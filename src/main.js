@@ -22,6 +22,10 @@ const playerColors = ['#ffdd4a', '#ff8eaf', '#88d9ff', '#a9e5a3'];
 $('name').value = session?.name || localStorage.getItem('bb-name') || '';
 $('room-input').value = params.get('room') || '';
 $('server-url').value = serverUrl;
+if (isGitHubPages) {
+  $('server-url').placeholder = 'wss://your-server.onrender.com';
+  document.querySelector('.server-settings p').textContent = 'Enter the secure address provided by your multiplayer host. Everyone joining a room must use the same server.';
+}
 if (!serverUrl) {
   document.querySelector('.server-settings').open = true;
   notice('The website is ready. Enter your hosted multiplayer server address under Connection server to create or join a room.');
