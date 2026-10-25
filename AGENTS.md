@@ -3,6 +3,8 @@
 This is a four-device multiplayer synchronization prototype, with no mini-games yet.
 The frontend uses Vite and browser JavaScript; `server/` is a separate Node WebSocket room service.
 Run `npm run dev` for same-Wi-Fi testing, `npm test` for protocol and clock checks, and `npm run build` for static output in `dist/`.
+The Pages workflow deploys `dist/` from `main`; `MULTIPLAYER_SERVER_URL` sets the public WebSocket address at build time.
+`render.yaml` describes a single free Node service, with `ALLOWED_ORIGINS` set to the frontend origin rather than its repository path.
 
 ## Timing invariants
 

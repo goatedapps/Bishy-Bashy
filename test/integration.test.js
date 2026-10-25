@@ -54,3 +54,12 @@ test('WebSocket upgrade rejects an unrelated browser origin', async t => {
   const [error] = await once(socket, 'error');
   assert.match(error.message, /403/);
 });
+
+test('WebSocket upgrade allows the configured GitHub Pages origin', async t => {
+  const app = await createApp({ allowedOrigins: ['https://goatedapps.github.io'] });
+  app.server.listen(0, '127.0.0.1'); await once(app.server, 'listening');
+  t.after(() => app.close());
+  const socket = new WebSocket(`ws://127.0.0.1:${app.server.address().port}/ws`, { origin: 'https://goatedapps.github.io' });
+  await once(socket, 'open');
+  assert.equal(socket.readyState, WebSocket.OPEN);
+});

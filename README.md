@@ -85,6 +85,41 @@ Invitations preserve a separately configured server address.
 A public HTTPS frontend cannot connect to an insecure `ws://` server on your local computer.
 No public deployment, account, or hosting subscription is created by this prototype.
 
+### GitHub Pages deployment
+
+The repository includes `.github/workflows/pages.yml` to test, build, and publish `dist/` whenever `main` changes.
+Enable Pages in **Settings → Pages** and select **GitHub Actions** as the source.
+GitHub Free requires a public repository for Pages; keeping this repository private requires an eligible GitHub plan.
+The intended website address is `https://goatedapps.github.io/Bishy-Bashy/` once Pages is enabled and the deployment succeeds.
+
+Before the multiplayer server is hosted, the published page opens its connection settings and asks for a server address.
+It does not attempt to use GitHub Pages as a WebSocket server.
+Once the server is deployed, set the repository Actions variable `MULTIPLAYER_SERVER_URL` to its `wss://` address, then rerun the website deployment.
+The build embeds that public address as `VITE_SERVER_URL`, so new visitors connect without entering it manually.
+This address is public configuration and must not contain credentials.
+Players can still override it in **Connection server**, and invitation links preserve overrides.
+
+### Host the multiplayer server on Render
+
+Render is a straightforward option for this prototype because its Node web services support secure WebSocket connections.
+You need a Render account and permission for Render to read this GitHub repository.
+No database, custom domain, or port forwarding on your home router is needed for this milestone.
+
+1. In Render, create a **Web Service** from `goatedapps/Bishy-Bashy`, or create a **Blueprint** using the included `render.yaml`.
+2. For manual setup, select the Node runtime and the Free instance type.
+3. Set the build command to `npm ci && npm run build` and the start command to `npm start`.
+4. Set the environment variable `ALLOWED_ORIGINS` to `https://goatedapps.github.io`, with no repository path or trailing slash.
+5. Set the health check path to `/health` and deploy.
+6. Copy the assigned service hostname and use `wss://` instead of `https://` for the game's connection server address.
+7. Add that address as the GitHub Actions variable described above, then deploy Pages again.
+
+Use a single server instance while rooms live in memory.
+Restarts, redeployments, or service sleep clear all rooms, and players will need to create a new room.
+Render's free service sleeps after fifteen minutes without inbound traffic and can take about a minute to wake up.
+Open its HTTPS `/health` address before testing if it has been idle.
+For consistent availability later, choose an always-on plan after checking current pricing.
+This configuration does not subscribe to a hosting plan or create a Render account.
+
 ## Checks
 
 ```sh

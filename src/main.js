@@ -5,7 +5,9 @@ const $ = id => document.getElementById(id);
 const readStored = key => { try { return JSON.parse(sessionStorage.getItem(key)); } catch { return null; } };
 const params = new URLSearchParams(location.search);
 const session = readStored('bb-session');
-const defaultServer = `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}`;
+const hostedServer = import.meta.env.VITE_SERVER_URL?.trim();
+const isGitHubPages = location.hostname.endsWith('.github.io');
+const defaultServer = hostedServer || (isGitHubPages ? '' : `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}`);
 let serverUrl = params.get('server') || localStorage.getItem('bb-server') || defaultServer;
 let socket, room, playerId = session?.playerId, token = session?.token;
 let clock = new SyncedClock();
@@ -20,6 +22,10 @@ const playerColors = ['#ffdd4a', '#ff8eaf', '#88d9ff', '#a9e5a3'];
 $('name').value = session?.name || localStorage.getItem('bb-name') || '';
 $('room-input').value = params.get('room') || '';
 $('server-url').value = serverUrl;
+if (!serverUrl) {
+  document.querySelector('.server-settings').open = true;
+  notice('The website is ready. Enter your hosted multiplayer server address under Connection server to create or join a room.');
+}
 
 function notice(message) {
   $('notice').textContent = message;
@@ -141,6 +147,7 @@ function enter(type) {
   const code = $('room-input').value.trim().toUpperCase();
   if (type === 'join' && !/^[A-Z2-9]{6}$/.test(code)) return notice('Enter the six-character room code.');
   serverUrl = $('server-url').value.trim() || defaultServer;
+  if (!serverUrl) return notice('Enter the hosted multiplayer server address, starting with wss://, under Connection server.');
   localStorage.setItem('bb-server', serverUrl);
   entryRequest = { type, name: $('name').value.trim(), code };
   joining = true; intentionalClose = false;
@@ -352,8 +359,10 @@ setInterval(() => {
 setInterval(ping, 3000);
 requestAnimationFrame(animate);
 
-try {
-  const response = await fetch('./connection-info');
-  if (response.ok && response.headers.get('content-type')?.includes('application/json')) lanUrls = (await response.json()).lanUrls;
-} catch { /* A static GitHub Pages copy does not expose local server addresses. */ }
+if (!isGitHubPages) {
+  try {
+    const response = await fetch('./connection-info');
+    if (response.ok && response.headers.get('content-type')?.includes('application/json')) lanUrls = (await response.json()).lanUrls;
+  } catch { /* A static host may not expose local server addresses. */ }
+}
 if (session) { intentionalClose = false; connect(); }
