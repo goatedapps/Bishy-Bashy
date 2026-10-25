@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1935b8" />
+    <meta name="description" content="A four-player connection and clock synchronization test for Bishy Bashy." />
+    <title>Bishy Bashy · Sync lab</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="masthead">
+        <a class="brand" href="./" aria-label="Bishy Bashy home">Bishy<span>Bashy<span class="brand-dot">!</span></span></a>
+        <div class="edition">The multiplayer<br /><strong>sound check.</strong></div>
+      </header>
+      <main>
+        <section id="welcome" class="welcome">
+          <div class="intro">
+            <div class="four-friends" aria-hidden="true"><i>1</i><i>2</i><i>3</i><i>4</i></div>
+            <h1>Different phones.<br />Same <span>GO!</span></h1>
+            <p>Get up to four friends in a room. Count down together. Tap to finish. Find out how closely your clocks agree.</p>
+            <p class="quiet">Connection test only. The chaos comes later.</p>
+          </div>
+          <form id="entry-form" class="entry-panel">
+            <h2>Take your place.</h2>
+            <label for="name">Your name</label>
+            <input id="name" name="name" maxlength="20" autocomplete="nickname" placeholder="What should we call you?" required />
+            <button id="create" type="button" class="button primary">Create a room</button>
+            <div class="or"><span>or join your friends</span></div>
+            <label for="room-input">Room code</label>
+            <div class="join-row"><input id="room-input" name="room" maxlength="6" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="ABCDEF" /><button type="submit" class="button secondary">Join</button></div>
+            <details class="server-settings"><summary>Connection server</summary><label for="server-url">Server address</label><input id="server-url" type="url" placeholder="ws://192.168.1.10:3000" /><p>On the same Wi-Fi, open the address shown by the computer running this test. A GitHub Pages copy needs a separate secure server.</p></details>
+          </form>
+        </section>
+
+        <section id="room-view" hidden>
+          <div class="room-toolbar"><div><span class="quiet">Your room</span><h1 id="room-code">------</h1></div><div class="room-tools"><button id="share" class="button small secondary">Invite friends</button><button id="leave" class="text-button">Leave room</button></div></div>
+          <div id="invite" class="invite-panel" hidden><canvas id="qr" aria-label="QR code for joining this room"></canvas><div><h2>Bring your own buttons.</h2><p>Scan on a phone or tablet, or share this link.</p><input id="invite-link" readonly aria-label="Room invitation link" /><button id="copy-link" class="text-button">Copy link</button><p id="invite-note" class="quiet"></p></div></div>
+          <div class="arena-heading"><h2>Everybody’s here.</h2><span id="occupancy" class="quiet">0 / 4 players</span></div>
+          <div id="players" class="players"></div>
+          <section class="test-console" aria-label="Synchronization test">
+            <div class="console-top"><span id="round-label">Ready when you are.</span><span id="round-number">Test 01</span></div>
+            <div id="clock-face" class="clock-face"><span id="countdown">Let’s sync.</span><p id="round-message">Let your clock settle, then tap Ready.</p></div>
+            <div class="test-actions"><button id="ready" class="button secondary">Ready</button><button id="start" class="button primary" hidden>Start sync test</button><button id="finish" class="button finish" hidden>Finish!</button></div>
+            <p class="console-footnote">After GO, tap Finish whenever you like. Your phone measures the time. Switching apps during the active test forfeits this round.</p>
+          </section>
+          <section id="results" class="results" hidden><div class="section-heading"><h2>The finish line.</h2><button id="export" class="text-button">Download report</button></div><p>Ranked by local elapsed time. Arrival delay does not change the result.</p><div class="table-scroll"><table><thead><tr><th>Place</th><th>Player</th><th>Local finish</th><th>Arrival lag*</th><th>GO delay</th></tr></thead><tbody id="result-rows"></tbody></table></div><p class="quiet">*Arrival lag includes the selected test delay and network travel. GO delay is how late that device first drew GO after its scheduled start; it is not a measured difference between screens.</p></section>
+          <details class="diagnostics" open><summary>Under the hood <span id="connection-badge">Connecting</span></summary><div class="metrics"><div><span>Round-trip ping</span><strong id="ping">—</strong></div><div><span>Estimated clock offset</span><strong id="offset">—</strong></div><div><span>Timing uncertainty*</span><strong id="uncertainty">—</strong></div><div><span>Fresh clock samples</span><strong id="samples">0</strong></div></div><p class="quiet">*An estimate from ping and sample variation, not a guarantee. Different screens and network paths can still introduce delay.</p><div class="experiment-controls"><label for="result-delay">Delay my result message<select id="result-delay"><option value="0">No extra delay</option><option value="250">250 milliseconds</option><option value="1000">1 second</option><option value="3000">3 seconds</option></select></label><button id="disconnect" class="button small secondary">Disconnect me for 5 seconds</button></div><p id="submission-status" role="status" class="quiet">No result pending.</p><div id="event-log" class="event-log" aria-label="Recent connection events"></div></details>
+        </section>
+        <p id="notice" role="status" class="notice" hidden></p>
+      </main>
+      <footer><span>Bishy Bashy / Sync lab</span><span>Four devices. One starting line.</span></footer>
+    </div>
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
