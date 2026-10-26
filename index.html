@@ -16,7 +16,7 @@
     <nav aria-label="Game settings">
       <button id="sound" class="icon-button sound-off" aria-label="Enable sound" aria-pressed="false">♪</button>
       <button id="rules-open" class="icon-button" aria-label="How to play">?</button>
-      <button id="settings-open" class="icon-button" aria-label="Connection settings">⚙</button>
+      <button id="settings-open" class="icon-button" aria-label="Settings">⚙</button>
     </nav>
   </header>
   <main>
@@ -56,7 +56,27 @@
   </main>
   <dialog id="rules"><form method="dialog"><button class="close" aria-label="Close rules">×</button></form><h2>How to play</h2><ol class="rules-list"><li>Match the <strong>bottom block</strong> with red, green, or blue.</li><li>Clear all <strong>30 blocks</strong> as fast as you can.</li><li>A wrong tap freezes your controls for <strong>0.3 seconds</strong>.</li></ol><div class="shape-legend"><span>● Red</span><span>▲ Green</span><span>◆ Blue</span></div><p>You have 45 seconds. Stay on this screen during the round; switching apps or reloading forfeits it.</p><form method="dialog"><button class="primary">Got it</button></form></dialog>
   <dialog id="invite"><form method="dialog"><button class="close" aria-label="Close invitation">×</button></form><h2>Bring your friends</h2><canvas id="qr" aria-label="Room invitation QR code"></canvas><label for="invite-link">Invitation link</label><input id="invite-link" readonly /><button id="copy-link">Copy link</button><p id="invite-note"></p></dialog>
-  <dialog id="settings"><form method="dialog"><button class="close" aria-label="Close settings">×</button></form><h2>Connection</h2><label for="server-url">Multiplayer server</label><input id="server-url" type="url" placeholder="wss://your-server.onrender.com" /><p id="server-help">Everyone in a room uses the same server. Changes apply when you next join.</p><p id="connection-badge">Not connected</p><dl class="metrics"><div><dt>Ping</dt><dd id="ping">—</dd></div><div><dt>Samples</dt><dd id="samples">0</dd></div><div><dt>Uncertainty</dt><dd id="uncertainty">—</dd></div></dl><details><summary>Connection tests</summary><label for="result-delay">Delay sending a finished result</label><select id="result-delay"><option value="0">No delay</option><option value="1000">1 second</option><option value="3000">3 seconds</option></select><button id="disconnect">Disconnect for 5 seconds</button><button id="export">Export timing report</button><div id="event-log" class="event-log"></div></details></dialog>
+  <dialog id="settings">
+    <form method="dialog"><button class="close" aria-label="Close settings">×</button></form>
+    <h2>Settings</h2>
+    <section class="audio-settings" aria-label="Sound settings">
+      <h3>Sound</h3>
+      <label for="music-mode">Music</label>
+      <select id="music-mode"><option value="auto">One device per room</option><option value="on">This device</option><option value="off">Off</option></select>
+      <p>Room music plays on the first player's device. Choose This device for headphones.</p>
+      <label for="music-volume" class="volume-label">Music volume <output id="music-volume-value" for="music-volume">65%</output></label>
+      <input id="music-volume" type="range" min="0" max="100" step="5" value="65" />
+      <label for="effects-volume" class="volume-label">Effects volume <output id="effects-volume-value" for="effects-volume">80%</output></label>
+      <input id="effects-volume" type="range" min="0" max="100" step="5" value="80" />
+      <button id="audio-preview">Preview sound</button>
+      <p id="audio-status" role="status">Sound is off.</p>
+    </section>
+    <h3>Connection</h3>
+    <label for="server-url">Multiplayer server</label><input id="server-url" type="url" placeholder="wss://your-server.onrender.com" />
+    <p id="server-help">Everyone in a room uses the same server. Changes apply when you next join.</p><p id="connection-badge">Not connected</p>
+    <dl class="metrics"><div><dt>Ping</dt><dd id="ping">—</dd></div><div><dt>Samples</dt><dd id="samples">0</dd></div><div><dt>Uncertainty</dt><dd id="uncertainty">—</dd></div></dl>
+    <details><summary>Connection tests</summary><label for="result-delay">Delay sending a finished result</label><select id="result-delay"><option value="0">No delay</option><option value="1000">1 second</option><option value="3000">3 seconds</option></select><button id="disconnect">Disconnect for 5 seconds</button><button id="export">Export timing report</button><div id="event-log" class="event-log"></div></details>
+  </dialog>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

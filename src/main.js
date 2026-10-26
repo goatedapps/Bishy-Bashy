@@ -21,7 +21,7 @@ let lastPong = 0, lastSyncSent = 0, lastPendingSent = -Infinity, lastProgressSen
 let inviteUrl = '', lanUrls = [], events = [];
 let hiddenSince = document.hidden ? performance.now() : null;
 const view = new GameView();
-const audio = new GameAudio();
+const audio = new GameAudio({ onChange: () => updateSound() });
 const buttons = [...document.querySelectorAll('.hit-button')];
 
 $('name').value = session?.name || localStorage.getItem('bb-name') || '';
@@ -128,7 +128,7 @@ function connect() {
       }
       setupLocalRound();
       if (room.round?.phase === 'results') {
-        if (previousPhase !== 'results') audio.cancel();
+        if (previousPhase !== 'results') audio.stopRound();
         if (pending && room.players.find(player => player.id === playerId)?.result) confirmResult();
         sessionStorage.removeItem('bb-active-round');
       }
@@ -204,7 +204,13 @@ function setupLocalRound() {
   }
   sessionStorage.setItem('bb-active-round', round.id);
   log(`Round ${room.testNumber} scheduled. Clock mapping frozen.`);
-  if (!document.hidden && !localRound.done) audio.countdown(round.id, start);
+  synchronizeAudio();
+}
+
+function synchronizeAudio() {
+  const round = room?.round;
+  if (document.hidden || !localRound || round?.phase === 'results' || localRound.done && localRound.status !== 'finished') return;
+  audio.scheduleRound(localRound.id, localRound.start, localRound.end, round.playerIds[0] === playerId, localRound.done);
 }
 
 function clearPending() {
@@ -233,8 +239,13 @@ function complete(status, elapsed = null) {
   $('submission-status').textContent = delay ? `Finish saved. Sending after ${delay / 1000} seconds of test delay.` : 'Result saved. Waiting for confirmation…';
   $('submission-status').hidden = false;
   log(status === 'finished' ? `Local finish: ${(elapsed / 1000).toFixed(3)} s.` : status === 'forfeit' ? 'Forfeited: game screen hidden or reloaded.' : 'Time expired.');
-  audio.cancel();
-  if (status === 'finished') audio.play('finish');
+  if (status === 'finished') {
+    audio.endPlayer();
+    audio.play('finish');
+  } else {
+    audio.stopRound();
+    if (status === 'timeout' && !document.hidden) audio.play('timeout');
+  }
   flushPending();
   renderRoom();
 }
@@ -258,7 +269,7 @@ function tap(color) {
   if (action.type === 'ignored') return;
   if (localRound.goDelay === null) localRound.goDelay = Math.max(0, time - localRound.start);
   if (action.type === 'finished') complete('finished', action.elapsed);
-  else audio.play(action.type);
+  else audio.play(action.type, { color, progress: localRound.run.cleared / room.round.blockCount });
   view.render(room, playerId, localRound, time);
   updateControls(time);
 }
@@ -367,6 +378,16 @@ function updateSound() {
   $('sound').classList.toggle('sound-off', !audio.enabled);
   $('sound').setAttribute('aria-pressed', String(audio.enabled));
   $('sound').setAttribute('aria-label', audio.enabled ? 'Mute sound' : 'Enable sound');
+  $('music-mode').value = audio.preferences.musicMode;
+  for (const [id, key] of [['music-volume', 'musicVolume'], ['effects-volume', 'effectsVolume']]) {
+    const value = Math.round(audio.preferences[key] * 100);
+    $(id).value = value;
+    $(`${id}-value`).textContent = `${value}%`;
+  }
+  $('audio-status').textContent = ({ off: 'Sound is off.', loading: 'Loading sounds…', ready: 'Sound ready.', waiting: 'Tap Preview sound to try it.', unavailable: 'Some sounds could not load. Tap Preview sound to retry.' })[audio.status];
+  const active = room?.round && room.round.phase !== 'results';
+  $('audio-preview').disabled = Boolean(active) || audio.status === 'loading';
+  $('audio-preview').textContent = audio.previewing ? 'Stop preview' : 'Preview sound';
 }
 
 $('create').addEventListener('click', () => enter('create'));
@@ -375,12 +396,18 @@ $('ready').addEventListener('click', () => { audio.unlock(); send({ type: 'ready
 $('start').addEventListener('click', () => { audio.unlock(); send({ type: 'start' }); });
 $('leave').addEventListener('click', () => send({ type: 'leave' }));
 $('rules-open').addEventListener('click', () => $('rules').showModal());
-$('settings-open').addEventListener('click', () => $('settings').showModal());
+$('settings-open').addEventListener('click', () => { updateSound(); $('settings').showModal(); });
 $('sound').addEventListener('click', async () => {
   audio.toggle(); updateSound();
   await audio.unlock();
-  if (localRound && !localRound.done && !document.hidden) audio.countdown(localRound.id, localRound.start);
+  synchronizeAudio();
 });
+$('audio-preview').addEventListener('click', () => audio.previewing ? audio.stopPreview() : audio.preview());
+$('settings').addEventListener('close', () => audio.stopPreview());
+$('music-mode').addEventListener('change', () => { audio.setPreferences({ musicMode: $('music-mode').value }); synchronizeAudio(); });
+for (const [id, key] of [['music-volume', 'musicVolume'], ['effects-volume', 'effectsVolume']]) {
+  $(id).addEventListener('input', () => audio.setPreferences({ [key]: Number($(id).value) / 100 }));
+}
 $('share').addEventListener('click', async () => { $('invite').showModal(); await prepareInvite(); });
 $('copy-link').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(inviteUrl); $('copy-link').textContent = 'Copied!'; }
@@ -420,7 +447,7 @@ document.addEventListener('visibilitychange', () => {
       localRound.hiddenDuringPlay = true; complete('forfeit');
     }
     hiddenSince = null; ping();
-    if (localRound && !localRound.done) audio.countdown(localRound.id, localRound.start);
+    synchronizeAudio();
   }
 });
 window.addEventListener('pagehide', () => {

@@ -28,7 +28,7 @@ export async function createApp({ dev = false, allowedOrigins = [] } = {}) {
       const file = path.resolve(root, 'dist', relative);
       if (!file.startsWith(path.resolve(root, 'dist') + path.sep)) { res.writeHead(403); return res.end('Forbidden'); }
       const content = await readFile(file);
-      const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png' };
+      const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.wav': 'audio/wav' };
       res.writeHead(200, { 'Content-Type': types[path.extname(file)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
       res.end(content);
     } catch { res.writeHead(404); res.end('Not found. Run npm run build before npm start.'); }

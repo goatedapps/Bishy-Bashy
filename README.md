@@ -33,9 +33,41 @@ Hosting moves to a connected player if the host disconnects.
 There is no automatic tournament progression yet.
 
 Sound is optional and off by default.
-Use the music-note button to enable short synthesized countdown, tap, mistake, and finish cues.
+Use the music-note button to enable music and effects, and the gear button for separate volume controls and a sound preview.
 All essential cues also appear visually.
 Physical phone audio and touch latency still need playtesting.
+
+## Music and sound
+
+The original soundtrack is a 128 BPM funky disco arcade loop, with an octave bass groove, four-on-the-floor drums, electric-piano-style chord stabs, and a bright melody.
+An additional percussion and melody layer enters on a beat near the final ten seconds.
+Correct taps have three wooden pop tones corresponding to the block colors; a wrong tap produces a springy falling sound.
+Countdown, GO, finish, and timeout each have a distinct cue.
+
+Music defaults to **One device per room**, using the first participant in that round's fixed player list.
+Other players can enable effects without duplicating the room music.
+Choose **This device** for personal music playback, such as headphones, or **Off** to keep effects only.
+The music continues while that player waits after finishing, then stops when the room reaches results or the round deadline.
+Network disconnection does not stop local audio; hiding the game, muting it, leaving, and forfeiting cancel scheduled playback.
+The finish cue is allowed to ring through a results-screen transition.
+
+Decoded sounds are cached and scheduled on the Web Audio clock from the agreed local start.
+Enabling sound or returning from an audio interruption joins the current musical position and skips old countdown cues.
+Sound loading and playback never gate gameplay or the result submission path.
+Effects duck the music briefly, independent category gains control the balance, and a master limiter provides additional headroom.
+Transient effects are capped at eight voices; the music uses two looping buffers.
+
+All ten mono WAV files total less than 2.5 MB and load only after sound is enabled.
+The normal and urgency loops each last 15 seconds at 32 kHz, with equal sample counts for phase alignment.
+The editable score and synthesis are in `scripts/audio/`; no third-party recordings or music services are used.
+Regenerate the runtime files and their numerical analysis with:
+
+```sh
+npm run audio:render
+```
+
+These signal and lifecycle checks do not establish subjective sound quality or physical speaker latency.
+Listen on target phones, headphones, and speakers to tune the final balance.
 
 ## Run locally
 
@@ -127,7 +159,8 @@ A sleeping hosted service may take time to wake up, and redeploying it clears ro
 
 `shared/totem.js` defines the game rules and deterministic local run.
 `src/main.js` coordinates lifecycle, timing, input, rooms, and the result outbox.
-`src/game-view.js` renders towers and results; `src/audio.js` owns optional procedural sound.
+`src/game-view.js` renders towers and results; `src/audio.js` owns audio loading, mixing, and lifecycle.
+`scripts/audio/` contains the original composition and synthesis; `public/audio/` contains its rendered runtime assets.
 `server/rooms.js` owns multiplayer room state and protocol validation.
 `public/assets/totem-blocks.png` contains original generated character artwork reused from the approved mockup.
 [Artwork notes](.lavish/totem-shrinker/artwork.md) preserve the generation prompt.

@@ -677,6 +677,37 @@ dialog form>.primary {
   padding-top:15px;
   font-size:13px
 }
+.audio-settings {
+  border-bottom:1px solid #dac9df;
+  padding-bottom:12px;
+  margin-bottom:22px;
+}
+.audio-settings h3,#settings>h3 {
+  font:900 18px Nunito,system-ui,sans-serif;
+  margin:0 0 8px;
+}
+.volume-label {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+.volume-label output {
+  font-size:12px;
+}
+.audio-settings input[type=range] {
+  accent-color:#7541bc;
+  border:0;
+  padding:8px 0;
+  height:36px;
+}
+#audio-preview {
+  width:100%;
+  margin-top:12px;
+  background:#e8d9fc;
+}
+#audio-status {
+  margin-bottom:0;
+}
 #settings details>button {
   width:100%;
   margin-top:10px;

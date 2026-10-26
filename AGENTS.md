@@ -16,7 +16,10 @@ Every device displays all four lanes, with controls for its own player only.
 The approved candy palette and original generated sprite sheet live in `src/style.css` and `public/assets/`.
 The portable design mockup remains in `mockups/`, with editable source/provenance in `.lavish/totem-shrinker/`.
 Keep screens visually driven; avoid redundant captions, decorative microcopy, and repeated instructions outside the rules screen.
-Optional procedural audio belongs in `src/audio.js`, starts only after a user gesture, and must have visual equivalents.
+Audio playback belongs in `src/audio.js`, starts only after a user gesture, and must have visual equivalents.
+The original disco score and synthesis live in `scripts/audio/`; regenerate `public/audio/` with `npm run audio:render` after changing them.
+Keep background music on one fixed participant by default, allow personal overrides, and preserve its phase across mute and interruption.
+Results may stop music and countdown cues, but must not truncate an accepted local finish cue.
 
 ## Timing invariants
 
