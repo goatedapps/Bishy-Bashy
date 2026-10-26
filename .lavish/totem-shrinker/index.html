@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffda47">
+  <title>Totem Shrinker · Design playground</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@500;600;700;800;900;1000&display=swap" rel="stylesheet">
+  <style>
+    :root{--ink:#3b214d;--yellow:#ffda47;--red:#ff6568;--green:#72dba0;--blue:#6bc8f4;--purple:#a583e8;--paper:#fffdf5;font-family:Nunito,'Trebuchet MS',sans-serif;color:var(--ink);background:#ffda47;font-synthesis:none}
+    *{box-sizing:border-box}body{margin:0;background-image:radial-gradient(#e9b924 1.1px,transparent 1.1px);background-size:18px 18px}button{font:inherit;color:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}button:disabled{cursor:default}button:focus-visible,a:focus-visible{outline:4px solid #7540c3;outline-offset:4px}button,input{touch-action:manipulation}h1,h2,h3,p{margin:0}h1,h2,.display{font-family:'Lilita One','Arial Rounded MT Bold',sans-serif;font-weight:400}a{color:inherit}[hidden]{display:none!important}.sr-only{position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip:rect(0,0,0,0)}
+    .review-bar{background:var(--paper);border-bottom:2px solid var(--ink);padding:12px 28px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}.review-label{font-size:13px;font-weight:900;display:flex;gap:9px;align-items:center}.review-dot{width:9px;height:9px;background:#b18ae9;border:2px solid var(--ink);border-radius:50%}.review-tools{display:flex;gap:15px;align-items:center}.screen-tabs{display:flex;gap:4px;background:#f0eafa;padding:4px;border-radius:12px}.screen-tabs button,.view-button{border:0;background:none;border-radius:8px;padding:8px 13px;font-size:12px;font-weight:900;white-space:nowrap}.screen-tabs button[aria-pressed=true]{background:var(--ink);color:#fff}.view-button{border:1.5px solid var(--ink);background:white}.view-button[aria-pressed=true]{background:#daccf4}
+    .design-stage{max-width:1160px;margin:0 auto;padding:23px 30px 16px}.game-shell{margin:auto;width:100%;min-width:0;transition:max-width .2s}.game-top{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:0 4px 19px}.brand{font-family:'Lilita One',sans-serif;font-size:28px;letter-spacing:-1px;line-height:.86;transform:rotate(-6deg)}.brand span{display:block}.brand b{color:#e34868;font-weight:400}.room-pill{background:var(--paper);border:2px solid var(--ink);border-radius:30px;padding:8px 14px;font-size:12px;font-weight:900;display:flex;gap:8px;align-items:center}.status-dot{width:8px;height:8px;border-radius:50%;background:#26a768}.title-block{text-align:center;position:relative;padding-bottom:20px}.title-block h1{font-size:clamp(42px,6vw,72px);line-height:1;letter-spacing:-1.5px;text-shadow:2px 3px 0 #fff6b9}.spark{position:absolute;font-size:40px;line-height:1;color:#a34ec1;left:12%;top:32%;transform:rotate(-14deg)}.spark.right{left:auto;right:12%;top:12%;font-size:32px;color:#e9546f;transform:rotate(12deg)}
+    .arcade-frame{border:3px solid var(--ink);border-radius:28px;background:var(--paper);box-shadow:0 8px 0 var(--ink);position:relative;overflow:hidden}.match-hud{padding:13px 22px;border-bottom:3px solid var(--ink);display:flex;justify-content:space-between;align-items:center;gap:12px;background:#fff9dc}.round-tag{font-size:12px;font-weight:1000}.timer{display:flex;align-items:center;gap:10px;font-variant-numeric:tabular-nums}.timer-icon{width:23px;height:23px;border:2px solid var(--ink);border-radius:50%;position:relative}.timer-icon:before{content:'';position:absolute;width:8px;height:3px;background:var(--ink);left:5px;top:-6px;border-radius:2px}.timer-icon:after{content:'';position:absolute;width:5px;height:7px;top:3px;left:8px;border-left:2px solid var(--ink);border-bottom:2px solid var(--ink)}.timer strong{font-family:'Lilita One',sans-serif;font-size:31px;font-weight:400}.timer small{font-size:12px;font-weight:900}.quiet-music{border:2px solid #c5b9c9;border-radius:50%;width:37px;height:37px;background:#f0eafa;display:grid;place-items:center;position:relative;opacity:.7;font-size:20px}.quiet-music:after{content:'';width:23px;height:2px;background:var(--ink);position:absolute;transform:rotate(-45deg)}
+    .arena{background:#eee6ff;position:relative;padding:0 20px;isolation:isolate}.arena:before{content:'';position:absolute;inset:0;background-image:radial-gradient(#d5c2f2 2px,transparent 2px);background-size:27px 27px;z-index:-1;opacity:.5}.lanes{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;position:relative}.lane{min-width:0;text-align:center;position:relative;padding:14px 8px 0;display:flex;flex-direction:column;align-items:center;border-left:2px dashed #d1bee7}.lane:first-child{border-left:0}.lane.you{background:linear-gradient(180deg,#fff7b7a6,#fff7b700);border-left:0}.player-name{font-size:14px;font-weight:1000;white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}.you-tag{font-size:10px;background:var(--yellow);border:1.5px solid var(--ink);border-radius:6px;padding:1px 5px;margin-left:4px}.tower-zone{--zone-height:308px;--overlap:10px;--zone-padding:8px;height:var(--zone-height);overflow:hidden;width:100%;display:flex;flex-direction:column;align-items:center;justify-content:end;position:relative;padding-bottom:8px}.tower{display:flex;flex-direction:column;align-items:center;width:100%;filter:drop-shadow(0 5px 0 #44294c26)}.block{width:clamp(70px,11vw,124px);aspect-ratio:1.5;background-image:url('totem-blocks.png');background-size:300% auto;background-position:var(--x,0%) var(--y,20%);position:relative;flex-shrink:0}.tower .block{width:min(100%,124px,calc((var(--zone-height) + 4 * var(--overlap) - var(--zone-padding)) * .3))}.tower .block+.block{margin-top:calc(-1 * var(--overlap))}.block[data-color=green]{--x:50%}.block[data-color=blue]{--x:100%}.block.alt{--y:86%}.block-shape{width:17px;height:17px;display:grid;place-items:center;position:absolute;right:5%;bottom:12%;border-radius:50%;background:#fff9e7;border:1.5px solid #3b214d;font-size:10px;font-weight:1000;line-height:1}.plinth{height:16px;background:var(--purple);border:2px solid var(--ink);border-radius:50%;width:79%;position:relative;margin-top:1px;box-shadow:0 5px 0 #8866ba}.remaining{display:flex;justify-content:center;align-items:center;gap:6px;font-size:11px;font-weight:1000;margin-top:15px;padding-bottom:12px}.remaining strong{font-family:'Lilita One',sans-serif;font-size:23px;font-weight:400;line-height:1}.progress-track{height:5px;width:70%;background:#cfc0e3;border-radius:4px;overflow:hidden;margin-bottom:4px}.progress-track i{display:block;height:100%;width:var(--progress);background:var(--ink);border-radius:4px}
+    .control-deck{border-top:3px solid var(--ink);background:var(--paper);padding:14px 23px 18px}.control-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:15px;max-width:600px;margin:auto}.hit-button{height:77px;border:3px solid var(--ink);border-radius:20px;box-shadow:0 6px 0 var(--ink),inset 0 5px 0 #ffffff65;background:var(--red);position:relative;transition:transform .1s,box-shadow .1s;display:flex;justify-content:center;align-items:center;gap:13px;font-weight:1000;font-size:15px;user-select:none}.hit-button.green{background:var(--green)}.hit-button.blue{background:var(--blue)}.hit-button:active,.hit-button.pressed{transform:translateY(5px);box-shadow:0 1px 0 var(--ink),inset 0 3px 0 #00000012}.hit-symbol{font-size:29px;line-height:1;color:var(--ink)}.key-hint{position:absolute;right:9px;bottom:7px;font-size:10px;font-weight:1000;opacity:.65}.preview-feedback{position:absolute;left:50%;top:38%;transform:translate(-50%,-50%) rotate(-10deg);font-family:'Lilita One',sans-serif;font-size:44px;color:#fff5b7;-webkit-text-stroke:1.5px var(--ink);text-shadow:3px 3px 0 var(--ink);pointer-events:none;opacity:0;z-index:3;white-space:nowrap}.preview-feedback.show{animation:pop .55s ease-out}
+    .how-screen{padding:30px}.how-layout{display:grid;grid-template-columns:1fr 1fr;align-items:center;gap:24px}.how-art{position:relative;display:flex;justify-content:center;align-items:center;min-height:320px;background:#e9d9ff;border:2px solid var(--ink);border-radius:48% 52% 48% 48%;transform:rotate(-4deg)}.how-art .tower{width:170px;transform:rotate(8deg)}.how-art .block{width:170px}.how-art .block+.block{margin-top:-12px}.how-copy h2{font-size:36px;line-height:1.05;margin-bottom:18px}.rules{display:flex;flex-direction:column;gap:17px}.rule{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start}.rule-num{font-family:'Lilita One',sans-serif;font-size:22px;display:grid;place-items:center;width:34px;height:34px;background:#ffda47;border:2px solid var(--ink);border-radius:12px;transform:rotate(-5deg)}.rule:nth-child(2) .rule-num{background:#a4e6ad;transform:rotate(5deg)}.rule:nth-child(3) .rule-num{background:#f5a1bf}.rule h3{font-size:15px;font-weight:1000;margin:2px 0 4px}.rule p{font-size:13px;line-height:1.55;color:#745d7b;font-weight:700}.ready-button,.action-button{border:2.5px solid var(--ink);background:var(--purple);border-radius:15px;box-shadow:0 5px 0 var(--ink);font-family:'Lilita One',sans-serif;font-size:24px;padding:14px 28px;min-height:55px}.ready-button{width:100%;margin-top:24px;background:var(--green)}.ready-button:active,.action-button:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ink)}.how-bottom{text-align:center;margin-top:26px;font-size:12px;font-weight:900;color:#77617e}.shape-legend{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:10px}.shape-legend span{border:1.5px solid var(--ink);border-radius:9px;padding:4px 9px;font-size:12px;font-weight:1000;background:var(--red)}.shape-legend span:nth-child(2){background:var(--green)}.shape-legend span:nth-child(3){background:var(--blue)}
+    .results-screen{padding:26px 32px 30px;background:radial-gradient(ellipse at 50% 20%,#fff1a5 0,#fffdf5 70%);position:relative}.results-title{text-align:center}.results-title .ribbon{display:inline-block;background:#e6d5ff;border:2px solid var(--ink);padding:4px 15px;font-weight:1000;font-size:12px;border-radius:6px;transform:rotate(-3deg)}.results-title h2{font-size:43px;line-height:1;margin:10px 0}.podium{display:flex;justify-content:center;align-items:end;gap:12px;padding:26px 0 0;max-width:560px;margin:auto}.podium-player{flex:1;max-width:170px;text-align:center;min-width:0}.podium-player .block{width:100%;max-width:120px;margin:0 auto -4px}.podium-player .crown{font-size:38px;line-height:1.1;color:#a16b06;transform:rotate(-8deg)}.podium-step{border:2px solid var(--ink);border-bottom:0;border-radius:15px 15px 0 0;padding:12px 6px;background:#d7c2f5;min-height:90px;box-shadow:inset 0 5px 0 #ffffff70}.podium-player.winner .podium-step{background:#ffda47;min-height:124px}.podium-player.third .podium-step{background:#ffc0a9;min-height:72px}.podium-step strong{display:block;font-size:14px;font-weight:1000;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.podium-step b{font-family:'Lilita One',sans-serif;font-size:26px;font-weight:400;display:block}.podium-step small{font-size:10px;font-weight:900}.results-floor{height:5px;border:2px solid var(--ink);background:var(--ink);max-width:560px;margin:auto;border-radius:3px}.result-list{margin:21px auto 0;max-width:560px;border:2px solid var(--ink);border-radius:15px;overflow:hidden;background:white}.result-row{display:grid;grid-template-columns:32px minmax(0,1fr) auto;align-items:center;gap:12px;font-size:13px;font-weight:900;padding:10px 16px;border-bottom:1.5px solid #eee3ef}.result-row:last-child{border:0}.result-row.winning{background:#fff2b0}.result-rank{font-family:'Lilita One',sans-serif;font-size:20px}.result-time{font-variant-numeric:tabular-nums;font-size:16px;font-weight:1000}.result-actions{display:flex;gap:12px;justify-content:center;margin-top:24px}.result-actions .action-button{font-size:20px;min-width:190px;background:#a4e6ad}.confetti-piece{position:absolute;width:9px;height:18px;top:40px;left:8%;background:#ff879a;transform:rotate(30deg);border-radius:3px}.confetti-piece:nth-of-type(2){left:18%;top:112px;background:#6bc8f4;transform:rotate(-30deg)}.confetti-piece:nth-of-type(3){left:auto;right:9%;top:80px;background:#a4e6ad;transform:rotate(55deg)}.confetti-piece:nth-of-type(4){left:auto;right:20%;top:160px;background:#a583e8;transform:rotate(-15deg)}
+    .game-shell.phone-layout{max-width:420px}.phone-layout .title-block h1{font-size:43px}.phone-layout .spark{font-size:22px;left:1%;top:0}.phone-layout .spark.right{left:auto;right:1%;top:10%}.phone-layout .game-top{padding-bottom:15px}.phone-layout .brand{font-size:24px}.phone-layout .room-pill{font-size:10px;padding:7px 9px}.phone-layout .arcade-frame{border-radius:22px}.phone-layout .match-hud{padding:10px 12px}.phone-layout .round-tag{font-size:10px}.phone-layout .timer{gap:6px}.phone-layout .timer strong{font-size:26px}.phone-layout .timer small{font-size:10px}.phone-layout .quiet-music{width:29px;height:29px;font-size:16px}.phone-layout .arena{padding:0 5px}.phone-layout .lanes{gap:0}.phone-layout .lane{padding:12px 3px 0;border-left-width:1px}.phone-layout .player-name{font-size:11px}.phone-layout .you-tag{font-size:8px;margin-left:2px;padding:0 3px}.phone-layout .tower-zone{--zone-height:235px;--overlap:7px;--zone-padding:7px;padding-bottom:7px}.phone-layout .tower-zone .block{width:min(100%,79px,calc((var(--zone-height) + 4 * var(--overlap) - var(--zone-padding)) * .3))}.phone-layout .block-shape{width:12px;height:12px;font-size:7px;border-width:1px}.phone-layout .plinth{height:11px;box-shadow:0 3px 0 #8866ba}.phone-layout .remaining{gap:3px;font-size:9px;margin-top:11px;padding-bottom:10px}.phone-layout .remaining strong{font-size:19px}.phone-layout .control-deck{padding:12px 12px 16px}.phone-layout .control-buttons{gap:9px}.phone-layout .hit-button{height:77px;border-radius:16px;flex-direction:column;gap:1px;font-size:11px}.phone-layout .hit-symbol{font-size:29px}.phone-layout .key-hint{display:none}.phone-layout .preview-feedback{font-size:27px}.phone-layout .how-screen{padding:20px 18px}.phone-layout .how-layout{grid-template-columns:1fr;gap:21px}.phone-layout .how-art{min-height:215px;width:85%;margin:auto}.phone-layout .how-art .tower{width:120px}.phone-layout .how-art .block{width:120px}.phone-layout .how-copy h2{font-size:30px;text-align:center;margin-bottom:21px}.phone-layout .rule p{font-size:12px}.phone-layout .how-bottom{font-size:11px;margin-top:18px}.phone-layout .results-screen{padding:24px 14px}.phone-layout .results-title h2{font-size:34px}.phone-layout .podium{gap:6px}.phone-layout .podium-player .block{width:85px;max-width:100%}.phone-layout .podium-step strong{font-size:11px}.phone-layout .podium-step b{font-size:22px}.phone-layout .podium-player .crown{font-size:30px}.phone-layout .result-row{gap:8px;padding:9px 11px;font-size:12px}.phone-layout .result-time{font-size:14px}.phone-layout .result-rank{font-size:18px}.phone-layout .confetti-piece{width:6px;height:12px}.phone-layout .result-actions .action-button{min-width:160px}
+    @keyframes pop{0%{opacity:0;transform:translate(-50%,-30%) rotate(-14deg) scale(.7)}25%{opacity:1;transform:translate(-50%,-60%) rotate(-8deg) scale(1.08)}65%{opacity:1}100%{opacity:0;transform:translate(-50%,-120%) rotate(6deg) scale(.95)}}
+    @media(max-width:740px){.review-bar{padding:10px 14px;justify-content:center;gap:8px}.review-label{font-size:11px}.review-tools{gap:8px}.screen-tabs button,.view-button{font-size:10px;padding:7px 9px}.design-stage{padding:20px 14px 12px}.how-layout{gap:18px}.how-copy h2{font-size:30px}}
+    @media(max-width:480px){.review-label{width:100%;justify-content:center}.review-tools{width:100%;justify-content:space-between}.review-bar{padding:8px 10px}.design-stage{padding:18px 10px 10px}.game-top{padding:0 3px 15px}.title-block{padding-bottom:16px}.title-block h1{font-size:43px}.game-shell{max-width:420px}}
+    @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}.preview-feedback.show{opacity:1}}
+  </style>
+</head>
+<body>
+  <header class="review-bar">
+    <div class="review-label"><span class="review-dot" aria-hidden="true"></span>Visual mockup · sample players &amp; times</div>
+    <div class="review-tools">
+      <nav class="screen-tabs" aria-label="Preview screens">
+        <button data-screen="how" aria-pressed="false">How to play</button>
+        <button data-screen="play" aria-pressed="true">In the round</button>
+        <button data-screen="results" aria-pressed="false">Results</button>
+      </nav>
+      <button id="phone-toggle" class="view-button" aria-pressed="false">Phone layout</button>
+    </div>
+  </header>
+  <main class="design-stage">
+    <div id="game-shell" class="game-shell">
+      <header class="game-top">
+        <div class="brand" aria-label="Bishy Bashy">Bishy<span>Bashy<b>!</b></span></div>
+        <div class="room-pill"><span class="status-dot" aria-hidden="true"></span>Room FIZZ4 <span aria-hidden="true">·</span> 4 friends</div>
+      </header>
+      <div class="title-block">
+        <span class="spark" aria-hidden="true">✦</span><span class="spark right" aria-hidden="true">✹</span>
+        <h1>Totem Shrinker</h1>
+      </div>
+      <div class="arcade-frame">
+        <section id="screen-play" aria-label="Sample game screen">
+          <div class="match-hud">
+            <div class="round-tag">Round 1 of 5</div>
+            <div class="timer" aria-label="Sample elapsed time 8.42 seconds"><i class="timer-icon" aria-hidden="true"></i><strong>08.42</strong><small>sec</small></div>
+            <span class="quiet-music" role="img" aria-label="Audio not included in this mockup" title="Audio comes later">♪</span>
+          </div>
+          <div class="arena">
+            <div class="lanes" id="player-lanes"></div>
+            <div id="preview-feedback" class="preview-feedback" aria-hidden="true">BOP!</div>
+          </div>
+          <div class="control-deck">
+            <div class="control-buttons">
+              <button class="hit-button red" data-hit="red" aria-label="Preview red circle button"><span class="hit-symbol" aria-hidden="true">●</span><span>Red</span><span class="key-hint">1</span></button>
+              <button class="hit-button green" data-hit="green" aria-label="Preview green triangle button"><span class="hit-symbol" aria-hidden="true">▲</span><span>Green</span><span class="key-hint">2</span></button>
+              <button class="hit-button blue" data-hit="blue" aria-label="Preview blue diamond button"><span class="hit-symbol" aria-hidden="true">◆</span><span>Blue</span><span class="key-hint">3</span></button>
+            </div>
+          </div>
+        </section>
+
+        <section id="screen-how" class="how-screen" aria-label="How to play preview" hidden>
+          <div class="how-layout">
+            <div class="how-art" aria-hidden="true"><div class="tower" id="instruction-tower"></div></div>
+            <div class="how-copy">
+              <h2>Make a big tower<br>very, very small.</h2>
+              <div class="rules">
+                <div class="rule"><span class="rule-num">1</span><div><h3>Look at the bottom block.</h3><p>Its color and shape tell you which button to tap.</p></div></div>
+                <div class="rule"><span class="rule-num">2</span><div><h3>Match it. Pop it. Repeat.</h3><p>Each match clears one block. Watch for the next one!</p></div></div>
+                <div class="rule"><span class="rule-num">3</span><div><h3>Race your friends to zero.</h3><p>Clear all 30 blocks. The quickest clear takes the round.</p></div></div>
+              </div>
+              <button class="ready-button" data-go="play">I’m ready. Let’s shrink!</button>
+            </div>
+          </div>
+          <div class="how-bottom"><div class="shape-legend"><span>● Red</span><span>▲ Green</span><span>◆ Blue</span></div></div>
+        </section>
+
+        <section id="screen-results" class="results-screen" aria-label="Sample results screen" hidden>
+          <i class="confetti-piece" aria-hidden="true"></i><i class="confetti-piece" aria-hidden="true"></i><i class="confetti-piece" aria-hidden="true"></i><i class="confetti-piece" aria-hidden="true"></i>
+          <div class="results-title"><span class="ribbon">Round 1 complete!</span><h2>Tiny tower. Big win!</h2></div>
+          <div class="podium">
+            <div class="podium-player"><div class="block" data-color="blue" aria-hidden="true"></div><div class="podium-step"><strong>Jules</strong><b>9.07<small> s</small></b><small>2nd place</small></div></div>
+            <div class="podium-player winner"><div class="crown" aria-hidden="true">♛</div><div class="block" data-color="red" aria-hidden="true"></div><div class="podium-step"><strong>Milo <small>(you!)</small></strong><b>8.42<small> s</small></b><small>1st place</small></div></div>
+            <div class="podium-player third"><div class="block" data-color="green" aria-hidden="true"></div><div class="podium-step"><strong>Bee</strong><b>9.86<small> s</small></b><small>3rd place</small></div></div>
+          </div>
+          <div class="results-floor"></div>
+          <div class="result-list">
+            <div class="result-row winning"><span class="result-rank">1</span><span class="result-name">Milo · You</span><span class="result-time">8.42 s</span></div>
+            <div class="result-row"><span class="result-rank">2</span><span class="result-name">Jules</span><span class="result-time">9.07 s</span></div>
+            <div class="result-row"><span class="result-rank">3</span><span class="result-name">Bee</span><span class="result-time">9.86 s</span></div>
+            <div class="result-row"><span class="result-rank">4</span><span class="result-name">Rio</span><span class="result-time">11.24 s</span></div>
+          </div>
+          <div class="result-actions"><button class="action-button" data-go="how">Rematch!</button></div>
+        </section>
+      </div>
+    </div>
+  </main>
+  <script>
+    const symbols = {red:'●',green:'▲',blue:'◆'};
+    const players = [
+      {name:'Milo',you:true,left:12,colors:['blue','red','green','blue','red'],progress:'60%'},
+      {name:'Jules',left:7,colors:['red','green','blue'],progress:'77%'},
+      {name:'Rio',left:15,colors:['green','blue','red','green','blue'],progress:'50%'},
+      {name:'Bee',left:10,colors:['blue','green','red','green'],progress:'67%'}
+    ];
+    function block(color,index=0){
+      const node=document.createElement('div');node.className='block'+(index%3===2?' alt':'');node.dataset.color=color;node.setAttribute('aria-label',color+' '+({red:'circle',green:'triangle',blue:'diamond'}[color])+' block');
+      const shape=document.createElement('span');shape.className='block-shape';shape.textContent=symbols[color];shape.setAttribute('aria-hidden','true');node.append(shape);return node;
+    }
+    players.forEach(player=>{
+      const lane=document.createElement('article');lane.className='lane'+(player.you?' you':'');lane.setAttribute('aria-label',player.name+(player.you?', your tower':'')+', '+player.left+' blocks remaining');
+      const name=document.createElement('h2');name.className='player-name';name.style.fontFamily='inherit';name.style.fontWeight='1000';name.textContent=player.name;
+      if(player.you){const tag=document.createElement('span');tag.className='you-tag';tag.textContent='You';name.append(tag);}
+      const zone=document.createElement('div');zone.className='tower-zone';const tower=document.createElement('div');tower.className='tower';player.colors.forEach((color,index)=>tower.append(block(color,index)));zone.append(tower);
+      const plinth=document.createElement('div');plinth.className='plinth';
+      const remaining=document.createElement('p');remaining.className='remaining';const number=document.createElement('strong');number.textContent=player.left;remaining.append(number,' left');
+      const progress=document.createElement('div');progress.className='progress-track';progress.setAttribute('aria-hidden','true');progress.style.setProperty('--progress',player.progress);progress.append(document.createElement('i'));
+      lane.append(name,zone,plinth,remaining,progress);document.getElementById('player-lanes').append(lane);
+    });
+    ['blue','green','red'].forEach((color,index)=>document.getElementById('instruction-tower').append(block(color,index)));
+    let currentScreen='play';
+    function showScreen(screen){
+      currentScreen=screen;
+      ['how','play','results'].forEach(name=>{document.getElementById('screen-'+name).hidden=name!==screen;document.querySelector('[data-screen="'+name+'"]').setAttribute('aria-pressed',String(name===screen));});
+    }
+    document.querySelectorAll('[data-screen]').forEach(button=>button.addEventListener('click',()=>showScreen(button.dataset.screen)));
+    document.querySelectorAll('[data-go]').forEach(button=>button.addEventListener('click',()=>showScreen(button.dataset.go)));
+    const shell=document.getElementById('game-shell');const phoneToggle=document.getElementById('phone-toggle');let forcedPhone=false;
+    function applyLayout(){const compact=forcedPhone||matchMedia('(max-width:620px)').matches;shell.classList.toggle('phone-layout',compact);phoneToggle.setAttribute('aria-pressed',String(forcedPhone));phoneToggle.textContent=forcedPhone?'Full layout':'Phone layout';}
+    phoneToggle.addEventListener('click',()=>{forcedPhone=!forcedPhone;applyLayout();});window.addEventListener('resize',applyLayout);applyLayout();
+    let feedbackTimer;const feedback=document.getElementById('preview-feedback');
+    function pressPreview(button){
+      if(currentScreen!=='play')return;
+      clearTimeout(feedbackTimer);document.querySelectorAll('[data-hit]').forEach(node=>node.classList.remove('pressed'));button.classList.add('pressed');feedback.classList.remove('show');void feedback.offsetWidth;feedback.textContent={red:'BOP!',green:'BOOP!',blue:'POP!'}[button.dataset.hit];feedback.classList.add('show');
+      feedbackTimer=setTimeout(()=>{button.classList.remove('pressed');feedback.classList.remove('show');},550);
+    }
+    document.querySelectorAll('[data-hit]').forEach(button=>button.addEventListener('click',()=>pressPreview(button)));
+    document.addEventListener('keydown',event=>{if(event.repeat||event.altKey||event.ctrlKey||event.metaKey||/INPUT|TEXTAREA|SELECT/.test(event.target.tagName))return;const color={1:'red',2:'green',3:'blue'}[event.key];if(color)pressPreview(document.querySelector('[data-hit="'+color+'"]'));});
+  </script>
+</body>
+</html>

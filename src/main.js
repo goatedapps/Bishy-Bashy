@@ -1,5 +1,8 @@
 import QRCode from 'qrcode';
 import { SyncedClock } from './clock.js';
+import { TotemRun, TOTEM_GAME } from '../shared/totem.js';
+import { GameView } from './game-view.js';
+import { GameAudio } from './audio.js';
 
 const $ = id => document.getElementById(id);
 const readStored = key => { try { return JSON.parse(sessionStorage.getItem(key)); } catch { return null; } };
@@ -9,27 +12,23 @@ const hostedServer = import.meta.env.VITE_SERVER_URL?.trim();
 const isGitHubPages = location.hostname.endsWith('.github.io');
 const defaultServer = hostedServer || (isGitHubPages ? '' : `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}`);
 let serverUrl = params.get('server') || localStorage.getItem('bb-server') || defaultServer;
-let socket, room, playerId = session?.playerId, token = session?.token;
+let socket, room, playerId = session?.playerId;
 let clock = new SyncedClock();
 let localRound = null;
 let pending = readStored('bb-pending');
-let reconnectAt = 0, reconnectTimer, entryRequest = null, joining = false, intentionalClose = false;
-let lastPong = 0, lastSyncSent = 0, lastPendingSent = 0, inviteUrl = '', lanUrls = [];
+let reconnectAt = 0, reconnectTimer, entryRequest = null, joining = false, intentionalClose = false, joined = false;
+let lastPong = 0, lastSyncSent = 0, lastPendingSent = -Infinity, lastProgressSent = 0, lastProgressKey = '';
+let inviteUrl = '', lanUrls = [], events = [];
 let hiddenSince = document.hidden ? performance.now() : null;
-let events = [];
-const playerColors = ['#ffdd4a', '#ff8eaf', '#88d9ff', '#a9e5a3'];
+const view = new GameView();
+const audio = new GameAudio();
+const buttons = [...document.querySelectorAll('.hit-button')];
 
 $('name').value = session?.name || localStorage.getItem('bb-name') || '';
 $('room-input').value = params.get('room') || '';
 $('server-url').value = serverUrl;
-if (isGitHubPages) {
-  $('server-url').placeholder = 'wss://your-server.onrender.com';
-  document.querySelector('.server-settings p').textContent = 'Enter the secure address provided by your multiplayer host. Everyone joining a room must use the same server.';
-}
-if (!serverUrl) {
-  document.querySelector('.server-settings').open = true;
-  notice('The website is ready. Enter your hosted multiplayer server address under Connection server to create or join a room.');
-}
+updateSound();
+if (!serverUrl) notice('Enter your multiplayer server address in Connection settings.');
 
 function notice(message) {
   $('notice').textContent = message;
@@ -38,8 +37,12 @@ function notice(message) {
 
 function log(message) {
   events.unshift(`${new Date().toLocaleTimeString()}  ${message}`);
-  events = events.slice(0, 6);
-  $('event-log').replaceChildren(...events.map(event => { const line = document.createElement('p'); line.textContent = event; return line; }));
+  events = events.slice(0, 8);
+  $('event-log').replaceChildren(...events.map(event => {
+    const line = document.createElement('p');
+    line.textContent = event;
+    return line;
+  }));
 }
 
 function send(message) {
@@ -47,7 +50,6 @@ function send(message) {
   socket.send(JSON.stringify(message));
   return true;
 }
-
 function ping() { send({ type: 'ping', sent: performance.now() }); }
 
 function connect() {
@@ -57,35 +59,38 @@ function connect() {
     if (!intentionalClose) reconnectTimer = setTimeout(connect, Math.max(100, reconnectAt - performance.now()));
     return;
   }
+  let connection;
   try {
     const url = new URL(serverUrl);
     if (!['ws:', 'wss:'].includes(url.protocol)) throw new Error('Use an address starting with ws:// or wss://.');
-    if (location.protocol === 'https:' && url.protocol !== 'wss:') throw new Error('An HTTPS page needs a secure wss:// connection server.');
+    if (location.protocol === 'https:' && url.protocol !== 'wss:') throw new Error('This website needs a secure wss:// multiplayer server.');
     url.pathname = '/ws'; url.search = ''; url.hash = '';
-    socket = new WebSocket(url);
+    connection = new WebSocket(url);
+    socket = connection;
+    joined = false;
   } catch (error) { joining = false; notice(error.message); return; }
   $('connection-badge').textContent = 'Connecting';
-  socket.addEventListener('open', () => {
+  connection.addEventListener('open', () => {
+    if (socket !== connection) return;
     clock = new SyncedClock();
     lastPong = performance.now();
     lastSyncSent = 0;
     log('Connected. Measuring clock offset.');
     notice('');
+    const saved = readStored('bb-session');
     if (entryRequest) send(entryRequest);
-    else if (sessionStorage.getItem('bb-session')) {
-      const saved = readStored('bb-session');
-      if (saved) send({ type: 'join', code: saved.code, name: saved.name, token: saved.token });
-    }
-    for (let i = 0; i < 8; i++) setTimeout(() => { if (socket?.readyState === WebSocket.OPEN) ping(); }, i * 200);
+    else if (saved) send({ type: 'join', code: saved.code, name: saved.name, token: saved.token });
+    for (let i = 0; i < 8; i++) setTimeout(() => { if (socket === connection && connection.readyState === WebSocket.OPEN) ping(); }, i * 200);
   });
-  socket.addEventListener('message', event => {
+  connection.addEventListener('message', event => {
+    if (socket !== connection) return;
     let message;
     try { message = JSON.parse(event.data); } catch { return; }
     if (message.type === 'pong') {
       lastPong = performance.now();
       clock.add({ sent: message.sent, received: lastPong, serverReceived: message.serverReceived, serverSent: message.serverSent });
       const estimate = clock.estimate(lastPong);
-      if (room && estimate && lastPong - lastSyncSent > 500) {
+      if (joined && estimate && lastPong - lastSyncSent > 500) {
         send({ type: 'sync', ...estimate });
         lastSyncSent = lastPong;
       }
@@ -93,280 +98,345 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      playerId = message.playerId; token = message.token;
+      if (message.protocol !== 2) {
+        intentionalClose = true; joining = false; entryRequest = null; connection.close();
+        notice('The multiplayer server needs the Totem Shrinker update. Try again after it has deployed.');
+        return;
+      }
+      playerId = message.playerId;
+      joined = true;
       const name = entryRequest?.name || readStored('bb-session')?.name || $('name').value;
-      sessionStorage.setItem('bb-session', JSON.stringify({ code: message.code, token, playerId, name }));
+      sessionStorage.setItem('bb-session', JSON.stringify({ code: message.code, token: message.token, playerId, name }));
       localStorage.setItem('bb-name', name);
       entryRequest = null; joining = false;
       $('welcome').hidden = true; $('room-view').hidden = false;
+      document.body.classList.add('in-room');
       log(`Joined room ${message.code}.`);
       if (pending && (pending.roomCode !== message.code || pending.playerId !== playerId)) clearPending();
+      flushPending();
     }
-    if (message.type === 'state') {
+    if (message.type === 'state' && joined) {
       const previousId = room?.round?.id;
+      const previousPhase = room?.round?.phase;
       room = message.room;
       if (room.round?.id !== previousId) {
-        localRound = null;
-        if (room.round && room.round.phase !== 'results') $('invite').hidden = true;
+        localRound = null; lastProgressKey = ''; lastProgressSent = 0;
+        audio.cancel();
+        $('submission-status').hidden = true;
+        for (const dialog of document.querySelectorAll('dialog[open]')) dialog.close();
         if (pending && pending.message.roundId !== room.round?.id) clearPending();
       }
       setupLocalRound();
-      if (pending && room.round?.phase === 'results') {
-        const mine = room.players.find(player => player.id === playerId)?.result;
-        if (mine) { clearPending(); $('submission-status').textContent = 'Result confirmed by the server.'; }
+      if (room.round?.phase === 'results') {
+        if (previousPhase !== 'results') audio.cancel();
+        if (pending && room.players.find(player => player.id === playerId)?.result) confirmResult();
+        sessionStorage.removeItem('bb-active-round');
       }
       renderRoom();
     }
-    if (message.type === 'result-ack' && pending?.message.roundId === message.roundId) {
-      clearPending();
-      $('submission-status').textContent = 'Result confirmed by the server.';
-      log('Result received and acknowledged.');
-    }
+    if (message.type === 'result-ack' && pending?.message.roundId === message.roundId) confirmResult();
     if (message.type === 'error') {
       joining = false;
       notice(message.message);
       if (message.message.includes('could not be found')) {
-        resetSession();
-        entryRequest = null;
-        notice(message.message);
-        return;
+        resetSession(); entryRequest = null; notice(message.message); return;
       }
-      if (entryRequest) { entryRequest = null; intentionalClose = true; socket.close(); }
+      if (entryRequest) { entryRequest = null; intentionalClose = true; connection.close(); }
       if (message.message.includes('window has closed') || message.message.includes('old or unknown')) clearPending();
     }
     if (message.type === 'left') resetSession();
   });
-  socket.addEventListener('close', () => {
-    $('connection-badge').textContent = 'Reconnecting';
-    log('Connection lost. Local timing continues.');
+  connection.addEventListener('close', () => {
+    if (socket !== connection) return;
+    joined = false;
+    log('Connection lost. Local play continues.');
     if (!intentionalClose) reconnectTimer = setTimeout(connect, Math.max(1000, reconnectAt - performance.now()));
     renderRoom();
   });
-  socket.addEventListener('error', () => notice('Cannot reach the connection server. Check its address, Wi-Fi, and whether it is running.'));
+  connection.addEventListener('error', () => {
+    if (socket === connection && !intentionalClose) notice('Cannot reach the multiplayer server. It may need a minute to wake up; reconnecting…');
+  });
 }
 
 function enter(type) {
-  if (joining) return;
-  if (!$('name').reportValidity()) return;
+  if (joining || !$('name').reportValidity()) return;
   const code = $('room-input').value.trim().toUpperCase();
   if (type === 'join' && !/^[A-Z2-9]{6}$/.test(code)) return notice('Enter the six-character room code.');
   serverUrl = $('server-url').value.trim() || defaultServer;
-  if (!serverUrl) return notice('Enter the hosted multiplayer server address, starting with wss://, under Connection server.');
+  if (!serverUrl) return notice('Enter the hosted multiplayer server address in Connection settings.');
   localStorage.setItem('bb-server', serverUrl);
   entryRequest = { type, name: $('name').value.trim(), code };
   joining = true; intentionalClose = false;
+  audio.unlock();
   notice('Connecting to the room…');
   if (socket?.readyState === WebSocket.OPEN) send(entryRequest);
   else connect();
 }
 
 function resetSession() {
-  intentionalClose = true;
+  intentionalClose = true; joined = false;
   socket?.close(); clearTimeout(reconnectTimer);
-  room = null; localRound = null; token = null; playerId = null;
-  clearPending();
+  room = null; localRound = null; playerId = null;
+  audio.cancel(); clearPending();
   sessionStorage.removeItem('bb-session'); sessionStorage.removeItem('bb-active-round');
-  $('welcome').hidden = false; $('room-view').hidden = true; notice('');
+  $('welcome').hidden = false; $('room-view').hidden = true;
+  document.body.classList.remove('in-room');
+  notice('');
 }
 
 function setupLocalRound() {
   const round = room?.round;
-  const estimate = clock.estimate(performance.now());
-  if (!round || round.phase === 'results' || localRound || !estimate || estimate.count < 3) return;
-  const wasActive = sessionStorage.getItem('bb-active-round') === round.id;
-  localRound = { id: round.id, start: round.startAt - estimate.offset, end: round.endAt - estimate.offset, offset: estimate.offset, uncertainty: estimate.uncertainty, goDelay: null, done: false, mustForfeit: wasActive, hiddenDuringPlay: false };
+  const time = performance.now();
+  const estimate = clock.estimate(time);
+  if (!round || round.game !== TOTEM_GAME || round.phase === 'results' || localRound || !estimate || estimate.count < 3 || !round.playerIds.includes(playerId)) return;
+  const start = round.startAt - estimate.offset;
+  const savedResult = pending?.message.roundId === round.id ? pending.message : room.players.find(player => player.id === playerId)?.result;
+  localRound = {
+    id: round.id, start, end: round.endAt - estimate.offset, offset: estimate.offset, uncertainty: estimate.uncertainty,
+    run: new TotemRun(round, start), goDelay: null, done: Boolean(savedResult), status: savedResult?.status,
+    mustForfeit: sessionStorage.getItem('bb-active-round') === round.id || time >= start, hiddenDuringPlay: false,
+  };
+  if (savedResult) {
+    localRound.run.cleared = savedResult.cleared || 0;
+    localRound.run.mistakes = savedResult.mistakes || 0;
+    localRound.run.elapsed = savedResult.elapsed;
+    localRound.run.done = true;
+  }
   sessionStorage.setItem('bb-active-round', round.id);
-  const mine = room.players.find(player => player.id === playerId);
-  if (mine?.result || pending?.message.roundId === round.id) localRound.done = true;
-  log(`Start scheduled. Clock estimate frozen for test ${room.testNumber}.`);
+  log(`Round ${room.testNumber} scheduled. Clock mapping frozen.`);
+  if (!document.hidden && !localRound.done) audio.countdown(round.id, start);
 }
 
 function clearPending() {
-  pending = null; sessionStorage.removeItem('bb-pending');
+  pending = null;
+  sessionStorage.removeItem('bb-pending');
+}
+function confirmResult() {
+  clearPending();
+  $('submission-status').textContent = 'Result confirmed.';
+  $('submission-status').hidden = false;
+  log('Result acknowledged.');
 }
 
 function complete(status, elapsed = null) {
   if (!localRound || localRound.done) return;
   localRound.done = true;
+  localRound.status = status;
+  localRound.run.done = true;
   const delay = status === 'finished' ? Number($('result-delay').value) : 0;
-  pending = { roomCode: room.code, playerId, dueAt: Date.now() + delay, message: { type: 'result', roundId: localRound.id, status, elapsed, goDelay: localRound.goDelay } };
+  pending = { roomCode: room.code, playerId, dueAt: Date.now() + delay, message: {
+    type: 'result', roundId: localRound.id, status, elapsed, cleared: localRound.run.cleared,
+    mistakes: localRound.run.mistakes, goDelay: localRound.goDelay,
+  } };
   sessionStorage.setItem('bb-pending', JSON.stringify(pending));
-  lastPendingSent = 0;
-  $('submission-status').textContent = delay ? `Finish saved locally. Sending after ${delay} ms of test delay.` : 'Result saved locally. Waiting for server confirmation.';
-  log(status === 'finished' ? `Local finish: ${(elapsed / 1000).toFixed(3)} s.` : status === 'forfeit' ? 'Round forfeited: game screen was hidden or reloaded.' : 'Local test time expired.');
+  lastPendingSent = -Infinity;
+  $('submission-status').textContent = delay ? `Finish saved. Sending after ${delay / 1000} seconds of test delay.` : 'Result saved. Waiting for confirmation…';
+  $('submission-status').hidden = false;
+  log(status === 'finished' ? `Local finish: ${(elapsed / 1000).toFixed(3)} s.` : status === 'forfeit' ? 'Forfeited: game screen hidden or reloaded.' : 'Time expired.');
+  audio.cancel();
+  if (status === 'finished') audio.play('finish');
   flushPending();
   renderRoom();
 }
 
 function flushPending() {
-  if (!pending || Date.now() < pending.dueAt || performance.now() - lastPendingSent < 1000) return;
-  if (send(pending.message)) { lastPendingSent = performance.now(); $('submission-status').textContent = 'Result sent. Waiting for server confirmation.'; }
+  if (!joined || !pending || Date.now() < pending.dueAt || performance.now() - lastPendingSent < 1000) return;
+  if (send(pending.message)) lastPendingSent = performance.now();
 }
 
-function finish() {
+function enforceLifecycle(time) {
+  if (!localRound || localRound.done || room?.round?.phase === 'results' || time < localRound.start) return;
+  if (localRound.mustForfeit || document.hidden || localRound.hiddenDuringPlay) complete('forfeit');
+  else if (time >= localRound.end) complete('timeout');
+}
+
+function tap(color) {
   const time = performance.now();
-  if (!localRound || document.hidden || localRound.done || time < localRound.start || time > localRound.end) return;
-  complete('finished', time - localRound.start);
+  enforceLifecycle(time);
+  if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
+  const action = localRound.run.tap(color, time);
+  if (action.type === 'ignored') return;
+  if (localRound.goDelay === null) localRound.goDelay = Math.max(0, time - localRound.start);
+  if (action.type === 'finished') complete('finished', action.elapsed);
+  else audio.play(action.type);
+  view.render(room, playerId, localRound, time);
+  updateControls(time);
+}
+
+function sendProgress(time) {
+  if (!joined || !localRound || localRound.done || time < localRound.start || time >= localRound.end || time - lastProgressSent < 250) return;
+  const { cleared, mistakes } = localRound.run;
+  const key = `${cleared}/${mistakes}`;
+  if (key === lastProgressKey) return;
+  if (send({ type: 'progress', roundId: localRound.id, cleared, mistakes })) {
+    lastProgressSent = time; lastProgressKey = key;
+  }
 }
 
 function updateMetrics() {
-  const estimate = clock.estimate(performance.now());
+  const time = performance.now();
+  const estimate = clock.estimate(time);
+  const connected = joined && socket?.readyState === WebSocket.OPEN;
   $('ping').textContent = estimate ? `${estimate.rtt.toFixed(1)} ms` : '—';
-  const wallOffset = estimate ? estimate.offset - performance.timeOrigin : 0;
-  $('offset').textContent = estimate ? `${wallOffset >= 0 ? '+' : ''}${wallOffset.toFixed(1)} ms` : '—';
   $('uncertainty').textContent = estimate ? `±${estimate.uncertainty.toFixed(1)} ms` : '—';
   $('samples').textContent = estimate ? String(estimate.count) : '0';
-  $('connection-badge').textContent = socket?.readyState !== WebSocket.OPEN ? 'Reconnecting' : estimate?.count >= 3 ? 'Connected · clock sampled' : 'Sampling clock';
-  const mine = room?.players.find(player => player.id === playerId);
-  const idle = !room?.round || room.round.phase === 'results';
-  $('ready').disabled = !idle || socket?.readyState !== WebSocket.OPEN || !estimate || estimate.count < 3;
-  if (mine) $('ready').textContent = mine.ready ? 'Not ready' : 'Ready';
-  $('start').disabled = !room?.players.every(player => player.connected && player.ready && player.sync?.count >= 3 && player.sync.rtt <= 1500);
-  $('disconnect').disabled = socket?.readyState !== WebSocket.OPEN;
+  $('connection-badge').textContent = !connected ? room ? 'Reconnecting' : 'Not connected' : estimate?.count >= 3 ? 'Connected · clock sampled' : 'Sampling clock';
+  $('connection-dot').classList.toggle('offline', !connected);
+  $('connection-dot').setAttribute('aria-label', connected ? 'Connected' : 'Reconnecting');
+  $('disconnect').disabled = !connected;
+  $('create').disabled = joining;
+  if (!room) return;
+  const idle = !room.round || room.round.phase === 'results';
+  const mine = room.players.find(player => player.id === playerId);
+  $('ready').disabled = !idle || !connected || !estimate || estimate.count < 3 || estimate.rtt > 1500;
+  $('ready').textContent = mine?.ready ? 'Not ready' : 'Ready';
+  const serverNow = time + (estimate?.offset || 0);
+  const disconnected = room.players.filter(player => !player.connected);
+  const wait = Math.max(0, ...disconnected.map(player => 15_000 - (serverNow - player.disconnectedAt)));
+  const allReady = room.players.filter(player => player.connected).every(player => player.ready && player.sync?.count >= 3 && player.sync.rtt <= 1500 && serverNow - player.sync.at < 20_000);
+  $('start').disabled = !connected || !idle || wait > 0 || !allReady;
+  let status = '';
+  if (!connected) status = 'Reconnecting… Keep playing; your result stays saved on this device.';
+  else if (idle) status = wait > 0 ? `Waiting ${Math.ceil(wait / 1000)}s for a friend to reconnect…` : !estimate || estimate.count < 3 ? 'Synchronizing clocks…' : allReady ? playerId === room.hostId ? 'Everyone’s ready!' : 'Waiting for the host to start.' : mine?.ready ? 'Waiting for friends to get ready…' : 'Tap Ready when you’re set.';
+  else if (localRound?.done) status = 'Waiting for the other players…';
+  else if (!room.round.playerIds.includes(playerId)) status = 'You can play in the next round.';
+  $('lobby-status').textContent = status;
+  $('lobby-status').hidden = !status;
 }
 
 function renderRoom() {
-  if (!room) return;
-  $('room-code').textContent = room.code;
-  $('occupancy').textContent = `${room.players.length} / 4 players`;
-  const active = room.round && room.round.phase !== 'results';
-  $('leave').disabled = Boolean(active);
-  $('ready').hidden = Boolean(active);
-  $('start').hidden = playerId !== room.hostId || Boolean(active);
-  $('round-number').textContent = `Test ${String(room.testNumber || 1).padStart(2, '0')}`;
-  $('players').replaceChildren(...Array.from({ length: 4 }, (_, index) => {
-    const player = room.players[index];
-    const lane = document.createElement('article');
-    lane.className = `player-lane${player?.id === playerId ? ' is-you' : ''}${!player ? ' empty' : ''}`;
-    lane.style.setProperty('--player-color', playerColors[index]);
-    const face = document.createElement('div'); face.className = 'player-face'; face.textContent = player ? ['◕', '◉', '●', '◔'][index] : '+';
-    const name = document.createElement('h3'); name.textContent = player ? player.name : 'Open spot';
-    const tag = document.createElement('span'); tag.className = 'player-tag'; tag.textContent = player ? `${player.id === playerId ? 'You' : `Player ${index + 1}`}${player.id === room.hostId ? ' · Host' : ''}` : 'Invite a friend';
-    const status = document.createElement('p');
-    status.className = 'player-status';
-    status.textContent = !player ? 'Waiting to join' : !player.connected ? 'Reconnecting…' : player.ready && !active ? '✓ Ready' : player.result ? ({ finished: `${(player.result.elapsed / 1000).toFixed(3)} s`, forfeit: 'Forfeited', timeout: 'Time expired', missing: 'No result' }[player.result.status]) : active ? (player.id === playerId && localRound?.done ? 'Sending result…' : 'In the test') : player.sync?.count >= 3 ? 'Clock sampled' : 'Syncing clock…';
-    lane.append(tag, face, name, status);
-    return lane;
-  }));
-  const hasResults = room.round?.phase === 'results';
-  $('results').hidden = !hasResults;
-  if (hasResults) renderResults();
   updateMetrics();
+  if (!room) return;
+  const active = room.round && room.round.phase !== 'results';
+  $('room-code').textContent = room.code;
+  $('occupancy').textContent = `· ${room.players.length}/4`;
+  $('leave').disabled = Boolean(active);
+  $('ready-actions').hidden = Boolean(active);
+  $('start').hidden = playerId !== room.hostId;
+  $('control-deck').hidden = !active || !room.round.playerIds.includes(playerId);
+  $('round-label').textContent = active ? `Round ${room.testNumber}` : 'Lobby';
+  view.render(room, playerId, localRound, performance.now());
 }
 
-function renderResults() {
-  const players = room.players.filter(player => room.round.playerIds.includes(player.id));
-  const sorted = [...players].sort((a, b) => (a.result?.status === 'finished' ? a.result.elapsed : Infinity) - (b.result?.status === 'finished' ? b.result.elapsed : Infinity));
-  let previousElapsed, previousRank;
-  $('result-rows').replaceChildren(...sorted.map((player, index) => {
-    const result = player.result;
-    const rank = result?.status === 'finished' ? (result.elapsed === previousElapsed ? previousRank : index + 1) : '—';
-    previousElapsed = result?.elapsed; previousRank = rank;
-    const row = document.createElement('tr');
-    if (player.id === playerId) row.className = 'your-result';
-    const cells = [rank, player.name + (player.id === playerId ? ' (you)' : ''), result?.status === 'finished' ? `${(result.elapsed / 1000).toFixed(3)} s` : ({ forfeit: 'Forfeited', timeout: 'Time expired', missing: 'No result' }[result?.status] || '—'), Number.isFinite(result?.arrivalLag) ? `${Math.round(result.arrivalLag)} ms` : '—', Number.isFinite(result?.goDelay) ? `${result.goDelay.toFixed(1)} ms` : '—'];
-    row.replaceChildren(...cells.map(value => { const cell = document.createElement('td'); cell.textContent = String(value); return cell; }));
-    return row;
-  }));
+function updateControls(time) {
+  const disabled = !localRound || localRound.done || document.hidden || time < localRound.start || time >= localRound.end || time < localRound.run.blockedUntil || room?.round?.phase === 'results';
+  for (const button of buttons) button.disabled = disabled;
 }
 
 function animate() {
   const time = performance.now();
+  enforceLifecycle(time);
   const round = room?.round;
-  $('finish').hidden = true;
-  $('clock-face').classList.remove('is-go');
-  if (!round) {
-    $('countdown').textContent = 'Let’s sync.';
-    $('round-label').textContent = 'Ready when you are.';
-    $('round-message').textContent = 'Let your clock settle, then tap Ready. The host starts when everyone is ready.';
-  } else if (round.phase === 'results') {
-    $('countdown').textContent = 'All in.';
-    $('round-label').textContent = 'Test complete';
-    $('round-message').textContent = 'Compare the results below. Ready up to run another test.';
-  } else if (!localRound) {
-    $('countdown').textContent = 'Syncing…';
-    $('round-message').textContent = 'Waiting for fresh clock measurements.';
-  } else {
-    if (time >= localRound.start && !localRound.done && (localRound.mustForfeit || document.hidden || localRound.hiddenDuringPlay)) complete('forfeit');
-    if (time >= localRound.end && !localRound.done) complete('timeout');
-    if (time < localRound.start) {
-      $('countdown').textContent = String(Math.ceil((localRound.start - time) / 1000));
-      $('round-label').textContent = 'Starting together';
-      $('round-message').textContent = 'Keep this screen open. Tap Finish after GO.';
-    } else if (!localRound.done) {
-      if (localRound.goDelay === null) localRound.goDelay = time - localRound.start;
-      $('countdown').textContent = 'GO!';
-      $('clock-face').classList.add('is-go');
-      $('round-label').textContent = `${((time - localRound.start) / 1000).toFixed(2)} s elapsed`;
-      $('round-message').textContent = `${Math.max(0, (localRound.end - time) / 1000).toFixed(1)} s left. Your phone is keeping time.`;
-      $('finish').hidden = false;
-    } else {
-      $('countdown').textContent = 'You’re done.';
-      $('round-label').textContent = 'Waiting for the room';
-      $('round-message').textContent = pending ? 'Your result is saved on this phone until the server confirms it.' : 'Stay here while the other players finish or reconnect.';
+  let overlay = '', small = false;
+  if (round && round.phase !== 'results') {
+    if (!localRound) { overlay = round.playerIds.includes(playerId) ? 'Syncing…' : 'Next round'; small = true; }
+    else if (time < localRound.start) overlay = String(Math.ceil((localRound.start - time) / 1000));
+    else {
+      if (localRound.goDelay === null && !localRound.done) localRound.goDelay = time - localRound.start;
+      if (localRound.done) { overlay = localRound.status === 'finished' ? 'Cleared!' : localRound.status === 'forfeit' ? 'Forfeited' : 'Time’s up!'; small = true; }
+      else if (time - localRound.start < 450) overlay = 'GO!';
     }
-  }
+    const elapsed = localRound ? localRound.run.elapsed ?? Math.max(0, Math.min(time, localRound.end) - localRound.start) : 0;
+    $('timer').textContent = (elapsed / 1000).toFixed(2);
+  } else $('timer').textContent = '00.00';
+  if ($('round-overlay').textContent !== overlay) $('round-overlay').textContent = overlay;
+  $('round-overlay').hidden = !overlay;
+  $('round-overlay').classList.toggle('small', small);
+  const frozen = Boolean(localRound && !localRound.done && time < localRound.run.blockedUntil);
+  const ownIndex = room?.players.findIndex(player => player.id === playerId) ?? -1;
+  if (ownIndex >= 0) view.lanes[ownIndex].lane.classList.toggle('frozen', frozen);
+  updateControls(time);
   requestAnimationFrame(animate);
 }
 
 async function prepareInvite() {
   const url = new URL(location.href);
-  if (['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && lanUrls.length && serverUrl === defaultServer) {
-    url.host = new URL(lanUrls[0]).host;
-  }
+  if (['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && lanUrls.length && serverUrl === defaultServer) url.host = new URL(lanUrls[0]).host;
   url.search = ''; url.searchParams.set('room', room.code);
   const address = new URL(serverUrl);
-  if (address.host !== location.host || address.protocol !== (location.protocol === 'https:' ? 'wss:' : 'ws:')) url.searchParams.set('server', serverUrl);
+  if (address.host !== url.host || address.protocol !== (location.protocol === 'https:' ? 'wss:' : 'ws:')) url.searchParams.set('server', serverUrl);
   inviteUrl = url.href;
   $('invite-link').value = inviteUrl;
-  $('invite-note').textContent = ['localhost', '127.0.0.1'].includes(url.hostname) ? 'This link points to this device only. Open the computer’s Wi-Fi address first to invite phones.' : 'For this local test, connect everyone to the same Wi-Fi. Allow this server through your firewall if prompted.';
-  try { await QRCode.toCanvas($('qr'), inviteUrl, { width: 176, margin: 2, color: { dark: '#1935b8', light: '#ffffff' } }); } catch { $('invite-note').textContent = 'Use the invitation link or enter the room code.'; }
+  $('copy-link').textContent = 'Copy link';
+  $('invite-note').textContent = ['localhost', '127.0.0.1'].includes(url.hostname) ? 'Open this computer’s Wi-Fi address to invite phones on the same network.' : location.protocol === 'https:' ? 'Scan on a phone or share this link. Up to four players.' : 'Connect phones to the same Wi-Fi, then scan or share this link.';
+  try { await QRCode.toCanvas($('qr'), inviteUrl, { width: 176, margin: 2, color: { dark: '#3b214d', light: '#fffdf5' } }); }
+  catch { $('invite-note').textContent = 'Share the invitation link or enter the room code.'; }
+}
+
+function updateSound() {
+  $('sound').classList.toggle('sound-off', !audio.enabled);
+  $('sound').setAttribute('aria-pressed', String(audio.enabled));
+  $('sound').setAttribute('aria-label', audio.enabled ? 'Mute sound' : 'Enable sound');
 }
 
 $('create').addEventListener('click', () => enter('create'));
 $('entry-form').addEventListener('submit', event => { event.preventDefault(); enter('join'); });
-$('ready').addEventListener('click', () => send({ type: 'ready', ready: !room.players.find(player => player.id === playerId)?.ready }));
-$('start').addEventListener('click', () => send({ type: 'start' }));
-$('finish').addEventListener('pointerdown', event => { if (event.button !== 0) return; event.preventDefault(); finish(); });
-$('finish').addEventListener('click', event => { if (event.detail === 0) finish(); });
+$('ready').addEventListener('click', () => { audio.unlock(); send({ type: 'ready', ready: !room.players.find(player => player.id === playerId)?.ready }); });
+$('start').addEventListener('click', () => { audio.unlock(); send({ type: 'start' }); });
 $('leave').addEventListener('click', () => send({ type: 'leave' }));
-$('share').addEventListener('click', async () => { $('invite').hidden = !$('invite').hidden; if (!$('invite').hidden) await prepareInvite(); });
+$('rules-open').addEventListener('click', () => $('rules').showModal());
+$('settings-open').addEventListener('click', () => $('settings').showModal());
+$('sound').addEventListener('click', async () => {
+  audio.toggle(); updateSound();
+  await audio.unlock();
+  if (localRound && !localRound.done && !document.hidden) audio.countdown(localRound.id, localRound.start);
+});
+$('share').addEventListener('click', async () => { $('invite').showModal(); await prepareInvite(); });
 $('copy-link').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(inviteUrl); $('copy-link').textContent = 'Copied!'; }
-  catch { $('invite-link').select(); notice('Select and copy the invitation link above.'); }
+  catch { $('invite-link').select(); $('invite-note').textContent = 'Select and copy the invitation link.'; }
 });
-$('disconnect').addEventListener('click', () => { reconnectAt = performance.now() + 5000; socket?.close(); log('Five-second disconnection test started.'); });
+for (const button of buttons) {
+  button.addEventListener('pointerdown', event => { if (event.button !== 0) return; event.preventDefault(); tap(Number(button.dataset.color)); });
+  button.addEventListener('click', event => { if (event.detail === 0) tap(Number(button.dataset.color)); });
+}
+const keys = { '1': 0, j: 0, '2': 1, k: 1, '3': 2, l: 2 };
+document.addEventListener('keydown', event => {
+  if (event.repeat || event.ctrlKey || event.metaKey || event.altKey || document.querySelector('dialog[open]') || ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return;
+  const color = keys[event.key.toLowerCase()];
+  if (color === undefined) return;
+  event.preventDefault(); tap(color);
+});
+$('disconnect').addEventListener('click', () => {
+  reconnectAt = performance.now() + 5000;
+  socket?.close();
+  $('settings').close();
+  log('Testing a 5-second disconnection.');
+});
 $('export').addEventListener('click', () => {
-  const report = { exportedAt: new Date().toISOString(), room: { ...room, players: room.players.map(({ sync, ...player }) => ({ ...player, sync: sync ? { rtt: sync.rtt, uncertainty: sync.uncertainty, count: sync.count } : null })) }, localClock: clock.estimate(performance.now()), localStart: localRound ? { uncertainty: localRound.uncertainty, goDelay: localRound.goDelay } : null, notes: 'Local elapsed times are self-reported. Clock uncertainty and GO delay are diagnostics, not measured cross-device screen skew.' };
+  const report = { exportedAt: new Date().toISOString(), room: room ? { code: room.code, roundNumber: room.testNumber, round: room.round, players: room.players } : null, clock: clock.estimate(performance.now()), local: localRound ? { roundId: localRound.id, uncertainty: localRound.uncertainty, goDelay: localRound.goDelay, cleared: localRound.run.cleared, mistakes: localRound.run.mistakes } : null, events, note: 'Client-reported timing; uncertainty and GO delay do not measure physical display or input latency.' };
   const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }));
-  const link = document.createElement('a'); link.href = url; link.download = `bishy-bashy-test-${room.testNumber}.json`; link.click(); setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const anchor = document.createElement('a'); anchor.href = url; anchor.download = `bishy-bashy-${room?.code || 'timing'}.json`; anchor.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
 document.addEventListener('visibilitychange', () => {
   const time = performance.now();
-  const hiddenAt = hiddenSince;
-  hiddenSince = document.hidden ? time : null;
-  if (!localRound || localRound.done || room?.round?.phase === 'results') return;
-  if (document.hidden && time >= localRound.start && time < localRound.end) { localRound.hiddenDuringPlay = true; complete('forfeit'); }
-  if (!document.hidden && time >= localRound.start && (localRound.hiddenDuringPlay || (hiddenAt !== null && hiddenAt < localRound.end))) complete('forfeit');
+  if (document.hidden) {
+    hiddenSince = time; audio.cancel();
+    if (localRound && time >= localRound.start && time < localRound.end && !localRound.done) complete('forfeit');
+  } else {
+    if (hiddenSince !== null && localRound && !localRound.done && hiddenSince < localRound.end && time >= localRound.start) {
+      localRound.hiddenDuringPlay = true; complete('forfeit');
+    }
+    hiddenSince = null; ping();
+    if (localRound && !localRound.done) audio.countdown(localRound.id, localRound.start);
+  }
 });
 window.addEventListener('pagehide', () => {
-  if (localRound && !localRound.done && performance.now() >= localRound.start && performance.now() < localRound.end) complete('forfeit');
+  audio.cancel();
+  if (localRound && performance.now() >= localRound.start && !localRound.done) complete('forfeit');
 });
-window.addEventListener('online', () => { if (socket?.readyState === WebSocket.CLOSED && !intentionalClose) connect(); });
-
+window.addEventListener('pageshow', event => {
+  if (event.persisted && localRound && !localRound.done && performance.now() >= localRound.start) complete('forfeit');
+  if (readStored('bb-session') && !intentionalClose) connect();
+});
 setInterval(() => {
-  updateMetrics();
-  flushPending();
-  if (socket?.readyState === WebSocket.OPEN && performance.now() - lastPong > 12_000) socket.close();
+  const time = performance.now();
+  enforceLifecycle(time); sendProgress(time); flushPending(); renderRoom();
+  if (socket?.readyState === WebSocket.OPEN && time - lastPong > 12_000) socket.close();
 }, 250);
-setInterval(ping, 3000);
+setInterval(() => { if (socket?.readyState === WebSocket.OPEN) ping(); }, 3000);
 requestAnimationFrame(animate);
-
-if (!isGitHubPages) {
-  try {
-    const response = await fetch('./connection-info');
-    if (response.ok && response.headers.get('content-type')?.includes('application/json')) lanUrls = (await response.json()).lanUrls;
-  } catch { /* A static host may not expose local server addresses. */ }
-}
-if (session) { intentionalClose = false; connect(); }
+if (!isGitHubPages) fetch('/connection-info').then(response => response.json()).then(info => { lanUrls = info.lanUrls || []; }).catch(() => {});
+if (session) connect();

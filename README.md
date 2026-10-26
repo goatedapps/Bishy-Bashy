@@ -1,131 +1,134 @@
-# Bishy Bashy · Sync lab
+# Bishy Bashy
 
-A four-player connection and clock synchronization test, before building any mini-games.
-Each device displays all four player slots and controls only its own finish button.
+A four-player browser party game, with Totem Shrinker as the first playable round.
+Everyone sees all four players and controls only their own tower.
+The static website runs on GitHub Pages; a separate Node WebSocket server coordinates rooms and results.
 
-## Run on your Wi-Fi
+- [Play](https://goatedapps.github.io/Bishy-Bashy/)
+- [Multiplayer server health](https://bishy-bashy-server.onrender.com/health)
+- [Approved visual mockup](mockups/totem-shrinker.html)
+
+## Play Totem Shrinker
+
+Create a room, share its QR code or invitation link, and join from up to four phones or tablets.
+Wait for clock synchronization, then each player taps **Ready**.
+The host taps **Start round** and everyone receives the same five-second countdown.
+
+Match the bottom block using red circle, green triangle, or blue diamond.
+The controls also accept **1 / 2 / 3** or **J / K / L** on a keyboard.
+Each correct tap clears one block immediately on that device.
+Only the next five blocks are displayed, with the next block at the bottom.
+All players receive the same 30-block sequence.
+A wrong tap freezes that player's inputs for 300 milliseconds.
+The first player to clear all 30 wins, ranked by locally measured elapsed time.
+The round ends after 45 seconds; unfinished players time out.
+These initial block, freeze, and duration settings are provisional and live in `shared/totem.js`.
+
+Switching apps, hiding the tab, or reloading during a round forfeits that round.
+A network disconnection alone does not forfeit: local play continues and a saved result retries after reconnecting.
+The server accepts submissions for ten seconds after the round deadline.
+Between rounds, the host waits up to 15 seconds for a disconnected player before starting with the connected players.
+The disconnected player's slot remains reserved, and they can play the next round after returning.
+Hosting moves to a connected player if the host disconnects.
+There is no automatic tournament progression yet.
+
+Sound is optional and off by default.
+Use the music-note button to enable short synthesized countdown, tap, mistake, and finish cues.
+All essential cues also appear visually.
+Physical phone audio and touch latency still need playtesting.
+
+## Run locally
 
 Install Node.js 22.12 or newer, then run:
 
 ```sh
-npm install
+npm ci
 npm run dev
 ```
 
 Open `http://localhost:3000` on the computer.
-Create a room, open **Invite friends**, and scan the QR code from phones or tablets on the same Wi-Fi.
-The server also prints the computer's network addresses; use the address for the Wi-Fi adapter if several appear.
-If the automatically selected invitation address belongs to a VPN or virtual adapter, open the correct Wi-Fi address on the computer before creating the invitation.
+For phones on the same Wi-Fi, open one of the network addresses printed by the server, then create an invitation.
+Choose the Wi-Fi adapter address if the computer also has VPN or virtual network adapters.
 Allow Node.js access to private networks if Windows Firewall asks.
-Guest Wi-Fi with device isolation can prevent connections between devices.
+Guest Wi-Fi with device isolation can prevent local connections.
 
-Each player chooses a name, waits for at least three clock samples, and taps **Ready**.
-The host starts the test, which schedules GO five seconds ahead.
-Tap **Finish** any time during the ten-second test.
-This is a timing instrument, not a reaction-time competition yet.
-Every screen shows the collected results, ranked by reported local elapsed time.
-For a browser-only smoke test, open separate tabs and use a separate player name in each tab.
-Keep each tab visible in a separate window during the countdown and test, because hidden game tabs forfeit.
+For a browser-only check, use separate windows with distinct player names.
+Keep every game window visible during a round because hidden tabs forfeit.
+Joining a new room from a duplicated tab may require leaving the copied session first.
 
-## What to test
+## Timing and multiplayer
 
-1. Join from up to four devices and verify that everyone sees the same room and player names.
-2. Ready every player and observe the shared countdown and GO.
-3. Set **Delay my result message** to three seconds on one device, finish early there, and finish later on another device.
-   The early finisher should rank first even if its message arrives last.
-4. Use **Disconnect me for 5 seconds** during a test, then finish while disconnected.
-   The result should be retained locally, retried after reconnection, and acknowledged once.
-5. Switch apps during an active test and return.
-   That device should show a forfeit while everyone else continues.
-6. Let the timer expire without finishing.
-   The device should report a timeout; an unreachable device is marked missing ten seconds after the test ends.
-7. Download a report to compare results, estimated clock uncertainty, and each device's reported GO render delay.
+The client exchanges four timestamps to estimate round-trip delay and server clock offset.
+It uses the median offset from the five lowest-latency fresh samples, retaining at most twenty recent samples.
+Server time is anchored to a monotonic clock.
+Every device freezes its server-to-local clock mapping when it receives a scheduled round.
+All input and completion times use `performance.now()`; later clock measurements cannot move that round's start.
 
-Room codes are public invitation identifiers.
-Reconnect credentials stay in session storage and are excluded from room broadcasts and downloaded reports.
-Rejoining is automatic after a brief connection loss, and connected players inherit hosting if the host disconnects.
-Rooms and results live in server memory; restarting the server clears them.
-Disconnected player slots stay reserved until the player returns or the room expires after thirty minutes without connected players.
-This milestone uses manual ready/start between tests; automatic tournament advancement and its fifteen-second reconnect wait are not implemented yet.
+The server sends a shared random seed so each device derives the same sequence.
+It does not validate each tap or send permission to clear a block.
+Cosmetic progress broadcasts run at most four times per second per player and do not affect input response or rankings.
+A finish is saved to a session-storage outbox, retried until acknowledged, and accepted idempotently.
+Result arrival order does not affect the final ranking.
 
-## How timing works
+This friends-only game trusts client-reported results, with basic bounds and ownership checks.
+It is not a competitive anti-cheat system.
+Clock uncertainty and reported GO render delay are estimates, not proof of physical screen synchronization.
+Network asymmetry, browser scheduling, touch processing, screen refresh, sleep, and audio hardware can affect perceived fairness.
 
-The client repeatedly exchanges four timestamps with the server and estimates round-trip delay and clock offset.
-It uses the median offset from the five lowest-latency fresh samples, retaining up to twenty recent samples.
-Server time is anchored once to a monotonic clock so changing the computer's wall clock does not move a test's start.
-When a round is scheduled, each device freezes its mapping from the server start time to its own `performance.now()` clock.
-Subsequent clock sampling cannot move the starting line during that round.
-Finishing saves the elapsed duration locally and queues an idempotent result submission.
-The server acknowledges the submission and ranks its elapsed duration independently of network arrival order.
-It waits at most ten extra seconds after the round deadline to collect results.
+Room codes are invitation identifiers.
+Private reconnect tokens stay on their device and are excluded from broadcasts, invitation links, and timing exports.
+Rooms and results live in server memory; a restart clears them.
+An empty room expires after thirty minutes without connected players.
+Use one server instance until shared room storage is implemented.
 
-The prototype trusts client-reported durations and provides basic sanity checks, not competitive anti-cheat.
-Network asymmetry, browser scheduling, screen refresh rates, device sleep, and touch processing can still affect fairness.
-Timing uncertainty is a heuristic based on round-trip delay and sample variation, not a certified accuracy bound.
-GO render delay measures the first animation callback after a scheduled start, not when pixels physically appeared.
-A high-speed recording of several physical screens is a useful next test of actual visible synchronization.
-Do not infer cross-device screen accuracy from similar ping values alone.
+## Connection checks
 
-## Static hosting and the connection server
+Open the gear button for connection settings, ping, sample count, and uncertainty.
+Its **Connection tests** section retains the original sync milestone's tools.
 
-```sh
-npm run build
-npm start
-```
-
-The build writes static browser files to `dist/`, with relative asset paths suitable for a GitHub Pages project site.
-`npm start` serves those files and the WebSocket endpoint on the same port.
-To use GitHub Pages, publish the `dist/` contents and run `server/index.js` on a separate WebSocket-capable Node host.
-Set `ALLOWED_ORIGINS` to the exact frontend origin, such as `https://yourname.github.io`, before starting that server.
-Several origins can be separated with commas, without spaces.
-Terminate HTTPS/WSS at your hosting provider's proxy, and set `PORT` if needed.
-In the app's **Connection server** field, enter `wss://your-server.example`.
-The server must expose `/ws`; the client uses that path automatically.
-Invitations preserve a separately configured server address.
-A public HTTPS frontend cannot connect to an insecure `ws://` server on your local computer.
-No public deployment, account, or hosting subscription is created by this prototype.
-
-### GitHub Pages deployment
-
-The repository includes `.github/workflows/pages.yml` to test, build, and publish `dist/` whenever `main` changes.
-Enable Pages in **Settings → Pages** and select **GitHub Actions** as the source.
-GitHub Free requires a public repository for Pages; keeping this repository private requires an eligible GitHub plan.
-The intended website address is `https://goatedapps.github.io/Bishy-Bashy/` once Pages is enabled and the deployment succeeds.
-
-Before the multiplayer server is hosted, the published page opens its connection settings and asks for a server address.
-It does not attempt to use GitHub Pages as a WebSocket server.
-Once the server is deployed, set the repository Actions variable `MULTIPLAYER_SERVER_URL` to its `wss://` address, then rerun the website deployment.
-The build embeds that public address as `VITE_SERVER_URL`, so new visitors connect without entering it manually.
-This address is public configuration and must not contain credentials.
-Players can still override it in **Connection server**, and invitation links preserve overrides.
-
-### Host the multiplayer server on Render
-
-Render is a straightforward option for this prototype because its Node web services support secure WebSocket connections.
-You need a Render account and permission for Render to read this GitHub repository.
-No database, custom domain, or port forwarding on your home router is needed for this milestone.
-
-1. In Render, create a **Web Service** from `goatedapps/Bishy-Bashy`, or create a **Blueprint** using the included `render.yaml`.
-2. For manual setup, select the Node runtime and the Free instance type.
-3. Set the build command to `npm ci && npm run build` and the start command to `npm start`.
-4. Set the environment variable `ALLOWED_ORIGINS` to `https://goatedapps.github.io`, with no repository path or trailing slash.
-5. Set the health check path to `/health` and deploy.
-6. Copy the assigned service hostname and use `wss://` instead of `https://` for the game's connection server address.
-7. Add that address as the GitHub Actions variable described above, then deploy Pages again.
-
-Use a single server instance while rooms live in memory.
-Restarts, redeployments, or service sleep clear all rooms, and players will need to create a new room.
-Render's free service sleeps after fifteen minutes without inbound traffic and can take about a minute to wake up.
-Open its HTTPS `/health` address before testing if it has been idle.
-For consistent availability later, choose an always-on plan after checking current pricing.
-This configuration does not subscribe to a hosting plan or create a Render account.
-
-## Checks
+1. Join four devices and check that names and countdowns agree.
+2. Clear blocks and check that friends see progress while only your controls affect your tower.
+3. Set a three-second result delay on an early finisher and verify that arrival order does not change the winner.
+4. Use **Disconnect for 5 seconds**, continue playing, and check that the finish is confirmed after reconnecting.
+5. Switch apps during play and verify a forfeit while the room continues.
+6. Let a round expire and check timeout results.
+7. Export a timing report to inspect estimates and final timings without reconnect credentials.
 
 ```sh
 npm test
 npm run build
 ```
 
-Automated checks cover clock estimation, shared starts, room capacity, player ownership, result ordering, reconnect submission, duplicate acknowledgments, forfeits, timeout collection, and WebSocket integration.
-Physical phone and tablet testing is still required before choosing mini-games or promising a timing tolerance.
+Automated checks cover deterministic gameplay, freezes, deadline boundaries, shared schedules, room ownership and capacity, progress throttling, delayed and duplicate results, reconnection, the between-round wait, missing players, and real four-client WebSocket rounds.
+Physical phone/tablet playtesting remains necessary.
+
+## Hosting
+
+`npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
+`npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
+The health endpoint reports protocol version 2 for the playable game.
+Deploy the frontend and backend together when changing the multiplayer protocol.
+
+The Pages workflow tests, builds, and deploys `main`.
+The repository Actions variable `MULTIPLAYER_SERVER_URL` is embedded as `VITE_SERVER_URL`.
+Its current public value is `wss://bishy-bashy-server.onrender.com`.
+Server addresses are public configuration and must not contain secrets.
+Players can override the address under Connection settings, and invitation links preserve that override.
+
+The included `render.yaml` configures a single Node web service.
+Use `npm ci && npm run build` to build and `npm start` to start.
+Set `ALLOWED_ORIGINS=https://goatedapps.github.io` and the health path to `/health`.
+Origins contain no repository path or trailing slash.
+Additional allowed origins may be comma-separated.
+HTTPS pages require a secure `wss://` server; the client uses its `/ws` endpoint automatically.
+A sleeping hosted service may take time to wake up, and redeploying it clears rooms.
+
+## Artwork and source layout
+
+`shared/totem.js` defines the game rules and deterministic local run.
+`src/main.js` coordinates lifecycle, timing, input, rooms, and the result outbox.
+`src/game-view.js` renders towers and results; `src/audio.js` owns optional procedural sound.
+`server/rooms.js` owns multiplayer room state and protocol validation.
+`public/assets/totem-blocks.png` contains original generated character artwork reused from the approved mockup.
+[Artwork notes](.lavish/totem-shrinker/artwork.md) preserve the generation prompt.
+This is an independent game inspired by arcade party games, using original artwork.

@@ -13,7 +13,7 @@ export async function createApp({ dev = false, allowedOrigins = [] } = {}) {
   const now = () => epoch + performance.now();
   const vite = dev ? await (await import('vite')).createServer({ root, server: { middlewareMode: true, hmr: false }, appType: 'spa' }) : null;
   const server = http.createServer(async (req, res) => {
-    if (req.url === '/health') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: true })); }
+    if (req.url === '/health') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: true, protocol: 2 })); }
     if (req.url === '/connection-info') {
       const port = server.address()?.port;
       const addresses = Object.values(networkInterfaces()).flat().filter(address => address && address.family === 'IPv4' && !address.internal && /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(address.address));
@@ -83,7 +83,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const app = await createApp({ dev: process.argv.includes('--dev'), allowedOrigins: (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean) });
   const port = Number(process.env.PORT || 3000);
   app.server.listen(port, '0.0.0.0', () => {
-    console.log(`Sync lab: http://localhost:${port}`);
+    console.log(`Bishy Bashy: http://localhost:${port}`);
     for (const addresses of Object.values(networkInterfaces())) for (const address of addresses || []) if (address.family === 'IPv4' && !address.internal) console.log(`Same Wi-Fi: http://${address.address}:${port}`);
   });
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, async () => { await app.close(); process.exit(0); });

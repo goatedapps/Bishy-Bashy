@@ -1,0 +1,13 @@
+# Totem Shrinker visual mockup
+
+Open [totem-shrinker.html](totem-shrinker.html) to review the approved first-game design.
+The portable HTML includes the generated artwork; online fonts have local fallbacks.
+Switch between rules, a sample round, and results using the top navigation.
+The phone-layout control previews a narrow layout on larger screens, and small screens use it automatically.
+Full stacks fit inside their tower areas in both layouts.
+The colored buttons show a visual press response without changing the sample score or tower.
+Players, times, and progress are illustrative; this file has no multiplayer, gameplay, timer, or audio.
+
+The editable review source and image provenance are in [the review folder](../.lavish/totem-shrinker/).
+The original sprite sheet is [totem-blocks.png](../.lavish/totem-shrinker/totem-blocks.png), and [artwork.md](../.lavish/totem-shrinker/artwork.md) records its generation prompt.
+The live app now implements this approved direction with real gameplay and multiplayer.

@@ -1,8 +1,10 @@
 import { randomBytes, randomUUID } from 'node:crypto';
+import { TOTEM_GAME, BLOCK_COUNT, GAME_DURATION_MS, MISTAKE_FREEZE_MS } from '../shared/totem.js';
 
 export const ROUND_MS = 10_000;
 export const GRACE_MS = 10_000;
 export const COUNTDOWN_MS = 5_000;
+export const RECONNECT_WAIT_MS = 15_000;
 const terminal = player => Boolean(player.result);
 
 export class RoomService {
@@ -19,7 +21,7 @@ export class RoomService {
   snapshot(room) {
     return {
       code: room.code, hostId: room.hostId, testNumber: room.testNumber,
-      players: room.players.map(({ id, name, connected, ready, sync, result }) => ({ id, name, connected, ready, sync, result })),
+      players: room.players.map(({ id, name, connected, ready, sync, result, progress, disconnectedAt }) => ({ id, name, connected, ready, sync, result, progress, disconnectedAt })),
       round: room.round ? { ...room.round } : null,
     };
   }
@@ -44,18 +46,19 @@ export class RoomService {
       if (!room) return this.error(client, 'That room could not be found. Check the code or create a new room.');
     }
     const returning = typeof message.token === 'string' && room.players.find(player => player.token === message.token);
-    if (!returning && room.round && room.round.phase !== 'results') return this.error(client, 'A test is underway. Join after this round finishes.');
+    if (!returning && room.round && room.round.phase !== 'results') return this.error(client, 'A round is underway. Join after it finishes.');
     if (!returning && room.players.length >= 4) return this.error(client, 'This room already has four players.');
     if (returning?.connected) return this.error(client, 'This player is already connected. Open a new tab to join as another player.');
-    const player = returning || { id: randomUUID(), token: randomBytes(24).toString('hex'), name: message.name.trim().slice(0, 20), ready: false, sync: null, result: null };
+    const player = returning || { id: randomUUID(), token: randomBytes(24).toString('hex'), name: message.name.trim().slice(0, 20), ready: false, sync: null, result: null, progress: { cleared: 0, mistakes: 0 } };
     player.client = client;
     player.connected = true;
+    player.disconnectedAt = null;
     player.ready = false;
     player.sync = null;
     if (!returning) room.players.push(player);
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 2, token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -82,15 +85,26 @@ export class RoomService {
       return this.broadcast(room);
     }
     if (message.type === 'start') {
-      if (player.id !== room.hostId) return this.error(client, 'Only the room host can start the test.');
+      if (player.id !== room.hostId) return this.error(client, 'Only the room host can start the round.');
       if (room.round && room.round.phase !== 'results') return;
-      if (!room.players.every(p => p.connected && p.ready && this.isSynced(p))) return this.error(client, 'Everyone must be connected, synchronized, and ready.');
+      const participants = room.players.filter(p => p.connected);
+      if (room.players.some(p => !p.connected && received - p.disconnectedAt < RECONNECT_WAIT_MS)) return this.error(client, 'Waiting up to 15 seconds for a disconnected player.');
+      if (!participants.every(p => p.ready && this.isSynced(p))) return this.error(client, 'Everyone connected must be synchronized and ready.');
       room.testNumber++;
-      room.players.forEach(p => { p.result = null; p.ready = false; });
+      room.players.forEach(p => {
+        p.result = p.connected ? null : { status: 'missing', elapsed: null, reason: 'Missed this round' };
+        p.ready = false;
+        p.progress = { cleared: 0, mistakes: 0 };
+        p.lastProgressAt = -Infinity;
+      });
       const startAt = received + COUNTDOWN_MS;
-      room.round = { id: randomUUID(), phase: 'countdown', startAt, endAt: startAt + ROUND_MS, expiresAt: startAt + ROUND_MS + GRACE_MS, duration: ROUND_MS, playerIds: room.players.map(p => p.id) };
+      const game = message.mode === 'sync' ? 'sync' : TOTEM_GAME;
+      const duration = game === 'sync' ? ROUND_MS : GAME_DURATION_MS;
+      room.round = { id: randomUUID(), game, phase: 'countdown', startAt, endAt: startAt + duration, expiresAt: startAt + duration + GRACE_MS, duration, playerIds: participants.map(p => p.id) };
+      if (game === TOTEM_GAME) Object.assign(room.round, { seed: randomBytes(4).readUInt32LE(), blockCount: BLOCK_COUNT, freezeMs: MISTAKE_FREEZE_MS });
       return this.broadcast(room);
     }
+    if (message.type === 'progress') return this.progress(room, player, message, received);
     if (message.type === 'result') return this.result(client, room, player, message, received);
     if (message.type === 'leave') {
       if (room.round && room.round.phase !== 'results') return this.error(client, 'Finish this test before leaving the room.');
@@ -107,6 +121,16 @@ export class RoomService {
     return player.sync && player.sync.count >= 3 && player.sync.rtt <= 1500 && this.now() - player.sync.at < 20_000;
   }
 
+  progress(room, player, message, received) {
+    const round = room.round;
+    if (!round || round.game !== TOTEM_GAME || round.id !== message.roundId || !round.playerIds.includes(player.id) || player.result || round.phase === 'results' || received < round.startAt || received > round.endAt) return;
+    const { cleared, mistakes } = message;
+    if (!Number.isInteger(cleared) || cleared < player.progress.cleared || cleared > round.blockCount || !Number.isInteger(mistakes) || mistakes < player.progress.mistakes || mistakes > 1000 || received - player.lastProgressAt < 150) return;
+    player.progress = { cleared, mistakes };
+    player.lastProgressAt = received;
+    this.broadcast(room);
+  }
+
   result(client, room, player, message, received) {
     const round = room.round;
     if (!round || round.id !== message.roundId || !round.playerIds.includes(player.id)) return this.error(client, 'This result belongs to an old or unknown test.');
@@ -115,7 +139,13 @@ export class RoomService {
     if (received < round.startAt) return this.error(client, 'The test has not started yet.');
     if (!['finished', 'forfeit', 'timeout'].includes(message.status)) return;
     if (message.status === 'finished' && (!Number.isFinite(message.elapsed) || message.elapsed < 0 || message.elapsed > round.duration || message.elapsed > received - round.startAt + 250)) return this.error(client, 'The reported finish time is outside this test.');
+    if (round.game === TOTEM_GAME && message.status === 'finished' && (message.cleared !== round.blockCount || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || message.mistakes > 1000)) return this.error(client, 'Finish all the blocks before submitting a result.');
     if (message.status === 'timeout' && received < round.endAt) return this.error(client, 'The test has not timed out yet.');
+    let cleared = null;
+    if (round.game === TOTEM_GAME) {
+      cleared = player.progress.cleared;
+      if (Number.isInteger(message.cleared) && message.cleared >= cleared && message.cleared <= round.blockCount) cleared = message.cleared;
+    }
     player.result = {
       status: message.status,
       elapsed: message.status === 'finished' ? message.elapsed : null,
@@ -123,7 +153,10 @@ export class RoomService {
       arrivalLag: message.status === 'finished' ? received - round.startAt - message.elapsed : null,
       goDelay: Number.isFinite(message.goDelay) && message.goDelay >= 0 ? message.goDelay : null,
       reason: message.status === 'forfeit' ? 'Left the game screen' : null,
+      cleared,
+      mistakes: Number.isInteger(message.mistakes) ? message.mistakes : null,
     };
+    if (round.game === TOTEM_GAME && message.status === 'finished') player.progress = { cleared: round.blockCount, mistakes: message.mistakes };
     this.send(client, { type: 'result-ack', roundId: round.id, status: player.result.status });
     this.finishIfComplete(room);
     this.broadcast(room);
@@ -142,6 +175,7 @@ export class RoomService {
     const player = this.playerFor(client);
     if (!player) return;
     player.connected = false;
+    player.disconnectedAt = this.now();
     player.ready = false;
     this.chooseHost(room);
     this.broadcast(room);
