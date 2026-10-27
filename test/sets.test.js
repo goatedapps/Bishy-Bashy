@@ -31,16 +31,16 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
   return { service, clients, room, messages, sync, ready, finish, setTime: value => { time = value; }, get now() { return time; } };
 }
 
-test('Arcade selects two distinct games from the expanding catalog; Game Select repeats five', () => {
+test('Arcade selects five distinct games from the expanding catalog; Game Select repeats five', () => {
   const ids = Object.keys(GAMES);
   const current = createSetPlan('arcade', ids[0], () => 0);
-  assert.equal(current.length, 2);
-  assert.equal(new Set(current).size, 2);
+  assert.equal(current.length, 5);
+  assert.equal(new Set(current).size, 5);
   assert.ok(current.every(id => ids.includes(id)));
   const future = Array.from({ length: 12 }, (_, index) => `game-${index}`);
   const plan = createSetPlan('arcade', null, max => max - 1, future);
-  assert.equal(plan.length, 2);
-  assert.equal(new Set(plan).size, 2);
+  assert.equal(plan.length, 5);
+  assert.equal(new Set(plan).size, 5);
   assert.deepEqual(createSetPlan('game-select', PERM_GAME), Array(5).fill(PERM_GAME));
 });
 
@@ -92,22 +92,22 @@ test('five automatic Totem rounds increase block counts and crown the total-poin
   assert.equal(room.round.blockCount, 30);
 });
 
-test('Arcade automatically plays two distinct base-difficulty games and keeps cumulative scores', () => {
+test('Arcade automatically plays five distinct base-difficulty games and keeps cumulative scores', () => {
   const { service, room, finish, sync, ready, setTime } = setup({ mode: 'arcade', count: 2 });
-  assert.equal(room.set.plan.length, 2);
-  assert.equal(new Set(room.set.plan).size, 2);
+  assert.equal(room.set.plan.length, 5);
+  assert.equal(new Set(room.set.plan).size, 5);
   assert.ok(room.set.plan.every(id => GAMES[id]));
-  const first = room.round.game;
-  assert.equal(room.round.difficulty, 1);
-  finish();
-  assert.equal(room.set.phase, 'intermission');
-  setTime(room.set.nextStartAt); sync(); service.tick();
-  assert.equal(room.set.phase, 'instructions'); ready();
-  assert.notEqual(room.round.game, first);
-  assert.equal(room.round.difficulty, 1);
-  finish();
+  for (let index = 0; index < 5; index++) {
+    assert.equal(room.round.difficulty, 1);
+    finish();
+    if (index < 4) {
+      assert.equal(room.set.phase, 'intermission');
+      setTime(room.set.nextStartAt); sync(); service.tick();
+      assert.equal(room.set.phase, 'instructions'); ready();
+    }
+  }
   assert.equal(room.set.phase, 'complete');
-  assert.deepEqual(room.set.players.map(player => player.points), [20, 14]);
+  assert.deepEqual(room.set.players.map(player => player.points), [50, 35]);
 });
 
 test('ready gates retain a bounded disconnected-player wait and never skip a connected unready player', () => {

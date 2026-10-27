@@ -1,0 +1,43 @@
+.firework-theme .arena {
+  background:#251440 url('/assets/fireworks-festival.png') center / cover no-repeat;
+  color:#fff4dc;
+}
+.firework-theme .lane { border-color:#d1b4f24d; }
+.firework-theme .lane.you { background:#ffe8a812; box-shadow:inset 0 0 0 2px #ffdb7670; }
+.firework-theme .lane:before { display:none; }
+.firework-theme .base { background:#e9af5c; border-color:#402049; box-shadow:0 4px 0 #251440; }
+.firework-theme .seat-status { color:#fff4dc; }
+.firework-theme .progress { background:#ffffff26; }
+.firework-theme .progress span { background:#ffda76; }
+.firework-theme .tower-zone { overflow:visible; }
+.firework-stage { position:relative; width:100%; height:100%; min-height:100px; isolation:isolate; }
+.firework-rocket {
+  position:absolute; left:50%; transform:translateX(-50%); font-size:24px;
+  color:#ffe3a0; text-shadow:0 0 12px #ffce76;
+}
+.firework-rocket:after {
+  content:''; position:absolute; top:90%; left:50%; width:3px; height:35px;
+  background:linear-gradient(#ffe3a0,transparent); transform:translateX(-50%);
+}
+.revealed .firework-rocket {
+  font-size:clamp(32px,6vw,64px); line-height:1; color:var(--firework-color);
+  text-shadow:0 0 16px var(--firework-color),0 3px 0 #251440;
+}
+.revealed .firework-rocket:after { display:none; }
+.firework-fuse { position:absolute; left:15%; right:15%; bottom:42%; height:4px; border-radius:4px; background:var(--firework-color); transform-origin:left; }
+.firework-burst { position:absolute; left:50%; top:30%; opacity:0; color:var(--firework-color); }
+.firework-burst i { position:absolute; width:4px; height:15px; border-radius:50%; background:currentColor; transform:rotate(var(--angle)) translateY(-32px); box-shadow:0 0 9px currentColor; }
+.bursting .firework-burst { opacity:1; animation:firework-pop .45s ease-out both; }
+.misfired .firework-rocket { color:#fff; font-size:38px; text-shadow:none; }
+.firework-theme .lane.forfeit .firework-stage { opacity:.4; }
+.firework-theme .lane.finished .tower-zone:after { display:none; }
+.firework-badge { display:block; color:#ff647b; font:80px/1 'Lilita One',sans-serif; text-shadow:3px 3px 0 #ffdc76,-3px -3px 0 #72bbff; }
+@keyframes firework-pop { from { transform:scale(.3); opacity:1; } to { transform:scale(1.2); opacity:0; } }
+@media(max-width:620px) {
+  .firework-burst i { height:10px; width:3px; transform:rotate(var(--angle)) translateY(-21px); }
+}
+@media(prefers-reduced-motion:reduce) {
+  .bursting .firework-burst { animation:none; opacity:1; }
+  .firework-rocket { bottom:62%!important; }
+  .firework-rocket:after { display:none; }
+}

@@ -6,6 +6,8 @@ import { createApp } from '../server/index.js';
 import { createSequence, TotemRun } from '../shared/totem.js';
 import { PermRun, PERM_GAME } from '../shared/perm.js';
 import { SLOT_GAME } from '../shared/slots.js';
+import { FIREWORK_GAME } from '../shared/fireworks.js';
+import { MONKEY_GAME, MonkeyRun } from '../shared/monkeys.js';
 import { comparePlayers } from '../shared/games.js';
 
 function receiveProtocol(socket, predicate) {
@@ -19,7 +21,7 @@ function receiveProtocol(socket, predicate) {
   });
 }
 
-for (const [mode, game, length] of [['arcade', 'totem-shrinker', 2], ['game-select', 'totem-shrinker', 5], ['game-select', PERM_GAME, 5], ['game-select', SLOT_GAME, 5]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
+for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-select', 'totem-shrinker', 5], ['game-select', PERM_GAME, 5], ['game-select', SLOT_GAME, 5], ['game-select', FIREWORK_GAME, 5], ['game-select', MONKEY_GAME, 5]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
   const app = await createApp();
   let time = 1_000_000;
   app.rooms.now = () => time;
@@ -46,14 +48,23 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 2], ['game-sele
   clients.forEach(socket => send(socket, { type: 'ready', ready: true }));
   state = (await waiting).room;
   assert.equal(state.set.plan.length, length);
-  if (mode === 'arcade') assert.equal(new Set(state.set.plan).size, 2);
+  if (mode === 'arcade') assert.equal(new Set(state.set.plan).size, 5);
   for (let index = 0; index < length; index++) {
     const round = state.round;
     assert.equal(round.difficulty, mode === 'arcade' ? 1 : index + 1);
     if (mode === 'game-select') assert.equal(round.game, game);
-    time = round.game === PERM_GAME ? round.endAt + 100 : round.startAt + 4000;
+    const monkeyRuns = round.game === MONKEY_GAME ? clients.map((_, place) => {
+      const run = new MonkeyRun(round, 0);
+      for (let stage = 0; stage < round.goal; stage++) {
+        const playAt = run.playAt;
+        run.sequence.slice(0, run.length).forEach((color, note) => run.tap(color, playAt + note * (100 + place * 20)));
+      }
+      assert.equal(run.done, true);
+      return run;
+    }) : null;
+    time = monkeyRuns ? round.startAt + Math.max(...monkeyRuns.map(run => run.elapsed)) + 100 : round.game === PERM_GAME ? round.endAt + 100 : round.startAt + 4000;
     waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.history.length === index + 1);
-    clients.forEach((socket, place) => send(socket, { type: 'result', roundId: round.id, status: 'finished', elapsed: round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: round.goal, mistakes: 0, ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}), ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) }));
+    clients.forEach((socket, place) => send(socket, { type: 'result', roundId: round.id, status: 'finished', elapsed: monkeyRuns ? monkeyRuns[place].elapsed : round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: round.goal, mistakes: 0, ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}), ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) }));
     state = (await waiting).room;
     assert.deepEqual(state.set.players.map(player => player.points), [10, 7, 4, 1].map(points => points * (index + 1)));
     if (index + 1 < length) {
@@ -174,6 +185,7 @@ test('real WebSocket clients can create, synchronize, and join a room', async t 
   host.send(JSON.stringify({ type: 'create', name: 'Host' }));
   const joined = await waiting;
   assert.equal(joined.code.length, 6);
+  assert.ok(joined.capabilities.includes('room-navigation'));
   waiting = receive(host, message => message.type === 'pong');
   host.send(JSON.stringify({ type: 'ping', sent: 100 }));
   const pong = await waiting;

@@ -3,11 +3,14 @@ import { SyncedClock } from './clock.js';
 import { TOTEM_GAME } from '../shared/totem.js';
 import { PERM_GAME, demoCues } from '../shared/perm.js';
 import { SLOT_GAME } from '../shared/slots.js';
+import { FIREWORK_GAME } from '../shared/fireworks.js';
+import { MONKEY_GAME } from '../shared/monkeys.js';
 import { GAMES, createRun, roundSettings, isRoundActive, gameRules } from '../shared/games.js';
 import { MODES, roundDetail } from '../shared/sets.js';
 import { GameView } from './game-view.js';
 import { SetView } from './set-view.js';
 import { GameAudio } from './audio.js';
+import { ruleVisual } from './game-art.js';
 
 const $ = id => document.getElementById(id);
 const readStored = key => { try { return JSON.parse(sessionStorage.getItem(key)); } catch { return null; } };
@@ -20,6 +23,8 @@ let serverUrl = params.get('server') || localStorage.getItem('bb-server') || def
 let socket, room, playerId = session?.playerId;
 let clock = new SyncedClock();
 let localRound = null;
+let navigationAction = null;
+let supportsRoomNavigation = false;
 let pending = readStored('bb-pending');
 let reconnectAt = 0, reconnectTimer, entryRequest = null, joining = false, intentionalClose = false, joined = false;
 let lastPong = 0, lastSyncSent = 0, lastPendingSent = -Infinity, lastProgressSent = 0, lastProgressKey = '';
@@ -114,6 +119,7 @@ function connect() {
         return;
       }
       playerId = message.playerId;
+      supportsRoomNavigation = message.capabilities?.includes('room-navigation') === true;
       joined = true;
       const name = entryRequest?.name || readStored('bb-session')?.name || $('name').value;
       sessionStorage.setItem('bb-session', JSON.stringify({ code: message.code, token: message.token, playerId, name }));
@@ -279,7 +285,11 @@ function enforceLifecycle(time) {
     localRound.run.advance(time);
     for (const event of localRound.run.events.splice(0)) if (event.type === 'growth') audio.play('permGrow');
     if (localRound.run.done) complete('finished', localRound.run.elapsed);
-  } else if (time >= localRound.end) complete('timeout');
+  } else {
+    if (room.round.game === FIREWORK_GAME) localRound.run.advance(time);
+    if (time >= localRound.end) complete('timeout');
+    else if (room.round.game === MONKEY_GAME) audio.demonstrate(`${localRound.id}/${localRound.run.demoVersion}`, localRound.run.cues);
+  }
 }
 
 function tap(color) {
@@ -351,7 +361,8 @@ function renderRoom() {
   const gate = room.set?.phase === 'instructions' || room.set?.phase === 'intermission' && room.mode === 'game-select';
   $('room-code').textContent = room.code;
   $('occupancy').textContent = `· ${room.players.length}/4`;
-  $('leave').disabled = Boolean(active);
+  $('leave').disabled = false;
+  $('back').hidden = playerId !== room.hostId || !room.set;
   $('ready-actions').hidden = Boolean(active || room.set?.phase === 'intermission' && room.mode === 'arcade');
   $('ready').hidden = !gate;
   $('start').hidden = playerId !== room.hostId || gate;
@@ -362,7 +373,7 @@ function renderRoom() {
 }
 
 function updateControls(time) {
-  const disabled = !localRound || localRound.done || document.hidden || time < localRound.start || time >= localRound.end || time < localRound.run.blockedUntil || room?.round?.phase === 'results' || room?.round?.game === PERM_GAME && localRound.run.phase(time).mode === 'watch';
+  const disabled = !localRound || localRound.done || document.hidden || time < localRound.start || time >= localRound.end || time < localRound.run.blockedUntil || room?.round?.phase === 'results' || room?.round?.game === PERM_GAME && localRound.run.phase(time).mode === 'watch' || room?.round?.game === MONKEY_GAME && localRound.run.phase(time).mode !== 'play';
   for (const button of buttons) {
     const color = Number(button.dataset.color);
     button.disabled = disabled || Boolean(room?.round?.game === SLOT_GAME && localRound && ((localRound.run.reelMask & (1 << color)) || time < localRound.run.blockedReels[color]));
@@ -441,12 +452,14 @@ function updateGameProfile() {
   audio.selectGame(game);
   document.body.classList.toggle('perm-theme', Boolean(room && perm));
   document.body.classList.toggle('slot-theme', Boolean(room && slots));
+  document.body.classList.toggle('firework-theme', Boolean(room && game === FIREWORK_GAME));
+  document.body.classList.toggle('monkey-theme', Boolean(room && game === MONKEY_GAME));
   document.body.classList.toggle('in-set', Boolean(inSet));
-  const title = !room ? 'Choose your mode' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'intermission' ? 'Standings' : room.set?.phase === 'instructions' || active ? GAMES[game].title : MODES[mode].title;
+  const title = !room ? 'Bishy Bashy!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'intermission' ? 'Standings' : room.set?.phase === 'instructions' || active ? GAMES[game].title : 'Choose your mode';
   if (document.querySelector('.game-title').textContent !== title) document.querySelector('.game-title').textContent = title;
   document.title = `${room ? title : 'Party games'} · Bishy Bashy`;
-  $('lobby-setup').hidden = Boolean(inSet);
-  $('game-picker').hidden = mode !== 'game-select';
+  $('lobby-setup').hidden = !room || Boolean(inSet);
+  $('game-browser').hidden = mode !== 'game-select';
   $('rhythm-guide').hidden = !perm || !active;
   $('slot-guide').hidden = !slots || !active;
   for (const button of document.querySelectorAll('[data-game]')) {
@@ -465,13 +478,30 @@ function displayRound() {
   return { game, ...roundSettings(game, 0) };
 }
 
+function requestNavigation(type) {
+  if (!room) return;
+  const inSet = room.set && room.set.phase !== 'complete';
+  if (!joined || socket?.readyState !== WebSocket.OPEN) return notice('Connection lost. Wait for reconnection, then try again.');
+  if ((type === 'back-to-modes' || inSet) && !supportsRoomNavigation) return notice('The multiplayer server needs the navigation update. Restart the server and refresh this page.');
+  const confirm = type === 'leave' ? inSet : isRoundActive(room.round) || room.set?.history.length > 0 && inSet;
+  if (!confirm) { send({ type, setId: room.set?.id }); return; }
+  navigationAction = { type, code: room.code, setId: room.set?.id };
+  const leaving = type === 'leave';
+  $('navigation-title').textContent = leaving ? 'Leave this game?' : 'Back to mode selection?';
+  $('navigation-description').textContent = leaving ? 'Your current unfinished round will be forfeited and you will leave the set. Your friends can keep playing.' : 'This ends the current set for everyone and clears its scores. Everyone stays in the room.';
+  $('navigation-confirm-action').textContent = leaving ? 'Leave room' : 'End set and go back';
+  $('navigation-stay').textContent = 'Keep playing';
+  $('navigation-confirm').showModal();
+}
+
 function showRules() {
   const profile = displayRound();
   const game = profile.game;
-  const perm = game === PERM_GAME;
   const activeSet = room?.set && room.set.phase !== 'complete';
-  $('rules-title').textContent = activeSet ? GAMES[game].title : 'How to play a set';
-  const rules = !activeSet ? ['Arcade plays two different random games. Game Select plays five rounds of one game.', 'Read the rules and tap Ready. Every connected player must be ready before the countdown.', 'Each round awards 10 / 7 / 4 / 1 points by place. Most total points wins.'] : gameRules(game, profile);
+  const gameHelp = activeSet || room?.mode === 'game-select';
+  $('rules-title').textContent = gameHelp ? GAMES[game].title : 'How to play a set';
+  $('rules-visual').replaceChildren(ruleVisual(gameHelp ? game : null));
+  const rules = !gameHelp ? ['Arcade plays five different random games. Game Select plays five rounds of one game.', 'Read the rules and tap Ready. Every connected player must be ready before the countdown.', 'Each round awards 10 / 7 / 4 / 1 points by place. Most total points wins.'] : gameRules(game, profile);
   $('rules-list').replaceChildren(...rules.map(text => { const item = document.createElement('li'); item.textContent = text; return item; }));
   $('rules-note').textContent = 'Stay on this screen during the round; switching apps or reloading forfeits it.';
   $('rules').showModal();
@@ -481,7 +511,18 @@ $('create').addEventListener('click', () => enter('create'));
 $('entry-form').addEventListener('submit', event => { event.preventDefault(); enter('join'); });
 $('ready').addEventListener('click', () => { notice(''); audio.unlock(); send({ type: 'ready', ready: !room.players.find(player => player.id === playerId)?.ready }); });
 $('start').addEventListener('click', () => { audio.unlock(); send({ type: 'start' }); });
-$('leave').addEventListener('click', () => send({ type: 'leave' }));
+$('leave').addEventListener('click', () => requestNavigation('leave'));
+$('back').addEventListener('click', () => requestNavigation('back-to-modes'));
+$('navigation-stay').addEventListener('click', () => $('navigation-confirm').close());
+$('navigation-confirm-action').addEventListener('click', () => {
+  const action = navigationAction;
+  if (action && room?.code === action.code) {
+    if (send({ type: action.type, setId: action.setId })) $('navigation-confirm').close();
+    else notice('Connection lost. Wait for reconnection, then try again.');
+  }
+});
+$('navigation-confirm').addEventListener('close', () => { navigationAction = null; });
+$('game-search').addEventListener('input', event => setView.filterGames(event.target.value));
 $('rules-open').addEventListener('click', showRules);
 $('settings-open').addEventListener('click', () => { updateSound(); $('settings').showModal(); });
 $('sound').addEventListener('click', async () => {

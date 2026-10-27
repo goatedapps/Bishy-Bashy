@@ -1,8 +1,10 @@
 import { GAMES, comparePlayers } from './games.js';
 import { PERM_GAME } from './perm.js';
 import { SLOT_GAME } from './slots.js';
+import { FIREWORK_GAME } from './fireworks.js';
+import { MONKEY_GAME } from './monkeys.js';
 
-export const ARCADE_LENGTH = 2;
+export const ARCADE_LENGTH = 5;
 export const GAME_SELECT_LENGTH = 5;
 export const INTERMISSION_MS = 8_000;
 export const PLACE_POINTS = [10, 7, 4, 1];
@@ -35,6 +37,8 @@ export function setStandings(players) {
 }
 
 export function roundDetail(round) {
+  if (round.game === MONKEY_GAME) return `${round.goal} stages · ${round.goal + 1} moves`;
+  if (round.game === FIREWORK_GAME) return `${round.goal} bursts · Speed ${round.difficulty}`;
   if (round.game === SLOT_GAME) return `3 reels · Speed ${round.difficulty}`;
   return round.game === PERM_GAME ? `${round.bpm} BPM` : `${round.blockCount} blocks`;
 }

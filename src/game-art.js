@@ -1,0 +1,74 @@
+import { facePortrait } from './slot-view.js';
+import { monkeyPortrait } from './monkey-view.js';
+import { fireworkBadge } from './firework-view.js';
+
+const node = (tag, className, text) => {
+  const element = document.createElement(tag);
+  element.className = className;
+  if (text !== undefined) element.textContent = text;
+  return element;
+};
+
+export function gameArt(game) {
+  const art = node('span', `game-art art-${game}`);
+  art.setAttribute('aria-hidden', 'true');
+  if (game === 'mimicking-monkeys') art.append(monkeyPortrait());
+  else if (game === 'fireworks-craze') art.append(fireworkBadge());
+  else if (game === 'facial-slot-machine') art.append(facePortrait(0));
+  else if (game === 'perm-mania') {
+    const dancer = node('span', 'perm-character');
+    dancer.append(node('span', 'perm-hair'), node('span', 'perm-dancer dancer-1'));
+    art.append(dancer);
+  } else art.append(node('span', 'block blue'), node('span', 'block red'));
+  return art;
+}
+
+function shapes(colors, className = '') {
+  const group = node('div', `tutorial-shapes ${className}`);
+  colors.forEach(color => group.append(node('span', `tutorial-symbol symbol-${color}`, ['●', '▲', '◆'][color])));
+  return group;
+}
+
+export function ruleVisual(game) {
+  const visual = node('div', 'rule-visual');
+  const first = node('div', 'rule-example');
+  const second = node('div', 'rule-example');
+  let label;
+  if (game === 'mimicking-monkeys') {
+    first.append(gameArt(game), shapes([0, 1, 2]), node('strong', '', 'Watch the order'));
+    second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Copy the order'));
+    label = 'Watch red circle, green triangle, blue diamond; then press red, green, blue in that order.';
+  } else if (game === 'perm-mania') {
+    first.append(gameArt(game), node('div', 'tutorial-beats', '● · ● ●'), node('strong', '', 'Watch the rhythm'));
+    second.append(node('div', 'tutorial-beats', '● · ● ●'), shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Copy with any button'));
+    label = 'Watch a rhythm, then copy its timing using any colored button.';
+  } else if (game === 'facial-slot-machine') {
+    first.append(gameArt(game), node('strong', '', 'Model face'));
+    const rows = node('div', 'tutorial-reels');
+    for (let color = 0; color < 3; color++) {
+      const row = node('div', `tutorial-reel symbol-${color}`);
+      row.append(node('span', '', ['●', '▲', '◆'][color]), facePortrait(1), facePortrait(0), facePortrait(2));
+      rows.append(row);
+    }
+    second.append(rows, node('strong', '', 'Match each center face'));
+    label = 'Match the model robot in all three rows. Each color button stops its own row at the center marker.';
+  } else if (game === 'fireworks-craze') {
+    first.append(node('span', 'tutorial-rocket', '✦'), node('strong', '', 'Wait for its color'));
+    second.append(shapes([0]), shapes([0], 'tutorial-buttons'), node('strong', '', 'Press the matching button'));
+    label = 'Wait for the rocket to reveal a red circle, then press the red circle button.';
+  } else if (game === 'totem-shrinker') {
+    first.append(gameArt(game), node('strong', '', 'Look at the bottom block'));
+    second.append(shapes([0], 'tutorial-buttons'), node('strong', '', 'Match its color'));
+    label = 'A red block is at the bottom of the tower. Press the red circle button to clear it.';
+  } else {
+    first.append(gameArt('totem-shrinker'), node('strong', '', 'Play together'));
+    second.append(node('div', 'tutorial-beats', '10 · 7 · 4 · 1'), node('strong', '', 'Earn points by place'));
+    label = 'Play together. Each round awards 10, 7, 4, or 1 points by placement.';
+  }
+  visual.setAttribute('role', 'img');
+  visual.setAttribute('aria-label', label);
+  first.setAttribute('aria-hidden', 'true');
+  second.setAttribute('aria-hidden', 'true');
+  visual.append(first, node('span', 'rule-arrow', '→'), second);
+  return visual;
+}

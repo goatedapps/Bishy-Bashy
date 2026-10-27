@@ -1,7 +1,6 @@
 import { GAMES, gameRules } from '../shared/games.js';
-import { MODES, ARCADE_LENGTH, GAME_SELECT_LENGTH, setStandings } from '../shared/sets.js';
-import { SLOT_GAME } from '../shared/slots.js';
-import { facePortrait } from './slot-view.js';
+import { MODES, setStandings } from '../shared/sets.js';
+import { gameArt, ruleVisual } from './game-art.js';
 
 const $ = id => document.getElementById(id);
 const node = (tag, className, text) => {
@@ -14,26 +13,28 @@ const node = (tag, className, text) => {
 export class SetView {
   constructor() {
     this.key = '';
-    $('arcade-count').textContent = `${Math.min(ARCADE_LENGTH, Object.keys(GAMES).length)} games`;
-    $('select-count').textContent = `${GAME_SELECT_LENGTH} rounds`;
+    $('home-cast').append(...Object.keys(GAMES).map(gameArt));
     for (const game of Object.values(GAMES)) {
       const button = node('button', `game-choice choice-${game.id}`);
       button.type = 'button';
       button.dataset.game = game.id;
       button.setAttribute('aria-pressed', 'false');
-      const art = node('span', 'game-choice-art');
-      art.setAttribute('aria-hidden', 'true');
-      if (game.id === SLOT_GAME) art.append(facePortrait(0));
-      else if (game.id === 'perm-mania') {
-        const avatar = node('span', 'perm-character');
-        avatar.append(node('span', 'perm-hair'), node('span', 'perm-dancer dancer-1'));
-        art.append(avatar);
-      } else art.append(node('span', 'block red'), node('span', 'block green'));
+      const art = gameArt(game.id);
       const copy = node('span', 'game-choice-copy');
       copy.append(node('strong', '', game.title), node('small', '', game.subtitle));
       button.append(art, copy);
       $('game-picker').append(button);
     }
+  }
+
+  filterGames(query) {
+    const term = query.trim().toLocaleLowerCase();
+    let shown = 0;
+    for (const button of $('game-picker').children) {
+      button.hidden = !GAMES[button.dataset.game].title.toLocaleLowerCase().includes(term);
+      if (!button.hidden) shown++;
+    }
+    $('game-empty').hidden = shown > 0;
   }
 
   render(room, playerId) {
@@ -51,6 +52,7 @@ export class SetView {
       if (this.instructionsKey !== room.round.id) {
         this.instructionsKey = room.round.id;
         $('instructions-title').textContent = GAMES[room.round.game].title;
+        $('instructions-visual').replaceChildren(ruleVisual(room.round.game));
         $('instructions-list').replaceChildren(...gameRules(room.round.game, room.round).map(text => node('li', '', text)));
       }
       this.renderReady(room, $('ready-players'), playerId);

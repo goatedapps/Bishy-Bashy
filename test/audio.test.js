@@ -60,6 +60,49 @@ function setup({ enabled = true, fetchFile, storage } = {}) {
   return { audio, context, values, requests, setTime: value => { time = value; }, get created() { return created; } };
 }
 
+test('memory demos schedule color tones once from local time and skip old notes after mute or interruption', async () => {
+  const { audio, context, setTime } = setup();
+  audio.selectGame('mimicking-monkeys');
+  await audio.unlock();
+  audio.scheduleRound('memory', 1000, 46000, true, false, { game: 'mimicking-monkeys' });
+  const cues = [{ color: 2, at: 1550 }, { color: 0, at: 2200 }];
+  setTime(1400);
+  audio.demonstrate('memory/1', cues);
+  let notes = [...audio.voices].filter(voice => voice.group === 'demonstration');
+  assert.equal(notes.length, 1);
+  assert.equal(notes[0].id, 'blue');
+  assert.equal(notes[0].source.started.at, context.currentTime + .15);
+  audio.demonstrate('memory/1', cues);
+  assert.equal([...audio.voices].filter(voice => voice.group === 'demonstration').length, 1);
+  audio.setEnabled(false);
+  assert.ok(notes[0].stopped);
+  setTime(1600);
+  audio.setEnabled(true);
+  await audio.unlock();
+  audio.demonstrate('memory/1', cues);
+  assert.equal([...audio.voices].filter(voice => voice.group === 'demonstration').length, 0);
+  setTime(2050);
+  audio.demonstrate('memory/1', cues);
+  notes = [...audio.voices].filter(voice => voice.group === 'demonstration');
+  assert.equal(notes.length, 1);
+  assert.equal(notes[0].id, 'red');
+  context.state = 'suspended'; context.stateChange();
+  assert.ok(notes[0].stopped);
+  setTime(2150); await context.resume();
+  audio.demonstrate('memory/1', cues);
+  assert.equal([...audio.voices].filter(voice => voice.group === 'demonstration').length, 1);
+  audio.demonstrate('memory/2', [{ color: 1, at: 2250 }]);
+  notes = [...audio.voices].filter(voice => voice.group === 'demonstration');
+  assert.equal(notes.length, 1);
+  assert.equal(notes[0].id, 'green');
+  audio.endPlayer();
+  assert.ok(notes[0].stopped);
+  audio.demonstrate('memory/2', [{ color: 1, at: 2250 }]);
+  assert.equal([...audio.voices].filter(voice => voice.group === 'demonstration').length, 0);
+  audio.stopRound();
+  assert.equal(audio.demonstrationKey, null);
+});
+
 test('audio is opt-in, loads once after a gesture, and preferences survive unavailable storage', async () => {
   const state = setup({ enabled: false });
   state.audio.scheduleRound('round', 5000, 50_000, true);

@@ -39,7 +39,6 @@
 .slot-theme .lane.forfeit .slot-cabinet { filter:grayscale(1); opacity:.5; }
 .slot-theme .lane.finished .tower-zone:after { display:none; }
 .slot-theme .lane.frozen .tower-zone { background:transparent; }
-.game-choice-art .face-portrait { width:70px; transform:rotate(-8deg); border:2px solid var(--ink); }
 .choice-facial-slot-machine[aria-pressed=true] { background:#ffdf9b!important; }
 @media(max-width:620px) {
  .slot-theme .game-top { padding:6px 12px 0; }
@@ -66,6 +65,5 @@
  .slot-theme .remaining { font-size:9px; min-height:22px; margin:5px 0; }
  .slot-theme .remaining strong { font-size:21px; }
  .slot-theme .seat-status { font-size:9px; height:15px; min-height:15px; margin:3px 0 0; }
- .game-choice-art .face-portrait { width:47px; }
  #game-picker { grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); }
 }

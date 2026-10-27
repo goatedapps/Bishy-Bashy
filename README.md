@@ -1,6 +1,6 @@
 # Bishy Bashy
 
-A four-player browser party game with Totem Shrinker, Perm Mania, and Facial Slot Machine.
+A four-player browser party game with Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys.
 Everyone sees all four players and controls only their own player.
 The static website runs on GitHub Pages; a separate Node WebSocket server coordinates rooms and results.
 
@@ -11,9 +11,18 @@ The static website runs on GitHub Pages; a separate Node WebSocket server coordi
 ## Choose a mode
 
 Create a room, share its QR code or invitation link, and join from up to four phones or tablets.
-Choose **Arcade** for two different games selected at random, played once each in a random order.
+The landing screen only asks for your name and offers **Create room** or **Join room** with a room code.
+The Bishy Bashy! title and a cast of original game characters introduce the games without adding extra setup actions.
+After creating or joining a room, choose a mode on the room screen.
+Game Select uses equal-sized illustrated cards in a scrollable library, with a title search for a larger catalog.
+Choose **Arcade** for five different games selected at random, played once each in a random order.
 Choose **Game Select** for five rounds of one game, with difficulty increasing each round.
 Only the host can change the mode or chosen game after joining.
+The host can use **Back to modes** to keep everyone in the same room and choose again.
+Before the first countdown this returns immediately; during an active round or an unfinished set with scores, confirmation explains that the current set and scores will be cleared for everyone.
+Rules screens include visual examples using the same artwork and color/shape controls as the game.
+**Leave** stays available during play and asks for confirmation before leaving an active set.
+Leaving forfeits only an unfinished round; an already accepted finish and previously earned points remain credited, and the other players can continue.
 Changing the setup resets everyone's Ready state; setup stays locked throughout the full set.
 The host taps **Start set** to show the game's instructions, with no more than three points.
 After clock synchronization, every connected player taps **Ready** on that screen before the shared five-second countdown can begin.
@@ -33,7 +42,7 @@ The accompanying Last game column shows each player's most recent performance an
 The server awards points once per round and retains earned points if a player leaves between rounds.
 New guests can join only after the full set ends; original players can reconnect during it.
 The Arcade length and Game Select round count live in `shared/sets.js`, and new games join the shared catalog in `shared/games.js`.
-Arcade still selects two games, now from a catalog of three.
+Arcade selects five games from the catalog, which currently contains five games.
 
 ## Play Totem Shrinker
 
@@ -158,6 +167,59 @@ The bank loads only for this game after sound is enabled, using the existing per
 The editable composition lives in `scripts/audio/slots.js`, and the delivered WAV files and numerical measurements live in `public/audio/`.
 Automated signal and playback-lifecycle checks pass; balance and physical audio latency still need listening tests on target phones.
 
+## Play Fireworks Craze
+
+Choose **Game Select → Fireworks Craze**, or encounter it in Arcade.
+Wait for the rising golden rocket to reveal a red circle, green triangle, or blue diamond, then press the matching shared button.
+Keyboard controls remain **1 / 2 / 3** or **J / K / L**.
+Burst 12 fireworks before the 30-second deadline; fastest locally measured elapsed time wins.
+Early presses, wrong colors, and expired reaction windows discard that rocket and add a 300 ms recovery before the next launch.
+Completed bursts remain credited after mistakes; unfinished players receive zero set points.
+
+All players receive the same seeded colors and reveal delays, with each player's attempts advancing locally.
+The flight time is **550, 500, 450, 400, and 350 ms** across Game Select, plus a seeded delay of 0, 90, or 180 ms per rocket.
+Reaction windows shrink from **900 to 500 ms**, in 100 ms steps, while Arcade uses the first difficulty.
+These are provisional casual-play settings pending phone playtests.
+Color stays hidden during flight, and matching shapes provide a color-independent visual cue once revealed.
+The fuse bar shows time remaining; bursts and a cross provide visual success and miss feedback during muted play.
+Other lanes show cosmetic bursts from progress reports rather than claiming to reproduce another device's private reaction timing.
+
+The original generated festival background lives in `public/assets/fireworks-festival.png`, with the prompt preserved in [artwork notes](public/assets/fireworks-artwork.md).
+Live rockets, reaction symbols, and burst particles are drawn by `src/firework-view.js` and `src/fireworks.css` for precise local feedback.
+Fireworks reuses the existing original disco audio bank, including three color tones, miss, GO, and finish cues, under the shared opt-in sound controls.
+Deploy both frontend and room service to make the new catalog entry available; the existing protocol 6 message schema is unchanged.
+
+## Play Mimicking Monkeys
+
+Choose **Game Select → Mimicking Monkeys**, or encounter it in Arcade.
+Watch the monkey demonstrate a sequence of red circles, green triangles, and blue diamonds, then copy the order using the shared three buttons.
+Keyboard controls remain **1 / 2 / 3** or **J / K / L**.
+The first sequence has two moves, and every completed stage adds one move to the same seeded prefix.
+Watch inputs are ignored; a **Your turn** label and a question mark indicate when you can answer.
+Copy the order at your own pace; this game does not judge rhythm.
+Neutral dots show sequence length during demonstrations and fill as response moves are accepted, without exposing the answer order.
+Repeated colors have a blank interval between flashes so they remain separate moves.
+
+Arcade requires five stages, ending with a six-move sequence.
+Game Select requires **5, 6, 7, 8, and 9 stages**, ending with sequences of **6 through 10 moves**.
+Demonstration steps take **650, 610, 570, 530, and 490 ms**, with each shape visible for 65% of its step.
+Each demonstration has a 550 ms lead-in and a 250 ms pause before answering.
+A wrong answer resets only the current response and adds 600 ms recovery before that sequence is demonstrated again.
+Completed stages remain credited, and a 100 ms input guard prevents simultaneous presses from submitting multiple answers.
+Finish every stage before the 45-second deadline; fastest local elapsed time wins, and unfinished rounds earn zero set points.
+These are provisional casual-play timings pending physical phone playtests.
+
+Every device uses the same seeded prefix and freezes its local clock mapping when the round is scheduled.
+Other lanes display each player's stage progress without reproducing their private demonstration or response timing.
+Optional demonstration tones reuse the existing three color sounds and are scheduled from the same local timestamps as the shape flashes, with a 150 ms audio lookahead.
+Mute, replay, finish, and interruption cancel queued demonstration sounds; resuming skips past notes, and muted play remains fully supported.
+Backing music, local hit/miss feedback, and finish cues reuse the original disco bank and shared audio controls.
+Audio scheduling checks do not establish physical speaker latency or subjective mix quality.
+
+The original generated character lives in `public/assets/mimicking-monkey.png`, with its prompt preserved in [artwork notes](public/assets/monkeys-artwork.md).
+The leafy stage, shape cues, and response indicators live in `src/monkey-view.js` and `src/monkeys.css`.
+Deploy frontend and room service together to make the new catalog entry available; the protocol 6 message schema is unchanged.
+
 ## Run locally
 
 Install Node.js 22.12 or newer, then run:
@@ -190,7 +252,7 @@ It does not validate each tap or send permission to clear a block.
 Cosmetic progress broadcasts run at most four times per second per player and do not affect input response or rankings.
 A finish is saved to a session-storage outbox, retried until acknowledged, and accepted idempotently.
 Result arrival order does not affect the final ranking.
-Every client ranks Totem Shrinker by elapsed time and Perm Mania by growth and timing score.
+Every client ranks Totem Shrinker, Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys by elapsed time, and Perm Mania by growth and timing score.
 
 This friends-only game trusts client-reported results, with basic bounds and ownership checks.
 It is not a competitive anti-cheat system.
@@ -222,7 +284,7 @@ npm run build
 ```
 
 Automated checks cover deterministic gameplay, all five difficulty levels, shared schedules, room ownership and capacity, progress throttling, delayed and duplicate results, reconnection, and missing players.
-Four-client WebSocket tests complete entire Arcade and Game Select sets for all three games, checking automatic progression and cumulative scoring.
+Four-client WebSocket tests complete entire Arcade and Game Select sets for all five games, checking automatic progression and cumulative scoring.
 Additional checks cover tied points, host migration, locked setup, skipped players, and tempo-scaled audio playback.
 Physical phone/tablet playtesting remains necessary.
 
@@ -252,6 +314,8 @@ A sleeping hosted service may take time to wake up, and redeploying it clears ro
 `shared/totem.js` defines the game rules and deterministic local run.
 `shared/perm.js` defines the rhythm rules; `shared/games.js` supplies the catalog and difficulty settings.
 `shared/slots.js` defines deterministic reel layouts, local stop judgments, and retry timing.
+`shared/fireworks.js` defines seeded rocket reveals, reaction windows, recovery, and local burst completion.
+`shared/monkeys.js` defines seeded memory prefixes, demonstration/response phases, replay recovery, and stage completion.
 `shared/sets.js` supplies mode lengths, random selection, placement awards, and cumulative ranking.
 `src/main.js` coordinates lifecycle, timing, input, rooms, and the result outbox.
 `src/game-view.js` renders towers and results; `src/audio.js` owns audio loading, mixing, and lifecycle.

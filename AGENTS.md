@@ -1,6 +1,6 @@
 # Bishy Bashy
 
-This is a four-device party game with playable Totem Shrinker, Perm Mania, and Facial Slot Machine.
+This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys.
 The Vite frontend deploys independently to GitHub Pages; `server/` is a separate Node WebSocket room service on Render.
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
@@ -19,7 +19,14 @@ Red, green, and blue stop their own continuously scrolling slot rows in any orde
 Reels show approaching faces and judge the portrait nearest the center marker; Game Select reduces travel time per portrait from 320 to 200 ms across five rounds.
 Track slot locks as a monotonic three-bit `reelMask`, rather than assuming the first N rows were stopped.
 `shared/games.js` is the common game registry, difficulty settings, and result ordering.
-`shared/sets.js` defines two-game Arcade, five-round Game Select, shared placement points, and cumulative standings.
+`shared/fireworks.js` owns Fireworks Craze's seeded rockets, reveal windows, and local elapsed-time race to 12 bursts.
+Early, wrong, and expired rockets advance the attempt and cost 300 ms; keep unrevealed colors hidden and render only the local player's actual reaction targets.
+`src/firework-view.js` and `src/fireworks.css` draw the live cues over the generated festival backdrop; remote bursts follow cosmetic progress.
+`shared/monkeys.js` owns Mimicking Monkeys' seeded expanding prefix, watch/play gates, and elapsed-time race through 5–9 stages.
+Wrong responses replay the current prefix after recovery; completed stages persist, and demonstration inputs are ignored.
+`src/monkey-view.js` and `src/monkeys.css` show the original monkey, color/shape flashes, and answer dots without revealing future answers or animating remote demonstrations.
+Memory demonstration tones use the local run's cue timestamps and a bounded audio lookahead; cancel them on replay, mute, finish, or interruption, and skip past cues on resume.
+`shared/sets.js` defines five-game Arcade, five-round Game Select, shared placement points, and cumulative standings.
 `server/rooms.js` owns the fixed set roster, idempotent point awards, intermissions, and readiness gates.
 Arcade shows a cumulative podium for eight seconds, then the next game's three-point rules and an all-player Ready gate.
 Game Select shows rules once and uses the podium's all-player Ready gate between subsequent rounds, with an eight-second minimum intermission.
@@ -29,6 +36,11 @@ Game Select increases Totem blocks from 30 to 70 and Perm tempo from 128 to 160 
 Every device displays all four lanes, with controls for its own player only.
 Shared styles live in `src/style.css`; the pink disco stage lives in `src/games.css`.
 The landing page and set standings use `src/sets.css` and `src/set-view.js`.
+The landing screen only creates or joins rooms; choose modes and games inside the room, with a short explanation visible on each mode card.
+Use the shared `src/game-art.js` artwork for the home cast, equal-sized scrollable game cards, and illustrated rules; the library filters titles and accommodates future games without a wider page.
+The host's Back to modes action resets the shared set while keeping the room; confirm if a round has begun or scores exist.
+Players may explicitly leave active sets after confirmation; preserve accepted finishes, forfeit unfinished rounds, and let remaining players continue without a missing-player wait.
+The join handshake advertises `room-navigation`; show an actionable update message if a new frontend is connected to a server lacking Back/active-Leave support.
 Facial Slot Machine uses `src/slot-view.js` and `src/slots.css`; remote reel animation is cosmetic and must not reset to zero on progress snapshots.
 Use the same three buttons and shared fixed control bar in every current and future game; do not add game-specific button layouts or replace them with a single Stop button.
 Show three horizontal scrolling slot rows per player, stacked red, green, and blue, with upcoming faces visible at narrow widths too.
@@ -55,6 +67,28 @@ Results may stop music and countdown cues, but must not truncate an accepted loc
 - Disconnection does not forfeit; hiding or reloading the active game does.
 - Wait up to 15 seconds for disconnected players at a Ready gate, then allow ready connected players to continue; never skip a connected unready player.
 - Clock uncertainty and GO render delay do not prove physical display synchronization.
+
+## Planned games: proposed build order
+
+The user intends to build all 15 games below gradually, in addition to the three existing games.
+This order prioritizes gameplay variety, with similar racing, button-mashing, and slot mechanics spaced out or added later.
+Mark each entry complete as its game is implemented.
+
+1. [x] Fireworks Craze — color reactions.
+2. [x] Mimicking Monkeys — expanding memory sequences.
+3. [ ] Jump for the Meat — precisely timed bounces.
+4. [ ] Burger Girl — catching falling ingredients.
+5. [ ] Me Find Mistake — spotting the odd picture out.
+6. [ ] Dice, Dice, More Dice — quickly choosing the highest die.
+7. [ ] Facing Which Way — tracking a picture through flips.
+8. [ ] It's Raining Coins — moving to catch falling coins.
+9. [ ] Dodge or Die!! — avoiding obstacles and timing jumps.
+10. [ ] Horse Speeder — accelerating and weaving between horses.
+11. [ ] Shark Jumper — following colored input sequences.
+12. [ ] Blaster Soda Race — alternating buttons to accelerate.
+13. [ ] Building Climber — alternating buttons to climb.
+14. [ ] Burst the Balloon — rapid button presses to inflate and burst a balloon.
+15. [ ] Wonder Oven — stopping three matching food symbols.
 
 ## Maintenance
 

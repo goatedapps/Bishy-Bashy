@@ -175,7 +175,8 @@ test('new players cannot join an active test and connected tokens cannot be reus
   service.handle(other, { type: 'join', code: room.code, name: 'Late' });
   assert.match(sent.get(other).at(-1).message, /underway/);
   service.handle(clients[0], { type: 'leave' });
-  assert.equal(room.players.length, 2);
+  assert.equal(room.players.length, 1);
+  assert.equal(clients[0].room, null);
 });
 
 test('only the host can switch games, switching resets ready, and active rounds stay locked', () => {

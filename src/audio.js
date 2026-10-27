@@ -4,6 +4,8 @@ const BASE_URL = import.meta.env?.BASE_URL || '/';
 const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
 const PROFILES = {
+  'mimicking-monkeys': { music: 'music', urgency: 'urgency', go: 'go' },
+  'fireworks-craze': { music: 'music', urgency: 'urgency', go: 'go' },
   'totem-shrinker': { music: 'music', urgency: 'urgency', go: 'go' },
   'perm-mania': { music: 'permMusic', urgency: 'permUrgency', go: 'permGo' },
   'facial-slot-machine': { music: 'slotMusic', urgency: 'slotUrgency', go: 'slotGo' },
@@ -36,6 +38,8 @@ export class GameAudio {
     this.previewing = false;
     this.previewRequest = 0;
     this.game = 'totem-shrinker';
+    this.demonstrationKey = null;
+    this.demonstrationNotes = new Set();
   }
 
   read(key) { try { return this.storage?.getItem(key); } catch { return null; } }
@@ -61,7 +65,7 @@ export class GameAudio {
     this.applyVolumes();
     this.context.addEventListener('statechange', () => {
       if (this.context.state !== 'running') this.stopVoices(() => true, true);
-      this.countdownKey = null; this.musicKey = null;
+      this.countdownKey = null; this.musicKey = null; this.demonstrationNotes.clear();
       if (this.context.state === 'running') this.synchronize();
       this.onChange();
     });
@@ -102,6 +106,8 @@ export class GameAudio {
     this.loadFailed = result.some(item => item.status === 'rejected');
     this.loading = null;
     this.countdownKey = null;
+    this.demonstrationNotes.clear();
+    this.stopVoices(voice => voice.group === 'demonstration');
     this.stopVoices(voice => voice.group === 'round');
     this.onChange();
     if (bank !== this.game) return this.load();
@@ -120,7 +126,7 @@ export class GameAudio {
     if (!this.enabled) {
       this.stopPreview();
       this.stopVoices(() => true);
-      this.countdownKey = null; this.musicKey = null;
+      this.countdownKey = null; this.musicKey = null; this.demonstrationNotes.clear();
     }
     this.onChange();
   }
@@ -191,6 +197,23 @@ export class GameAudio {
       this.duck.gain.linearRampToValueAtTime(id === 'mistake' ? .4 : .66, time + .012);
       this.duck.gain.setTargetAtTime(1, time + .09, .06);
     }
+  }
+
+  demonstrate(key, cues) {
+    if (this.demonstrationKey !== key) {
+      this.stopVoices(voice => voice.group === 'demonstration');
+      this.demonstrationKey = key;
+      this.demonstrationNotes.clear();
+    }
+    if (!this.enabled || this.context?.state !== 'running' || !this.target || this.target.playerDone || this.target.game !== 'mimicking-monkeys') return;
+    const now = this.now();
+    cues.forEach((cue, index) => {
+      const remaining = cue.at - now;
+      // Look ahead on the audio clock without scheduling a whole sequence of future voices.
+      if (remaining < 0 || remaining > 150 || cue.at >= this.target.end || this.demonstrationNotes.has(index)) return;
+      const voice = this.source(['red', 'green', 'blue'][cue.color], { at: this.context.currentTime + remaining / 1000, group: 'demonstration' });
+      if (voice) this.demonstrationNotes.add(index);
+    });
   }
 
   scheduleRound(id, start, end, musicOwner, playerDone = false, { game = this.game, cues = [], bpm = 128 } = {}) {
@@ -269,12 +292,13 @@ export class GameAudio {
 
   stopRound() {
     this.target = null; this.musicKey = null; this.countdownKey = null;
-    this.stopVoices(voice => voice.group === 'round' || voice.group === 'music');
+    this.demonstrationKey = null; this.demonstrationNotes.clear();
+    this.stopVoices(voice => voice.group === 'round' || voice.group === 'music' || voice.group === 'demonstration');
   }
 
   endPlayer() {
     if (this.target) this.target.playerDone = true;
-    this.stopVoices(voice => voice.group === 'round');
+    this.stopVoices(voice => voice.group === 'round' || voice.group === 'demonstration');
   }
 
   cancel() {

@@ -1,6 +1,10 @@
 import { COLORS, createSequence } from '../shared/totem.js';
 import { PERM_GAME } from '../shared/perm.js';
 import { SLOT_GAME, slotLayout } from '../shared/slots.js';
+import { FIREWORK_GAME } from '../shared/fireworks.js';
+import { FireworkStage, fireworkBadge } from './firework-view.js';
+import { MONKEY_GAME } from '../shared/monkeys.js';
+import { MonkeyStage, monkeyPortrait } from './monkey-view.js';
 import { SlotStage, facePortrait, renderTarget } from './slot-view.js';
 import { GAMES, comparePlayers, isRoundActive } from '../shared/games.js';
 
@@ -42,7 +46,9 @@ export class GameView {
       const avatar = dancer(index);
       avatar.hidden = true;
       const slots = new SlotStage();
-      zone.append(tower, avatar, slots.cabinet);
+      const fireworks = new FireworkStage();
+      const monkeys = new MonkeyStage();
+      zone.append(tower, avatar, slots.cabinet, fireworks.element, monkeys.element);
       const remaining = node('div', 'remaining');
       const progress = node('div', 'progress');
       const fill = node('span', '');
@@ -50,7 +56,7 @@ export class GameView {
       const status = node('p', 'seat-status');
       lane.append(name, zone, node('div', 'base'), remaining, progress, status);
       $('player-lanes').append(lane);
-      return { lane, name, tower, avatar, slots, remaining, fill, status, towerKey: '' };
+      return { lane, name, tower, avatar, slots, fireworks, monkeys, remaining, fill, status, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -67,6 +73,8 @@ export class GameView {
     const game = active ? round.game : room.selectedGame;
     const perm = game === PERM_GAME;
     const slots = game === SLOT_GAME;
+    const fireworks = game === FIREWORK_GAME;
+    const monkeys = game === MONKEY_GAME;
     const sequence = game === 'totem-shrinker' && round ? createSequence(round.seed, round.blockCount) : [];
     if (slots && active) renderTarget(round);
     $('arena').classList.toggle('lobby', !active);
@@ -79,10 +87,16 @@ export class GameView {
       const frozen = ownRun && !ownRun.done && time < ownRun.run.blockedUntil;
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';
-      elements.tower.hidden = perm || slots;
+      elements.tower.hidden = perm || slots || fireworks || monkeys;
       elements.avatar.hidden = !perm;
       elements.slots.cabinet.hidden = !slots;
-      if (slots) {
+      elements.fireworks.element.hidden = !fireworks;
+      elements.monkeys.element.hidden = !monkeys;
+      if (monkeys) {
+        elements.monkeys.render(round || {}, ownRun?.run, time, active, Boolean(player), cleared, Boolean(status));
+      } else if (fireworks) {
+        elements.fireworks.render(round || {}, ownRun?.run, time, active, Boolean(player), cleared, Boolean(status));
+      } else if (slots) {
         if (!active || ownRun) elements.slots.render(round || { seed: 0 }, ownRun?.run.reelMask ?? player?.progress?.reelMask ?? 0, ownRun ? time - ownRun.start : 0, ownRun?.run, active, Boolean(player));
       }
       else if (perm) {
@@ -97,10 +111,10 @@ export class GameView {
           elements.towerKey = key;
         }
       }
-      const value = perm || slots ? cleared : active && player ? Math.max(0, round.blockCount - cleared) : 0;
-      const counterKey = `${game}/${value}`;
+      const value = perm || slots || fireworks || monkeys ? cleared : active && player ? Math.max(0, round.blockCount - cleared) : 0;
+      const counterKey = `${game}/${value}/${round?.goal}`;
       if (elements.remaining.dataset.value !== counterKey) {
-        elements.remaining.replaceChildren(node('strong', '', String(value)), document.createTextNode(slots ? ' / 3' : perm ? ' / 8' : 'left'));
+        elements.remaining.replaceChildren(node('strong', '', String(value)), document.createTextNode(monkeys ? ` / ${round?.goal || 5}` : fireworks ? ` / ${round?.goal || 12}` : slots ? ' / 3' : perm ? ' / 8' : 'left'));
         elements.remaining.dataset.value = counterKey;
       }
       elements.fill.style.width = `${active && player ? cleared / round.goal * 100 : 0}%`;
@@ -114,6 +128,22 @@ export class GameView {
   }
 
   animate(room, local, time, elapsed) {
+    if (room.round?.game === MONKEY_GAME && isRoundActive(room.round)) {
+      this.lanes.forEach((elements, index) => {
+        const player = room.players[index];
+        const own = elements.lane.classList.contains('you') ? local : null;
+        elements.monkeys.render(room.round, own?.run, time, true, Boolean(player), own?.run.cleared ?? player?.progress?.cleared ?? 0, Boolean(own?.done || player?.result));
+      });
+      return;
+    }
+    if (room.round?.game === FIREWORK_GAME && isRoundActive(room.round)) {
+      this.lanes.forEach((elements, index) => {
+        const player = room.players[index];
+        const own = player?.id && elements.lane.classList.contains('you') ? local : null;
+        elements.fireworks.render(room.round, own?.run, time, true, Boolean(player), own?.run.cleared ?? player?.progress?.cleared ?? 0, Boolean(own?.done || player?.result));
+      });
+      return;
+    }
     if (room.round?.game === SLOT_GAME && isRoundActive(room.round)) {
       this.lanes.forEach((elements, index) => {
         const own = elements.lane.classList.contains('you') ? local : null;
@@ -158,7 +188,7 @@ export class GameView {
       const seat = node('div', 'podium-seat');
       const step = node('div', 'podium-step');
       step.append(node('strong', '', String(rank(player))), document.createTextNode(perm ? `${player.result.cleared} / 8` : resultLabel(player.result)));
-      seat.append(game === SLOT_GAME ? facePortrait(slotLayout(room.round.seed).target) : perm ? dancer(room.players.indexOf(player), player.result.cleared) : block(index % 3), node('div', 'podium-name', player.name), step);
+      seat.append(game === MONKEY_GAME ? monkeyPortrait() : game === FIREWORK_GAME ? fireworkBadge() : game === SLOT_GAME ? facePortrait(slotLayout(room.round.seed).target) : perm ? dancer(room.players.indexOf(player), player.result.cleared) : block(index % 3), node('div', 'podium-name', player.name), step);
       return seat;
     }));
     $('result-rows').replaceChildren(...sorted.map(player => {
