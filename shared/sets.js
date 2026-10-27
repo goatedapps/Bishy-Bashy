@@ -3,6 +3,7 @@ import { PERM_GAME } from './perm.js';
 import { SLOT_GAME } from './slots.js';
 import { FIREWORK_GAME } from './fireworks.js';
 import { MONKEY_GAME } from './monkeys.js';
+import { JUMP_GAME } from './jump.js';
 
 export const ARCADE_LENGTH = 5;
 export const GAME_SELECT_LENGTH = 5;
@@ -37,6 +38,7 @@ export function setStandings(players) {
 }
 
 export function roundDetail(round) {
+  if (round.game === JUMP_GAME) return `${round.goal} boosts · Speed ${round.difficulty}`;
   if (round.game === MONKEY_GAME) return `${round.goal} stages · ${round.goal + 1} moves`;
   if (round.game === FIREWORK_GAME) return `${round.goal} bursts · Speed ${round.difficulty}`;
   if (round.game === SLOT_GAME) return `3 reels · Speed ${round.difficulty}`;

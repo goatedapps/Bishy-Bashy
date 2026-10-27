@@ -1,6 +1,6 @@
 # Bishy Bashy
 
-This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys.
+This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, and Jump for the Meat.
 The Vite frontend deploys independently to GitHub Pages; `server/` is a separate Node WebSocket room service on Render.
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
@@ -26,6 +26,9 @@ Early, wrong, and expired rockets advance the attempt and cost 300 ms; keep unre
 Wrong responses replay the current prefix after recovery; completed stages persist, and demonstration inputs are ignored.
 `src/monkey-view.js` and `src/monkeys.css` show the original monkey, color/shape flashes, and answer dots without revealing future answers or animating remote demonstrations.
 Memory demonstration tones use the local run's cue timestamps and a bounded audio lookahead; cancel them on replay, mute, finish, or interruption, and skip past cues on resume.
+`shared/jump.js` owns seeded bounce arcs, inclusive landing windows, recovery, and the elapsed-time race to the final meat-reaching apex.
+Any of the three buttons boosts a valid landing; preserve successful boosts after a miss and resolve final completion at its scheduled local apex, even on a delayed frame.
+`src/jump-view.js` and `src/jump.css` draw the original dinosaur and landing guide; remote bounces remain cosmetic, and the home cast stays bounded to five characters as the catalog grows.
 `shared/sets.js` defines five-game Arcade, five-round Game Select, shared placement points, and cumulative standings.
 `server/rooms.js` owns the fixed set roster, idempotent point awards, intermissions, and readiness gates.
 Arcade shows a cumulative podium for eight seconds, then the next game's three-point rules and an all-player Ready gate.
@@ -76,7 +79,7 @@ Mark each entry complete as its game is implemented.
 
 1. [x] Fireworks Craze — color reactions.
 2. [x] Mimicking Monkeys — expanding memory sequences.
-3. [ ] Jump for the Meat — precisely timed bounces.
+3. [x] Jump for the Meat — precisely timed bounces.
 4. [ ] Burger Girl — catching falling ingredients.
 5. [ ] Me Find Mistake — spotting the odd picture out.
 6. [ ] Dice, Dice, More Dice — quickly choosing the highest die.

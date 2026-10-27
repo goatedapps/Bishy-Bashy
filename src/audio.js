@@ -4,6 +4,7 @@ const BASE_URL = import.meta.env?.BASE_URL || '/';
 const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
 const PROFILES = {
+  'jump-for-the-meat': { music: 'music', urgency: 'urgency', go: 'go' },
   'mimicking-monkeys': { music: 'music', urgency: 'urgency', go: 'go' },
   'fireworks-craze': { music: 'music', urgency: 'urgency', go: 'go' },
   'totem-shrinker': { music: 'music', urgency: 'urgency', go: 'go' },

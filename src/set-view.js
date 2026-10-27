@@ -13,7 +13,7 @@ const node = (tag, className, text) => {
 export class SetView {
   constructor() {
     this.key = '';
-    $('home-cast').append(...Object.keys(GAMES).map(gameArt));
+    $('home-cast').append(...Object.keys(GAMES).slice(-5).map(gameArt));
     for (const game of Object.values(GAMES)) {
       const button = node('button', `game-choice choice-${game.id}`);
       button.type = 'button';

@@ -1,6 +1,7 @@
 import { facePortrait } from './slot-view.js';
 import { monkeyPortrait } from './monkey-view.js';
 import { fireworkBadge } from './firework-view.js';
+import { dinoPortrait } from './jump-view.js';
 
 const node = (tag, className, text) => {
   const element = document.createElement(tag);
@@ -12,7 +13,8 @@ const node = (tag, className, text) => {
 export function gameArt(game) {
   const art = node('span', `game-art art-${game}`);
   art.setAttribute('aria-hidden', 'true');
-  if (game === 'mimicking-monkeys') art.append(monkeyPortrait());
+  if (game === 'jump-for-the-meat') art.append(dinoPortrait());
+  else if (game === 'mimicking-monkeys') art.append(monkeyPortrait());
   else if (game === 'fireworks-craze') art.append(fireworkBadge());
   else if (game === 'facial-slot-machine') art.append(facePortrait(0));
   else if (game === 'perm-mania') {
@@ -34,7 +36,11 @@ export function ruleVisual(game) {
   const first = node('div', 'rule-example');
   const second = node('div', 'rule-example');
   let label;
-  if (game === 'mimicking-monkeys') {
+  if (game === 'jump-for-the-meat') {
+    first.append(gameArt(game), node('span', 'jump-meat'), node('strong', '', 'Time the landing'));
+    second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Any button boosts your bounce'));
+    label = 'Press any colored button as the dinosaur lands and its ring turns gold. Each boost jumps higher toward the meat.';
+  } else if (game === 'mimicking-monkeys') {
     first.append(gameArt(game), shapes([0, 1, 2]), node('strong', '', 'Watch the order'));
     second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Copy the order'));
     label = 'Watch red circle, green triangle, blue diamond; then press red, green, blue in that order.';

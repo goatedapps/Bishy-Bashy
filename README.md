@@ -1,6 +1,6 @@
 # Bishy Bashy
 
-A four-player browser party game with Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys.
+A four-player browser party game with Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, and Jump for the Meat.
 Everyone sees all four players and controls only their own player.
 The static website runs on GitHub Pages; a separate Node WebSocket server coordinates rooms and results.
 
@@ -42,7 +42,7 @@ The accompanying Last game column shows each player's most recent performance an
 The server awards points once per round and retains earned points if a player leaves between rounds.
 New guests can join only after the full set ends; original players can reconnect during it.
 The Arcade length and Game Select round count live in `shared/sets.js`, and new games join the shared catalog in `shared/games.js`.
-Arcade selects five games from the catalog, which currently contains five games.
+Arcade selects five distinct games from the catalog, which currently contains six games.
 
 ## Play Totem Shrinker
 
@@ -220,6 +220,30 @@ The original generated character lives in `public/assets/mimicking-monkey.png`, 
 The leafy stage, shape cues, and response indicators live in `src/monkey-view.js` and `src/monkeys.css`.
 Deploy frontend and room service together to make the new catalog entry available; the protocol 6 message schema is unchanged.
 
+## Play Jump for the Meat
+
+Choose **Game Select → Jump for the Meat**, or encounter it in Arcade.
+The dinosaur bounces automatically; press **any of the three buttons** as it lands, when the landing ring turns gold.
+Keyboard controls remain **1 / 2 / 3** or **J / K / L**.
+The countdown bar and descending character help you anticipate the landing, and each well-timed press makes the next bounce higher.
+After the last boost, reach the meat at the final jump's apex to finish; final flight time is included in your locally measured result.
+An early tap or missed landing causes a 450 ms recovery before another attempt, while successful boosts remain credited.
+A 100 ms input guard ignores simultaneous buttons and accidental double presses.
+Unfinished players time out after 30 seconds and receive zero set points.
+
+Arcade requires six boosts; Game Select requires **6, 7, 8, 9, and 10 boosts**.
+Base bounce periods shorten from **1,200 to 1,000 ms** in 50 ms steps, with a seeded −80, 0, or +80 ms adjustment per height shared by all players.
+Landing windows narrow from **±150 to ±90 ms** in 15 ms steps; both window boundaries are inclusive.
+Input judgments use the frozen local round clock, and a delayed animation frame cannot extend a missed landing or move the final apex time.
+Remote bounces are cosmetic; only local inputs determine a player's result.
+These initial settings are provisional until playtested on phones.
+
+The game uses an original generated dinosaur and a peach-and-sand stage, with meat, landing-ring, and timing-bar shapes drawn in code.
+The delivered character is `public/assets/jump-dino.png`, with its full prompt preserved in [artwork notes](public/assets/jump-artwork.md).
+Illustrated rules explain the landing and the three interchangeable buttons, and all essential cues remain visible while muted.
+The game reuses the original opt-in disco audio bank for backing music, accepted boosts, misses, GO, and finish cues.
+Deploy frontend and room service together to register the new game in both catalogs.
+
 ## Run locally
 
 Install Node.js 22.12 or newer, then run:
@@ -252,7 +276,7 @@ It does not validate each tap or send permission to clear a block.
 Cosmetic progress broadcasts run at most four times per second per player and do not affect input response or rankings.
 A finish is saved to a session-storage outbox, retried until acknowledged, and accepted idempotently.
 Result arrival order does not affect the final ranking.
-Every client ranks Totem Shrinker, Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys by elapsed time, and Perm Mania by growth and timing score.
+Every client ranks Totem Shrinker, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, and Jump for the Meat by elapsed time, and Perm Mania by growth and timing score.
 
 This friends-only game trusts client-reported results, with basic bounds and ownership checks.
 It is not a competitive anti-cheat system.
@@ -284,7 +308,7 @@ npm run build
 ```
 
 Automated checks cover deterministic gameplay, all five difficulty levels, shared schedules, room ownership and capacity, progress throttling, delayed and duplicate results, reconnection, and missing players.
-Four-client WebSocket tests complete entire Arcade and Game Select sets for all five games, checking automatic progression and cumulative scoring.
+Four-client WebSocket tests complete entire Arcade and Game Select sets for all six games, checking automatic progression and cumulative scoring.
 Additional checks cover tied points, host migration, locked setup, skipped players, and tempo-scaled audio playback.
 Physical phone/tablet playtesting remains necessary.
 
@@ -316,6 +340,7 @@ A sleeping hosted service may take time to wake up, and redeploying it clears ro
 `shared/slots.js` defines deterministic reel layouts, local stop judgments, and retry timing.
 `shared/fireworks.js` defines seeded rocket reveals, reaction windows, recovery, and local burst completion.
 `shared/monkeys.js` defines seeded memory prefixes, demonstration/response phases, replay recovery, and stage completion.
+`shared/jump.js` defines seeded jump arcs, landing judgments, retry timing, and final-apex completion.
 `shared/sets.js` supplies mode lengths, random selection, placement awards, and cumulative ranking.
 `src/main.js` coordinates lifecycle, timing, input, rooms, and the result outbox.
 `src/game-view.js` renders towers and results; `src/audio.js` owns audio loading, mixing, and lifecycle.

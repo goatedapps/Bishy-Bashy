@@ -5,6 +5,7 @@ import { PERM_GAME, demoCues } from '../shared/perm.js';
 import { SLOT_GAME } from '../shared/slots.js';
 import { FIREWORK_GAME } from '../shared/fireworks.js';
 import { MONKEY_GAME } from '../shared/monkeys.js';
+import { JUMP_GAME } from '../shared/jump.js';
 import { GAMES, createRun, roundSettings, isRoundActive, gameRules } from '../shared/games.js';
 import { MODES, roundDetail } from '../shared/sets.js';
 import { GameView } from './game-view.js';
@@ -286,8 +287,9 @@ function enforceLifecycle(time) {
     for (const event of localRound.run.events.splice(0)) if (event.type === 'growth') audio.play('permGrow');
     if (localRound.run.done) complete('finished', localRound.run.elapsed);
   } else {
-    if (room.round.game === FIREWORK_GAME) localRound.run.advance(time);
-    if (time >= localRound.end) complete('timeout');
+    if (room.round.game === FIREWORK_GAME || room.round.game === JUMP_GAME) localRound.run.advance(time);
+    if (localRound.run.done) complete('finished', localRound.run.elapsed);
+    else if (time >= localRound.end) complete('timeout');
     else if (room.round.game === MONKEY_GAME) audio.demonstrate(`${localRound.id}/${localRound.run.demoVersion}`, localRound.run.cues);
   }
 }
@@ -454,6 +456,7 @@ function updateGameProfile() {
   document.body.classList.toggle('slot-theme', Boolean(room && slots));
   document.body.classList.toggle('firework-theme', Boolean(room && game === FIREWORK_GAME));
   document.body.classList.toggle('monkey-theme', Boolean(room && game === MONKEY_GAME));
+  document.body.classList.toggle('jump-theme', Boolean(room && game === JUMP_GAME));
   document.body.classList.toggle('in-set', Boolean(inSet));
   const title = !room ? 'Bishy Bashy!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'intermission' ? 'Standings' : room.set?.phase === 'instructions' || active ? GAMES[game].title : 'Choose your mode';
   if (document.querySelector('.game-title').textContent !== title) document.querySelector('.game-title').textContent = title;

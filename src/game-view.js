@@ -5,6 +5,8 @@ import { FIREWORK_GAME } from '../shared/fireworks.js';
 import { FireworkStage, fireworkBadge } from './firework-view.js';
 import { MONKEY_GAME } from '../shared/monkeys.js';
 import { MonkeyStage, monkeyPortrait } from './monkey-view.js';
+import { JUMP_GAME } from '../shared/jump.js';
+import { JumpStage, dinoPortrait } from './jump-view.js';
 import { SlotStage, facePortrait, renderTarget } from './slot-view.js';
 import { GAMES, comparePlayers, isRoundActive } from '../shared/games.js';
 
@@ -48,7 +50,8 @@ export class GameView {
       const slots = new SlotStage();
       const fireworks = new FireworkStage();
       const monkeys = new MonkeyStage();
-      zone.append(tower, avatar, slots.cabinet, fireworks.element, monkeys.element);
+      const jump = new JumpStage();
+      zone.append(tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element);
       const remaining = node('div', 'remaining');
       const progress = node('div', 'progress');
       const fill = node('span', '');
@@ -56,7 +59,7 @@ export class GameView {
       const status = node('p', 'seat-status');
       lane.append(name, zone, node('div', 'base'), remaining, progress, status);
       $('player-lanes').append(lane);
-      return { lane, name, tower, avatar, slots, fireworks, monkeys, remaining, fill, status, towerKey: '' };
+      return { lane, name, tower, avatar, slots, fireworks, monkeys, jump, remaining, fill, status, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -75,6 +78,7 @@ export class GameView {
     const slots = game === SLOT_GAME;
     const fireworks = game === FIREWORK_GAME;
     const monkeys = game === MONKEY_GAME;
+    const jump = game === JUMP_GAME;
     const sequence = game === 'totem-shrinker' && round ? createSequence(round.seed, round.blockCount) : [];
     if (slots && active) renderTarget(round);
     $('arena').classList.toggle('lobby', !active);
@@ -87,12 +91,15 @@ export class GameView {
       const frozen = ownRun && !ownRun.done && time < ownRun.run.blockedUntil;
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';
-      elements.tower.hidden = perm || slots || fireworks || monkeys;
+      elements.tower.hidden = perm || slots || fireworks || monkeys || jump;
       elements.avatar.hidden = !perm;
       elements.slots.cabinet.hidden = !slots;
       elements.fireworks.element.hidden = !fireworks;
       elements.monkeys.element.hidden = !monkeys;
-      if (monkeys) {
+      elements.jump.element.hidden = !jump;
+      if (jump) {
+        elements.jump.render(round || {}, ownRun?.run, time, 0, active, Boolean(player), cleared, Boolean(status));
+      } else if (monkeys) {
         elements.monkeys.render(round || {}, ownRun?.run, time, active, Boolean(player), cleared, Boolean(status));
       } else if (fireworks) {
         elements.fireworks.render(round || {}, ownRun?.run, time, active, Boolean(player), cleared, Boolean(status));
@@ -111,10 +118,10 @@ export class GameView {
           elements.towerKey = key;
         }
       }
-      const value = perm || slots || fireworks || monkeys ? cleared : active && player ? Math.max(0, round.blockCount - cleared) : 0;
+      const value = perm || slots || fireworks || monkeys || jump ? cleared : active && player ? Math.max(0, round.blockCount - cleared) : 0;
       const counterKey = `${game}/${value}/${round?.goal}`;
       if (elements.remaining.dataset.value !== counterKey) {
-        elements.remaining.replaceChildren(node('strong', '', String(value)), document.createTextNode(monkeys ? ` / ${round?.goal || 5}` : fireworks ? ` / ${round?.goal || 12}` : slots ? ' / 3' : perm ? ' / 8' : 'left'));
+        elements.remaining.replaceChildren(node('strong', '', String(value)), document.createTextNode(jump ? ` / ${round?.goal || 6}` : monkeys ? ` / ${round?.goal || 5}` : fireworks ? ` / ${round?.goal || 12}` : slots ? ' / 3' : perm ? ' / 8' : 'left'));
         elements.remaining.dataset.value = counterKey;
       }
       elements.fill.style.width = `${active && player ? cleared / round.goal * 100 : 0}%`;
@@ -128,6 +135,14 @@ export class GameView {
   }
 
   animate(room, local, time, elapsed) {
+    if (room.round?.game === JUMP_GAME && isRoundActive(room.round)) {
+      this.lanes.forEach((elements, index) => {
+        const player = room.players[index];
+        const own = elements.lane.classList.contains('you') ? local : null;
+        elements.jump.render(room.round, own?.run, time, elapsed, true, Boolean(player), own?.run.cleared ?? player?.progress?.cleared ?? 0, Boolean(own?.done || player?.result));
+      });
+      return;
+    }
     if (room.round?.game === MONKEY_GAME && isRoundActive(room.round)) {
       this.lanes.forEach((elements, index) => {
         const player = room.players[index];
@@ -188,7 +203,7 @@ export class GameView {
       const seat = node('div', 'podium-seat');
       const step = node('div', 'podium-step');
       step.append(node('strong', '', String(rank(player))), document.createTextNode(perm ? `${player.result.cleared} / 8` : resultLabel(player.result)));
-      seat.append(game === MONKEY_GAME ? monkeyPortrait() : game === FIREWORK_GAME ? fireworkBadge() : game === SLOT_GAME ? facePortrait(slotLayout(room.round.seed).target) : perm ? dancer(room.players.indexOf(player), player.result.cleared) : block(index % 3), node('div', 'podium-name', player.name), step);
+      seat.append(game === JUMP_GAME ? dinoPortrait() : game === MONKEY_GAME ? monkeyPortrait() : game === FIREWORK_GAME ? fireworkBadge() : game === SLOT_GAME ? facePortrait(slotLayout(room.round.seed).target) : perm ? dancer(room.players.indexOf(player), player.result.cleared) : block(index % 3), node('div', 'podium-name', player.name), step);
       return seat;
     }));
     $('result-rows').replaceChildren(...sorted.map(player => {

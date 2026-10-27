@@ -8,6 +8,7 @@ import { PermRun, PERM_GAME } from '../shared/perm.js';
 import { SLOT_GAME } from '../shared/slots.js';
 import { FIREWORK_GAME } from '../shared/fireworks.js';
 import { MONKEY_GAME, MonkeyRun } from '../shared/monkeys.js';
+import { JUMP_GAME, JumpRun } from '../shared/jump.js';
 import { comparePlayers } from '../shared/games.js';
 
 function receiveProtocol(socket, predicate) {
@@ -21,7 +22,7 @@ function receiveProtocol(socket, predicate) {
   });
 }
 
-for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-select', 'totem-shrinker', 5], ['game-select', PERM_GAME, 5], ['game-select', SLOT_GAME, 5], ['game-select', FIREWORK_GAME, 5], ['game-select', MONKEY_GAME, 5]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
+for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-select', 'totem-shrinker', 5], ['game-select', PERM_GAME, 5], ['game-select', SLOT_GAME, 5], ['game-select', FIREWORK_GAME, 5], ['game-select', MONKEY_GAME, 5], ['game-select', JUMP_GAME, 5]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
   const app = await createApp();
   let time = 1_000_000;
   app.rooms.now = () => time;
@@ -53,7 +54,13 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
     const round = state.round;
     assert.equal(round.difficulty, mode === 'arcade' ? 1 : index + 1);
     if (mode === 'game-select') assert.equal(round.game, game);
-    const monkeyRuns = round.game === MONKEY_GAME ? clients.map((_, place) => {
+    const simulatedRuns = round.game === JUMP_GAME ? clients.map((_, place) => {
+      const run = new JumpRun(round, 0);
+      for (let boost = 0; boost < round.goal; boost++) run.tap(boost % 3, run.landAt + place * 15);
+      run.advance(run.finishAt);
+      assert.equal(run.done, true);
+      return run;
+    }) : round.game === MONKEY_GAME ? clients.map((_, place) => {
       const run = new MonkeyRun(round, 0);
       for (let stage = 0; stage < round.goal; stage++) {
         const playAt = run.playAt;
@@ -62,9 +69,9 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
       assert.equal(run.done, true);
       return run;
     }) : null;
-    time = monkeyRuns ? round.startAt + Math.max(...monkeyRuns.map(run => run.elapsed)) + 100 : round.game === PERM_GAME ? round.endAt + 100 : round.startAt + 4000;
+    time = simulatedRuns ? round.startAt + Math.max(...simulatedRuns.map(run => run.elapsed)) + 100 : round.game === PERM_GAME ? round.endAt + 100 : round.startAt + 4000;
     waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.history.length === index + 1);
-    clients.forEach((socket, place) => send(socket, { type: 'result', roundId: round.id, status: 'finished', elapsed: monkeyRuns ? monkeyRuns[place].elapsed : round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: round.goal, mistakes: 0, ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}), ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) }));
+    clients.forEach((socket, place) => send(socket, { type: 'result', roundId: round.id, status: 'finished', elapsed: simulatedRuns ? simulatedRuns[place].elapsed : round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: round.goal, mistakes: 0, ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}), ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) }));
     state = (await waiting).room;
     assert.deepEqual(state.set.players.map(player => player.points), [10, 7, 4, 1].map(points => points * (index + 1)));
     if (index + 1 < length) {
