@@ -13,6 +13,7 @@ export class JumpRun {
     this.goal = round.goal;
     this.periodMs = round.periodMs;
     this.windowMs = round.windowMs;
+    this.perfectMs = round.perfectMs ?? Math.round(round.windowMs * .3);
     this.delays = createSequence(round.seed, round.goal + 1).map(value => (value - 1) * 80);
     this.launchedAt = localStart;
     this.launchHeight = 0;
@@ -42,12 +43,13 @@ export class JumpRun {
     if (time >= this.end) return 'expired';
     if (this.finishAt !== null) return 'reaching';
     if (time < this.blockedUntil) return 'stumble';
-    return time >= this.landAt - this.windowMs && time <= this.landAt + this.windowMs ? 'land' : 'air';
+    const error = Math.abs(time - this.landAt);
+    return error <= this.perfectMs ? 'perfect' : error <= this.windowMs ? 'land' : 'air';
   }
 
   miss(time) {
     this.mistakes++;
-    this.feedback = { kind: 'miss', at: time };
+    this.feedback = { kind: 'miss', at: time, label: time < this.landAt ? 'Too early!' : 'Too late!' };
     this.blockedUntil = time + JUMP_RECOVERY_MS;
     this.launchedAt = this.blockedUntil;
     this.launchHeight = 0;
@@ -71,15 +73,18 @@ export class JumpRun {
     this.advance(time);
     if (time < this.blockedUntil) return { type: 'ignored' };
     this.lastTap = time;
-    if (this.phase(time) !== 'land') {
+    const phase = this.phase(time);
+    if (phase !== 'land' && phase !== 'perfect') {
       this.miss(time);
       return { type: 'mistake' };
     }
     this.launchHeight = this.heightAt(time);
-    this.cleared++;
+    const perfect = phase === 'perfect';
+    const gain = Math.min(perfect ? 2 : 1, this.goal - this.cleared);
+    this.cleared += gain;
     this.launchedAt = time;
-    this.feedback = { kind: 'boost', at: time };
+    this.feedback = { kind: 'boost', at: time, perfect, gain };
     if (this.cleared === this.goal) this.finishAt = time + this.arcMs / 2;
-    return { type: 'hit' };
+    return { type: perfect ? 'jumpPerfect' : 'hit', gain };
   }
 }

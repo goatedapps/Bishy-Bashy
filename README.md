@@ -223,9 +223,12 @@ Deploy frontend and room service together to make the new catalog entry availabl
 ## Play Jump for the Meat
 
 Choose **Game Select → Jump for the Meat**, or encounter it in Arcade.
-The dinosaur bounces automatically; press **any of the three buttons** as it lands, when the landing ring turns gold.
+The dinosaur bounces automatically; press **any of the three buttons** as it lands, when the landing ring turns gold or green.
 Keyboard controls remain **1 / 2 / 3** or **J / K / L**.
-The countdown bar and descending character help you anticipate the landing, and each well-timed press makes the next bounce higher.
+The moving timing cursor and descending character help you anticipate the landing.
+The wide gold zone gives **Good +1**, while its smaller green center gives **Perfect +2**, making a larger height gain and shortening the race.
+You can take a safe early landing or wait for the center to gain two boosts; remaining progress is capped at the goal.
+Accepted boosts stretch the dinosaur briefly and create an impact burst; a Perfect landing also plays a distinct optional flourish.
 After the last boost, reach the meat at the final jump's apex to finish; final flight time is included in your locally measured result.
 An early tap or missed landing causes a 450 ms recovery before another attempt, while successful boosts remain credited.
 A 100 ms input guard ignores simultaneous buttons and accidental double presses.
@@ -234,14 +237,17 @@ Unfinished players time out after 30 seconds and receive zero set points.
 Arcade requires six boosts; Game Select requires **6, 7, 8, 9, and 10 boosts**.
 Base bounce periods shorten from **1,200 to 1,000 ms** in 50 ms steps, with a seeded −80, 0, or +80 ms adjustment per height shared by all players.
 Landing windows narrow from **±150 to ±90 ms** in 15 ms steps; both window boundaries are inclusive.
+The Perfect half-window is 30% of the landing half-window, rounded to **45, 41, 36, 32, and 27 ms** across the five difficulties, with inclusive boundaries.
 Input judgments use the frozen local round clock, and a delayed animation frame cannot extend a missed landing or move the final apex time.
 Remote bounces are cosmetic; only local inputs determine a player's result.
 These initial settings are provisional until playtested on phones.
 
-The game uses an original generated dinosaur and a peach-and-sand stage, with meat, landing-ring, and timing-bar shapes drawn in code.
+The game uses an original generated dinosaur and roasted drumstick on a peach-and-sand stage, with landing rings, impact particles, and timing guides drawn in code.
 The delivered character is `public/assets/jump-dino.png`, with its full prompt preserved in [artwork notes](public/assets/jump-artwork.md).
 Illustrated rules explain the landing and the three interchangeable buttons, and all essential cues remain visible while muted.
-The game reuses the original opt-in disco audio bank for backing music, accepted boosts, misses, GO, and finish cues.
+The game reuses the original opt-in disco audio bank for backing music, accepted boosts, misses, GO, and finish cues, plus the existing Perm growth flourish for Perfect landings.
+Only that additional flourish is loaded for Jump; the full Perm music bank is unnecessary.
+Automated timing comparisons confirm that all-Perfect play beats safe early landings at every difficulty; physical phone testing still needs to establish whether the choice feels satisfying.
 Deploy frontend and room service together to register the new game in both catalogs.
 
 ## Run locally

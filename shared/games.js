@@ -16,7 +16,7 @@ export const GAMES = Object.assign(Object.create(null), {
 
 export function roundSettings(game, seed, difficulty = 1) {
   const level = Math.max(1, Math.min(5, Math.trunc(difficulty) || 1));
-  if (game === JUMP_GAME) return { seed, difficulty: level, goal: JUMP_GOAL + level - 1, duration: JUMP_DURATION_MS, periodMs: 1200 - (level - 1) * 50, windowMs: 150 - (level - 1) * 15 };
+  if (game === JUMP_GAME) return { seed, difficulty: level, goal: JUMP_GOAL + level - 1, duration: JUMP_DURATION_MS, periodMs: 1200 - (level - 1) * 50, windowMs: 150 - (level - 1) * 15, perfectMs: Math.round((150 - (level - 1) * 15) * .3) };
   if (game === MONKEY_GAME) return { seed, difficulty: level, goal: MONKEY_STAGES + level - 1, duration: MONKEY_DURATION_MS, stepMs: 650 - (level - 1) * 40 };
   if (game === FIREWORK_GAME) return { seed, difficulty: level, goal: FIREWORK_GOAL, duration: FIREWORK_DURATION_MS, flightMs: 550 - (level - 1) * 50, windowMs: 900 - (level - 1) * 100 };
   if (game === SLOT_GAME) return { seed, difficulty: level, goal: REEL_COUNT, duration: SLOT_DURATION_MS, stepMs: 320 - (level - 1) * 30, retryMs: RETRY_MS };
@@ -40,7 +40,7 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game, round) {
-  if (game === JUMP_GAME) return ['Press any of the three buttons as the dinosaur lands, when the ring turns gold.', 'Each well-timed landing boosts the next bounce higher. Early taps and missed landings cost time.', `Land ${round.goal} boosts, then reach the meat at the top of your final jump. Fastest time wins.`];
+  if (game === JUMP_GAME) return ['Press any button as the dinosaur lands. Gold gives +1 boost; aim for the small green center for a Perfect +2.', 'Bigger boosts reach the meat faster. Early taps and missed landings cost time, but keep your height progress.', `Earn ${round.goal} boosts, then grab the meat at the top of your final jump. Fastest time wins.`];
   if (game === MONKEY_GAME) return ['Watch the monkey show a sequence of colored shapes, then copy it with the matching buttons.', 'Each success adds one move. A mistake replays that sequence; completed stages stay yours.', `Complete ${round.goal} stages fastest. Remember the order—you do not need to copy the rhythm.`];
   if (game === FIREWORK_GAME) return ['Wait for the rocket to reveal its color and shape.', 'Press the matching red circle, green triangle, or blue diamond before it fades.', `Burst ${round.goal} fireworks fastest. Early, wrong, or missed taps cost time.`];
   if (game === SLOT_GAME) return ['Match all three rows to the model face at the center marker.', 'Red stops the red row, green the green row, and blue the blue row—in any order.', 'Correct faces stay locked. A miss restarts only that row. Fastest complete face wins.'];

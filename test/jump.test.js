@@ -33,7 +33,7 @@ test('all three buttons accept both inclusive landing boundaries and preserve he
 
 test('early taps stumble, missed windows recover once, and completed boosts remain credited', () => {
   const run = new JumpRun(settings(), 1000);
-  run.tap(0, run.landAt);
+  run.tap(0, run.landAt - run.windowMs);
   assert.equal(run.tap(1, run.launchedAt + 200).type, 'mistake');
   assert.equal(run.cleared, 1);
   assert.equal(run.tap(2, run.blockedUntil - 1).type, 'ignored');
@@ -57,7 +57,7 @@ test('five difficulties finish at the final apex, independent of frame delivery 
   for (let level = 1; level <= 5; level++) {
     const round = settings(level), run = createRun(round, 5000);
     assert.ok(run instanceof JumpRun);
-    for (let boost = 0; boost < round.goal; boost++) assert.equal(run.tap(boost % 3, run.landAt).type, 'hit');
+    while (run.cleared < round.goal) assert.equal(run.tap(run.cleared % 3, run.landAt).type, 'jumpPerfect');
     assert.equal(run.cleared, round.goal);
     assert.equal(run.done, false);
     assert.equal(run.phase(run.finishAt - 1), 'reaching');
@@ -70,6 +70,33 @@ test('five difficulties finish at the final apex, independent of frame delivery 
     assert.equal(run.elapsed, finishAt - run.start);
     assert.ok(run.elapsed < round.duration);
     assert.equal(run.tap(0, finishAt).type, 'ignored');
+  }
+});
+
+test('perfect center timings earn two boosts, safe edges earn one, and perfects beat safe play', () => {
+  for (let level = 1; level <= 5; level++) {
+    const round = settings(level), safe = new JumpRun(round, 0), perfect = new JumpRun(round, 0);
+    while (safe.cleared < safe.goal) {
+      assert.equal(safe.tap(0, safe.landAt - safe.windowMs).type, 'hit');
+      assert.equal(safe.feedback.gain, 1);
+    }
+    while (perfect.cleared < perfect.goal) {
+      const before = perfect.cleared;
+      assert.equal(perfect.phase(perfect.landAt), 'perfect');
+      assert.equal(perfect.tap(2, perfect.landAt).type, 'jumpPerfect');
+      assert.equal(perfect.cleared - before, Math.min(2, perfect.goal - before));
+    }
+    safe.advance(safe.finishAt); perfect.advance(perfect.finishAt);
+    assert.ok(perfect.elapsed < safe.elapsed);
+    assert.equal(perfect.cleared, round.goal);
+    for (const edge of [-1, 1]) {
+      const run = new JumpRun(round, 0);
+      assert.equal(run.tap(1, run.landAt + edge * run.perfectMs).type, 'jumpPerfect');
+      assert.equal(run.cleared, 2);
+      const outside = new JumpRun(round, 0);
+      assert.equal(outside.tap(1, outside.landAt + edge * (outside.perfectMs + 1)).type, 'hit');
+      assert.equal(outside.cleared, 1);
+    }
   }
 });
 

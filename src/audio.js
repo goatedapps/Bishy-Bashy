@@ -188,6 +188,7 @@ export class GameAudio {
   }
 
   play(id, { color = 0, progress = 0, at = this.context?.currentTime, group = 'effects', game = this.game } = {}) {
+    if (id === 'jumpPerfect') id = 'permGrow';
     if (id === 'hit') id = game === 'perm-mania' ? 'permHit' : ['red', 'green', 'blue'][color] || 'red';
     if (id === 'mistake' && game === 'perm-mania') id = 'permMiss';
     const voice = this.source(id, { at, group, rate: ['red', 'green', 'blue'].includes(id) ? 1 + clamp(progress) * .04 : 1 });

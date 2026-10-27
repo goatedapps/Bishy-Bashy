@@ -5,6 +5,16 @@ import { GameAudio } from '../src/audio.js';
 import { AUDIO_FILES, BEAT, LOOP_SECONDS, audioAssetIds } from '../scripts/audio/score.js';
 import { demoCues } from '../shared/perm.js';
 
+test('Jump loads an existing flourish for perfect landings without requiring the full Perm bank', async () => {
+  const { audio, requests } = setup();
+  audio.selectGame('jump-for-the-meat');
+  await audio.unlock();
+  assert.ok(requests.some(url => url.includes('perm-grow.wav')));
+  assert.ok(!requests.some(url => url.includes('perm-groove.wav')));
+  audio.play('jumpPerfect', { game: 'jump-for-the-meat' });
+  assert.equal([...audio.voices].at(-1).id, 'permGrow');
+});
+
 class Parameter {
   constructor() { this.value = 1; this.events = []; }
   record(method, value, time, constant) { this.value = value; this.events.push({ method, value, time, constant }); return this; }

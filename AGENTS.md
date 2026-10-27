@@ -28,6 +28,8 @@ Wrong responses replay the current prefix after recovery; completed stages persi
 Memory demonstration tones use the local run's cue timestamps and a bounded audio lookahead; cancel them on replay, mute, finish, or interruption, and skip past cues on resume.
 `shared/jump.js` owns seeded bounce arcs, inclusive landing windows, recovery, and the elapsed-time race to the final meat-reaching apex.
 Any of the three buttons boosts a valid landing; preserve successful boosts after a miss and resolve final completion at its scheduled local apex, even on a delayed frame.
+The wide gold landing window earns one boost; its green Perfect center (30% of the half-window) earns two, capped at the remaining goal.
+Keep the timing cursor, landing ring, +1/+2 feedback, and optional Perfect flourish consistent with the same local input timestamp.
 `src/jump-view.js` and `src/jump.css` draw the original dinosaur and landing guide; remote bounces remain cosmetic, and the home cast stays bounded to five characters as the catalog grows.
 `shared/sets.js` defines five-game Arcade, five-round Game Select, shared placement points, and cumulative standings.
 `server/rooms.js` owns the fixed set roster, idempotent point awards, intermissions, and readiness gates.
