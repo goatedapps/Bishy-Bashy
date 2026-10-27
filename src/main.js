@@ -2,6 +2,7 @@ import QRCode from 'qrcode';
 import { SyncedClock } from './clock.js';
 import { TOTEM_GAME } from '../shared/totem.js';
 import { PERM_GAME, demoCues } from '../shared/perm.js';
+import { SLOT_GAME } from '../shared/slots.js';
 import { GAMES, createRun, roundSettings } from '../shared/games.js';
 import { MODES, roundDetail } from '../shared/sets.js';
 import { GameView } from './game-view.js';
@@ -107,7 +108,7 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 4) {
+      if (message.protocol !== 5) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -189,6 +190,7 @@ function resetSession() {
   audio.cancel(); clearPending();
   sessionStorage.removeItem('bb-session'); sessionStorage.removeItem('bb-active-round');
   $('welcome').hidden = false; $('room-view').hidden = true;
+  $('submission-status').hidden = true;
   document.body.classList.remove('in-room');
   updateGameProfile();
   notice('');
@@ -253,7 +255,7 @@ function complete(status, elapsed = null) {
   log(status === 'finished' ? `Local finish: ${(elapsed / 1000).toFixed(3)} s.` : status === 'forfeit' ? 'Forfeited: game screen hidden or reloaded.' : 'Time expired.');
   if (status === 'finished') {
     audio.endPlayer();
-    audio.play('finish');
+    audio.play(room.round.game === SLOT_GAME ? 'slotWin' : 'finish');
   } else {
     audio.stopRound();
     if (status === 'timeout' && !document.hidden) audio.play('timeout');
@@ -354,6 +356,10 @@ function renderRoom() {
 function updateControls(time) {
   const disabled = !localRound || localRound.done || document.hidden || time < localRound.start || time >= localRound.end || time < localRound.run.blockedUntil || room?.round?.phase === 'results' || room?.round?.game === PERM_GAME && localRound.run.phase(time).mode === 'watch';
   for (const button of buttons) button.disabled = disabled;
+  if (room?.round?.game === SLOT_GAME) {
+    const label = localRound?.done ? 'Matched!' : time < (localRound?.run.blockedUntil || 0) ? 'Try again…' : `Stop reel ${Math.min(3, (localRound?.run.cleared || 0) + 1)}`;
+    if ($('slot-stop-label').textContent !== label) $('slot-stop-label').textContent = label;
+  }
 }
 
 function animate() {
@@ -378,7 +384,7 @@ function animate() {
   const frozen = Boolean(localRound && !localRound.done && time < localRound.run.blockedUntil);
   const ownIndex = room?.players.findIndex(player => player.id === playerId) ?? -1;
   if (ownIndex >= 0) view.lanes[ownIndex].lane.classList.toggle('frozen', frozen);
-  if (room) view.animate(room, localRound, time);
+  if (room) view.animate(room, localRound, time, time + (clock.estimate(time)?.offset ?? Date.now() - time) - (room.round?.startAt || 0));
   if (room) setView.animate(room, time + (clock.estimate(time)?.offset ?? Date.now() - time));
   updateControls(time);
   requestAnimationFrame(animate);
@@ -424,8 +430,10 @@ function updateGameProfile() {
   const profile = displayRound();
   const game = profile.game;
   const perm = game === PERM_GAME;
+  const slots = game === SLOT_GAME;
   audio.selectGame(game);
   document.body.classList.toggle('perm-theme', Boolean(room && perm));
+  document.body.classList.toggle('slot-theme', Boolean(room && slots));
   document.body.classList.toggle('in-set', Boolean(inSet));
   const title = !room ? 'Choose your mode' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'intermission' ? `Next: ${GAMES[game].title}` : active ? GAMES[game].title : MODES[mode].title;
   if (document.querySelector('.game-title').textContent !== title) document.querySelector('.game-title').textContent = title;
@@ -433,6 +441,8 @@ function updateGameProfile() {
   $('lobby-setup').hidden = Boolean(inSet);
   $('game-picker').hidden = mode !== 'game-select';
   $('rhythm-guide').hidden = !perm || !active;
+  $('slot-guide').hidden = !slots || !active;
+  for (const button of buttons) button.hidden = button.id === 'slot-stop' ? !slots : slots;
   for (const button of document.querySelectorAll('[data-game]')) {
     button.setAttribute('aria-pressed', String(button.dataset.game === (room?.selectedGame || selectedGame)));
     button.disabled = Boolean(inSet || active || room && room.hostId !== playerId);
@@ -461,7 +471,7 @@ function showRules() {
   const perm = game === PERM_GAME;
   const activeSet = room?.set && room.set.phase !== 'complete';
   $('rules-title').textContent = activeSet ? GAMES[game].title : 'How to play a set';
-  const rules = !activeSet ? ['Arcade plays two different random games. Game Select plays five rounds of one game, getting harder each round.', 'Tap Ready once. The host starts the set; the next rounds follow automatically.', 'Each round awards 10 / 7 / 4 / 1 set points by place. Ties share points; unfinished and forfeited rounds earn zero. Most total points wins.'] : perm ? ['Watch the four-beat rhythm, then copy it with any button.', `One mistake or fewer in a phrase grows your hair. Eight phrases at ${profile.bpm} BPM.`, 'Biggest hair wins. Rhythm score breaks ties; extra taps count as mistakes.'] : ['Match the bottom block with red, green, or blue.', `Clear all ${profile.blockCount} blocks as fast as you can.`, 'A wrong tap freezes your controls for 0.3 seconds.'];
+  const rules = !activeSet ? ['Arcade plays two different random games. Game Select plays five rounds of one game, getting harder each round.', 'Tap Ready once. The host starts the set; the next rounds follow automatically.', 'Each round awards 10 / 7 / 4 / 1 set points by place. Ties share points; unfinished and forfeited rounds earn zero. Most total points wins.'] : game === SLOT_GAME ? ['Match all three reels to the target face. Watch the highlighted reel and tap Stop when its portrait matches.', 'Any colored key works: 1 / 2 / 3 or J / K / L. Reels stop left to right; correct matches stay locked.', 'A miss pauses that reel briefly, then it spins again. First to match all three wins. You have 30 seconds.'] : perm ? ['Watch the four-beat rhythm, then copy it with any button.', `One mistake or fewer in a phrase grows your hair. Eight phrases at ${profile.bpm} BPM.`, 'Biggest hair wins. Rhythm score breaks ties; extra taps count as mistakes.'] : ['Match the bottom block with red, green, or blue.', `Clear all ${profile.blockCount} blocks as fast as you can.`, 'A wrong tap freezes your controls for 0.3 seconds.'];
   $('rules-list').replaceChildren(...rules.map(text => { const item = document.createElement('li'); item.textContent = text; return item; }));
   $('rules-note').textContent = 'Stay on this screen during the round; switching apps or reloading forfeits it.';
   $('rules').showModal();

@@ -1,6 +1,6 @@
 # Bishy Bashy
 
-A four-player browser party game with Totem Shrinker and Perm Mania.
+A four-player browser party game with Totem Shrinker, Perm Mania, and Facial Slot Machine.
 Everyone sees all four players and controls only their own player.
 The static website runs on GitHub Pages; a separate Node WebSocket server coordinates rooms and results.
 
@@ -28,6 +28,7 @@ Final standings include a round-by-round points table.
 The server awards points once per round and retains earned points if a player leaves between rounds.
 New guests can join only after the full set ends; original players can reconnect during it.
 The Arcade length and Game Select round count live in `shared/sets.js`, and new games join the shared catalog in `shared/games.js`.
+Arcade still selects two games, now from a catalog of three.
 
 ## Play Totem Shrinker
 
@@ -118,6 +119,36 @@ The demonstration sounds and visual notes share the agreed local timeline, but p
 This is an independent adaptation of the rhythm-and-hair-growth concept described in [this player guide](https://gamefaqs.gamespot.com/ps/575837-bishi-bashi-special-2/faqs/13258), with original artwork and music.
 [Perm Mania artwork notes](public/assets/perm-artwork.md) preserve the image-generation prompt and sprite layout.
 
+## Play Facial Slot Machine
+
+Choose **Game Select → Facial Slot Machine**, or encounter it in Arcade.
+Match all three reels to the portrait above the stage.
+Tap **Stop**, any colored keyboard input (**1 / 2 / 3** or **J / K / L**), or the focused Stop button with Space.
+Reels stop in order from left to right; the highlighted reel shows which one your next press will stop.
+A correct face stays locked and moves control to the next reel.
+A miss holds the wrong face for 450 ms, then that reel resumes spinning; previous matches remain locked.
+An input guard of 120 ms prevents one simultaneous press from stopping several reels.
+The first player to lock all three target portraits wins, ranked by local elapsed time, with a 30-second deadline.
+Unfinished players receive zero set points.
+
+Every player receives the same seeded target and reel order, calculated from the agreed round start.
+There are six visually distinct portraits: Robot, Frog, Lion, Cat, Yeti, and Octopus.
+Each reel cycles through all six once, begins away from the target, and repeats deterministically.
+Arcade holds each portrait for 320 ms; Game Select uses **320, 290, 260, 230, and 200 ms** across its five rounds.
+These are provisional casual-play timings and should be tuned from phone playtests.
+Local input never waits for the server, and cosmetic remote spinning follows the shared clock while lock counts update at most four times a second.
+
+The game uses a turquoise, pink, and butter-yellow photo-booth stage, with horizontal reel cabinets on larger screens and stacked reels on phones.
+Its six original portraits were produced with the built-in image-generation tool.
+[Facial Slot Machine artwork notes](public/assets/facial-slot-artwork.md) preserve the complete prompt, sprite order, and returned image details.
+The mechanic is an independent adaptation of matching the target face across three reels, as described in the [original game's player guide](https://gamefaqs.gamespot.com/ps/575837-bishi-bashi-special-2/faqs/13258).
+
+The original 128 BPM carousel-funk soundtrack combines a bouncing bassline, bright mallet melody, chord stabs, and claps.
+A second layer enters near the final ten seconds, and successful locks, retries, GO, and a completed face have distinct synthesized cues.
+The bank loads only for this game after sound is enabled, using the existing per-room music policy, mute controls, voice cap, and interruption handling.
+The editable composition lives in `scripts/audio/slots.js`, and the delivered WAV files and numerical measurements live in `public/audio/`.
+Automated signal and playback-lifecycle checks pass; balance and physical audio latency still need listening tests on target phones.
+
 ## Run locally
 
 Install Node.js 22.12 or newer, then run:
@@ -182,7 +213,7 @@ npm run build
 ```
 
 Automated checks cover deterministic gameplay, all five difficulty levels, shared schedules, room ownership and capacity, progress throttling, delayed and duplicate results, reconnection, and missing players.
-Four-client WebSocket tests complete entire Arcade and Game Select sets, checking automatic progression and cumulative scoring.
+Four-client WebSocket tests complete entire Arcade and Game Select sets for all three games, checking automatic progression and cumulative scoring.
 Additional checks cover tied points, host migration, locked setup, skipped players, and tempo-scaled audio playback.
 Physical phone/tablet playtesting remains necessary.
 
@@ -190,7 +221,7 @@ Physical phone/tablet playtesting remains necessary.
 
 `npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
 `npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
-The health endpoint reports protocol version 4 for automatic multiplayer sets.
+The health endpoint reports protocol version 5 for automatic multiplayer sets with Facial Slot Machine.
 Deploy the frontend and backend together when changing the multiplayer protocol.
 
 The Pages workflow tests, builds, and deploys `main`.
@@ -211,10 +242,12 @@ A sleeping hosted service may take time to wake up, and redeploying it clears ro
 
 `shared/totem.js` defines the game rules and deterministic local run.
 `shared/perm.js` defines the rhythm rules; `shared/games.js` supplies the catalog and difficulty settings.
+`shared/slots.js` defines deterministic reel layouts, local stop judgments, and retry timing.
 `shared/sets.js` supplies mode lengths, random selection, placement awards, and cumulative ranking.
 `src/main.js` coordinates lifecycle, timing, input, rooms, and the result outbox.
 `src/game-view.js` renders towers and results; `src/audio.js` owns audio loading, mixing, and lifecycle.
 `src/set-view.js` renders the mode choices, intermission, and cumulative standings.
+`src/slot-view.js` and `src/slots.css` render the target portrait, four reel cabinets, and their feedback.
 `scripts/audio/` contains the original composition and synthesis; `public/audio/` contains its rendered runtime assets.
 `server/rooms.js` owns multiplayer room state and protocol validation.
 `public/assets/totem-blocks.png` contains original generated character artwork reused from the approved mockup.

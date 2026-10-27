@@ -11,6 +11,7 @@
   <link rel="stylesheet" href="/src/style.css" />
   <link rel="stylesheet" href="/src/games.css" />
   <link rel="stylesheet" href="/src/sets.css" />
+  <link rel="stylesheet" href="/src/slots.css" />
 </head>
 <body>
   <header class="game-top">
@@ -58,8 +59,10 @@
           <div class="rhythm-heading"><strong id="rhythm-phase">Watch</strong><span id="rhythm-phrase">Phrase 1 / 8</span><span id="rhythm-hint">Copy with any button</span></div>
           <div id="rhythm-track" class="rhythm-track" role="img" aria-label="Rhythm pattern"></div>
         </div>
+        <div id="slot-guide" class="slot-guide" hidden><span id="slot-target-face" class="face-portrait"></span><div class="slot-guide-copy"><strong>Match this face!</strong><span id="slot-target-name"></span><small>Stop the reels left to right</small></div></div>
         <div id="arena" class="arena"><div id="player-lanes" class="lanes"></div><div id="round-overlay" class="round-overlay" hidden aria-live="polite"></div></div>
         <div id="control-deck" class="control-deck" hidden aria-label="Your controls">
+          <button id="slot-stop" class="hit-button slot-stop" data-color="0" aria-label="Stop reel" hidden disabled><span class="stop-icon" aria-hidden="true">■</span><span id="slot-stop-label">Stop reel 1</span><small>Any key: 1 / 2 / 3</small></button>
           <button class="hit-button red" data-color="0" aria-label="Red circle" disabled><span class="shape">●</span><span>Red</span><small>1 / J</small></button>
           <button class="hit-button green" data-color="1" aria-label="Green triangle" disabled><span class="shape">▲</span><span>Green</span><small>2 / K</small></button>
           <button class="hit-button blue" data-color="2" aria-label="Blue diamond" disabled><span class="shape">◆</span><span>Blue</span><small>3 / L</small></button>

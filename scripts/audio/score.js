@@ -25,9 +25,12 @@ export const AUDIO_FILES = {
   music: 'totem-party.wav', urgency: 'totem-party-urgency.wav',
   permMusic: 'perm-groove.wav', permUrgency: 'perm-groove-urgency.wav',
   permDemo: 'perm-demo.wav', permHit: 'perm-hit.wav', permMiss: 'perm-miss.wav', permGrow: 'perm-grow.wav', permGo: 'perm-go.wav',
+  slotMusic: 'slot-carousel.wav', slotUrgency: 'slot-carousel-urgency.wav',
+  slotLock: 'slot-lock.wav', slotMiss: 'slot-miss.wav', slotWin: 'slot-win.wav', slotGo: 'slot-go.wav',
 };
 
 export function audioAssetIds(game = 'totem-shrinker') {
   const shared = ['tick', 'finish', 'timeout'];
+  if (game === 'facial-slot-machine') return [...shared, 'slotMusic', 'slotUrgency', 'slotLock', 'slotMiss', 'slotWin', 'slotGo'];
   return [...shared, ...(game === 'perm-mania' ? ['permMusic', 'permUrgency', 'permDemo', 'permHit', 'permMiss', 'permGrow', 'permGo'] : ['red', 'green', 'blue', 'mistake', 'go', 'music', 'urgency'])];
 }

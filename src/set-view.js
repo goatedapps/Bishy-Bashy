@@ -1,5 +1,7 @@
 import { GAMES, roundSettings } from '../shared/games.js';
 import { MODES, ARCADE_LENGTH, GAME_SELECT_LENGTH, setStandings, roundDetail } from '../shared/sets.js';
+import { SLOT_GAME } from '../shared/slots.js';
+import { facePortrait } from './slot-view.js';
 
 const $ = id => document.getElementById(id);
 const node = (tag, className, text) => {
@@ -21,13 +23,14 @@ export class SetView {
       button.setAttribute('aria-pressed', 'false');
       const art = node('span', 'game-choice-art');
       art.setAttribute('aria-hidden', 'true');
-      if (game.id === 'perm-mania') {
+      if (game.id === SLOT_GAME) art.append(facePortrait(0));
+      else if (game.id === 'perm-mania') {
         const avatar = node('span', 'perm-character');
         avatar.append(node('span', 'perm-hair'), node('span', 'perm-dancer dancer-1'));
         art.append(avatar);
       } else art.append(node('span', 'block red'), node('span', 'block green'));
       const copy = node('span', 'game-choice-copy');
-      copy.append(node('strong', '', game.title), node('small', '', game.id === 'perm-mania' ? 'A faster groove each round' : 'A taller tower each round'));
+      copy.append(node('strong', '', game.title), node('small', '', game.subtitle));
       button.append(art, copy);
       $('game-picker').append(button);
     }
@@ -45,7 +48,7 @@ export class SetView {
       $('next-game').textContent = `Up next: ${GAMES[next].title}`;
       const level = set.mode === 'game-select' ? set.roundIndex + 2 : 1;
       const settings = { game: next, ...roundSettings(next, 0, level) };
-      $('next-detail').textContent = `${roundDetail(settings)} · ${next === 'perm-mania' ? 'Watch, then copy with any button' : 'Match the bottom block'}`;
+      $('next-detail').textContent = `${roundDetail(settings)} · ${next === SLOT_GAME ? 'Stop all three on the target face' : next === 'perm-mania' ? 'Watch, then copy with any button' : 'Match the bottom block'}`;
     }
     if (!set.history.length) return;
     const final = set.phase === 'complete';

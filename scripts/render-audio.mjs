@@ -2,16 +2,17 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { AUDIO_FILES, SAMPLE_RATE, LOOP_SECONDS, BPM } from './audio/score.js';
 import { music, effects, mix, inspect, wav } from './audio/synthesis.js';
+import { slotAudio } from './audio/slots.js';
 
 const output = new URL('../public/audio/', import.meta.url);
 await mkdir(output, { recursive: true });
 const perm = music({ perm: true });
-const assets = { ...music(), ...effects(), permMusic: perm.music, permUrgency: perm.urgency };
+const assets = { ...music(), ...effects(), permMusic: perm.music, permUrgency: perm.urgency, ...slotAudio() };
 const report = { bpm: BPM, sampleRate: SAMPLE_RATE, loopSeconds: LOOP_SECONDS, files: {} };
 for (const [id, samples] of Object.entries(assets)) {
   const file = AUDIO_FILES[id];
   await writeFile(new URL(file, output), wav(samples));
-  report.files[id] = { file, ...inspect(samples, ['music', 'urgency', 'permMusic', 'permUrgency'].includes(id)) };
+  report.files[id] = { file, ...inspect(samples, ['music', 'urgency', 'permMusic', 'permUrgency', 'slotMusic', 'slotUrgency'].includes(id)) };
 }
 await writeFile(new URL('analysis.json', output), JSON.stringify(report, null, 2) + '\n');
 

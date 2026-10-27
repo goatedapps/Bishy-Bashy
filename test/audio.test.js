@@ -198,7 +198,7 @@ test('authored PCM assets have headroom, quiet endpoints, and continuous equal-l
     for (let index = 0; index < length; index++) { const sample = bytes.readInt16LE(44 + index * 2) / 32767; peak = Math.max(peak, Math.abs(sample)); dc += sample; }
     assert.ok(peak > .25 && peak < .71, `${id}: peak ${peak}`);
     assert.ok(Math.abs(dc / length) < .002, `${id}: excessive DC`);
-    if (['music', 'urgency', 'permMusic', 'permUrgency'].includes(id)) {
+    if (['music', 'urgency', 'permMusic', 'permUrgency', 'slotMusic', 'slotUrgency'].includes(id)) {
       assert.equal(length / bytes.readUInt32LE(24), LOOP_SECONDS);
       assert.ok(Math.abs(bytes.readInt16LE(44) - bytes.readInt16LE(bytes.length - 2)) / 32767 < .005, `${id}: loop seam`);
     } else {
@@ -206,8 +206,8 @@ test('authored PCM assets have headroom, quiet endpoints, and continuous equal-l
       assert.ok(Math.abs(bytes.readInt16LE(bytes.length - 2)) / 32767 < .001);
     }
   }
-  assert.ok(bytesTotal < 4_500_000, `Audio library budget exceeded: ${bytesTotal}`);
-  for (const game of ['totem-shrinker', 'perm-mania']) assert.ok(audioAssetIds(game).reduce((sum, id) => sum + sizes[id], 0) < 2_500_000, `${game}: audio bank budget exceeded`);
+  assert.ok(bytesTotal < 6_500_000, `Audio library budget exceeded: ${bytesTotal}`);
+  for (const game of ['totem-shrinker', 'perm-mania', 'facial-slot-machine']) assert.ok(audioAssetIds(game).reduce((sum, id) => sum + sizes[id], 0) < 2_500_000, `${game}: audio bank budget exceeded`);
 });
 
 test('Perm Mania loads its own bank and schedules each demonstration on the audio clock', async () => {
@@ -246,4 +246,23 @@ test('faster Perm rounds speed up backing tracks and preserve the correct phase 
   assert.equal(resumed.source.playbackRate.value, 1.25);
   assert.equal(resumed.source.started.offset, 0);
   assert.ok([...audio.voices].filter(voice => voice.id === 'permDemo').every(voice => voice.source.started.at >= context.currentTime));
+});
+
+test('Facial Slot Machine uses its own bank, bounded match feedback, and a finish tail across results', async () => {
+  const { audio, requests } = setup();
+  audio.selectGame('facial-slot-machine');
+  await audio.unlock();
+  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length);
+  assert.equal(audio.buffers.has('music'), false);
+  assert.equal(audio.buffers.has('permMusic'), false);
+  audio.scheduleRound('slots', 5000, 35_000, true, false, { game: 'facial-slot-machine' });
+  assert.equal([...audio.voices].filter(voice => voice.id === 'slotMusic').length, 1);
+  assert.equal([...audio.voices].filter(voice => voice.id === 'slotGo').length, 1);
+  for (let index = 0; index < 20; index++) audio.play(index % 2 ? 'slotMiss' : 'slotLock');
+  assert.equal([...audio.voices].filter(voice => voice.group === 'effects').length, 8);
+  audio.endPlayer(); audio.play('slotWin'); audio.stopRound();
+  assert.equal([...audio.voices].filter(voice => voice.group === 'music' || voice.group === 'round').length, 0);
+  assert.equal([...audio.voices].filter(voice => voice.id === 'slotWin').length, 1);
+  audio.cancel();
+  assert.equal(audio.voices.size, 0);
 });

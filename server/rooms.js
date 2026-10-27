@@ -2,6 +2,7 @@ import { randomBytes, randomUUID, randomInt } from 'node:crypto';
 import { TOTEM_GAME } from '../shared/totem.js';
 import { GAMES, roundSettings } from '../shared/games.js';
 import { PERM_GAME } from '../shared/perm.js';
+import { SLOT_GAME } from '../shared/slots.js';
 import { MODES, INTERMISSION_MS, createSetPlan, awardRound } from '../shared/sets.js';
 
 export const ROUND_MS = 10_000;
@@ -62,7 +63,7 @@ export class RoomService {
     if (!returning) room.players.push(player);
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 4, token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 5, token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -210,7 +211,7 @@ export class RoomService {
     if (received < round.startAt) return this.error(client, 'The test has not started yet.');
     if (!['finished', 'forfeit', 'timeout'].includes(message.status)) return;
     if (message.status === 'finished' && (!Number.isFinite(message.elapsed) || message.elapsed < 0 || message.elapsed > round.duration || message.elapsed > received - round.startAt + 250)) return this.error(client, 'The reported finish time is outside this test.');
-    if (round.game === TOTEM_GAME && message.status === 'finished' && (message.cleared !== round.blockCount || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || message.mistakes > 1000)) return this.error(client, 'Finish all the blocks before submitting a result.');
+    if ([TOTEM_GAME, SLOT_GAME].includes(round.game) && message.status === 'finished' && (message.cleared !== round.goal || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || message.mistakes > 1000)) return this.error(client, 'Complete every match before submitting a result.');
     if (round.game === PERM_GAME && message.status === 'finished' && (received < round.endAt - 250 || message.elapsed !== round.duration || !Number.isInteger(message.cleared) || message.cleared < player.progress.cleared || message.cleared > round.goal || !Number.isInteger(message.score) || message.score < 0 || message.score > round.maxScore || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || message.mistakes > 1000)) return this.error(client, 'Wait for the rhythm round to finish before submitting a valid score.');
     if (message.status === 'timeout' && received < round.endAt) return this.error(client, 'The test has not timed out yet.');
     let cleared = null;
@@ -229,7 +230,7 @@ export class RoomService {
       mistakes: Number.isInteger(message.mistakes) ? message.mistakes : null,
       ...(round.game === PERM_GAME ? { score: message.status === 'finished' ? message.score : 0 } : {}),
     };
-    if (round.game === TOTEM_GAME && message.status === 'finished') player.progress = { cleared: round.blockCount, mistakes: message.mistakes };
+    if ([TOTEM_GAME, SLOT_GAME].includes(round.game) && message.status === 'finished') player.progress = { cleared: round.goal, mistakes: message.mistakes };
     if (round.game === PERM_GAME && message.status === 'finished') player.progress = { cleared, mistakes: message.mistakes, score: message.score };
     this.send(client, { type: 'result-ack', roundId: round.id, status: player.result.status });
     this.finishIfComplete(room);

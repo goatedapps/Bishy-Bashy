@@ -10,7 +10,7 @@ function random(seed) {
   return () => { state ^= state << 13; state ^= state >>> 17; state ^= state << 5; return (state >>> 0) / 0xffffffff * 2 - 1; };
 }
 
-function tone(note, duration, kind = 'lead') {
+export function tone(note, duration, kind = 'lead') {
   const output = new Float32Array(Math.ceil(duration * SAMPLE_RATE));
   const frequency = hz(note);
   for (let index = 0; index < output.length; index++) {
@@ -27,7 +27,7 @@ function tone(note, duration, kind = 'lead') {
   return output;
 }
 
-function drum(kind, seed) {
+export function drum(kind, seed) {
   const duration = { kick: .2, snare: .16, hat: .055, clap: .13, tom: .16 }[kind];
   const output = new Float32Array(Math.ceil(duration * SAMPLE_RATE));
   const noise = random(seed);
@@ -64,7 +64,7 @@ export function mix(target, source, seconds, gain = 1, loop = false) {
   });
 }
 
-function normalize(samples, peak) {
+export function normalize(samples, peak) {
   const measured = samples.reduce((maximum, sample) => Math.max(maximum, Math.abs(sample)), 0);
   const scale = measured ? peak / measured : 1;
   return samples.map(sample => sample * scale);

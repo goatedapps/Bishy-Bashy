@@ -1,5 +1,6 @@
 import { GAMES, comparePlayers } from './games.js';
 import { PERM_GAME } from './perm.js';
+import { SLOT_GAME } from './slots.js';
 
 export const ARCADE_LENGTH = 2;
 export const GAME_SELECT_LENGTH = 5;
@@ -34,5 +35,6 @@ export function setStandings(players) {
 }
 
 export function roundDetail(round) {
+  if (round.game === SLOT_GAME) return `3 reels · Speed ${round.difficulty}`;
   return round.game === PERM_GAME ? `${round.bpm} BPM` : `${round.blockCount} blocks`;
 }

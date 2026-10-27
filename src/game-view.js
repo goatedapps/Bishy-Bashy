@@ -1,5 +1,7 @@
 import { COLORS, createSequence } from '../shared/totem.js';
 import { PERM_GAME } from '../shared/perm.js';
+import { SLOT_GAME, slotLayout } from '../shared/slots.js';
+import { SlotStage, facePortrait, renderTarget } from './slot-view.js';
 import { GAMES, comparePlayers } from '../shared/games.js';
 
 const SHAPES = ['●', '▲', '◆'];
@@ -39,7 +41,8 @@ export class GameView {
       const tower = node('div', 'tower');
       const avatar = dancer(index);
       avatar.hidden = true;
-      zone.append(tower, avatar);
+      const slots = new SlotStage();
+      zone.append(tower, avatar, slots.cabinet);
       const remaining = node('div', 'remaining');
       const progress = node('div', 'progress');
       const fill = node('span', '');
@@ -47,7 +50,7 @@ export class GameView {
       const status = node('p', 'seat-status');
       lane.append(name, zone, node('div', 'base'), remaining, progress, status);
       $('player-lanes').append(lane);
-      return { lane, name, tower, avatar, remaining, fill, status, towerKey: '' };
+      return { lane, name, tower, avatar, slots, remaining, fill, status, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -63,7 +66,9 @@ export class GameView {
     const active = round && round.phase !== 'results';
     const game = active ? round.game : room.selectedGame;
     const perm = game === PERM_GAME;
-    const sequence = !perm && round ? createSequence(round.seed, round.blockCount) : [];
+    const slots = game === SLOT_GAME;
+    const sequence = game === 'totem-shrinker' && round ? createSequence(round.seed, round.blockCount) : [];
+    if (slots && active) renderTarget(round);
     $('arena').classList.toggle('lobby', !active);
     this.lanes.forEach((elements, index) => {
       const player = room.players[index];
@@ -74,9 +79,13 @@ export class GameView {
       const frozen = ownRun && !ownRun.done && time < ownRun.run.blockedUntil;
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';
-      elements.tower.hidden = perm;
+      elements.tower.hidden = perm || slots;
       elements.avatar.hidden = !perm;
-      if (perm) {
+      elements.slots.cabinet.hidden = !slots;
+      if (slots) {
+        if (!active || ownRun) elements.slots.render(round || { seed: 0 }, cleared, ownRun ? time - ownRun.start : 0, ownRun?.run, active, Boolean(player));
+      }
+      else if (perm) {
         const growth = active && player ? cleared : 0;
         elements.avatar.style.setProperty('--hair-size', `${45 + growth * 11}%`);
         elements.avatar.setAttribute('aria-label', `Disco dancer, hair growth ${growth} of 8`);
@@ -88,15 +97,15 @@ export class GameView {
           elements.towerKey = key;
         }
       }
-      const value = perm ? cleared : active && player ? Math.max(0, round.blockCount - cleared) : 0;
-      const counterKey = `${perm}/${value}`;
+      const value = perm || slots ? cleared : active && player ? Math.max(0, round.blockCount - cleared) : 0;
+      const counterKey = `${game}/${value}`;
       if (elements.remaining.dataset.value !== counterKey) {
-        elements.remaining.replaceChildren(node('strong', '', String(value)), document.createTextNode(perm ? ' / 8' : 'left'));
+        elements.remaining.replaceChildren(node('strong', '', String(value)), document.createTextNode(slots ? ' / 3' : perm ? ' / 8' : 'left'));
         elements.remaining.dataset.value = counterKey;
       }
       elements.fill.style.width = `${active && player ? cleared / round.goal * 100 : 0}%`;
       const score = ownRun?.run.score ?? player?.progress?.score ?? 0;
-      elements.status.textContent = !player ? 'Waiting to join' : !player.connected ? 'Reconnecting…' : active ? status ? resultLabel(status, perm) : frozen ? 'Oops!' : perm ? `${score.toLocaleString()} pts` : '' : player.ready ? '✓ Ready' : player.sync?.count >= 3 ? (player.id === room.hostId ? 'Host' : 'Not ready') : 'Syncing…';
+      elements.status.textContent = !player ? 'Waiting to join' : !player.connected ? 'Reconnecting…' : active ? status ? resultLabel(status, perm) : frozen ? 'Oops!' : slots ? `Reel ${Math.min(3, cleared + 1)}` : perm ? `${score.toLocaleString()} pts` : '' : player.ready ? '✓ Ready' : player.sync?.count >= 3 ? (player.id === room.hostId ? 'Host' : 'Not ready') : 'Syncing…';
     });
     const hasResults = round?.phase === 'results';
     $('play-view').hidden = hasResults;
@@ -104,7 +113,15 @@ export class GameView {
     if (hasResults) this.results(room, playerId);
   }
 
-  animate(room, local, time) {
+  animate(room, local, time, elapsed) {
+    if (room.round?.game === SLOT_GAME && room.round.phase !== 'results') {
+      this.lanes.forEach((elements, index) => {
+        const own = elements.lane.classList.contains('you') ? local : null;
+        const player = room.players[index];
+        elements.slots.render(room.round, own?.run.cleared ?? player?.progress?.cleared ?? 0, Math.max(0, own ? time - own.start : elapsed), own?.run, true, Boolean(player));
+      });
+      return;
+    }
     if (room.round?.game !== PERM_GAME || room.round.phase === 'results' || !local || time < local.start || local.done) return;
     const phase = local.run.phase(time);
     const heading = phase.mode === 'watch' ? 'Watch' : 'Your turn!';
@@ -141,7 +158,7 @@ export class GameView {
       const seat = node('div', 'podium-seat');
       const step = node('div', 'podium-step');
       step.append(node('strong', '', String(rank(player))), document.createTextNode(perm ? `${player.result.cleared} / 8` : resultLabel(player.result)));
-      seat.append(perm ? dancer(room.players.indexOf(player), player.result.cleared) : block(index % 3), node('div', 'podium-name', player.name), step);
+      seat.append(game === SLOT_GAME ? facePortrait(slotLayout(room.round.seed).target) : perm ? dancer(room.players.indexOf(player), player.result.cleared) : block(index % 3), node('div', 'podium-name', player.name), step);
       return seat;
     }));
     $('result-rows').replaceChildren(...sorted.map(player => {

@@ -3,6 +3,11 @@ import { AUDIO_FILES, BEAT, audioAssetIds } from '../scripts/audio/score.js';
 const BASE_URL = import.meta.env?.BASE_URL || '/';
 const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
+const PROFILES = {
+  'totem-shrinker': { music: 'music', urgency: 'urgency', go: 'go' },
+  'perm-mania': { music: 'permMusic', urgency: 'permUrgency', go: 'permGo' },
+  'facial-slot-machine': { music: 'slotMusic', urgency: 'slotUrgency', go: 'slotGo' },
+};
 const clamp = value => Math.max(0, Math.min(1, value));
 
 export class GameAudio {
@@ -202,6 +207,7 @@ export class GameAudio {
     if (!this.enabled || this.context?.state !== 'running' || !this.target || !this.buffers.size) return;
     const { id, start, end, musicOwner, playerDone, game, cues, bpm } = this.target;
     const perm = game === 'perm-mania';
+    const profile = PROFILES[game] || PROFILES['totem-shrinker'];
     const rate = perm ? bpm / 128 : 1;
     const now = this.now();
     if (now >= end) { this.stopRound(); return; }
@@ -210,7 +216,7 @@ export class GameAudio {
       this.countdownKey = id;
       for (let count = 3; count >= 0; count--) {
         const remaining = (start - count * 1000 - now) / 1000;
-        if (remaining >= 0) this.play(count ? 'tick' : perm ? 'permGo' : 'go', { at: audioNow + remaining, group: 'round' });
+        if (remaining >= 0) this.play(count ? 'tick' : profile.go, { at: audioNow + remaining, group: 'round' });
       }
       if (perm) for (const cue of cues) {
         const remaining = (start + cue - now) / 1000;
@@ -223,8 +229,8 @@ export class GameAudio {
       this.musicKey = null;
       return;
     }
-    const baseId = perm ? 'permMusic' : 'music';
-    const urgencyId = perm ? 'permUrgency' : 'urgency';
+    const baseId = profile.music;
+    const urgencyId = profile.urgency;
     const musicKey = `${id}:${baseId}:${this.buffers.has(urgencyId)}:${rate}`;
     if (this.musicKey === musicKey || !this.buffers.has(baseId)) return;
     this.stopVoices(voice => voice.group === 'music');
@@ -286,8 +292,8 @@ export class GameAudio {
     this.stopPreview(false);
     this.previewing = true;
     const at = this.context.currentTime + .03;
-    if (this.preferences.musicMode !== 'off' && this.preferences.musicVolume > 0) this.source(game === 'perm-mania' ? 'permMusic' : 'music', { at, group: 'preview-music', loop: true, end: at + 8 });
-    const cues = game === 'perm-mania' ? [['permDemo', .5], ['permDemo', .5 + BEAT], ['permDemo', .5 + BEAT * 2], ['permDemo', .5 + BEAT * 3], ['permHit', .5 + BEAT * 4], ['permHit', .5 + BEAT * 5], ['permHit', .5 + BEAT * 6], ['permHit', .5 + BEAT * 7], ['permGrow', .5 + BEAT * 8], ['finish', 6.3]] : [['red', .5], ['green', .8], ['blue', 1.1], ['mistake', 1.6], ['tick', 2.5], ['tick', 3.5], ['tick', 4.5], ['go', 5.5], ['finish', 6.3]];
+    if (this.preferences.musicMode !== 'off' && this.preferences.musicVolume > 0) this.source((PROFILES[game] || PROFILES['totem-shrinker']).music, { at, group: 'preview-music', loop: true, end: at + 8 });
+    const cues = game === 'facial-slot-machine' ? [['slotGo', .3], ['slotLock', 1.1], ['slotMiss', 1.8], ['slotLock', 3], ['slotWin', 4.5]] : game === 'perm-mania' ? [['permDemo', .5], ['permDemo', .5 + BEAT], ['permDemo', .5 + BEAT * 2], ['permDemo', .5 + BEAT * 3], ['permHit', .5 + BEAT * 4], ['permHit', .5 + BEAT * 5], ['permHit', .5 + BEAT * 6], ['permHit', .5 + BEAT * 7], ['permGrow', .5 + BEAT * 8], ['finish', 6.3]] : [['red', .5], ['green', .8], ['blue', 1.1], ['mistake', 1.6], ['tick', 2.5], ['tick', 3.5], ['tick', 4.5], ['go', 5.5], ['finish', 6.3]];
     for (const [id, delay] of cues) this.play(id, { at: at + delay, group: 'preview-effects' });
     this.onChange();
   }

@@ -33,7 +33,10 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
 
 test('Arcade selects two distinct games from the expanding catalog; Game Select repeats five', () => {
   const ids = Object.keys(GAMES);
-  assert.deepEqual(createSetPlan('arcade', ids[0], () => 0).sort(), ids.sort());
+  const current = createSetPlan('arcade', ids[0], () => 0);
+  assert.equal(current.length, 2);
+  assert.equal(new Set(current).size, 2);
+  assert.ok(current.every(id => ids.includes(id)));
   const future = Array.from({ length: 12 }, (_, index) => `game-${index}`);
   const plan = createSetPlan('arcade', null, max => max - 1, future);
   assert.equal(plan.length, 2);
@@ -89,9 +92,11 @@ test('five automatic Totem rounds increase block counts and crown the total-poin
   assert.equal(room.round.blockCount, 30);
 });
 
-test('Arcade automatically plays both base-difficulty games and keeps cumulative scores', () => {
+test('Arcade automatically plays two distinct base-difficulty games and keeps cumulative scores', () => {
   const { service, room, finish, sync, setTime } = setup({ mode: 'arcade', count: 2 });
-  assert.deepEqual([...room.set.plan].sort(), Object.keys(GAMES).sort());
+  assert.equal(room.set.plan.length, 2);
+  assert.equal(new Set(room.set.plan).size, 2);
+  assert.ok(room.set.plan.every(id => GAMES[id]));
   const first = room.round.game;
   assert.equal(room.round.difficulty, 1);
   finish();
