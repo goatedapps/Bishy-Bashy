@@ -1,6 +1,8 @@
 import QRCode from 'qrcode';
 import { SyncedClock } from './clock.js';
-import { TotemRun, TOTEM_GAME } from '../shared/totem.js';
+import { TOTEM_GAME } from '../shared/totem.js';
+import { PERM_GAME, demoCues } from '../shared/perm.js';
+import { GAMES, createRun } from '../shared/games.js';
 import { GameView } from './game-view.js';
 import { GameAudio } from './audio.js';
 
@@ -20,6 +22,8 @@ let reconnectAt = 0, reconnectTimer, entryRequest = null, joining = false, inten
 let lastPong = 0, lastSyncSent = 0, lastPendingSent = -Infinity, lastProgressSent = 0, lastProgressKey = '';
 let inviteUrl = '', lanUrls = [], events = [];
 let hiddenSince = document.hidden ? performance.now() : null;
+let selectedGame = GAMES[localStorage.getItem('bb-game')] ? localStorage.getItem('bb-game') : TOTEM_GAME;
+let timingOffset = Math.max(-150, Math.min(150, Number(localStorage.getItem('bb-timing-offset')) || 0));
 const view = new GameView();
 const audio = new GameAudio({ onChange: () => updateSound() });
 const buttons = [...document.querySelectorAll('.hit-button')];
@@ -28,6 +32,7 @@ $('name').value = session?.name || localStorage.getItem('bb-name') || '';
 $('room-input').value = params.get('room') || '';
 $('server-url').value = serverUrl;
 updateSound();
+updateGameProfile();
 if (!serverUrl) notice('Enter your multiplayer server address in Connection settings.');
 
 function notice(message) {
@@ -98,9 +103,9 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 2) {
+      if (message.protocol !== 3) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
-        notice('The multiplayer server needs the Totem Shrinker update. Try again after it has deployed.');
+        notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
       }
       playerId = message.playerId;
@@ -165,7 +170,7 @@ function enter(type) {
   serverUrl = $('server-url').value.trim() || defaultServer;
   if (!serverUrl) return notice('Enter the hosted multiplayer server address in Connection settings.');
   localStorage.setItem('bb-server', serverUrl);
-  entryRequest = { type, name: $('name').value.trim(), code };
+  entryRequest = { type, name: $('name').value.trim(), code, game: selectedGame };
   joining = true; intentionalClose = false;
   audio.unlock();
   notice('Connecting to the room…');
@@ -181,6 +186,7 @@ function resetSession() {
   sessionStorage.removeItem('bb-session'); sessionStorage.removeItem('bb-active-round');
   $('welcome').hidden = false; $('room-view').hidden = true;
   document.body.classList.remove('in-room');
+  updateGameProfile();
   notice('');
 }
 
@@ -188,18 +194,19 @@ function setupLocalRound() {
   const round = room?.round;
   const time = performance.now();
   const estimate = clock.estimate(time);
-  if (!round || round.game !== TOTEM_GAME || round.phase === 'results' || localRound || !estimate || estimate.count < 3 || !round.playerIds.includes(playerId)) return;
+  if (!round || !GAMES[round.game] || round.phase === 'results' || localRound || !estimate || estimate.count < 3 || !round.playerIds.includes(playerId)) return;
   const start = round.startAt - estimate.offset;
   const savedResult = pending?.message.roundId === round.id ? pending.message : room.players.find(player => player.id === playerId)?.result;
   localRound = {
     id: round.id, start, end: round.endAt - estimate.offset, offset: estimate.offset, uncertainty: estimate.uncertainty,
-    run: new TotemRun(round, start), goDelay: null, done: Boolean(savedResult), status: savedResult?.status,
+    run: createRun(round, start, timingOffset), goDelay: null, done: Boolean(savedResult), status: savedResult?.status,
     mustForfeit: sessionStorage.getItem('bb-active-round') === round.id || time >= start, hiddenDuringPlay: false,
   };
   if (savedResult) {
     localRound.run.cleared = savedResult.cleared || 0;
     localRound.run.mistakes = savedResult.mistakes || 0;
     localRound.run.elapsed = savedResult.elapsed;
+    if (round.game === PERM_GAME) localRound.run.score = savedResult.score || 0;
     localRound.run.done = true;
   }
   sessionStorage.setItem('bb-active-round', round.id);
@@ -210,7 +217,7 @@ function setupLocalRound() {
 function synchronizeAudio() {
   const round = room?.round;
   if (document.hidden || !localRound || round?.phase === 'results' || localRound.done && localRound.status !== 'finished') return;
-  audio.scheduleRound(localRound.id, localRound.start, localRound.end, round.playerIds[0] === playerId, localRound.done);
+  audio.scheduleRound(localRound.id, localRound.start, localRound.end, round.playerIds[0] === playerId, localRound.done, { game: round.game, cues: round.game === PERM_GAME ? demoCues(round.seed) : [] });
 }
 
 function clearPending() {
@@ -233,6 +240,7 @@ function complete(status, elapsed = null) {
   pending = { roomCode: room.code, playerId, dueAt: Date.now() + delay, message: {
     type: 'result', roundId: localRound.id, status, elapsed, cleared: localRound.run.cleared,
     mistakes: localRound.run.mistakes, goDelay: localRound.goDelay,
+    ...(room.round.game === PERM_GAME ? { score: localRound.run.score } : {}),
   } };
   sessionStorage.setItem('bb-pending', JSON.stringify(pending));
   lastPendingSent = -Infinity;
@@ -258,7 +266,11 @@ function flushPending() {
 function enforceLifecycle(time) {
   if (!localRound || localRound.done || room?.round?.phase === 'results' || time < localRound.start) return;
   if (localRound.mustForfeit || document.hidden || localRound.hiddenDuringPlay) complete('forfeit');
-  else if (time >= localRound.end) complete('timeout');
+  else if (room.round.game === PERM_GAME) {
+    localRound.run.advance(time);
+    for (const event of localRound.run.events.splice(0)) if (event.type === 'growth') audio.play('permGrow');
+    if (localRound.run.done) complete('finished', localRound.run.elapsed);
+  } else if (time >= localRound.end) complete('timeout');
 }
 
 function tap(color) {
@@ -269,7 +281,7 @@ function tap(color) {
   if (action.type === 'ignored') return;
   if (localRound.goDelay === null) localRound.goDelay = Math.max(0, time - localRound.start);
   if (action.type === 'finished') complete('finished', action.elapsed);
-  else audio.play(action.type, { color, progress: localRound.run.cleared / room.round.blockCount });
+  else audio.play(action.type, { color, progress: localRound.run.cleared / room.round.goal, game: room.round.game });
   view.render(room, playerId, localRound, time);
   updateControls(time);
 }
@@ -277,9 +289,10 @@ function tap(color) {
 function sendProgress(time) {
   if (!joined || !localRound || localRound.done || time < localRound.start || time >= localRound.end || time - lastProgressSent < 250) return;
   const { cleared, mistakes } = localRound.run;
-  const key = `${cleared}/${mistakes}`;
+  const score = localRound.run.score;
+  const key = `${cleared}/${mistakes}/${score ?? ''}`;
   if (key === lastProgressKey) return;
-  if (send({ type: 'progress', roundId: localRound.id, cleared, mistakes })) {
+  if (send({ type: 'progress', roundId: localRound.id, cleared, mistakes, ...(score !== undefined ? { score } : {}) })) {
     lastProgressSent = time; lastProgressKey = key;
   }
 }
@@ -318,6 +331,7 @@ function updateMetrics() {
 function renderRoom() {
   updateMetrics();
   if (!room) return;
+  updateGameProfile();
   const active = room.round && room.round.phase !== 'results';
   $('room-code').textContent = room.code;
   $('occupancy').textContent = `· ${room.players.length}/4`;
@@ -330,7 +344,7 @@ function renderRoom() {
 }
 
 function updateControls(time) {
-  const disabled = !localRound || localRound.done || document.hidden || time < localRound.start || time >= localRound.end || time < localRound.run.blockedUntil || room?.round?.phase === 'results';
+  const disabled = !localRound || localRound.done || document.hidden || time < localRound.start || time >= localRound.end || time < localRound.run.blockedUntil || room?.round?.phase === 'results' || room?.round?.game === PERM_GAME && localRound.run.phase(time).mode === 'watch';
   for (const button of buttons) button.disabled = disabled;
 }
 
@@ -344,7 +358,7 @@ function animate() {
     else if (time < localRound.start) overlay = String(Math.ceil((localRound.start - time) / 1000));
     else {
       if (localRound.goDelay === null && !localRound.done) localRound.goDelay = time - localRound.start;
-      if (localRound.done) { overlay = localRound.status === 'finished' ? 'Cleared!' : localRound.status === 'forfeit' ? 'Forfeited' : 'Time’s up!'; small = true; }
+      if (localRound.done) { overlay = localRound.status === 'finished' ? round.game === PERM_GAME ? 'Fabulous!' : 'Cleared!' : localRound.status === 'forfeit' ? 'Forfeited' : 'Time’s up!'; small = true; }
       else if (time - localRound.start < 450) overlay = 'GO!';
     }
     const elapsed = localRound ? localRound.run.elapsed ?? Math.max(0, Math.min(time, localRound.end) - localRound.start) : 0;
@@ -356,6 +370,7 @@ function animate() {
   const frozen = Boolean(localRound && !localRound.done && time < localRound.run.blockedUntil);
   const ownIndex = room?.players.findIndex(player => player.id === playerId) ?? -1;
   if (ownIndex >= 0) view.lanes[ownIndex].lane.classList.toggle('frozen', frozen);
+  if (room) view.animate(room, localRound, time);
   updateControls(time);
   requestAnimationFrame(animate);
 }
@@ -388,6 +403,36 @@ function updateSound() {
   const active = room?.round && room.round.phase !== 'results';
   $('audio-preview').disabled = Boolean(active) || audio.status === 'loading';
   $('audio-preview').textContent = audio.previewing ? 'Stop preview' : 'Preview sound';
+  $('timing-offset').value = timingOffset;
+  $('timing-offset-value').textContent = `${timingOffset > 0 ? '+' : ''}${timingOffset} ms`;
+  $('timing-offset').disabled = Boolean(active);
+}
+
+function updateGameProfile() {
+  const active = room?.round && room.round.phase !== 'results';
+  const game = active ? room.round.game : room?.selectedGame || selectedGame;
+  const perm = game === PERM_GAME;
+  audio.selectGame(game);
+  document.body.classList.toggle('perm-theme', perm);
+  document.querySelector('.game-title').textContent = GAMES[game]?.title || 'Bishy Bashy';
+  document.title = `${GAMES[game]?.title || 'Bishy Bashy'} · Bishy Bashy`;
+  $('totem-entry').hidden = perm;
+  $('perm-entry').hidden = !perm;
+  $('rhythm-guide').hidden = !perm || !active;
+  for (const button of document.querySelectorAll('[data-game]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.game === game));
+    button.disabled = Boolean(active || room && room.hostId !== playerId);
+  }
+}
+
+function showRules() {
+  const game = room?.round && room.round.phase !== 'results' ? room.round.game : room?.selectedGame || selectedGame;
+  const perm = game === PERM_GAME;
+  $('rules-title').textContent = GAMES[game].title;
+  const rules = perm ? ['Watch the four-beat rhythm, then copy it with any button.', 'One mistake or fewer in a phrase grows your hair. Eight phrases, 30 seconds.', 'Biggest hair wins. Timing score breaks ties; extra taps count as mistakes.'] : ['Match the bottom block with red, green, or blue.', 'Clear all 30 blocks as fast as you can.', 'A wrong tap freezes your controls for 0.3 seconds.'];
+  $('rules-list').replaceChildren(...rules.map(text => { const item = document.createElement('li'); item.textContent = text; return item; }));
+  $('rules-note').textContent = 'Stay on this screen during the round; switching apps or reloading forfeits it.';
+  $('rules').showModal();
 }
 
 $('create').addEventListener('click', () => enter('create'));
@@ -395,19 +440,28 @@ $('entry-form').addEventListener('submit', event => { event.preventDefault(); en
 $('ready').addEventListener('click', () => { audio.unlock(); send({ type: 'ready', ready: !room.players.find(player => player.id === playerId)?.ready }); });
 $('start').addEventListener('click', () => { audio.unlock(); send({ type: 'start' }); });
 $('leave').addEventListener('click', () => send({ type: 'leave' }));
-$('rules-open').addEventListener('click', () => $('rules').showModal());
+$('rules-open').addEventListener('click', showRules);
 $('settings-open').addEventListener('click', () => { updateSound(); $('settings').showModal(); });
 $('sound').addEventListener('click', async () => {
   audio.toggle(); updateSound();
   await audio.unlock();
   synchronizeAudio();
 });
-$('audio-preview').addEventListener('click', () => audio.previewing ? audio.stopPreview() : audio.preview());
+$('audio-preview').addEventListener('click', () => audio.previewing ? audio.stopPreview() : audio.preview(room?.selectedGame || selectedGame));
 $('settings').addEventListener('close', () => audio.stopPreview());
 $('music-mode').addEventListener('change', () => { audio.setPreferences({ musicMode: $('music-mode').value }); synchronizeAudio(); });
 for (const [id, key] of [['music-volume', 'musicVolume'], ['effects-volume', 'effectsVolume']]) {
   $(id).addEventListener('input', () => audio.setPreferences({ [key]: Number($(id).value) / 100 }));
 }
+$('timing-offset').addEventListener('input', () => {
+  timingOffset = Number($('timing-offset').value);
+  localStorage.setItem('bb-timing-offset', String(timingOffset));
+  updateSound();
+});
+for (const button of document.querySelectorAll('[data-game]')) button.addEventListener('click', () => {
+  if (room) send({ type: 'select-game', game: button.dataset.game });
+  else { selectedGame = button.dataset.game; localStorage.setItem('bb-game', selectedGame); updateGameProfile(); }
+});
 $('share').addEventListener('click', async () => { $('invite').showModal(); await prepareInvite(); });
 $('copy-link').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(inviteUrl); $('copy-link').textContent = 'Copied!'; }

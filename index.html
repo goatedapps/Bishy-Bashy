@@ -4,11 +4,12 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <meta name="theme-color" content="#ffda47" />
-  <title>Totem Shrinker · Bishy Bashy</title>
+  <title>Bishy Bashy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/src/style.css" />
+  <link rel="stylesheet" href="/src/games.css" />
 </head>
 <body>
   <header class="game-top">
@@ -21,8 +22,12 @@
   </header>
   <main>
     <h1 class="game-title">Totem Shrinker</h1>
+    <nav id="game-picker" class="game-picker" aria-label="Choose a game">
+      <button type="button" data-game="totem-shrinker" aria-pressed="true">Totem Shrinker</button>
+      <button type="button" data-game="perm-mania" aria-pressed="false">Perm Mania</button>
+    </nav>
     <section id="welcome" class="entry-layout" aria-label="Join the game">
-      <div class="entry-art" aria-hidden="true"><div class="block blue"></div><div class="block green"></div><div class="block red"></div></div>
+      <div class="entry-art" aria-hidden="true"><div id="totem-entry"><div class="block blue"></div><div class="block green"></div><div class="block red"></div></div><div id="perm-entry" class="perm-character" hidden><div class="perm-hair"></div><div class="perm-dancer dancer-0"></div></div></div>
       <form id="entry-form" class="entry-panel">
         <label for="name">Your name</label>
         <input id="name" maxlength="20" autocomplete="nickname" required placeholder="Player name" />
@@ -39,6 +44,11 @@
       </div>
       <section id="play-view" class="arcade-frame">
         <div class="match-hud"><strong id="round-label">Lobby</strong><div class="timer"><span aria-hidden="true">◷</span> <span id="timer">00.00</span><small>sec</small></div><span id="connection-dot" class="online-dot" role="status" aria-label="Connecting"></span></div>
+        <div id="rhythm-guide" class="rhythm-guide" hidden>
+          <span class="disco-ball" aria-hidden="true"></span>
+          <div class="rhythm-heading"><strong id="rhythm-phase">Watch</strong><span id="rhythm-phrase">Phrase 1 / 8</span><span id="rhythm-hint">Copy with any button</span></div>
+          <div id="rhythm-track" class="rhythm-track" role="img" aria-label="Rhythm pattern"></div>
+        </div>
         <div id="arena" class="arena"><div id="player-lanes" class="lanes"></div><div id="round-overlay" class="round-overlay" hidden aria-live="polite"></div></div>
         <div id="control-deck" class="control-deck" hidden aria-label="Your controls">
           <button class="hit-button red" data-color="0" aria-label="Red circle" disabled><span class="shape">●</span><span>Red</span><small>1 / J</small></button>
@@ -54,7 +64,7 @@
     </section>
     <p id="notice" class="notice" hidden role="alert"></p>
   </main>
-  <dialog id="rules"><form method="dialog"><button class="close" aria-label="Close rules">×</button></form><h2>How to play</h2><ol class="rules-list"><li>Match the <strong>bottom block</strong> with red, green, or blue.</li><li>Clear all <strong>30 blocks</strong> as fast as you can.</li><li>A wrong tap freezes your controls for <strong>0.3 seconds</strong>.</li></ol><div class="shape-legend"><span>● Red</span><span>▲ Green</span><span>◆ Blue</span></div><p>You have 45 seconds. Stay on this screen during the round; switching apps or reloading forfeits it.</p><form method="dialog"><button class="primary">Got it</button></form></dialog>
+  <dialog id="rules"><form method="dialog"><button class="close" aria-label="Close rules">×</button></form><h2 id="rules-title">How to play</h2><ol id="rules-list" class="rules-list"></ol><div class="shape-legend"><span>● Red</span><span>▲ Green</span><span>◆ Blue</span></div><p id="rules-note"></p><form method="dialog"><button class="primary">Got it</button></form></dialog>
   <dialog id="invite"><form method="dialog"><button class="close" aria-label="Close invitation">×</button></form><h2>Bring your friends</h2><canvas id="qr" aria-label="Room invitation QR code"></canvas><label for="invite-link">Invitation link</label><input id="invite-link" readonly /><button id="copy-link">Copy link</button><p id="invite-note"></p></dialog>
   <dialog id="settings">
     <form method="dialog"><button class="close" aria-label="Close settings">×</button></form>
@@ -70,6 +80,9 @@
       <input id="effects-volume" type="range" min="0" max="100" step="5" value="80" />
       <button id="audio-preview">Preview sound</button>
       <p id="audio-status" role="status">Sound is off.</p>
+      <label for="timing-offset" class="volume-label">Rhythm timing <output id="timing-offset-value" for="timing-offset">0 ms</output></label>
+      <input id="timing-offset" type="range" min="-150" max="150" step="10" value="0" />
+      <p>For Perm Mania: increase this if taps consistently register late. Set before the round.</p>
     </section>
     <h3>Connection</h3>
     <label for="server-url">Multiplayer server</label><input id="server-url" type="url" placeholder="wss://your-server.onrender.com" />

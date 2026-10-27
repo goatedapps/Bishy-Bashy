@@ -70,21 +70,22 @@ function normalize(samples, peak) {
   return samples.map(sample => sample * scale);
 }
 
-export function music() {
+export function music({ perm = false } = {}) {
   const base = new Float32Array(Math.round(LOOP_SECONDS * SAMPLE_RATE));
   const urgency = new Float32Array(base.length);
   const stepSeconds = BEAT / 4;
   for (let bar = 0; bar < 8; bar++) {
     const root = ROOTS[bar];
-    for (const step of [0, 2, 3, 6, 8, 10, 11, 14, 15]) {
+    const backing = perm && bar % 2 === 0 ? .65 : 1;
+    for (const step of perm ? [0, 3, 6, 7, 8, 10, 14] : [0, 2, 3, 6, 8, 10, 11, 14, 15]) {
       const note = root + ([2, 6, 10, 14].includes(step) ? 12 : step === 15 ? 7 : 0);
-      mix(base, tone(note, step === 3 || step === 11 ? .12 : .2, 'bass'), (bar * 16 + step) * stepSeconds, step % 4 === 0 ? .31 : .24, true);
+      mix(base, tone(note, step === 3 || step === 11 ? .12 : .2, 'bass'), (bar * 16 + step) * stepSeconds, (step % 4 === 0 ? .31 : .24) * backing, true);
     }
     for (const step of [2, 6, 10, 14]) for (const note of CHORDS[bar]) mix(base, tone(note, .21, 'chord'), (bar * 16 + step) * stepSeconds, .055, true);
-    MELODY[bar].forEach((note, step) => {
+    MELODY[perm ? (bar + 4) % 8 : bar].forEach((note, step) => {
       if (note === null) return;
       const time = (bar * 16 + step) * stepSeconds;
-      mix(base, tone(note, .18), time, step % 4 === 0 ? .19 : .145, true);
+      if (!perm || bar % 2 === 1) mix(base, tone(note, .18), time, (step % 4 === 0 ? .19 : .145) * (perm ? .7 : 1), true);
       mix(urgency, tone(note + 12, .13, 'wood'), time, .1, true);
     });
     for (let step = 0; step < 16; step++) {
@@ -129,6 +130,17 @@ export function effects() {
   const timeout = new Float32Array(SAMPLE_RATE);
   for (const [index, note] of [69, 66, 62].entries()) mix(timeout, tone(note, .42, 'chord'), index * .16, .25);
   result.timeout = normalize(timeout, .55);
+  const demo = tone(81, .14, 'wood');
+  mix(demo, drum('clap', 120), 0, .28);
+  result.permDemo = normalize(demo, .7);
+  const hit = tone(78, .12, 'wood');
+  mix(hit, drum('clap', 121), 0, .4);
+  result.permHit = normalize(hit, .62);
+  result.permMiss = normalize(tone(50, .15, 'bass'), .35);
+  const grow = new Float32Array(SAMPLE_RATE * .4);
+  [78, 81, 86].forEach((note, index) => mix(grow, tone(note, .2, 'wood'), index * .055, .3));
+  result.permGrow = normalize(grow, .6);
+  result.permGo = normalize(tone(86, .12, 'chord'), .48);
   return result;
 }
 

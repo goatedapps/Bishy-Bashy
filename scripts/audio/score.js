@@ -23,4 +23,11 @@ export const AUDIO_FILES = {
   mistake: 'mistake.wav', tick: 'countdown.wav', go: 'go.wav',
   finish: 'finish.wav', timeout: 'timeout.wav',
   music: 'totem-party.wav', urgency: 'totem-party-urgency.wav',
+  permMusic: 'perm-groove.wav', permUrgency: 'perm-groove-urgency.wav',
+  permDemo: 'perm-demo.wav', permHit: 'perm-hit.wav', permMiss: 'perm-miss.wav', permGrow: 'perm-grow.wav', permGo: 'perm-go.wav',
 };
+
+export function audioAssetIds(game = 'totem-shrinker') {
+  const shared = ['tick', 'finish', 'timeout'];
+  return [...shared, ...(game === 'perm-mania' ? ['permMusic', 'permUrgency', 'permDemo', 'permHit', 'permMiss', 'permGrow', 'permGo'] : ['red', 'green', 'blue', 'mistake', 'go', 'music', 'urgency'])];
+}

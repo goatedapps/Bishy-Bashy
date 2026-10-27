@@ -1,23 +1,29 @@
 # Bishy Bashy
 
-This is a four-device party game with playable Totem Shrinker.
+This is a four-device party game with playable Totem Shrinker and Perm Mania.
 The Vite frontend deploys independently to GitHub Pages; `server/` is a separate Node WebSocket room service on Render.
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 2 identifies the playable game; coordinate frontend/backend releases when changing it.
+Protocol version 3 includes host-controlled game selection; coordinate frontend/backend releases when changing it.
 
 ## Game and visuals
 
 `shared/totem.js` owns the deterministic shared-seed sequence and local gameplay rules.
 Initial tuning is 30 blocks, a 300 ms wrong-tap freeze, and a 45-second deadline.
 Show the next five blocks with the next input at the bottom, and size the complete stack to fit inside its lane.
+`shared/perm.js` owns Perm Mania's seeded call-and-response phrases, local timing judgments, hair growth, and fixed 30-second score round.
+Perm Mania ranks growth, then timing score; Totem Shrinker ranks elapsed time.
+`shared/games.js` is the common game registry and result ordering; the host may switch games only between rounds, resetting readiness.
 Every device displays all four lanes, with controls for its own player only.
-The approved candy palette and original generated sprite sheet live in `src/style.css` and `public/assets/`.
+Shared styles live in `src/style.css`; game selection and the pink disco stage live in `src/games.css`.
+Original generated sprites and their provenance live in `public/assets/`.
 The portable design mockup remains in `mockups/`, with editable source/provenance in `.lavish/totem-shrinker/`.
 Keep screens visually driven; avoid redundant captions, decorative microcopy, and repeated instructions outside the rules screen.
 Audio playback belongs in `src/audio.js`, starts only after a user gesture, and must have visual equivalents.
 The original disco score and synthesis live in `scripts/audio/`; regenerate `public/audio/` with `npm run audio:render` after changing them.
+Load audio banks per game and schedule Perm Mania demonstrations from the same frozen clock mapping as its visual guide.
+Freeze any per-device rhythm timing adjustment when scheduling the round; muted play must remain possible with the visual guide.
 Keep background music on one fixed participant by default, allow personal overrides, and preserve its phase across mute and interruption.
 Results may stop music and countdown cues, but must not truncate an accepted local finish cue.
 

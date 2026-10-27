@@ -173,3 +173,46 @@ test('new players cannot join an active test and connected tokens cannot be reus
   service.handle(clients[0], { type: 'leave' });
   assert.equal(room.players.length, 2);
 });
+
+test('only the host can switch games, switching resets ready, and active rounds stay locked', () => {
+  const { service, clients, room, sent } = setup();
+  clients.forEach(client => { service.handle(client, { type: 'sync', rtt: 20, uncertainty: 10, count: 5 }); service.handle(client, { type: 'ready', ready: true }); });
+  service.handle(clients[1], { type: 'select-game', game: 'perm-mania' });
+  assert.equal(room.selectedGame, 'totem-shrinker');
+  assert.match(sent.get(clients[1]).at(-1).message, /host/);
+  service.handle(clients[0], { type: 'select-game', game: '__proto__' });
+  assert.equal(room.selectedGame, 'totem-shrinker');
+  service.handle(clients[0], { type: 'select-game', game: 'perm-mania' });
+  assert.ok(room.players.every(player => !player.ready));
+  clients.forEach(client => service.handle(client, { type: 'ready', ready: true }));
+  service.handle(clients[0], { type: 'start' });
+  assert.equal(room.round.game, 'perm-mania');
+  assert.equal(room.round.duration, 30_000);
+  service.handle(clients[0], { type: 'select-game', game: 'totem-shrinker' });
+  assert.equal(room.selectedGame, 'perm-mania');
+});
+
+test('Perm scores require a completed round, stay bound to the connection, and acknowledge retries', () => {
+  const { service, clients, room, sent, setTime } = setup();
+  service.handle(clients[0], { type: 'select-game', game: 'perm-mania' });
+  clients.forEach(client => { service.handle(client, { type: 'sync', rtt: 20, uncertainty: 10, count: 5 }); service.handle(client, { type: 'ready', ready: true }); });
+  service.handle(clients[0], { type: 'start' });
+  const round = room.round;
+  const result = { type: 'result', roundId: round.id, status: 'finished', elapsed: round.duration, cleared: 8, mistakes: 0, score: round.maxScore };
+  setTime(round.startAt + 2000);
+  service.handle(clients[0], result);
+  assert.equal(room.players[0].result, null);
+  service.handle(clients[1], { type: 'progress', roundId: round.id, cleared: 1, mistakes: 1, score: 3000, playerId: room.players[0].id });
+  assert.equal(room.players[0].progress.cleared, 0);
+  assert.equal(room.players[1].progress.cleared, 1);
+  setTime(round.endAt + 100);
+  service.handle(clients[0], { ...result, score: round.maxScore + 1 });
+  assert.equal(room.players[0].result, null);
+  service.handle(clients[0], result);
+  service.handle(clients[1], { ...result, cleared: 7, mistakes: 2, score: 20_000 });
+  assert.equal(room.round.phase, 'results');
+  assert.equal(room.players[0].result.cleared, 8);
+  service.handle(clients[0], { ...result, score: 0 });
+  assert.equal(room.players[0].result.score, round.maxScore);
+  assert.equal(sent.get(clients[0]).at(-1).type, 'result-ack');
+});

@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { GameAudio } from '../src/audio.js';
-import { AUDIO_FILES, BEAT, LOOP_SECONDS } from '../scripts/audio/score.js';
+import { AUDIO_FILES, BEAT, LOOP_SECONDS, audioAssetIds } from '../scripts/audio/score.js';
+import { demoCues } from '../shared/perm.js';
 
 class Parameter {
   constructor() { this.value = 1; this.events = []; }
@@ -68,7 +69,7 @@ test('audio is opt-in, loads once after a gesture, and preferences survive unava
   assert.equal(await state.audio.unlock(), true);
   await state.audio.unlock();
   assert.equal(state.created, 1);
-  assert.equal(state.requests.length, Object.keys(AUDIO_FILES).length);
+  assert.equal(state.requests.length, audioAssetIds().length);
   state.audio.setPreferences({ musicVolume: 2, effectsVolume: -1, musicMode: 'off' });
   assert.deepEqual(JSON.parse(state.values.get('bb-audio')), { musicMode: 'off', musicVolume: 1, effectsVolume: 0 });
   const blocked = setup({ storage: { getItem() { throw new Error('Blocked'); }, setItem() { throw new Error('Blocked'); } } });
@@ -185,9 +186,11 @@ test('music-off preview plays only effects and ends when its last cue ends', asy
 
 test('authored PCM assets have headroom, quiet endpoints, and continuous equal-length loops', async () => {
   let bytesTotal = 0;
+  const sizes = {};
   for (const [id, file] of Object.entries(AUDIO_FILES)) {
     const bytes = await readFile(new URL(`../public/audio/${file}`, import.meta.url));
     bytesTotal += bytes.length;
+    sizes[id] = bytes.length;
     assert.equal(bytes.toString('ascii', 0, 4), 'RIFF');
     assert.equal(bytes.readUInt16LE(22), 1);
     const length = bytes.readUInt32LE(40) / 2;
@@ -195,7 +198,7 @@ test('authored PCM assets have headroom, quiet endpoints, and continuous equal-l
     for (let index = 0; index < length; index++) { const sample = bytes.readInt16LE(44 + index * 2) / 32767; peak = Math.max(peak, Math.abs(sample)); dc += sample; }
     assert.ok(peak > .25 && peak < .71, `${id}: peak ${peak}`);
     assert.ok(Math.abs(dc / length) < .002, `${id}: excessive DC`);
-    if (['music', 'urgency'].includes(id)) {
+    if (['music', 'urgency', 'permMusic', 'permUrgency'].includes(id)) {
       assert.equal(length / bytes.readUInt32LE(24), LOOP_SECONDS);
       assert.ok(Math.abs(bytes.readInt16LE(44) - bytes.readInt16LE(bytes.length - 2)) / 32767 < .005, `${id}: loop seam`);
     } else {
@@ -203,5 +206,28 @@ test('authored PCM assets have headroom, quiet endpoints, and continuous equal-l
       assert.ok(Math.abs(bytes.readInt16LE(bytes.length - 2)) / 32767 < .001);
     }
   }
-  assert.ok(bytesTotal < 2_500_000, `Audio download budget exceeded: ${bytesTotal}`);
+  assert.ok(bytesTotal < 4_500_000, `Audio library budget exceeded: ${bytesTotal}`);
+  for (const game of ['totem-shrinker', 'perm-mania']) assert.ok(audioAssetIds(game).reduce((sum, id) => sum + sizes[id], 0) < 2_500_000, `${game}: audio bank budget exceeded`);
+});
+
+test('Perm Mania loads its own bank and schedules each demonstration on the audio clock', async () => {
+  const { audio, context, requests } = setup();
+  audio.selectGame('perm-mania');
+  await audio.unlock();
+  assert.equal(audio.buffers.has('music'), false);
+  assert.equal(audio.buffers.has('permMusic'), true);
+  assert.equal(requests.length, audioAssetIds('perm-mania').length);
+  const cues = demoCues(123);
+  audio.scheduleRound('perm', 5000, 35_000, true, false, { game: 'perm-mania', cues });
+  const guide = [...audio.voices].filter(voice => voice.id === 'permDemo');
+  assert.equal(guide.length, cues.length);
+  assert.deepEqual(guide.map(voice => voice.source.started.at), cues.map(at => context.currentTime + 5 + at / 1000));
+  assert.equal([...audio.voices].filter(voice => voice.id === 'permMusic').length, 1);
+  const count = audio.voices.size;
+  audio.synchronize();
+  assert.equal(audio.voices.size, count);
+  audio.play('hit', { game: 'perm-mania' });
+  assert.ok([...audio.voices].some(voice => voice.id === 'permHit'));
+  audio.stopRound();
+  assert.equal([...audio.voices].filter(voice => voice.group === 'round').length, 0);
 });

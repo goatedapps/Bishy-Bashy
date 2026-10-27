@@ -1,7 +1,7 @@
 # Bishy Bashy
 
-A four-player browser party game, with Totem Shrinker as the first playable round.
-Everyone sees all four players and controls only their own tower.
+A four-player browser party game with Totem Shrinker and Perm Mania.
+Everyone sees all four players and controls only their own player.
 The static website runs on GitHub Pages; a separate Node WebSocket server coordinates rooms and results.
 
 - [Play](https://goatedapps.github.io/Bishy-Bashy/)
@@ -11,6 +11,8 @@ The static website runs on GitHub Pages; a separate Node WebSocket server coordi
 ## Play Totem Shrinker
 
 Create a room, share its QR code or invitation link, and join from up to four phones or tablets.
+Choose a game using the buttons above the room; only the host can switch it after joining.
+Changing games resets everyone's Ready state and is locked during a round.
 Wait for clock synchronization, then each player taps **Ready**.
 The host taps **Start round** and everyone receives the same five-second countdown.
 
@@ -57,7 +59,7 @@ Sound loading and playback never gate gameplay or the result submission path.
 Effects duck the music briefly, independent category gains control the balance, and a master limiter provides additional headroom.
 Transient effects are capped at eight voices; the music uses two looping buffers.
 
-All ten mono WAV files total less than 2.5 MB and load only after sound is enabled.
+Each game's mono WAV bank totals less than 2.5 MB and loads only after sound is enabled for that game.
 The normal and urgency loops each last 15 seconds at 32 kHz, with equal sample counts for phase alignment.
 The editable score and synthesis are in `scripts/audio/`; no third-party recordings or music services are used.
 Regenerate the runtime files and their numerical analysis with:
@@ -68,6 +70,31 @@ npm run audio:render
 
 These signal and lifecycle checks do not establish subjective sound quality or physical speaker latency.
 Listen on target phones, headphones, and speakers to tune the final balance.
+
+## Play Perm Mania
+
+Select **Perm Mania** before creating a room, or let the host choose it between rounds.
+Every player receives the same eight seeded rhythm phrases at 128 BPM.
+Each phrase demonstrates four beats, then asks the player to repeat that rhythm over four beats.
+Tap any colored button, **1 / 2 / 3**, or **J / K / L** in time with the notes.
+Watching taps do not score; missing notes and extra response taps count as mistakes.
+A phrase with at most one mistake grows the dancer's hair by one stage.
+The round lasts exactly 30 seconds, and the final result is submitted locally at its end.
+Rankings use hair growth first and timing score second, with exact ties sharing a rank.
+Completed rhythm rounds outrank forfeits and missing results; completion packet arrival order does not affect ranking.
+
+The initial hit window is ±140 ms, with **Perfect** feedback within 55 ms.
+Accurate hits award up to 1,000 points each; stray response taps subtract 250 points without reducing the score below zero.
+An 80 ms input guard ignores simultaneous keys or accidental double input, while repeated mashing still fails phrases.
+These are provisional casual-play settings, rather than a certified rhythm-game timing tolerance.
+The **Rhythm timing** setting ranges from −150 to +150 ms and freezes when the local round is scheduled.
+Increase it if taps consistently register late on a particular device or speaker setup.
+The visual guide works while muted; enabling personal music can help players joining from different locations.
+
+Perm Mania has its own disco backing, demonstration claps, local hit/miss feedback, and hair-growth flourish.
+The demonstration sounds and visual notes share the agreed local timeline, but physical audio, display, and touch latency still require phone testing.
+This is an independent adaptation of the rhythm-and-hair-growth concept described in [this player guide](https://gamefaqs.gamespot.com/ps/575837-bishi-bashi-special-2/faqs/13258), with original artwork and music.
+[Perm Mania artwork notes](public/assets/perm-artwork.md) preserve the image-generation prompt and sprite layout.
 
 ## Run locally
 
@@ -101,6 +128,7 @@ It does not validate each tap or send permission to clear a block.
 Cosmetic progress broadcasts run at most four times per second per player and do not affect input response or rankings.
 A finish is saved to a session-storage outbox, retried until acknowledged, and accepted idempotently.
 Result arrival order does not affect the final ranking.
+Every client ranks Totem Shrinker by elapsed time and Perm Mania by growth and timing score.
 
 This friends-only game trusts client-reported results, with basic bounds and ownership checks.
 It is not a competitive anti-cheat system.
@@ -138,7 +166,7 @@ Physical phone/tablet playtesting remains necessary.
 
 `npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
 `npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
-The health endpoint reports protocol version 2 for the playable game.
+The health endpoint reports protocol version 3 for the two-game platform.
 Deploy the frontend and backend together when changing the multiplayer protocol.
 
 The Pages workflow tests, builds, and deploys `main`.

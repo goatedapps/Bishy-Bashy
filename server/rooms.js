@@ -1,5 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
-import { TOTEM_GAME, BLOCK_COUNT, GAME_DURATION_MS, MISTAKE_FREEZE_MS } from '../shared/totem.js';
+import { TOTEM_GAME } from '../shared/totem.js';
+import { GAMES, roundSettings } from '../shared/games.js';
+import { PERM_GAME } from '../shared/perm.js';
 
 export const ROUND_MS = 10_000;
 export const GRACE_MS = 10_000;
@@ -20,7 +22,7 @@ export class RoomService {
 
   snapshot(room) {
     return {
-      code: room.code, hostId: room.hostId, testNumber: room.testNumber,
+      code: room.code, hostId: room.hostId, testNumber: room.testNumber, selectedGame: room.selectedGame,
       players: room.players.map(({ id, name, connected, ready, sync, result, progress, disconnectedAt }) => ({ id, name, connected, ready, sync, result, progress, disconnectedAt })),
       round: room.round ? { ...room.round } : null,
     };
@@ -39,7 +41,7 @@ export class RoomService {
     if (message.type === 'create') {
       let code;
       do { code = Array.from(randomBytes(6), byte => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[byte % 32]).join(''); } while (this.rooms.has(code));
-      room = { code, players: [], hostId: null, round: null, testNumber: 0, updatedAt: this.now() };
+      room = { code, players: [], hostId: null, round: null, testNumber: 0, selectedGame: GAMES[message.game] ? message.game : TOTEM_GAME, updatedAt: this.now() };
       this.rooms.set(code, room);
     } else {
       room = this.rooms.get(String(message.code).toUpperCase());
@@ -58,7 +60,7 @@ export class RoomService {
     if (!returning) room.players.push(player);
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 2, token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 3, token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -84,6 +86,13 @@ export class RoomService {
       player.ready = Boolean(message.ready);
       return this.broadcast(room);
     }
+    if (message.type === 'select-game') {
+      if (player.id !== room.hostId) return this.error(client, 'Only the room host can choose the game.');
+      if (room.round && room.round.phase !== 'results' || !GAMES[message.game] || room.selectedGame === message.game) return;
+      room.selectedGame = message.game;
+      room.players.forEach(p => { p.ready = false; });
+      return this.broadcast(room);
+    }
     if (message.type === 'start') {
       if (player.id !== room.hostId) return this.error(client, 'Only the room host can start the round.');
       if (room.round && room.round.phase !== 'results') return;
@@ -98,10 +107,11 @@ export class RoomService {
         p.lastProgressAt = -Infinity;
       });
       const startAt = received + COUNTDOWN_MS;
-      const game = message.mode === 'sync' ? 'sync' : TOTEM_GAME;
-      const duration = game === 'sync' ? ROUND_MS : GAME_DURATION_MS;
+      const game = message.mode === 'sync' ? 'sync' : room.selectedGame;
+      const settings = game === 'sync' ? { duration: ROUND_MS } : roundSettings(game, randomBytes(4).readUInt32LE());
+      const duration = settings.duration;
       room.round = { id: randomUUID(), game, phase: 'countdown', startAt, endAt: startAt + duration, expiresAt: startAt + duration + GRACE_MS, duration, playerIds: participants.map(p => p.id) };
-      if (game === TOTEM_GAME) Object.assign(room.round, { seed: randomBytes(4).readUInt32LE(), blockCount: BLOCK_COUNT, freezeMs: MISTAKE_FREEZE_MS });
+      Object.assign(room.round, settings);
       return this.broadcast(room);
     }
     if (message.type === 'progress') return this.progress(room, player, message, received);
@@ -123,10 +133,11 @@ export class RoomService {
 
   progress(room, player, message, received) {
     const round = room.round;
-    if (!round || round.game !== TOTEM_GAME || round.id !== message.roundId || !round.playerIds.includes(player.id) || player.result || round.phase === 'results' || received < round.startAt || received > round.endAt) return;
+    if (!round || !GAMES[round.game] || round.id !== message.roundId || !round.playerIds.includes(player.id) || player.result || round.phase === 'results' || received < round.startAt || received > round.endAt) return;
     const { cleared, mistakes } = message;
-    if (!Number.isInteger(cleared) || cleared < player.progress.cleared || cleared > round.blockCount || !Number.isInteger(mistakes) || mistakes < player.progress.mistakes || mistakes > 1000 || received - player.lastProgressAt < 150) return;
-    player.progress = { cleared, mistakes };
+    if (!Number.isInteger(cleared) || cleared < player.progress.cleared || cleared > round.goal || !Number.isInteger(mistakes) || mistakes < player.progress.mistakes || mistakes > 1000 || received - player.lastProgressAt < 150) return;
+    if (round.game === PERM_GAME && (!Number.isInteger(message.score) || message.score < 0 || message.score > round.maxScore)) return;
+    player.progress = { cleared, mistakes, ...(round.game === PERM_GAME ? { score: message.score } : {}) };
     player.lastProgressAt = received;
     this.broadcast(room);
   }
@@ -140,11 +151,12 @@ export class RoomService {
     if (!['finished', 'forfeit', 'timeout'].includes(message.status)) return;
     if (message.status === 'finished' && (!Number.isFinite(message.elapsed) || message.elapsed < 0 || message.elapsed > round.duration || message.elapsed > received - round.startAt + 250)) return this.error(client, 'The reported finish time is outside this test.');
     if (round.game === TOTEM_GAME && message.status === 'finished' && (message.cleared !== round.blockCount || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || message.mistakes > 1000)) return this.error(client, 'Finish all the blocks before submitting a result.');
+    if (round.game === PERM_GAME && message.status === 'finished' && (received < round.endAt - 250 || message.elapsed !== round.duration || !Number.isInteger(message.cleared) || message.cleared < player.progress.cleared || message.cleared > round.goal || !Number.isInteger(message.score) || message.score < 0 || message.score > round.maxScore || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || message.mistakes > 1000)) return this.error(client, 'Wait for the rhythm round to finish before submitting a valid score.');
     if (message.status === 'timeout' && received < round.endAt) return this.error(client, 'The test has not timed out yet.');
     let cleared = null;
-    if (round.game === TOTEM_GAME) {
+    if (GAMES[round.game]) {
       cleared = player.progress.cleared;
-      if (Number.isInteger(message.cleared) && message.cleared >= cleared && message.cleared <= round.blockCount) cleared = message.cleared;
+      if (Number.isInteger(message.cleared) && message.cleared >= cleared && message.cleared <= round.goal) cleared = message.cleared;
     }
     player.result = {
       status: message.status,
@@ -155,8 +167,10 @@ export class RoomService {
       reason: message.status === 'forfeit' ? 'Left the game screen' : null,
       cleared,
       mistakes: Number.isInteger(message.mistakes) ? message.mistakes : null,
+      ...(round.game === PERM_GAME ? { score: message.status === 'finished' ? message.score : 0 } : {}),
     };
     if (round.game === TOTEM_GAME && message.status === 'finished') player.progress = { cleared: round.blockCount, mistakes: message.mistakes };
+    if (round.game === PERM_GAME && message.status === 'finished') player.progress = { cleared, mistakes: message.mistakes, score: message.score };
     this.send(client, { type: 'result-ack', roundId: round.id, status: player.result.status });
     this.finishIfComplete(room);
     this.broadcast(room);

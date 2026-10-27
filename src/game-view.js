@@ -1,4 +1,6 @@
 import { COLORS, createSequence } from '../shared/totem.js';
+import { PERM_GAME, BEAT_MS } from '../shared/perm.js';
+import { GAMES, comparePlayers } from '../shared/games.js';
 
 const SHAPES = ['●', '▲', '◆'];
 const $ = id => document.getElementById(id);
@@ -8,7 +10,7 @@ const node = (tag, className, text) => {
   if (text !== undefined) element.textContent = text;
   return element;
 };
-const resultLabel = result => result?.status === 'finished' ? `${(result.elapsed / 1000).toFixed(3)} s` : ({ forfeit: 'Forfeited', timeout: 'Time expired', missing: 'No result' }[result?.status] || 'Waiting…');
+const resultLabel = (result, perm = false) => result?.status === 'finished' ? perm ? `${result.cleared} growth · ${result.score.toLocaleString()} pts` : `${(result.elapsed / 1000).toFixed(3)} s` : ({ forfeit: 'Forfeited', timeout: 'Time expired', missing: 'No result' }[result?.status] || 'Waiting…');
 
 function block(color, surprised = false) {
   const element = node('div', `block ${COLORS[color]}${surprised ? ' surprised' : ''}`);
@@ -19,14 +21,25 @@ function block(color, surprised = false) {
   return element;
 }
 
+function dancer(index, growth = 0) {
+  const element = node('div', 'perm-character');
+  element.style.setProperty('--hair-size', `${45 + growth * 11}%`);
+  element.append(node('div', 'perm-hair'), node('div', `perm-dancer dancer-${index % 4}`));
+  element.setAttribute('role', 'img');
+  element.setAttribute('aria-label', `Disco dancer, hair growth ${growth} of 8`);
+  return element;
+}
+
 export class GameView {
   constructor() {
-    this.lanes = Array.from({ length: 4 }, () => {
+    this.lanes = Array.from({ length: 4 }, (_, index) => {
       const lane = node('article', 'lane');
       const name = node('h3', '');
       const zone = node('div', 'tower-zone');
       const tower = node('div', 'tower');
-      zone.append(tower);
+      const avatar = dancer(index);
+      avatar.hidden = true;
+      zone.append(tower, avatar);
       const remaining = node('div', 'remaining');
       const progress = node('div', 'progress');
       const fill = node('span', '');
@@ -34,7 +47,13 @@ export class GameView {
       const status = node('p', 'seat-status');
       lane.append(name, zone, node('div', 'base'), remaining, progress, status);
       $('player-lanes').append(lane);
-      return { lane, name, tower, remaining, fill, status, towerKey: '' };
+      return { lane, name, tower, avatar, remaining, fill, status, towerKey: '' };
+    });
+    this.pips = Array.from({ length: 8 }, (_, index) => {
+      const pip = node('span', 'beat-dot');
+      pip.dataset.step = index;
+      $('rhythm-track').append(pip);
+      return pip;
     });
     this.resultKey = '';
   }
@@ -42,30 +61,42 @@ export class GameView {
   render(room, playerId, local, time) {
     const round = room.round;
     const active = round && round.phase !== 'results';
-    const sequence = round ? createSequence(round.seed, round.blockCount) : [];
+    const game = active ? round.game : room.selectedGame;
+    const perm = game === PERM_GAME;
+    const sequence = !perm && round ? createSequence(round.seed, round.blockCount) : [];
     $('arena').classList.toggle('lobby', !active);
     this.lanes.forEach((elements, index) => {
       const player = room.players[index];
       const own = player?.id === playerId;
-      const ownRun = own && local?.id === round?.id ? local : null;
+      const ownRun = active && own && local?.id === round?.id ? local : null;
       const cleared = ownRun ? ownRun.run.cleared : player?.progress?.cleared || 0;
-      const status = player?.result || (ownRun?.done ? { status: ownRun.status, elapsed: ownRun.run.elapsed } : null);
+      const status = player?.result || (ownRun?.done ? { status: ownRun.status, elapsed: ownRun.run.elapsed, cleared, score: ownRun.run.score || 0 } : null);
       const frozen = ownRun && !ownRun.done && time < ownRun.run.blockedUntil;
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';
-      const colors = !player || !active ? [index % 3] : sequence.slice(cleared, cleared + 5).reverse();
-      const key = `${colors.join(',')}/${Boolean(frozen)}`;
-      if (key !== elements.towerKey) {
-        elements.tower.replaceChildren(...colors.map(color => block(color, Boolean(frozen))));
-        elements.towerKey = key;
+      elements.tower.hidden = perm;
+      elements.avatar.hidden = !perm;
+      if (perm) {
+        const growth = active && player ? cleared : 0;
+        elements.avatar.style.setProperty('--hair-size', `${45 + growth * 11}%`);
+        elements.avatar.setAttribute('aria-label', `Disco dancer, hair growth ${growth} of 8`);
+      } else {
+        const colors = !player || !active ? [index % 3] : sequence.slice(cleared, cleared + 5).reverse();
+        const key = `${colors.join(',')}/${Boolean(frozen)}`;
+        if (key !== elements.towerKey) {
+          elements.tower.replaceChildren(...colors.map(color => block(color, Boolean(frozen))));
+          elements.towerKey = key;
+        }
       }
-      const left = active && player ? Math.max(0, round.blockCount - cleared) : 0;
-      if (elements.remaining.dataset.left !== String(left)) {
-        elements.remaining.replaceChildren(node('strong', '', String(left)), document.createTextNode('left'));
-        elements.remaining.dataset.left = left;
+      const value = perm ? cleared : active && player ? Math.max(0, round.blockCount - cleared) : 0;
+      const counterKey = `${perm}/${value}`;
+      if (elements.remaining.dataset.value !== counterKey) {
+        elements.remaining.replaceChildren(node('strong', '', String(value)), document.createTextNode(perm ? ' / 8' : 'left'));
+        elements.remaining.dataset.value = counterKey;
       }
-      elements.fill.style.width = `${active && player ? cleared / round.blockCount * 100 : 0}%`;
-      elements.status.textContent = !player ? 'Waiting to join' : !player.connected ? 'Reconnecting…' : active ? status ? resultLabel(status) : frozen ? 'Oops!' : '' : player.ready ? '✓ Ready' : player.sync?.count >= 3 ? (player.id === room.hostId ? 'Host' : 'Not ready') : 'Syncing…';
+      elements.fill.style.width = `${active && player ? cleared / round.goal * 100 : 0}%`;
+      const score = ownRun?.run.score ?? player?.progress?.score ?? 0;
+      elements.status.textContent = !player ? 'Waiting to join' : !player.connected ? 'Reconnecting…' : active ? status ? resultLabel(status, perm) : frozen ? 'Oops!' : perm ? `${score.toLocaleString()} pts` : '' : player.ready ? '✓ Ready' : player.sync?.count >= 3 ? (player.id === room.hostId ? 'Host' : 'Not ready') : 'Syncing…';
     });
     const hasResults = round?.phase === 'results';
     $('play-view').hidden = hasResults;
@@ -73,30 +104,52 @@ export class GameView {
     if (hasResults) this.results(room, playerId);
   }
 
+  animate(room, local, time) {
+    if (room.round?.game !== PERM_GAME || room.round.phase === 'results' || !local || time < local.start || local.done) return;
+    const phase = local.run.phase(time);
+    const heading = phase.mode === 'watch' ? 'Watch' : 'Your turn!';
+    if ($('rhythm-phase').textContent !== heading) $('rhythm-phase').textContent = heading;
+    $('rhythm-guide').classList.toggle('your-turn', phase.mode === 'play');
+    $('rhythm-phrase').textContent = `Phrase ${phase.phrase + 1} / 8`;
+    $('rhythm-track').setAttribute('aria-label', `${heading}. Rhythm positions ${phase.steps.map(step => step + 1).join(', ')}`);
+    this.pips.forEach((pip, step) => {
+      const note = local.run.notes.find(note => note.phrase === phase.phrase && note.step === step);
+      pip.className = `beat-dot${phase.steps.includes(step) ? ' is-note' : ''}${phase.position === step ? ' is-current' : ''}${phase.mode === 'play' && note?.hit ? ' is-hit' : ''}${phase.mode === 'play' && note?.missed ? ' is-miss' : ''}`;
+      pip.dataset.note = String(phase.steps.includes(step));
+      pip.textContent = phase.steps.includes(step) ? '●' : '·';
+    });
+    const pulse = Math.max(0, 1 - ((time - local.start) % BEAT_MS) / BEAT_MS * 4);
+    $('arena').style.setProperty('--disco-pulse', pulse.toFixed(3));
+    const own = this.lanes.find(lane => lane.lane.classList.contains('you'));
+    if (own && local.run.feedback && time - local.run.feedback.at < 600) own.status.textContent = local.run.feedback.kind;
+  }
+
   results(room, playerId) {
     const key = JSON.stringify([room.round.id, room.players.map(player => [player.id, player.result])]);
     if (this.resultKey === key) return;
     this.resultKey = key;
-    const sorted = room.players.filter(player => room.round.playerIds.includes(player.id)).sort((a, b) => (a.result?.status === 'finished' ? a.result.elapsed : Infinity) - (b.result?.status === 'finished' ? b.result.elapsed : Infinity));
+    const game = room.round.game;
+    const perm = game === PERM_GAME;
+    $('results').classList.toggle('perm-results', perm);
+    const sorted = room.players.filter(player => room.round.playerIds.includes(player.id)).sort((a, b) => comparePlayers(a, b, game));
     const finishers = sorted.filter(player => player.result?.status === 'finished');
-    const winners = finishers.filter(player => player.result.elapsed === finishers[0]?.result.elapsed);
-    $('result-round').textContent = `Round ${room.testNumber}`;
+    const rank = player => finishers.findIndex(other => comparePlayers(other, player, game) === 0) + 1;
+    const winners = finishers.filter(player => comparePlayers(player, finishers[0], game) === 0);
+    $('result-round').textContent = `${GAMES[game]?.title || 'Round'} · Round ${room.testNumber}`;
     $('result-title').textContent = winners.length > 1 ? 'It’s a tie!' : winners.length ? `${winners[0].name} wins!` : 'Time’s up!';
     $('podium').replaceChildren(...finishers.slice(0, 3).map((player, index) => {
-      const rank = finishers.findIndex(other => other.result.elapsed === player.result.elapsed) + 1;
       const seat = node('div', 'podium-seat');
       const step = node('div', 'podium-step');
-      step.append(node('strong', '', String(rank)), document.createTextNode(resultLabel(player.result)));
-      seat.append(block(index % 3), node('div', 'podium-name', player.name), step);
+      step.append(node('strong', '', String(rank(player))), document.createTextNode(perm ? `${player.result.cleared} / 8` : resultLabel(player.result)));
+      seat.append(perm ? dancer(room.players.indexOf(player), player.result.cleared) : block(index % 3), node('div', 'podium-name', player.name), step);
       return seat;
     }));
     $('result-rows').replaceChildren(...sorted.map(player => {
       const result = player.result;
-      const rank = result?.status === 'finished' ? finishers.findIndex(other => other.result.elapsed === result.elapsed) + 1 : '—';
       const row = node('div', `result-row${player.id === playerId ? ' you' : ''}`);
-      const timing = node('div', 'result-time', resultLabel(result));
+      const timing = node('div', 'result-time', resultLabel(result, perm));
       if (result?.status === 'finished') timing.append(node('small', '', `${result.mistakes || 0} mistakes`));
-      row.append(node('span', 'rank', String(rank)), node('span', 'result-name', player.name + (player.id === playerId ? ' · You' : '')), timing);
+      row.append(node('span', 'rank', result?.status === 'finished' ? String(rank(player)) : '—'), node('span', 'result-name', player.name + (player.id === playerId ? ' · You' : '')), timing);
       return row;
     }));
   }

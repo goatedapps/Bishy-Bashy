@@ -1,0 +1,423 @@
+.game-picker {
+  display:flex;
+  justify-content:center;
+  gap:7px;
+  margin:-8px auto 18px;
+  position:relative;
+  z-index:1
+}
+.game-picker button {
+  font-size:12px;
+  border-radius:24px;
+  padding:8px 17px;
+  background:#fffdf5b3
+}
+.game-picker button[aria-pressed=true] {
+  background:var(--ink);
+  color:var(--paper);
+  box-shadow:0 3px 0 #9c6d9a
+}
+.game-picker button:disabled {
+  opacity:1
+}
+.game-picker button:disabled:not([aria-pressed=true]) {
+  opacity:.45
+}
+#totem-entry {
+  display:flex;
+  flex-direction:column;
+  align-items:center
+}
+.in-room .game-title {
+  font-size:clamp(32px,4vw,50px);
+  margin:8px 0 15px
+}
+.in-room .game-picker {
+  margin:-3px 0 14px
+}
+.in-room .tower-zone {
+  --tower-height:clamp(125px,calc(100dvh - 575px),330px)
+}
+.in-room .lobby .tower-zone {
+  --tower-height:150px
+}
+.lane.empty .remaining,.lane.empty .progress {
+  visibility:hidden
+}
+.perm-theme {
+  background-color:#ffb2cf;
+  background-image:radial-gradient(#ea85b4 1px,transparent 1px)
+}
+.perm-theme .game-title {
+  text-shadow:0 4px #fff3c4
+}
+.perm-theme .entry-panel,.perm-theme .arcade-frame {
+  box-shadow:0 7px 0 #d574a1
+}
+.perm-theme .arena {
+  background-color:#f7dcf0;
+  background-image:linear-gradient(45deg,#e9b8df2b 25%,transparent 25%,transparent 75%,#e9b8df2b 75%),linear-gradient(45deg,#e9b8df2b 25%,transparent 25%,transparent 75%,#e9b8df2b 75%);
+  background-size:32px 32px;
+  background-position:0 0,16px 16px
+}
+.perm-theme .lane {
+  border-color:#d8a7d0
+}
+.perm-theme .lane.you {
+  background:#fff5b357
+}
+.perm-theme .lane:before {
+  content:'';
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg,#fff8e57a,transparent 80%);
+  clip-path:polygon(35% 0,65% 0,100% 100%,0 100%);
+  opacity:calc(.3 + var(--disco-pulse,0) * .25);
+  pointer-events:none
+}
+.perm-theme .tower-zone {
+  --tower-height:clamp(150px,calc(100dvh - 590px),330px)
+}
+.perm-theme .lobby .tower-zone {
+  --tower-height:180px
+}
+.perm-theme .base {
+  background:#bd84dd;
+  box-shadow:0 4px 0 #a16ab6
+}
+.perm-theme .lane.finished .tower-zone:after {
+  display:none
+}
+.perm-theme .lane.forfeit .perm-character {
+  filter:grayscale(1);
+  opacity:.5
+}
+.perm-character {
+  --hair-size:45%;
+  position:relative;
+  width:min(145px,90%,calc(var(--tower-height,300px) * .48));
+  aspect-ratio:1;
+  flex-shrink:0;
+  isolation:isolate
+}
+.perm-dancer,.perm-hair,.disco-ball {
+  position:absolute;
+  background-image:url('/assets/perm-disco-sprites.png');
+  background-size:300% 200%;
+  background-repeat:no-repeat
+}
+.perm-dancer {
+  inset:0;
+  z-index:1;
+  background-position:0 0
+}
+.dancer-1 {
+  background-position:50% 0
+}
+.dancer-2 {
+  background-position:100% 0
+}
+.dancer-3 {
+  background-position:0 100%
+}
+.perm-hair {
+  background-position:50% 100%;
+  width:var(--hair-size);
+  aspect-ratio:1;
+  left:53%;
+  top:32%;
+  transform:translate(-50%,-90%);
+  z-index:0;
+  transition:width .25s cubic-bezier(.2,1.8,.5,1)
+}
+.perm-theme .lane .perm-character {
+  transform:translateY(calc(var(--disco-pulse,0) * -3px)) rotate(calc(var(--disco-pulse,0) * -2deg));
+  transform-origin:50% 100%
+}
+.disco-ball {
+  background-position:100% 100%;
+  aspect-ratio:1
+}
+.perm-theme .entry-art {
+  transform:none;
+  min-height:350px
+}
+.entry-art #perm-entry {
+  --hair-size:110%;
+  width:260px;
+  max-width:100%;
+  margin-top:70px
+}
+.perm-theme .podium {
+  padding-top:60px
+}
+.podium .perm-character {
+  width:95px;
+  max-width:100%
+}
+.rhythm-guide {
+  background:#fff4d8;
+  border-bottom:2px solid var(--ink);
+  padding:9px 22px 11px
+}
+.rhythm-heading {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  font-size:11px;
+  font-weight:900
+}
+.rhythm-heading>strong {
+  font:24px 'Lilita One',system-ui;
+  color:#9051bc;
+  min-width:120px
+}
+.rhythm-guide.your-turn {
+  background:#ddf5c8
+}
+.rhythm-guide.your-turn .rhythm-heading>strong {
+  color:#287b5b
+}
+.rhythm-track {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  position:relative;
+  max-width:430px;
+  margin:9px auto 0;
+  gap:10px
+}
+.rhythm-track:before {
+  content:'';
+  height:3px;
+  background:#d7bdde;
+  position:absolute;
+  left:10px;
+  right:10px;
+  top:12px
+}
+.beat-dot {
+  width:25px;
+  height:25px;
+  border:2px solid #ceb5d4;
+  background:#fffdf5;
+  border-radius:50%;
+  position:relative;
+  z-index:1;
+  display:grid;
+  place-items:center;
+  font-size:12px;
+  color:#b198bf
+}
+.beat-dot.is-note {
+  border-color:var(--ink);
+  color:var(--ink);
+  background:#ffda47
+}
+.beat-dot.is-current {
+  outline:4px solid #a583e8;
+  outline-offset:2px;
+  transform:scale(1.1)
+}
+.beat-dot.is-hit {
+  background:#72dba0
+}
+.beat-dot.is-miss {
+  background:#ff9b9f
+}
+#rhythm-hint {
+  font-size:10px
+}
+.perm-theme .result-time {
+  font-size:13px
+}
+.audio-settings input#timing-offset {
+  accent-color:#7541bc;
+  border:0;
+  padding:8px 0;
+  height:36px
+}
+@media(max-width:620px) {
+  #totem-entry {
+    flex-direction:row
+  }
+  .game-picker {
+    gap:6px;
+    margin-top:-6px;
+    margin-bottom:14px
+  }
+  .game-picker button {
+    font-size:11px;
+    padding:7px 13px
+  }
+  .in-room .game-title {
+    font-size:34px
+  }
+  .in-room .tower-zone {
+    --tower-height:clamp(130px,calc(100dvh - 485px),235px)
+  }
+  .perm-theme .tower-zone {
+    --tower-height:clamp(145px,calc(100dvh - 570px),265px)
+  }
+  .perm-theme .lobby .tower-zone {
+    --tower-height:160px
+  }
+  .perm-theme .entry-art {
+    min-height:210px
+  }
+  .entry-art #perm-entry {
+    width:170px;
+    margin-top:45px
+  }
+  .perm-theme .entry-layout {
+    gap:5px;
+    margin-top:5px
+  }
+  .rhythm-guide {
+    padding:8px 12px 10px
+  }
+  .rhythm-heading {
+    gap:5px;
+    font-size:10px
+  }
+  .rhythm-heading>strong {
+    font-size:22px;
+    min-width:100px
+  }
+  #rhythm-hint {
+    display:none
+  }
+  .rhythm-track {
+    max-width:290px;
+    gap:7px
+  }
+  .beat-dot {
+    height:21px;
+    width:21px;
+    font-size:10px
+  }
+  .rhythm-track:before {
+    top:10px
+  }
+  .perm-theme .result-time {
+    font-size:10px
+  }
+  .perm-theme .result-row {
+    gap:5px
+  }
+  .podium .perm-character {
+    width:75px
+  }
+  .perm-theme .podium {
+    padding-top:45px
+  }
+}
+@media(prefers-reduced-motion:reduce) {
+  .perm-theme .lane .perm-character {
+    transform:none
+  }
+  .perm-theme .lane:before {
+    opacity:.3
+  }
+}
+.rhythm-guide {
+  position:relative
+}
+.rhythm-guide>.disco-ball {
+  width:36px;
+  height:36px;
+  left:15px;
+  top:10px
+}
+.rhythm-heading {
+  padding-left:40px
+}
+.perm-character {
+  width:min(145px,68%,calc(var(--tower-height,300px) * .48))
+}
+.perm-results .podium {
+  padding-top:60px
+}
+.perm-results .result-time {
+  font-size:13px
+}
+@media(max-width:620px) {
+  .rhythm-guide>.disco-ball {
+    width:30px;
+    height:30px;
+    left:7px;
+    top:8px
+  }
+  .rhythm-heading {
+    padding-left:30px
+  }
+  .perm-results .podium {
+    padding-top:45px
+  }
+  .perm-results .result-time {
+    font-size:10px
+  }
+}
+.perm-theme .lane {
+  padding:10px 8px 8px
+}
+.perm-theme .lane h3 {
+  height:20px
+}
+.perm-theme .base {
+  height:7px;
+  margin:5px auto 3px
+}
+.perm-theme .remaining {
+  min-height:25px;
+  margin:3px 0 5px
+}
+.perm-theme .remaining strong {
+  font-size:22px
+}
+.perm-theme .seat-status {
+  height:15px;
+  margin:4px 0 0;
+  font-size:10px
+}
+.in-room .game-title {
+  font-size:clamp(32px,4vw,44px);
+  margin:8px 0 11px
+}
+.in-room .game-picker {
+  margin:0 0 10px
+}
+.in-room .game-top {
+  padding-top:10px
+}
+@media(max-height:800px) and (min-width:621px) {
+  .in-room .game-title {
+    font-size:36px
+  }
+  .in-room .game-top .brand {
+    font-size:25px
+  }
+  .in-room .game-top .icon-button {
+    height:36px;
+    width:36px
+  }
+  .in-room .game-top .sound-off:after {
+    top:16px;
+    left:4px
+  }
+}
+@media(max-width:620px) {
+  .perm-theme .lane {
+    padding:10px 3px 8px
+  }
+  .perm-theme .seat-status {
+    font-size:9px
+  }
+  .perm-theme .lane h3 {
+    height:24px
+  }
+  .in-room .game-title {
+    font-size:34px
+  }
+}

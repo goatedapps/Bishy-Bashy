@@ -1,4 +1,4 @@
-import { AUDIO_FILES, BEAT } from '../scripts/audio/score.js';
+import { AUDIO_FILES, BEAT, audioAssetIds } from '../scripts/audio/score.js';
 
 const BASE_URL = import.meta.env?.BASE_URL || '/';
 const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
@@ -30,6 +30,7 @@ export class GameAudio {
     this.loadFailed = false;
     this.previewing = false;
     this.previewRequest = 0;
+    this.game = 'totem-shrinker';
   }
 
   read(key) { try { return this.storage?.getItem(key); } catch { return null; } }
@@ -77,8 +78,9 @@ export class GameAudio {
   }
 
   async load() {
-    if (this.loading) return this.loading;
-    const missing = Object.entries(AUDIO_FILES).filter(([id]) => !this.buffers.has(id));
+    if (this.loading) { await this.loading; return this.load(); }
+    const bank = this.game;
+    const missing = audioAssetIds(bank).filter(id => !this.buffers.has(id)).map(id => [id, AUDIO_FILES[id]]);
     if (!missing.length) { this.loadFailed = false; return; }
     this.loading = Promise.allSettled(missing.map(async ([id, file]) => {
       const controller = new AbortController();
@@ -97,6 +99,14 @@ export class GameAudio {
     this.countdownKey = null;
     this.stopVoices(voice => voice.group === 'round');
     this.onChange();
+    if (bank !== this.game) return this.load();
+  }
+
+  selectGame(game) {
+    if (this.game === game) return;
+    this.game = game;
+    this.stopPreview();
+    if (this.enabled && this.context) this.load().then(() => this.synchronize());
   }
 
   setEnabled(enabled) {
@@ -165,8 +175,9 @@ export class GameAudio {
     return voice;
   }
 
-  play(id, { color = 0, progress = 0, at = this.context?.currentTime, group = 'effects' } = {}) {
-    if (id === 'hit') id = ['red', 'green', 'blue'][color] || 'red';
+  play(id, { color = 0, progress = 0, at = this.context?.currentTime, group = 'effects', game = this.game } = {}) {
+    if (id === 'hit') id = game === 'perm-mania' ? 'permHit' : ['red', 'green', 'blue'][color] || 'red';
+    if (id === 'mistake' && game === 'perm-mania') id = 'permMiss';
     const voice = this.source(id, { at, group, rate: ['red', 'green', 'blue'].includes(id) ? 1 + clamp(progress) * .04 : 1 });
     if (voice && group === 'effects') {
       const time = Math.max(this.context.currentTime, at);
@@ -177,18 +188,20 @@ export class GameAudio {
     }
   }
 
-  scheduleRound(id, start, end, musicOwner, playerDone = false) {
+  scheduleRound(id, start, end, musicOwner, playerDone = false, { game = this.game, cues = [] } = {}) {
+    this.selectGame(game);
     if (this.target?.id !== id) {
       this.stopRound();
       this.stopPreview();
-      this.target = { id, start, end, musicOwner, playerDone };
+      this.target = { id, start, end, musicOwner, playerDone, game, cues };
     } else Object.assign(this.target, { musicOwner, playerDone });
     this.synchronize();
   }
 
   synchronize() {
     if (!this.enabled || this.context?.state !== 'running' || !this.target || !this.buffers.size) return;
-    const { id, start, end, musicOwner, playerDone } = this.target;
+    const { id, start, end, musicOwner, playerDone, game, cues } = this.target;
+    const perm = game === 'perm-mania';
     const now = this.now();
     if (now >= end) { this.stopRound(); return; }
     const audioNow = this.context.currentTime;
@@ -196,7 +209,11 @@ export class GameAudio {
       this.countdownKey = id;
       for (let count = 3; count >= 0; count--) {
         const remaining = (start - count * 1000 - now) / 1000;
-        if (remaining >= 0) this.play(count ? 'tick' : 'go', { at: audioNow + remaining, group: 'round' });
+        if (remaining >= 0) this.play(count ? 'tick' : perm ? 'permGo' : 'go', { at: audioNow + remaining, group: 'round' });
+      }
+      if (perm) for (const cue of cues) {
+        const remaining = (start + cue - now) / 1000;
+        if (remaining >= 0) this.play('permDemo', { at: audioNow + remaining, group: 'round' });
       }
     }
     const allowed = this.preferences.musicMode === 'on' || this.preferences.musicMode === 'auto' && musicOwner;
@@ -205,19 +222,21 @@ export class GameAudio {
       this.musicKey = null;
       return;
     }
-    const musicKey = `${id}:${this.buffers.has('urgency')}`;
-    if (this.musicKey === musicKey || !this.buffers.has('music')) return;
+    const baseId = perm ? 'permMusic' : 'music';
+    const urgencyId = perm ? 'permUrgency' : 'urgency';
+    const musicKey = `${id}:${baseId}:${this.buffers.has(urgencyId)}`;
+    if (this.musicKey === musicKey || !this.buffers.has(baseId)) return;
     this.stopVoices(voice => voice.group === 'music');
     this.musicKey = musicKey;
     const elapsed = Math.max(0, (now - start) / 1000);
     const at = audioNow + Math.max(0, (start - now) / 1000);
     const audioEnd = audioNow + (end - now) / 1000;
-    const base = this.buffers.get('music');
-    this.source('music', { at, group: 'music', loop: true, offset: elapsed % base.duration, end: audioEnd });
+    const base = this.buffers.get(baseId);
+    this.source(baseId, { at, group: 'music', loop: true, offset: elapsed % base.duration, end: audioEnd });
     const urgencyBeat = Math.ceil(Math.max(0, (end - start - 10_000) / 1000) / BEAT) * BEAT;
     const urgentAt = Math.max(now, start + urgencyBeat * 1000);
-    const urgency = this.buffers.get('urgency');
-    if (urgency) this.source('urgency', {
+    const urgency = this.buffers.get(urgencyId);
+    if (urgency) this.source(urgencyId, {
       at: audioNow + (urgentAt - now) / 1000, group: 'music', loop: true,
       offset: ((urgentAt - start) / 1000) % urgency.duration, end: audioEnd,
     });
@@ -256,16 +275,18 @@ export class GameAudio {
     this.stopVoices(() => true);
   }
 
-  async preview() {
+  async preview(game = this.game) {
     if (this.target) return;
+    this.selectGame(game);
     const request = ++this.previewRequest;
     this.setEnabled(true);
     if (!await this.unlock() || request !== this.previewRequest || !this.enabled || this.target) return;
     this.stopPreview(false);
     this.previewing = true;
     const at = this.context.currentTime + .03;
-    if (this.preferences.musicMode !== 'off' && this.preferences.musicVolume > 0) this.source('music', { at, group: 'preview-music', loop: true, end: at + 8 });
-    for (const [id, delay] of [['red', .5], ['green', .8], ['blue', 1.1], ['mistake', 1.6], ['tick', 2.5], ['tick', 3.5], ['tick', 4.5], ['go', 5.5], ['finish', 6.3]]) this.play(id, { at: at + delay, group: 'preview-effects' });
+    if (this.preferences.musicMode !== 'off' && this.preferences.musicVolume > 0) this.source(game === 'perm-mania' ? 'permMusic' : 'music', { at, group: 'preview-music', loop: true, end: at + 8 });
+    const cues = game === 'perm-mania' ? [['permDemo', .5], ['permDemo', .5 + BEAT], ['permDemo', .5 + BEAT * 2], ['permDemo', .5 + BEAT * 3], ['permHit', .5 + BEAT * 4], ['permHit', .5 + BEAT * 5], ['permHit', .5 + BEAT * 6], ['permHit', .5 + BEAT * 7], ['permGrow', .5 + BEAT * 8], ['finish', 6.3]] : [['red', .5], ['green', .8], ['blue', 1.1], ['mistake', 1.6], ['tick', 2.5], ['tick', 3.5], ['tick', 4.5], ['go', 5.5], ['finish', 6.3]];
+    for (const [id, delay] of cues) this.play(id, { at: at + delay, group: 'preview-effects' });
     this.onChange();
   }
 

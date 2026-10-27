@@ -5,12 +5,13 @@ import { music, effects, mix, inspect, wav } from './audio/synthesis.js';
 
 const output = new URL('../public/audio/', import.meta.url);
 await mkdir(output, { recursive: true });
-const assets = { ...music(), ...effects() };
+const perm = music({ perm: true });
+const assets = { ...music(), ...effects(), permMusic: perm.music, permUrgency: perm.urgency };
 const report = { bpm: BPM, sampleRate: SAMPLE_RATE, loopSeconds: LOOP_SECONDS, files: {} };
 for (const [id, samples] of Object.entries(assets)) {
   const file = AUDIO_FILES[id];
   await writeFile(new URL(file, output), wav(samples));
-  report.files[id] = { file, ...inspect(samples, ['music', 'urgency'].includes(id)) };
+  report.files[id] = { file, ...inspect(samples, ['music', 'urgency', 'permMusic', 'permUrgency'].includes(id)) };
 }
 await writeFile(new URL('analysis.json', output), JSON.stringify(report, null, 2) + '\n');
 
