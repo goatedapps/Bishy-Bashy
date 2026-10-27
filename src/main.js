@@ -3,7 +3,7 @@ import { SyncedClock } from './clock.js';
 import { TOTEM_GAME } from '../shared/totem.js';
 import { PERM_GAME, demoCues } from '../shared/perm.js';
 import { SLOT_GAME } from '../shared/slots.js';
-import { GAMES, createRun, roundSettings } from '../shared/games.js';
+import { GAMES, createRun, roundSettings, isRoundActive, gameRules } from '../shared/games.js';
 import { MODES, roundDetail } from '../shared/sets.js';
 import { GameView } from './game-view.js';
 import { SetView } from './set-view.js';
@@ -108,7 +108,7 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 5) {
+      if (message.protocol !== 6) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -130,6 +130,7 @@ function connect() {
       const previousPhase = room?.round?.phase;
       room = message.room;
       if (room.round?.id !== previousId) {
+        window.scrollTo(0, 0);
         localRound = null; lastProgressKey = ''; lastProgressSent = 0;
         audio.cancel();
         $('submission-status').hidden = true;
@@ -200,7 +201,7 @@ function setupLocalRound() {
   const round = room?.round;
   const time = performance.now();
   const estimate = clock.estimate(time);
-  if (!round || !GAMES[round.game] || round.phase === 'results' || localRound || !estimate || estimate.count < 3 || !round.playerIds.includes(playerId)) return;
+  if (!isRoundActive(round) || !GAMES[round.game] || localRound || !estimate || estimate.count < 3 || !round.playerIds.includes(playerId)) return;
   const start = round.startAt - estimate.offset;
   const savedResult = pending?.message.roundId === round.id ? pending.message : room.players.find(player => player.id === playerId)?.result;
   localRound = {
@@ -213,6 +214,7 @@ function setupLocalRound() {
     localRound.run.mistakes = savedResult.mistakes || 0;
     localRound.run.elapsed = savedResult.elapsed;
     if (round.game === PERM_GAME) localRound.run.score = savedResult.score || 0;
+    if (round.game === SLOT_GAME) localRound.run.reelMask = savedResult.reelMask || 0;
     localRound.run.done = true;
   }
   sessionStorage.setItem('bb-active-round', round.id);
@@ -247,6 +249,7 @@ function complete(status, elapsed = null) {
     type: 'result', roundId: localRound.id, status, elapsed, cleared: localRound.run.cleared,
     mistakes: localRound.run.mistakes, goDelay: localRound.goDelay,
     ...(room.round.game === PERM_GAME ? { score: localRound.run.score } : {}),
+    ...(room.round.game === SLOT_GAME ? { reelMask: localRound.run.reelMask } : {}),
   } };
   sessionStorage.setItem('bb-pending', JSON.stringify(pending));
   lastPendingSent = -Infinity;
@@ -296,9 +299,10 @@ function sendProgress(time) {
   if (!joined || !localRound || localRound.done || time < localRound.start || time >= localRound.end || time - lastProgressSent < 250) return;
   const { cleared, mistakes } = localRound.run;
   const score = localRound.run.score;
-  const key = `${cleared}/${mistakes}/${score ?? ''}`;
+  const reelMask = localRound.run.reelMask;
+  const key = `${cleared}/${mistakes}/${score ?? ''}/${reelMask ?? ''}`;
   if (key === lastProgressKey) return;
-  if (send({ type: 'progress', roundId: localRound.id, cleared, mistakes, ...(score !== undefined ? { score } : {}) })) {
+  if (send({ type: 'progress', roundId: localRound.id, cleared, mistakes, ...(reelMask !== undefined ? { reelMask } : {}), ...(score !== undefined ? { score } : {}) })) {
     lastProgressSent = time; lastProgressKey = key;
   }
 }
@@ -318,18 +322,19 @@ function updateMetrics() {
   if (!room) return;
   const inSet = room.set && room.set.phase !== 'complete';
   const idle = !inSet && (!room.round || room.round.phase === 'results');
+  const gate = room.set?.phase === 'instructions' || room.set?.phase === 'intermission' && room.mode === 'game-select';
   const mine = room.players.find(player => player.id === playerId);
-  $('ready').disabled = !idle || !connected || !estimate || estimate.count < 3 || estimate.rtt > 1500;
+  $('ready').disabled = !gate || !connected || !estimate || estimate.count < 3 || estimate.rtt > 1500 || !mine?.sync || mine.sync.count < 3 || time + estimate.offset - mine.sync.at >= 20_000;
   $('ready').textContent = mine?.ready ? 'Not ready' : 'Ready';
   $('start').textContent = room.set?.phase === 'complete' ? 'Start new set' : 'Start set';
   const serverNow = time + (estimate?.offset || 0);
   const disconnected = room.players.filter(player => !player.connected);
   const wait = Math.max(0, ...disconnected.map(player => 15_000 - (serverNow - player.disconnectedAt)));
-  const allReady = room.players.filter(player => player.connected).every(player => player.ready && player.sync?.count >= 3 && player.sync.rtt <= 1500 && serverNow - player.sync.at < 20_000);
-  $('start').disabled = !connected || !idle || wait > 0 || !allReady;
+  $('start').disabled = !connected || !idle;
   let status = '';
   if (!connected) status = 'Reconnecting… Keep playing; your result stays saved on this device.';
-  else if (idle) status = wait > 0 ? `Waiting ${Math.ceil(wait / 1000)}s for a friend to reconnect…` : !estimate || estimate.count < 3 ? 'Synchronizing clocks…' : allReady ? playerId === room.hostId ? 'Everyone’s ready!' : 'Waiting for the host to start.' : mine?.ready ? 'Waiting for friends to get ready…' : 'Tap Ready when you’re set.';
+  else if (idle) status = playerId === room.hostId ? 'Start the set when your friends have joined.' : 'Waiting for the host to start.';
+  else if (gate) status = wait > 0 ? `Waiting ${Math.ceil(wait / 1000)}s for a friend to reconnect…` : !estimate || estimate.count < 3 ? 'Synchronizing clocks…' : mine?.ready ? 'Waiting for everyone to be ready…' : 'Tap Ready when you’re set.';
   else if (room.set?.phase === 'intermission') status = '';
   else if (localRound?.done) status = 'Waiting for the other players…';
   else if (!room.round.playerIds.includes(playerId)) status = 'You can play in the next round.';
@@ -337,16 +342,19 @@ function updateMetrics() {
   $('lobby-status').hidden = !status;
 }
 
+
 function renderRoom() {
   updateMetrics();
   if (!room) return;
   updateGameProfile();
-  const active = room.round && room.round.phase !== 'results';
+  const active = isRoundActive(room.round);
+  const gate = room.set?.phase === 'instructions' || room.set?.phase === 'intermission' && room.mode === 'game-select';
   $('room-code').textContent = room.code;
   $('occupancy').textContent = `· ${room.players.length}/4`;
   $('leave').disabled = Boolean(active);
-  $('ready-actions').hidden = Boolean(active || room.set && room.set.phase !== 'complete');
-  $('start').hidden = playerId !== room.hostId;
+  $('ready-actions').hidden = Boolean(active || room.set?.phase === 'intermission' && room.mode === 'arcade');
+  $('ready').hidden = !gate;
+  $('start').hidden = playerId !== room.hostId || gate;
   $('control-deck').hidden = !active || !room.round.playerIds.includes(playerId);
   $('round-label').textContent = active ? room.set ? roundDetail(room.round) : `Round ${room.testNumber}` : 'Lobby';
   view.render(room, playerId, localRound, performance.now());
@@ -355,10 +363,9 @@ function renderRoom() {
 
 function updateControls(time) {
   const disabled = !localRound || localRound.done || document.hidden || time < localRound.start || time >= localRound.end || time < localRound.run.blockedUntil || room?.round?.phase === 'results' || room?.round?.game === PERM_GAME && localRound.run.phase(time).mode === 'watch';
-  for (const button of buttons) button.disabled = disabled;
-  if (room?.round?.game === SLOT_GAME) {
-    const label = localRound?.done ? 'Matched!' : time < (localRound?.run.blockedUntil || 0) ? 'Try again…' : `Stop reel ${Math.min(3, (localRound?.run.cleared || 0) + 1)}`;
-    if ($('slot-stop-label').textContent !== label) $('slot-stop-label').textContent = label;
+  for (const button of buttons) {
+    const color = Number(button.dataset.color);
+    button.disabled = disabled || Boolean(room?.round?.game === SLOT_GAME && localRound && ((localRound.run.reelMask & (1 << color)) || time < localRound.run.blockedReels[color]));
   }
 }
 
@@ -367,7 +374,7 @@ function animate() {
   enforceLifecycle(time);
   const round = room?.round;
   let overlay = '', small = false;
-  if (round && round.phase !== 'results') {
+  if (isRoundActive(round)) {
     if (!localRound) { overlay = round.playerIds.includes(playerId) ? 'Syncing…' : 'Next round'; small = true; }
     else if (time < localRound.start) overlay = String(Math.ceil((localRound.start - time) / 1000));
     else {
@@ -424,7 +431,7 @@ function updateSound() {
 }
 
 function updateGameProfile() {
-  const active = room?.round && room.round.phase !== 'results';
+  const active = isRoundActive(room?.round);
   const inSet = room?.set && room.set.phase !== 'complete';
   const mode = room?.mode || selectedMode;
   const profile = displayRound();
@@ -435,14 +442,13 @@ function updateGameProfile() {
   document.body.classList.toggle('perm-theme', Boolean(room && perm));
   document.body.classList.toggle('slot-theme', Boolean(room && slots));
   document.body.classList.toggle('in-set', Boolean(inSet));
-  const title = !room ? 'Choose your mode' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'intermission' ? `Next: ${GAMES[game].title}` : active ? GAMES[game].title : MODES[mode].title;
+  const title = !room ? 'Choose your mode' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'intermission' ? 'Standings' : room.set?.phase === 'instructions' || active ? GAMES[game].title : MODES[mode].title;
   if (document.querySelector('.game-title').textContent !== title) document.querySelector('.game-title').textContent = title;
   document.title = `${room ? title : 'Party games'} · Bishy Bashy`;
   $('lobby-setup').hidden = Boolean(inSet);
   $('game-picker').hidden = mode !== 'game-select';
   $('rhythm-guide').hidden = !perm || !active;
   $('slot-guide').hidden = !slots || !active;
-  for (const button of buttons) button.hidden = button.id === 'slot-stop' ? !slots : slots;
   for (const button of document.querySelectorAll('[data-game]')) {
     button.setAttribute('aria-pressed', String(button.dataset.game === (room?.selectedGame || selectedGame)));
     button.disabled = Boolean(inSet || active || room && room.hostId !== playerId);
@@ -454,13 +460,7 @@ function updateGameProfile() {
 }
 
 function displayRound() {
-  if (room?.round && room.round.phase !== 'results') return room.round;
-  const set = room?.set;
-  if (set?.phase === 'intermission') {
-    const index = set.roundIndex + 1;
-    const game = set.plan[index];
-    return { game, ...roundSettings(game, 0, set.mode === 'game-select' ? index + 1 : 1) };
-  }
+  if (room?.round && room.set?.phase !== 'complete') return room.round;
   const game = room?.selectedGame || selectedGame;
   return { game, ...roundSettings(game, 0) };
 }
@@ -471,7 +471,7 @@ function showRules() {
   const perm = game === PERM_GAME;
   const activeSet = room?.set && room.set.phase !== 'complete';
   $('rules-title').textContent = activeSet ? GAMES[game].title : 'How to play a set';
-  const rules = !activeSet ? ['Arcade plays two different random games. Game Select plays five rounds of one game, getting harder each round.', 'Tap Ready once. The host starts the set; the next rounds follow automatically.', 'Each round awards 10 / 7 / 4 / 1 set points by place. Ties share points; unfinished and forfeited rounds earn zero. Most total points wins.'] : game === SLOT_GAME ? ['Match all three reels to the target face. Watch the highlighted reel and tap Stop when its portrait matches.', 'Any colored key works: 1 / 2 / 3 or J / K / L. Reels stop left to right; correct matches stay locked.', 'A miss pauses that reel briefly, then it spins again. First to match all three wins. You have 30 seconds.'] : perm ? ['Watch the four-beat rhythm, then copy it with any button.', `One mistake or fewer in a phrase grows your hair. Eight phrases at ${profile.bpm} BPM.`, 'Biggest hair wins. Rhythm score breaks ties; extra taps count as mistakes.'] : ['Match the bottom block with red, green, or blue.', `Clear all ${profile.blockCount} blocks as fast as you can.`, 'A wrong tap freezes your controls for 0.3 seconds.'];
+  const rules = !activeSet ? ['Arcade plays two different random games. Game Select plays five rounds of one game.', 'Read the rules and tap Ready. Every connected player must be ready before the countdown.', 'Each round awards 10 / 7 / 4 / 1 points by place. Most total points wins.'] : gameRules(game, profile);
   $('rules-list').replaceChildren(...rules.map(text => { const item = document.createElement('li'); item.textContent = text; return item; }));
   $('rules-note').textContent = 'Stay on this screen during the round; switching apps or reloading forfeits it.';
   $('rules').showModal();
@@ -479,7 +479,7 @@ function showRules() {
 
 $('create').addEventListener('click', () => enter('create'));
 $('entry-form').addEventListener('submit', event => { event.preventDefault(); enter('join'); });
-$('ready').addEventListener('click', () => { audio.unlock(); send({ type: 'ready', ready: !room.players.find(player => player.id === playerId)?.ready }); });
+$('ready').addEventListener('click', () => { notice(''); audio.unlock(); send({ type: 'ready', ready: !room.players.find(player => player.id === playerId)?.ready }); });
 $('start').addEventListener('click', () => { audio.unlock(); send({ type: 'start' }); });
 $('leave').addEventListener('click', () => send({ type: 'leave' }));
 $('rules-open').addEventListener('click', showRules);

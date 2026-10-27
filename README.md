@@ -15,16 +15,21 @@ Choose **Arcade** for two different games selected at random, played once each i
 Choose **Game Select** for five rounds of one game, with difficulty increasing each round.
 Only the host can change the mode or chosen game after joining.
 Changing the setup resets everyone's Ready state; setup stays locked throughout the full set.
-Wait for clock synchronization, then each player taps **Ready**.
-The host taps **Start set** and everyone receives the same five-second countdown.
-After each round, standings appear for eight seconds before the next countdown starts automatically.
-Players do not need to tap Ready again between rounds.
+The host taps **Start set** to show the game's instructions, with no more than three points.
+After clock synchronization, every connected player taps **Ready** on that screen before the shared five-second countdown can begin.
+In Arcade, each completed game shows a cumulative podium for eight seconds, followed by the next game's instructions and a fresh all-player Ready gate.
+The Arcade transition does not announce the next game.
+In Game Select, instructions appear only once; subsequent rounds use a Ready button on the podium screen instead of repeating them.
+Game Select intermissions last at least eight seconds and wait until every connected player is ready.
+Players may toggle readiness off again before the countdown starts.
 
 Each round awards **10 / 7 / 4 / 1 set points** by placement.
 Ties share placement points and skip the following occupied places: two tied first-place players earn 10 each, and the next player earns 4 for third.
 Unfinished rounds, forfeits, missing results, and Perm rounds with zero rhythm score earn zero set points.
 The highest accumulated total wins the set; equal highest totals share victory, and a set with no points has no winner.
 Final standings include a round-by-round points table.
+Every transition and final screen restores a first/second/third podium using cumulative placement and total points.
+The accompanying Last game column shows each player's most recent performance and the set points earned in that round.
 The server awards points once per round and retains earned points if a player leaves between rounds.
 New guests can join only after the full set ends; original players can reconnect during it.
 The Arcade length and Game Select round count live in `shared/sets.js`, and new games join the shared catalog in `shared/games.js`.
@@ -46,9 +51,10 @@ Base gameplay settings live in `shared/totem.js`; difficulty settings live in `s
 Switching apps, hiding the tab, or reloading during a round forfeits that round.
 A network disconnection alone does not forfeit: local play continues and a saved result retries after reconnecting.
 The server accepts submissions for ten seconds after the round deadline.
-Between rounds, automatic progression waits up to 15 seconds for a disconnected player to return or a connected player's stale clock measurements to refresh.
-It then continues with synchronized players; skipped players earn zero for that round and may return for the next one.
-If no synchronized players remain, the set waits until at least one is available.
+Ready gates wait up to 15 seconds for a disconnected player to return, then may continue with ready connected players.
+Skipped disconnected players earn zero for that round and may return for the next one.
+Connected players are never skipped because they have not clicked Ready or their clock measurements need refreshing.
+If no connected players remain, the set waits for one to return.
 The disconnected player's slot remains reserved, and they can play the next round after returning.
 Hosting moves to a connected player if the host disconnects.
 
@@ -123,22 +129,25 @@ This is an independent adaptation of the rhythm-and-hair-growth concept describe
 
 Choose **Game Select → Facial Slot Machine**, or encounter it in Arcade.
 Match all three reels to the portrait above the stage.
-Tap **Stop**, any colored keyboard input (**1 / 2 / 3** or **J / K / L**), or the focused Stop button with Space.
-Reels stop in order from left to right; the highlighted reel shows which one your next press will stop.
-A correct face stays locked and moves control to the next reel.
-A miss holds the wrong face for 450 ms, then that reel resumes spinning; previous matches remain locked.
-An input guard of 120 ms prevents one simultaneous press from stopping several reels.
+All three rows spin at once, with neighboring portraits visible as they approach the center marker.
+The **red** button stops the red row, **green** stops green, and **blue** stops blue, in any order.
+Use **1 / 2 / 3** or **J / K / L** for the corresponding colors on a keyboard.
+The portrait nearest the center marker at the local input timestamp is selected.
+A correct face stays locked while the other rows continue.
+A miss pauses only that row for 450 ms, then resumes its motion from the stopped position; previous matches remain locked.
+Each row has its own 120 ms input guard, so simultaneous presses on different colors remain valid.
 The first player to lock all three target portraits wins, ranked by local elapsed time, with a 30-second deadline.
 Unfinished players receive zero set points.
 
 Every player receives the same seeded target and reel order, calculated from the agreed round start.
 There are six visually distinct portraits: Robot, Frog, Lion, Cat, Yeti, and Octopus.
 Each reel cycles through all six once, begins away from the target, and repeats deterministically.
-Arcade holds each portrait for 320 ms; Game Select uses **320, 290, 260, 230, and 200 ms** across its five rounds.
+In Arcade, a portrait travels one position every 320 ms; Game Select uses **320, 290, 260, 230, and 200 ms** across its five rounds.
 These are provisional casual-play timings and should be tuned from phone playtests.
 Local input never waits for the server, and cosmetic remote spinning follows the shared clock while lock counts update at most four times a second.
 
-The game uses a turquoise, pink, and butter-yellow photo-booth stage, with horizontal reel cabinets on larger screens and stacked reels on phones.
+The game uses a turquoise, pink, and butter-yellow photo-booth stage, with three colored horizontal reel strips stacked inside each player's cabinet.
+The same three colored buttons retain their design and fixed position in all games, including future additions.
 Its six original portraits were produced with the built-in image-generation tool.
 [Facial Slot Machine artwork notes](public/assets/facial-slot-artwork.md) preserve the complete prompt, sprite order, and returned image details.
 The mechanic is an independent adaptation of matching the target face across three reels, as described in the [original game's player guide](https://gamefaqs.gamespot.com/ps/575837-bishi-bashi-special-2/faqs/13258).
@@ -221,7 +230,7 @@ Physical phone/tablet playtesting remains necessary.
 
 `npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
 `npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
-The health endpoint reports protocol version 5 for automatic multiplayer sets with Facial Slot Machine.
+The health endpoint reports protocol version 6 for Ready-gated sets and independent Facial Slot Machine rows.
 Deploy the frontend and backend together when changing the multiplayer protocol.
 
 The Pages workflow tests, builds, and deploys `main`.

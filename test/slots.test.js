@@ -1,113 +1,75 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SlotRun, SLOT_GAME, slotLayout, reelFace, FACE_NAMES, INPUT_GUARD_MS } from '../shared/slots.js';
-import { createRun, roundSettings } from '../shared/games.js';
+import { SlotRun, SLOT_GAME, slotLayout, reelFace, FACE_NAMES, validReelMask } from '../shared/slots.js';
+import { createRun, roundSettings, gameRules, GAMES } from '../shared/games.js';
 import { RoomService } from '../server/rooms.js';
-
 const settings = (seed = 123, difficulty = 1) => ({ id: 'slots', game: SLOT_GAME, ...roundSettings(SLOT_GAME, seed, difficulty) });
-
-function nextTarget(run, after) {
-  let time = Math.max(after, run.blockedUntil, run.lastTap + INPUT_GUARD_MS);
-  while (reelFace(run.layout, run.cleared, time - run.start, run.stepMs) !== run.layout.target) time = run.start + (Math.floor((time - run.start) / run.stepMs) + 1) * run.stepMs + 1;
+function nextTarget(run, color, after) {
+  let time = Math.max(after, run.blockedReels[color], run.lastTaps[color] + 120);
+  while (reelFace(run.layout, color, run.reelElapsed(color,time), run.stepMs) !== run.layout.target) time += 1;
   return time;
 }
-
-test('seeded reels show every distinct face, share the target, and never start on a free match', () => {
-  for (let seed = 0; seed < 100; seed++) {
-    const layout = slotLayout(seed);
-    assert.deepEqual(slotLayout(seed), layout);
-    assert.ok(layout.target >= 0 && layout.target < FACE_NAMES.length);
-    for (const reel of layout.reels) {
-      assert.equal(new Set(reel).size, FACE_NAMES.length);
-      assert.notEqual(reel[0], layout.target);
-    }
-    assert.deepEqual(Array.from({ length: 6 }, (_, index) => reelFace(layout, 0, index * 320, 320)), layout.reels[0]);
-    assert.equal(reelFace(layout, 0, 6 * 320, 320), layout.reels[0][0]);
+test('seeded reels have six unique predictable faces and nearest-center judgments', () => {
+  for (let seed=0;seed<100;seed++) {
+    const layout=slotLayout(seed); assert.deepEqual(layout,slotLayout(seed));
+    for (const reel of layout.reels) { assert.equal(new Set(reel).size,FACE_NAMES.length); assert.notEqual(reel[0],layout.target); }
+    assert.deepEqual(Array.from({length:6},(_,i)=>reelFace(layout,0,i*320,320)),layout.reels[0]);
+    assert.equal(reelFace(layout,0,159.99,320),layout.reels[0][0]);
+    assert.equal(reelFace(layout,0,160,320),layout.reels[0][1]);
   }
 });
-
-test('a miss freezes only the current reel, keeps prior matches, and ignores repeated input', () => {
-  const run = new SlotRun(settings(), 10_000);
-  assert.equal(run.tap(0, run.start - 1).type, 'ignored');
-  assert.equal(run.tap(0, run.start).type, 'slotMiss');
-  assert.equal(run.mistakes, 1);
-  const retry = run.blockedUntil;
-  assert.equal(run.tap(1, retry - 1).type, 'ignored');
-  const first = nextTarget(run, retry);
-  assert.equal(run.tap(2, first).type, 'slotLock');
-  assert.equal(run.cleared, 1);
-  assert.equal(run.tap(0, first).type, 'ignored');
-  let wrong = first + INPUT_GUARD_MS;
-  while (reelFace(run.layout, 1, wrong - run.start, run.stepMs) === run.layout.target) wrong += run.stepMs;
-  assert.equal(run.tap(1, wrong).type, 'slotMiss');
-  assert.equal(run.cleared, 1);
-  assert.equal(run.mistakes, 2);
+test('colors stop their own rows in any order, including simultaneous independent presses', () => {
+  const run=new SlotRun(settings(),1000);
+  let time=nextTarget(run,2,run.start);
+  assert.equal(run.tap(2,time).type,'slotLock'); assert.equal(run.reelMask,4);
+  assert.equal(run.tap(2,time+500).type,'ignored');
+  time=nextTarget(run,0,time+120); assert.equal(run.tap(0,time).type,'slotLock'); assert.equal(run.reelMask,5);
+  time=nextTarget(run,1,time+120); assert.equal(run.tap(1,time).type,'finished'); assert.equal(run.reelMask,7);
+  assert.equal(run.elapsed,time-run.start); assert.equal(run.cleared,3);
+  const simultaneous=new SlotRun(settings(),0);
+  assert.equal(simultaneous.tap(0,0).type,'slotMiss');
+  assert.equal(simultaneous.tap(1,0).type,'slotMiss');
+  assert.equal(simultaneous.tap(2,0).type,'slotMiss'); assert.equal(simultaneous.mistakes,3);
 });
-
-test('every difficulty can be completed locally with any key and preserves exact elapsed time', () => {
-  assert.deepEqual(Array.from({ length: 5 }, (_, index) => settings(1, index + 1).stepMs), [320, 290, 260, 230, 200]);
-  for (let difficulty = 1; difficulty <= 5; difficulty++) {
-    const round = settings(521, difficulty);
-    const run = createRun(round, 3456.789);
-    let time = run.start;
-    for (let reel = 0; reel < 3; reel++) {
-      time = nextTarget(run, time + INPUT_GUARD_MS);
-      const action = run.tap(reel, time);
-      assert.equal(action.type, reel === 2 ? 'finished' : 'slotLock');
-    }
-    assert.equal(run.cleared, 3);
-    assert.equal(run.mistakes, 0);
-    assert.equal(run.elapsed, time - run.start);
-    assert.ok(run.elapsed < round.duration);
-    assert.equal(run.tap(0, time + 500).type, 'ignored');
-    assert.equal(run.cleared, 3);
+test('misses freeze only their own row, preserve other locks, and resume motion without a jump', () => {
+  const run=new SlotRun(settings(),0);
+  assert.equal(run.tap(0,0).type,'slotMiss'); assert.equal(run.tap(0,100).type,'ignored');
+  assert.equal(run.reelElapsed(0,200),0); assert.equal(run.reelElapsed(1,200),200);
+  assert.equal(run.reelElapsed(0,450),0); assert.equal(run.reelElapsed(0,451),1);
+  const time=nextTarget(run,2,200); assert.equal(run.tap(2,time).type,'slotLock');
+  assert.equal(run.reelMask,4); assert.equal(run.cleared,1);
+});
+test('all five difficulties and deadline boundaries remain local and deterministic', () => {
+  assert.deepEqual(Array.from({length:5},(_,i)=>settings(1,i+1).stepMs),[320,290,260,230,200]);
+  for(let level=1;level<=5;level++) {
+    const round=settings(52,level),run=createRun(round,5000); let time=5000;
+    for(const color of [1,2,0]) {time=nextTarget(run,color,time+120);run.tap(color,time);}
+    assert.equal(run.cleared,3); assert.ok(run.elapsed<round.duration);
+    assert.equal(run.tap(0,time+1000).type,'ignored');
+    assert.equal(new SlotRun(round,0).tap(0,round.duration).type,'ignored');
   }
+  assert.equal(validReelMask(4,1),true); assert.equal(validReelMask(4,2),false); assert.equal(validReelMask(8,1),false);
+  for (const game of Object.keys(GAMES)) assert.equal(gameRules(game,roundSettings(game,1)).length,3);
 });
-
-test('reel boundaries and the round deadline use the input timestamp', () => {
-  const round = settings();
-  const run = new SlotRun(round, 1000);
-  const targetStep = run.layout.reels[0].indexOf(run.layout.target);
-  const targetAt = run.start + targetStep * run.stepMs;
-  assert.equal(run.tap(0, targetAt).type, 'slotLock');
-  assert.equal(reelFace(run.layout, 0, targetStep * run.stepMs - .001, run.stepMs), run.layout.reels[0][targetStep - 1]);
-  assert.equal(new SlotRun(round, 1000).tap(0, 1000 + round.duration).type, 'ignored');
-  assert.equal(new SlotRun(round, 1000).tap(3, targetAt).type, 'ignored');
-});
-
-test('server rejects incomplete face matches and awards a delayed reconnect result exactly once', () => {
-  let now = 1_000_000;
-  const sent = [];
-  const service = new RoomService({ now: () => now, send: (client, message) => sent.push({ client, message: structuredClone(message) }) });
-  const host = {}, friend = {};
-  service.handle(host, { type: 'create', name: 'Host', mode: 'game-select', game: SLOT_GAME });
-  const room = service.rooms.get(host.room);
-  service.handle(friend, { type: 'join', name: 'Friend', code: room.code });
-  for (const client of [host, friend]) {
-    service.handle(client, { type: 'sync', count: 5, rtt: 20, uncertainty: 10 });
-    service.handle(client, { type: 'ready', ready: true });
-  }
-  service.handle(host, { type: 'start' });
-  const round = room.round;
-  const run = new SlotRun(round, 0);
-  let time = 0;
-  for (let reel = 0; reel < 3; reel++) { time = nextTarget(run, time + 120); run.tap(0, time); }
-  now = round.startAt + time + 1000;
-  const result = { type: 'result', roundId: round.id, status: 'finished', elapsed: run.elapsed, cleared: 2, mistakes: 0 };
-  service.handle(host, result);
-  assert.equal(room.players[0].result, null);
-  const token = room.players[0].token;
-  service.disconnect(host);
-  service.handle(friend, { type: 'result', roundId: round.id, status: 'finished', elapsed: run.elapsed + 100, cleared: 3, mistakes: 0 });
-  const resumed = {};
-  service.handle(resumed, { type: 'join', code: room.code, token, name: 'Host' });
-  result.cleared = 3;
-  service.handle(resumed, result);
-  assert.equal(room.round.phase, 'results');
-  assert.deepEqual(room.set.players.map(player => player.points), [10, 7]);
-  assert.equal(room.players[0].result.elapsed, run.elapsed);
-  service.handle(resumed, result);
-  assert.equal(room.set.history.length, 1);
-  assert.equal(room.set.players[0].points, 10);
-  assert.ok(sent.some(item => item.client === resumed && item.message.type === 'result-ack'));
+test('rules wait for every connected player; readiness and color masks cannot be bypassed', () => {
+  let now=1000000; const messages=[];
+  const service=new RoomService({now:()=>now,send:(client,message)=>messages.push({client,message:structuredClone(message)})});
+  const host={},friend={}; service.handle(host,{type:'create',name:'Host',mode:'game-select',game:SLOT_GAME});
+  const room=service.rooms.get(host.room);service.handle(friend,{type:'join',code:room.code,name:'Friend'});
+  service.handle(host,{type:'start'}); assert.equal(room.round.phase,'instructions');
+  for(const c of [host,friend])service.handle(c,{type:'sync',rtt:20,uncertainty:10,count:5});
+  service.handle(host,{type:'ready',ready:true}); now+=60000;service.tick();assert.equal(room.round.phase,'instructions');
+  for(const c of [host,friend])service.handle(c,{type:'sync',rtt:20,uncertainty:10,count:5});
+  service.handle(friend,{type:'ready',ready:true});assert.equal(room.round.phase,'countdown');
+  now=room.round.startAt+5000;
+  service.handle(host,{type:'progress',roundId:room.round.id,cleared:1,mistakes:0,reelMask:4});assert.equal(room.players[0].progress.reelMask,4);
+  now+=300;service.handle(host,{type:'progress',roundId:room.round.id,cleared:1,mistakes:0,reelMask:1});assert.equal(room.players[0].progress.reelMask,4);
+  const result={type:'result',roundId:room.round.id,status:'finished',elapsed:1000,cleared:3,mistakes:0,reelMask:3};
+  service.handle(host,result);assert.equal(room.players[0].result,null);
+  result.reelMask=7;service.handle(host,result);service.handle(friend,{...result,elapsed:2000});
+  assert.equal(room.set.phase,'intermission');assert.deepEqual(room.set.players.map(p=>p.points),[10,7]);
+  service.handle(host,result);assert.equal(room.set.history.length,1);
+  now=room.set.nextStartAt;for(const c of [host,friend])service.handle(c,{type:'sync',rtt:20,uncertainty:10,count:5});service.tick();
+  assert.equal(room.set.phase,'intermission');service.handle(host,{type:'ready',ready:true});assert.equal(room.set.phase,'intermission');
+  service.handle(friend,{type:'ready',ready:true});assert.equal(room.round.phase,'countdown');assert.equal(room.set.roundIndex,1);
 });

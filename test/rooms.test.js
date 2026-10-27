@@ -14,6 +14,7 @@ function setup(count = 2) {
   const start = (mode = 'sync') => {
     clients.forEach(client => { service.handle(client, { type: 'sync', rtt: 20, uncertainty: 10, count: 5 }); service.handle(client, { type: 'ready', ready: true }); });
     service.handle(clients[0], { type: 'start', mode });
+    if (room.round?.phase === 'instructions') clients.forEach(client => service.handle(client, { type: 'ready', ready: true }));
   };
   return { service, clients, room, sent, start, setTime: value => { time = value; } };
 }
@@ -83,11 +84,13 @@ test('host can start after the 15-second reconnect wait, and a returning spectat
   service.disconnect(clients[1]);
   service.handle(clients[0], { type: 'sync', rtt: 20, uncertainty: 10, count: 5 });
   service.handle(clients[0], { type: 'ready', ready: true });
-  service.handle(clients[0], { type: 'start' });
+  service.handle(clients[0], { type: 'start', mode: 'sync' });
+  if (room.round?.phase === 'instructions') clients.forEach(client => service.handle(client, { type: 'ready', ready: true }));
   assert.equal(room.round, null);
   assert.match(sent.get(clients[0]).at(-1).message, /15 seconds/);
   setTime(1_015_000);
-  service.handle(clients[0], { type: 'start' });
+  service.handle(clients[0], { type: 'start', mode: 'sync' });
+  if (room.round?.phase === 'instructions') clients.forEach(client => service.handle(client, { type: 'ready', ready: true }));
   assert.deepEqual(room.round.playerIds, [room.players[0].id]);
   const returning = {};
   service.handle(returning, { type: 'join', code: room.code, name: 'Second', token });
@@ -107,6 +110,7 @@ test('all devices receive the same scheduled start and need fresh samples', () =
   setTime(room.round.expiresAt); service.tick();
   room.players.forEach(player => { player.ready = true; });
   service.handle(clients[0], { type: 'start' });
+  if (room.round?.phase === 'instructions') clients.forEach(client => service.handle(client, { type: 'ready', ready: true }));
   assert.equal(room.testNumber, 1);
 });
 
@@ -186,6 +190,7 @@ test('only the host can switch games, switching resets ready, and active rounds 
   assert.ok(room.players.every(player => !player.ready));
   clients.forEach(client => service.handle(client, { type: 'ready', ready: true }));
   service.handle(clients[0], { type: 'start' });
+  if (room.round?.phase === 'instructions') clients.forEach(client => service.handle(client, { type: 'ready', ready: true }));
   assert.equal(room.round.game, 'perm-mania');
   assert.equal(room.round.duration, 30_000);
   service.handle(clients[0], { type: 'select-game', game: 'totem-shrinker' });
@@ -197,6 +202,7 @@ test('Perm scores require a completed round, stay bound to the connection, and a
   service.handle(clients[0], { type: 'select-game', game: 'perm-mania' });
   clients.forEach(client => { service.handle(client, { type: 'sync', rtt: 20, uncertainty: 10, count: 5 }); service.handle(client, { type: 'ready', ready: true }); });
   service.handle(clients[0], { type: 'start' });
+  if (room.round?.phase === 'instructions') clients.forEach(client => service.handle(client, { type: 'ready', ready: true }));
   const round = room.round;
   const result = { type: 'result', roundId: round.id, status: 'finished', elapsed: round.duration, cleared: 8, mistakes: 0, score: round.maxScore };
   setTime(round.startAt + 2000);

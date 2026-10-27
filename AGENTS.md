@@ -5,7 +5,7 @@ The Vite frontend deploys independently to GitHub Pages; `server/` is a separate
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 5 includes Facial Slot Machine in automatic sets; coordinate frontend/backend releases when changing it.
+Protocol version 6 includes readiness gates and independent slot-row lock masks; coordinate frontend/backend releases when changing it.
 
 ## Game and visuals
 
@@ -15,18 +15,24 @@ Show the next five blocks with the next input at the bottom, and size the comple
 `shared/perm.js` owns Perm Mania's seeded call-and-response phrases, local timing judgments, hair growth, and tempo-dependent round duration.
 Perm Mania ranks growth, then timing score; Totem Shrinker ranks elapsed time.
 `shared/slots.js` owns seeded portrait reels and local stops; Facial Slot Machine ranks elapsed time after matching all three reels.
-Any colored input stops the next reel from left to right; a miss preserves earlier locks and pauses the current reel for 450 ms.
-Game Select reduces portrait hold times from 320 to 200 ms across five rounds; input guards and the 30-second deadline stay fixed.
+Red, green, and blue stop their own continuously scrolling slot rows in any order; misses pause only that row for 450 ms and resume its motion without a jump.
+Reels show approaching faces and judge the portrait nearest the center marker; Game Select reduces travel time per portrait from 320 to 200 ms across five rounds.
+Track slot locks as a monotonic three-bit `reelMask`, rather than assuming the first N rows were stopped.
 `shared/games.js` is the common game registry, difficulty settings, and result ordering.
 `shared/sets.js` defines two-game Arcade, five-round Game Select, shared placement points, and cumulative standings.
-`server/rooms.js` owns the fixed set roster, idempotent point awards, eight-second intermissions, and automatic progression.
+`server/rooms.js` owns the fixed set roster, idempotent point awards, intermissions, and readiness gates.
+Arcade shows a cumulative podium for eight seconds, then the next game's three-point rules and an all-player Ready gate.
+Game Select shows rules once and uses the podium's all-player Ready gate between subsequent rounds, with an eight-second minimum intermission.
+Readiness never carries across a round or instructions screen, and countdowns require every connected player to be ready and freshly synchronized.
 The host may configure modes and games only outside an active set, resetting readiness; new guests must wait until the set finishes.
 Game Select increases Totem blocks from 30 to 70 and Perm tempo from 128 to 160 BPM across five rounds.
 Every device displays all four lanes, with controls for its own player only.
 Shared styles live in `src/style.css`; the pink disco stage lives in `src/games.css`.
 The landing page and set standings use `src/sets.css` and `src/set-view.js`.
 Facial Slot Machine uses `src/slot-view.js` and `src/slots.css`; remote reel animation is cosmetic and must not reset to zero on progress snapshots.
-Keep target, four player lanes, and Stop visible together on compact phones; use stacked reels at narrow widths.
+Use the same three buttons and shared fixed control bar in every current and future game; do not add game-specific button layouts or replace them with a single Stop button.
+Show three horizontal scrolling slot rows per player, stacked red, green, and blue, with upcoming faces visible at narrow widths too.
+Set podium positions and points use cumulative totals; the separate Last game column shows that round's performance and earned points.
 Original generated sprites and their provenance live in `public/assets/`.
 The portable design mockup remains in `mockups/`, with editable source/provenance in `.lavish/totem-shrinker/`.
 Keep screens visually driven; avoid redundant captions, decorative microcopy, and repeated instructions outside the rules screen.
@@ -47,7 +53,7 @@ Results may stop music and countdown cues, but must not truncate an accepted loc
 - Treat result submissions as idempotent, acknowledge them, and persist pending submissions across reconnects.
 - Keep reconnect tokens private; exclude them from broadcasts, invitations, and reports.
 - Disconnection does not forfeit; hiding or reloading the active game does.
-- Wait up to 15 seconds for disconnected or unsynchronized players between rounds, then continue with synchronized players and award skipped players zero for that round.
+- Wait up to 15 seconds for disconnected players at a Ready gate, then allow ready connected players to continue; never skip a connected unready player.
 - Clock uncertainty and GO render delay do not prove physical display synchronization.
 
 ## Maintenance

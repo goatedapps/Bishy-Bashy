@@ -2,7 +2,7 @@ import { COLORS, createSequence } from '../shared/totem.js';
 import { PERM_GAME } from '../shared/perm.js';
 import { SLOT_GAME, slotLayout } from '../shared/slots.js';
 import { SlotStage, facePortrait, renderTarget } from './slot-view.js';
-import { GAMES, comparePlayers } from '../shared/games.js';
+import { GAMES, comparePlayers, isRoundActive } from '../shared/games.js';
 
 const SHAPES = ['●', '▲', '◆'];
 const $ = id => document.getElementById(id);
@@ -63,7 +63,7 @@ export class GameView {
 
   render(room, playerId, local, time) {
     const round = room.round;
-    const active = round && round.phase !== 'results';
+    const active = isRoundActive(round);
     const game = active ? round.game : room.selectedGame;
     const perm = game === PERM_GAME;
     const slots = game === SLOT_GAME;
@@ -83,7 +83,7 @@ export class GameView {
       elements.avatar.hidden = !perm;
       elements.slots.cabinet.hidden = !slots;
       if (slots) {
-        if (!active || ownRun) elements.slots.render(round || { seed: 0 }, cleared, ownRun ? time - ownRun.start : 0, ownRun?.run, active, Boolean(player));
+        if (!active || ownRun) elements.slots.render(round || { seed: 0 }, ownRun?.run.reelMask ?? player?.progress?.reelMask ?? 0, ownRun ? time - ownRun.start : 0, ownRun?.run, active, Boolean(player));
       }
       else if (perm) {
         const growth = active && player ? cleared : 0;
@@ -105,7 +105,7 @@ export class GameView {
       }
       elements.fill.style.width = `${active && player ? cleared / round.goal * 100 : 0}%`;
       const score = ownRun?.run.score ?? player?.progress?.score ?? 0;
-      elements.status.textContent = !player ? 'Waiting to join' : !player.connected ? 'Reconnecting…' : active ? status ? resultLabel(status, perm) : frozen ? 'Oops!' : slots ? `Reel ${Math.min(3, cleared + 1)}` : perm ? `${score.toLocaleString()} pts` : '' : player.ready ? '✓ Ready' : player.sync?.count >= 3 ? (player.id === room.hostId ? 'Host' : 'Not ready') : 'Syncing…';
+      elements.status.textContent = !player ? 'Waiting to join' : !player.connected ? 'Reconnecting…' : active ? status ? resultLabel(status, perm) : frozen ? 'Oops!' : perm ? `${score.toLocaleString()} pts` : '' : player.ready ? '✓ Ready' : player.sync?.count >= 3 ? (player.id === room.hostId ? 'Host' : 'Not ready') : 'Syncing…';
     });
     const hasResults = round?.phase === 'results';
     $('play-view').hidden = hasResults;
@@ -114,11 +114,11 @@ export class GameView {
   }
 
   animate(room, local, time, elapsed) {
-    if (room.round?.game === SLOT_GAME && room.round.phase !== 'results') {
+    if (room.round?.game === SLOT_GAME && isRoundActive(room.round)) {
       this.lanes.forEach((elements, index) => {
         const own = elements.lane.classList.contains('you') ? local : null;
         const player = room.players[index];
-        elements.slots.render(room.round, own?.run.cleared ?? player?.progress?.cleared ?? 0, Math.max(0, own ? time - own.start : elapsed), own?.run, true, Boolean(player));
+        elements.slots.render(room.round, own?.run.reelMask ?? player?.progress?.reelMask ?? 0, Math.max(0, own ? time - own.start : elapsed), own?.run, true, Boolean(player));
       });
       return;
     }

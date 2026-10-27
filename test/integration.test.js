@@ -41,6 +41,10 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 2], ['game-sele
   let waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.round);
   send(clients[0], { type: 'start' });
   let state = (await waiting).room;
+  assert.equal(state.round.phase, 'instructions');
+  waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.round.phase === 'countdown');
+  clients.forEach(socket => send(socket, { type: 'ready', ready: true }));
+  state = (await waiting).room;
   assert.equal(state.set.plan.length, length);
   if (mode === 'arcade') assert.equal(new Set(state.set.plan).size, 2);
   for (let index = 0; index < length; index++) {
@@ -49,16 +53,22 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 2], ['game-sele
     if (mode === 'game-select') assert.equal(round.game, game);
     time = round.game === PERM_GAME ? round.endAt + 100 : round.startAt + 4000;
     waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.history.length === index + 1);
-    clients.forEach((socket, place) => send(socket, { type: 'result', roundId: round.id, status: 'finished', elapsed: round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: round.goal, mistakes: 0, ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) }));
+    clients.forEach((socket, place) => send(socket, { type: 'result', roundId: round.id, status: 'finished', elapsed: round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: round.goal, mistakes: 0, ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}), ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) }));
     state = (await waiting).room;
     assert.deepEqual(state.set.players.map(player => player.points), [10, 7, 4, 1].map(points => points * (index + 1)));
     if (index + 1 < length) {
       assert.equal(state.set.phase, 'intermission');
       time = state.set.nextStartAt;
-      const next = receiveProtocol(clients[0], message => message.type === 'state' && message.room.round.id !== round.id);
+      const next = receiveProtocol(clients[0], message => message.type === 'state' && message.room.round.id !== round.id && message.room.round.phase === 'countdown');
       const synced = receiveProtocol(clients[0], message => message.type === 'state' && message.room.players.every(player => player.sync?.at === time));
       clients.forEach(socket => send(socket, { type: 'sync', rtt: 20, uncertainty: 10, count: 5 }));
       await synced; app.rooms.tick();
+      if (mode === 'arcade') {
+        const instructions = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.phase === 'instructions');
+        send(clients[0], { type: 'sync', rtt: 20, uncertainty: 10, count: 5 });
+        await instructions;
+      }
+      clients.forEach(socket => send(socket, { type: 'ready', ready: true }));
       state = (await next).room;
       assert.equal(state.set.roundIndex, index + 1);
       assert.ok(state.players.every(player => !player.ready));
@@ -93,7 +103,7 @@ for (const game of ['totem-shrinker', PERM_GAME]) test(`${game}: four real conne
     const waiting = receive(socket, message => message.type === 'joined');
     send(socket, { type: index ? 'join' : 'create', game, mode: 'game-select', code, name: `Player ${index + 1}` });
     const joined = await waiting;
-    assert.equal(joined.protocol, 5);
+    assert.equal(joined.protocol, 6);
     code = joined.code;
     clients.push({ socket, ...joined });
     const ready = receive(socket, message => message.type === 'state' && message.room.players.some(player => player.id === joined.playerId && player.ready));
@@ -101,8 +111,11 @@ for (const game of ['totem-shrinker', PERM_GAME]) test(`${game}: four real conne
     send(socket, { type: 'ready', ready: true });
     await ready;
   }
-  const scheduled = clients.map(client => receive(client.socket, message => message.type === 'state' && message.room.round));
+  const scheduled = clients.map(client => receive(client.socket, message => message.type === 'state' && message.room.round?.phase === 'countdown'));
+  const instructions = receive(clients[0].socket, message => message.type === 'state' && message.room.round?.phase === 'instructions');
   send(clients[0].socket, { type: 'start' });
+  await instructions;
+  clients.forEach(client => send(client.socket, { type: 'ready', ready: true }));
   const states = await Promise.all(scheduled);
   const round = states[0].room.round;
   for (const state of states) assert.deepEqual(createSequence(state.room.round.seed), createSequence(round.seed));
@@ -178,7 +191,7 @@ test('real WebSocket clients can create, synchronize, and join a room', async t 
   assert.equal(state.room.players[1].name, 'Friend 1');
   assert.equal(JSON.stringify(state).includes(joined.token), false);
   const health = await fetch(`http://127.0.0.1:${port}/health`);
-  assert.deepEqual(await health.json(), { ok: true, protocol: 5 });
+  assert.deepEqual(await health.json(), { ok: true, protocol: 6 });
   const info = await fetch(`http://127.0.0.1:${port}/connection-info`);
   assert.ok(Array.isArray((await info.json()).lanUrls));
 });

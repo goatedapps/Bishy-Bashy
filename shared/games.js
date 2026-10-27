@@ -25,6 +25,14 @@ export function createRun(round, localStart, timingOffset = 0) {
   return round.game === PERM_GAME ? new PermRun(round, localStart, timingOffset) : new TotemRun(round, localStart);
 }
 
+export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
+
+export function gameRules(game, round) {
+  if (game === SLOT_GAME) return ['Match all three rows to the model face at the center marker.', 'Red stops the red row, green the green row, and blue the blue row—in any order.', 'Correct faces stay locked. A miss restarts only that row. Fastest complete face wins.'];
+  if (game === PERM_GAME) return ['Watch the rhythm, then copy it with any of the three buttons.', 'One mistake or fewer in a phrase grows your hair.', 'Biggest hair wins; rhythm score breaks ties.'];
+  return ['Match the bottom block with the same color button.', `Clear all ${round.blockCount} blocks as fast as you can.`, 'A wrong tap freezes your controls for 0.3 seconds.'];
+}
+
 export function comparePlayers(a, b, game) {
   const finishedA = a.result?.status === 'finished';
   const finishedB = b.result?.status === 'finished';

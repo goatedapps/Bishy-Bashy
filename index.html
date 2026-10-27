@@ -51,7 +51,7 @@
         <button id="leave" class="text-button">Leave</button>
       </div>
       <div id="set-progress" class="set-progress" hidden></div>
-      <section id="intermission" class="intermission" hidden aria-live="polite"><strong id="next-game"></strong><span id="next-detail"></span><p id="intermission-countdown"></p></section>
+      <section id="game-instructions" class="game-instructions" hidden aria-label="Game instructions"><span class="ribbon">How to play</span><h2 id="instructions-title"></h2><ol id="instructions-list"></ol><div id="ready-players" class="ready-players"></div></section>
       <section id="play-view" class="arcade-frame">
         <div class="match-hud"><strong id="round-label">Lobby</strong><div class="timer"><span aria-hidden="true">◷</span> <span id="timer">00.00</span><small>sec</small></div><span id="connection-dot" class="online-dot" role="status" aria-label="Connecting"></span></div>
         <div id="rhythm-guide" class="rhythm-guide" hidden>
@@ -59,10 +59,9 @@
           <div class="rhythm-heading"><strong id="rhythm-phase">Watch</strong><span id="rhythm-phrase">Phrase 1 / 8</span><span id="rhythm-hint">Copy with any button</span></div>
           <div id="rhythm-track" class="rhythm-track" role="img" aria-label="Rhythm pattern"></div>
         </div>
-        <div id="slot-guide" class="slot-guide" hidden><span id="slot-target-face" class="face-portrait"></span><div class="slot-guide-copy"><strong>Match this face!</strong><span id="slot-target-name"></span><small>Stop the reels left to right</small></div></div>
+        <div id="slot-guide" class="slot-guide" hidden><span id="slot-target-face" class="face-portrait"></span><div class="slot-guide-copy"><strong>Model face</strong><span id="slot-target-name"></span><small>Stop each color at the center marker</small></div></div>
         <div id="arena" class="arena"><div id="player-lanes" class="lanes"></div><div id="round-overlay" class="round-overlay" hidden aria-live="polite"></div></div>
         <div id="control-deck" class="control-deck" hidden aria-label="Your controls">
-          <button id="slot-stop" class="hit-button slot-stop" data-color="0" aria-label="Stop reel" hidden disabled><span class="stop-icon" aria-hidden="true">■</span><span id="slot-stop-label">Stop reel 1</span><small>Any key: 1 / 2 / 3</small></button>
           <button class="hit-button red" data-color="0" aria-label="Red circle" disabled><span class="shape">●</span><span>Red</span><small>1 / J</small></button>
           <button class="hit-button green" data-color="1" aria-label="Green triangle" disabled><span class="shape">▲</span><span>Green</span><small>2 / K</small></button>
           <button class="hit-button blue" data-color="2" aria-label="Blue diamond" disabled><span class="shape">◆</span><span>Blue</span><small>3 / L</small></button>
@@ -71,7 +70,7 @@
       <section id="results" class="arcade-frame results-screen" hidden aria-label="Round results">
         <span id="result-round" class="ribbon"></span><h2 id="result-title"></h2><div id="podium" class="podium"></div><div id="result-rows" class="result-rows"></div>
       </section>
-      <section id="standings-panel" class="standings-panel" hidden aria-label="Set standings"><span id="standings-label" class="ribbon"></span><h2 id="standings-title">Set standings</h2><div id="standings-rows"></div><details id="set-history"><summary>Round-by-round points</summary><div id="history-table"></div></details></section>
+      <section id="standings-panel" class="standings-panel" hidden aria-label="Set standings"><span id="standings-label" class="ribbon"></span><h2 id="standings-title">Set standings</h2><div id="set-podium" class="set-podium"></div><div class="standing-head"><span>Player</span><span>Last game</span><span>Total</span></div><div id="standings-rows"></div><p id="intermission-countdown" class="intermission-countdown"></p><div id="podium-ready-players" class="ready-players"></div><details id="set-history"><summary>Round-by-round points</summary><div id="history-table"></div></details></section>
       <div id="ready-actions" class="ready-actions"><button id="ready" class="primary" disabled>Ready</button><button id="start" hidden disabled>Start round</button></div>
       <p id="lobby-status" class="status" role="status"></p><p id="submission-status" class="status" hidden role="status"></p>
     </section>

@@ -19,13 +19,13 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
   for (let index = 1; index < count; index++) service.handle(clients[index], { type: 'join', code: room.code, name: `Player ${index + 1}` });
   const sync = (indices = clients.map((_, index) => index)) => indices.forEach(index => service.handle(clients[index], { type: 'sync', rtt: 20, uncertainty: 10, count: 5 }));
   const ready = () => { sync(); clients.forEach(client => service.handle(client, { type: 'ready', ready: true })); };
-  ready(); service.handle(clients[0], { type: 'start' });
+  ready(); service.handle(clients[0], { type: 'start' }); ready();
   const finish = (order = clients.map((_, index) => index), winner = 0) => {
     const round = room.round;
     time = round.game === PERM_GAME ? round.endAt + 100 : round.startAt + 3500;
     for (const index of order) {
       const place = index === winner ? 0 : index === 0 ? 1 : index;
-      service.handle(clients[index], { type: 'result', roundId: round.id, status: 'finished', elapsed: round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: round.goal, mistakes: 0, ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) });
+      service.handle(clients[index], { type: 'result', roundId: round.id, status: 'finished', elapsed: round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: round.goal, mistakes: 0, ...(round.game === 'facial-slot-machine' ? { reelMask: 7 } : {}), ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) });
     }
   };
   return { service, clients, room, messages, sync, ready, finish, setTime: value => { time = value; }, get now() { return time; } };
@@ -74,7 +74,7 @@ test('five automatic Totem rounds increase block counts and crown the total-poin
       const outsider = {};
       service.handle(outsider, { type: 'join', code: room.code, name: 'Late' });
       assert.match(state.messages.get(outsider).at(-1).message, /set is underway/);
-      setTime(room.set.nextStartAt - 1); sync(); service.tick();
+      state.ready(); setTime(room.set.nextStartAt - 1); sync(); service.tick();
       assert.equal(room.set.phase, 'intermission');
       setTime(room.set.nextStartAt); service.tick();
       assert.equal(room.set.phase, 'playing');
@@ -85,7 +85,7 @@ test('five automatic Totem rounds increase block counts and crown the total-poin
   assert.equal(setStandings(room.set.players)[0].id, room.players[0].id);
   assert.equal(room.set.history.length, 5);
   service.tick(); assert.equal(room.set.history.length, 5);
-  state.ready(); service.handle(clients[0], { type: 'start' });
+  state.ready(); service.handle(clients[0], { type: 'start' }); state.ready();
   assert.notEqual(room.set.id, setId);
   assert.ok(room.set.players.every(player => player.points === 0));
   assert.equal(room.set.history.length, 0);
@@ -93,7 +93,7 @@ test('five automatic Totem rounds increase block counts and crown the total-poin
 });
 
 test('Arcade automatically plays two distinct base-difficulty games and keeps cumulative scores', () => {
-  const { service, room, finish, sync, setTime } = setup({ mode: 'arcade', count: 2 });
+  const { service, room, finish, sync, ready, setTime } = setup({ mode: 'arcade', count: 2 });
   assert.equal(room.set.plan.length, 2);
   assert.equal(new Set(room.set.plan).size, 2);
   assert.ok(room.set.plan.every(id => GAMES[id]));
@@ -102,6 +102,7 @@ test('Arcade automatically plays two distinct base-difficulty games and keeps cu
   finish();
   assert.equal(room.set.phase, 'intermission');
   setTime(room.set.nextStartAt); sync(); service.tick();
+  assert.equal(room.set.phase, 'instructions'); ready();
   assert.notEqual(room.round.game, first);
   assert.equal(room.round.difficulty, 1);
   finish();
@@ -109,30 +110,20 @@ test('Arcade automatically plays two distinct base-difficulty games and keeps cu
   assert.deepEqual(room.set.players.map(player => player.points), [20, 14]);
 });
 
-test('disconnected and unsynchronized players get a bounded wait, then miss only that round', () => {
-  const { service, clients, room, finish, sync, setTime } = setup({ count: 2 });
+test('ready gates retain a bounded disconnected-player wait and never skip a connected unready player', () => {
+  const state = setup({ count: 2 });
+  const { service, clients, room, finish, sync, setTime } = state;
   finish();
-  const endedAt = room.set.resumeAt - INTERMISSION_MS;
   service.disconnect(clients[1]);
-  setTime(endedAt + INTERMISSION_MS); sync([0]); service.tick();
-  assert.equal(room.set.phase, 'intermission');
-  assert.equal(room.set.nextStartAt, endedAt + RECONNECT_WAIT_MS);
+  sync([0]); service.handle(clients[0], { type: 'ready', ready: true });
   setTime(room.set.nextStartAt); service.tick();
+  assert.equal(room.set.phase, 'intermission');
+  setTime(state.now + RECONNECT_WAIT_MS); sync([0]); service.tick();
   assert.deepEqual(room.round.playerIds, [room.players[0].id]);
-  assert.equal(room.players[1].result.status, 'missing');
-  const returning = {};
-  service.handle(returning, { type: 'join', code: room.code, token: room.players[1].token, name: 'Returned' });
-  assert.equal(room.players.length, 2);
-  setTime(room.round.startAt + 1500);
-  service.handle(returning, { type: 'result', roundId: room.round.id, status: 'finished', elapsed: 1000, cleared: room.round.goal, mistakes: 0 });
-  assert.equal(room.players[1].result.status, 'missing');
-  assert.equal(room.set.players[1].points, 7);
-  const stale = setup({ count: 2 });
-  stale.finish(); stale.room.players[1].sync = null;
-  stale.setTime(stale.room.set.nextStartAt); stale.sync([0]); stale.service.tick();
-  assert.equal(stale.room.set.waitReason, 'sync');
-  stale.setTime(stale.room.set.nextStartAt); stale.service.tick();
-  assert.deepEqual(stale.room.round.playerIds, [stale.room.players[0].id]);
+  const stale = setup({ count: 2 }); stale.finish();
+  stale.setTime(stale.room.set.nextStartAt + 30_000); stale.sync([0]); stale.service.tick();
+  assert.equal(stale.room.set.phase, 'intermission');
+  stale.ready(); assert.equal(stale.room.set.phase, 'playing');
 });
 
 test('host migration and leaving between rounds preserve earned points and the original roster', () => {
@@ -142,7 +133,7 @@ test('host migration and leaving between rounds preserve earned points and the o
   service.handle(clients[0], { type: 'leave' });
   assert.equal(room.hostId, room.players[0].id);
   assert.equal(room.set.players.find(player => player.id === originalHost).points, 10);
-  setTime(room.set.nextStartAt); sync([1]); service.tick();
+  setTime(room.set.nextStartAt); sync([1]); service.handle(clients[1], { type: 'ready', ready: true }); service.tick();
   assert.equal(room.round.playerIds.length, 1);
   assert.equal(room.set.players.length, 2);
   assert.equal(JSON.stringify(service.snapshot(room)).includes(room.players[0].token), false);

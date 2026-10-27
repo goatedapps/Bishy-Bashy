@@ -61,18 +61,19 @@
 .in-set #results h2 { font-size:28px; margin:10px 0 0; }
 .standings-panel { border:3px solid var(--ink); border-radius:24px; padding:18px 24px; background:var(--paper); margin-top:18px; text-align:center; }
 .standings-panel h2 { font-size:27px; margin:10px 0 14px; }
-.standing-row { display:flex; gap:12px; align-items:center; text-align:left; padding:9px 8px; border-top:1px solid #e4d5ea; }
+.standing-row { display:grid; grid-template-columns:29px minmax(0,1fr) 130px 70px; gap:12px; align-items:center; text-align:left; padding:9px 8px; border-top:1px solid #e4d5ea; }
 .standing-row.you { background:#fff2bd; border-radius:10px; }
 .standing-rank { display:grid; place-items:center; min-width:29px; height:29px; background:#eee2fc; border-radius:50%; font:21px 'Lilita One',system-ui,sans-serif; }
 .leader .standing-rank { background:#ffda47; }
 .standing-name { flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:14px; }
 .standing-name small { display:block; font-size:10px; font-weight:700; color:#765a86; margin-top:2px; }
-.points-earned { font-weight:900; font-size:12px; color:#268157; margin-left:auto; }
+.points-earned { font-weight:900; font-size:12px; color:#268157; text-align:right; }
+.points-earned strong { display:block; }
+.points-earned small { display:block; color:#765a86; font-size:10px; font-weight:700; margin-top:2px; }
 .standing-points { display:flex; gap:4px; align-items:baseline; min-width:60px; justify-content:end; }
 .standing-points strong { font:29px 'Lilita One',system-ui,sans-serif; }
 .standing-points small { font-size:11px; font-weight:800; }
 .final-standings { margin-top:0; padding:26px 32px; background:#fff9dd; box-shadow:0 7px 0 #c99a35; }
-.final-standings:before { content:'★'; display:block; font-size:56px; color:#e3a509; line-height:1; text-shadow:0 3px #fff; }
 .final-standings h2 { font-size:clamp(30px,4vw,44px); }
 .final-standings .standing-row { padding:14px 8px; }
 .final-standings .standing-points strong { font-size:36px; }
@@ -82,6 +83,29 @@
 .history-table th,.history-table td { padding:9px 7px; border-bottom:1px solid #e4d5ea; }
 .history-table thead { background:#ece0f8; }
 .history-table tbody th { text-align:left; font-weight:800; }
+.standing-head { display:grid; grid-template-columns:minmax(0,1fr) 130px 70px; gap:12px; padding:0 8px 8px 49px; text-align:right; font-size:11px; font-weight:900; }
+.standing-head span:first-child { text-align:left; }
+.standings-panel { max-width:850px; margin:0 auto; background:#fff8d9; box-shadow:0 7px 0 #c99a35; }
+.set-podium { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); align-items:end; max-width:530px; margin:25px auto 22px; gap:10px; border-bottom:4px solid var(--ink); }
+.set-podium-seat { position:relative; display:flex; flex-direction:column; align-items:center; }
+.set-podium-seat .block { width:min(108px,90%); margin:0 auto 5px; }
+.set-podium-step { border:2px solid var(--ink); border-bottom:0; border-radius:14px 14px 0 0; background:#d9c3f5; width:100%; min-height:100px; padding:13px 8px 9px; }
+.place-1 .set-podium-step { min-height:130px; background:#ffdf49; }
+.place-3 .set-podium-step { min-height:90px; background:#ffbfad; }
+.set-podium-step>strong { display:block; font:35px 'Lilita One',system-ui,sans-serif; margin:4px 0; }
+.set-podium-step>strong small { font:900 11px Nunito,system-ui,sans-serif; }
+.podium-place { font-size:11px; font-weight:900; }
+.podium-crown { color:#bb8300; font-size:35px; line-height:1; margin-bottom:4px; }
+.game-instructions { max-width:720px; margin:auto; padding:26px 30px; border:3px solid var(--ink); border-radius:26px; background:var(--paper); box-shadow:0 7px 0 #c99a35; text-align:center; }
+.game-instructions h2 { margin:18px 0; font-size:36px; }
+.game-instructions ol { text-align:left; margin:0 auto 24px; max-width:540px; padding-left:25px; font-size:17px; font-weight:800; }
+.game-instructions li { padding:7px 0 7px 5px; line-height:1.45; }
+.ready-players { display:flex; justify-content:center; gap:8px; flex-wrap:wrap; margin:16px 0 0; }
+.ready-chip { background:#eee5fa; border:1px solid #d5bedf; border-radius:18px; padding:6px 12px; font-size:12px; font-weight:900; }
+.ready-chip.is-ready { background:#bce8c4; border-color:#619d6c; }
+.intermission-countdown { font-size:12px; font-weight:900; margin:18px 0 0; }
+#control-deck { position:fixed; z-index:10; bottom:calc(12px + env(safe-area-inset-bottom,0px)); left:50%; transform:translateX(-50%); width:min(calc(100% - 28px),1064px); border:3px solid var(--ink); border-radius:22px; box-shadow:0 5px 0 #3b214d55; }
+.in-room:has(#control-deck:not([hidden])) main { padding-bottom:140px; }
 @media(max-width:620px) {
   .join-shortcut { font-size:11px; margin-right:2px; }
   body:not(.in-room) .game-top { padding:16px 14px 0; }
@@ -126,6 +150,20 @@
   .intermission>span { font-size:11px; }
   .standings-panel { padding:14px 12px; }
   .standing-row { gap:8px; }
+  .standing-row { grid-template-columns:25px minmax(0,1fr) 94px 46px; }
+  .standing-head { grid-template-columns:minmax(0,1fr) 94px 46px; gap:8px; padding-left:41px; font-size:10px; }
+  .points-earned small { font-size:9px; }
+  .standing-points { min-width:0; }
+  .set-podium { gap:6px; margin:20px auto 18px; }
+  .set-podium-step { padding:9px 3px; min-height:87px; }
+  .set-podium-step .podium-name { font-size:11px; }
+  .set-podium-step>strong { font-size:28px; }
+  .place-1 .set-podium-step { min-height:110px; }
+  .place-3 .set-podium-step { min-height:80px; }
+  .game-instructions { padding:20px 18px; }
+  .game-instructions h2 { font-size:29px; }
+  .game-instructions ol { font-size:14px; }
+  .ready-chip { font-size:11px; padding:5px 9px; }
   .standing-name { font-size:12px; }
   .final-standings { padding:22px 14px; }
   .final-standings h2 { font-size:31px; }

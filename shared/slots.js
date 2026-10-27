@@ -31,8 +31,11 @@ export function slotLayout(seed) {
 }
 
 export function reelFace(layout, reel, elapsed, stepMs) {
-  return layout.reels[reel][Math.floor(Math.max(0, elapsed) / stepMs) % FACE_NAMES.length];
+  return layout.reels[reel][Math.floor(Math.max(0, elapsed) / stepMs + .5) % FACE_NAMES.length];
 }
+
+export const maskCount = mask => (mask & 1) + ((mask >> 1) & 1) + ((mask >> 2) & 1);
+export const validReelMask = (mask, cleared) => Number.isInteger(mask) && mask >= 0 && mask <= 7 && maskCount(mask) === cleared;
 
 export class SlotRun {
   constructor(round, localStart) {
@@ -45,24 +48,37 @@ export class SlotRun {
     this.cleared = 0;
     this.mistakes = 0;
     this.blockedUntil = 0;
-    this.lastTap = -Infinity;
-    this.missedFace = null;
+    this.reelMask = 0;
+    this.blockedReels = [0, 0, 0];
+    this.lastTaps = [-Infinity, -Infinity, -Infinity];
+    this.missedFaces = [null, null, null];
+    this.pausedMs = [0, 0, 0];
+    this.stoppedAt = [0, 0, 0];
     this.done = false;
     this.elapsed = null;
   }
 
+  reelElapsed(color, time) {
+    if ((this.reelMask & (1 << color)) || time < this.blockedReels[color]) return this.stoppedAt[color];
+    return Math.max(0, time - this.start - this.pausedMs[color]);
+  }
+
   tap(color, time) {
-    if (this.done || !Number.isInteger(color) || color < 0 || color > 2 || time < this.start || time >= this.end || time < this.blockedUntil || time - this.lastTap < INPUT_GUARD_MS) return { type: 'ignored' };
-    this.lastTap = time;
-    const face = reelFace(this.layout, this.cleared, time - this.start, this.stepMs);
+    if (this.done || !Number.isInteger(color) || color < 0 || color > 2 || time < this.start || time >= this.end || (this.reelMask & (1 << color)) || time < this.blockedReels[color] || time - this.lastTaps[color] < INPUT_GUARD_MS) return { type: 'ignored' };
+    this.lastTaps[color] = time;
+    const elapsed = this.reelElapsed(color, time);
+    const face = reelFace(this.layout, color, elapsed, this.stepMs);
+    this.stoppedAt[color] = elapsed;
     if (face !== this.layout.target) {
-      this.missedFace = face;
+      this.missedFaces[color] = face;
       this.mistakes++;
-      this.blockedUntil = time + this.retryMs;
+      this.blockedReels[color] = time + this.retryMs;
+      this.pausedMs[color] += this.retryMs;
       return { type: 'slotMiss' };
     }
-    this.cleared++;
-    this.missedFace = null;
+    this.reelMask |= 1 << color;
+    this.cleared = maskCount(this.reelMask);
+    this.missedFaces[color] = null;
     if (this.cleared === REEL_COUNT) {
       this.done = true;
       this.elapsed = time - this.start;

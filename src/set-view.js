@@ -1,5 +1,5 @@
-import { GAMES, roundSettings } from '../shared/games.js';
-import { MODES, ARCADE_LENGTH, GAME_SELECT_LENGTH, setStandings, roundDetail } from '../shared/sets.js';
+import { GAMES, gameRules } from '../shared/games.js';
+import { MODES, ARCADE_LENGTH, GAME_SELECT_LENGTH, setStandings } from '../shared/sets.js';
 import { SLOT_GAME } from '../shared/slots.js';
 import { facePortrait } from './slot-view.js';
 
@@ -39,18 +39,25 @@ export class SetView {
   render(room, playerId) {
     const set = room.set;
     $('set-progress').hidden = !set;
-    $('intermission').hidden = set?.phase !== 'intermission';
-    $('standings-panel').hidden = !set?.history.length || set.phase === 'playing';
+    const instructions = set?.phase === 'instructions';
+    const standingsVisible = set && ['intermission', 'complete'].includes(set.phase);
+    $('game-instructions').hidden = !instructions;
+    $('standings-panel').hidden = !standingsVisible;
     if (!set) return;
+    $('results').hidden = true;
+    if (instructions || standingsVisible) $('play-view').hidden = true;
     $('set-progress').textContent = `${MODES[set.mode].title} · ${set.mode === 'arcade' ? 'Game' : 'Round'} ${set.roundIndex + 1} of ${set.plan.length}`;
-    if (set.phase === 'intermission') {
-      const next = set.plan[set.roundIndex + 1];
-      $('next-game').textContent = `Up next: ${GAMES[next].title}`;
-      const level = set.mode === 'game-select' ? set.roundIndex + 2 : 1;
-      const settings = { game: next, ...roundSettings(next, 0, level) };
-      $('next-detail').textContent = `${roundDetail(settings)} · ${next === SLOT_GAME ? 'Stop all three on the target face' : next === 'perm-mania' ? 'Watch, then copy with any button' : 'Match the bottom block'}`;
+    if (instructions) {
+      if (this.instructionsKey !== room.round.id) {
+        this.instructionsKey = room.round.id;
+        $('instructions-title').textContent = GAMES[room.round.game].title;
+        $('instructions-list').replaceChildren(...gameRules(room.round.game, room.round).map(text => node('li', '', text)));
+      }
+      this.renderReady(room, $('ready-players'), playerId);
     }
-    if (!set.history.length) return;
+    if (!standingsVisible || !set.history.length) return;
+    this.renderReady(room, $('podium-ready-players'), playerId);
+    $('podium-ready-players').hidden = set.phase === 'complete' || set.mode === 'arcade';
     const final = set.phase === 'complete';
     if (final) { $('results').hidden = true; $('play-view').hidden = true; }
     $('standings-panel').classList.toggle('final-standings', final);
@@ -59,20 +66,32 @@ export class SetView {
     this.key = key;
     const standings = setStandings(set.players);
     const leaders = standings.filter(player => player.points > 0 && player.placement === 1);
-    $('standings-label').textContent = `${MODES[set.mode].title} · ${final ? 'Set complete' : 'Total points'}`;
-    $('standings-title').textContent = !final ? 'Set standings' : leaders.length > 1 ? 'A shared victory!' : leaders.length ? `${leaders[0].name} takes the crown!` : 'No winner this time';
+    $('standings-label').textContent = final ? 'Set complete!' : `${set.mode === 'arcade' ? 'Game' : 'Round'} ${set.history.length} complete!`;
+    $('standings-title').textContent = !final ? 'Current standings' : leaders.length > 1 ? 'A shared victory!' : leaders.length ? `${leaders[0].name} takes the crown!` : 'No winner this time';
     const last = set.history.at(-1);
+    $('set-podium').replaceChildren(...[standings[1], standings[0], standings[2]].map(player => {
+      if (!player) return node('div', 'set-podium-empty');
+      const seat = node('div', `set-podium-seat place-${player.placement}${player.id === playerId ? ' you' : ''}`);
+      if (player.placement === 1 && player.points > 0) seat.append(node('span', 'podium-crown', '♛'));
+      const avatar = node('div', `block ${['red', 'blue', 'green'][set.players.findIndex(member => member.id === player.id) % 3]}`);
+      avatar.setAttribute('aria-hidden', 'true');
+      const step = node('div', 'set-podium-step');
+      const points = node('strong', '', `${player.points}`);
+      points.append(node('small', '', ' pts'));
+      step.append(node('div', 'podium-name', player.name + (player.id === playerId ? ' · You' : '')), points, node('span', 'podium-place', `${player.placement}${['', 'st', 'nd', 'rd'][player.placement] || 'th'} place`));
+      seat.append(avatar, step);
+      return seat;
+    }));
     $('standings-rows').replaceChildren(...standings.map(player => {
       const row = node('div', `standing-row${player.id === playerId ? ' you' : ''}${player.placement === 1 && player.points ? ' leader' : ''}`);
       const earned = last.rows.find(item => item.playerId === player.id)?.points || 0;
       const name = node('strong', 'standing-name', player.name + (player.id === playerId ? ' · You' : ''));
-      if (!final) {
-        const result = last.rows.find(item => item.playerId === player.id)?.result;
-        const detail = result?.status === 'finished' ? last.game === 'perm-mania' ? `${result.cleared} growth · ${result.score.toLocaleString()} rhythm score` : `${(result.elapsed / 1000).toFixed(3)} seconds` : ({ forfeit: 'Forfeited', timeout: 'Time expired', missing: 'Missed this round' }[result?.status] || '');
-        name.append(node('small', '', detail));
-      }
+      const result = last.rows.find(item => item.playerId === player.id)?.result;
+      const detail = result?.status === 'finished' ? last.game === 'perm-mania' ? `${result.cleared} growth · ${result.score.toLocaleString()}` : `${(result.elapsed / 1000).toFixed(3)} s` : ({ forfeit: 'Forfeited', timeout: 'Time expired', missing: 'Missed round' }[result?.status] || '');
       row.append(node('span', 'standing-rank', String(player.placement)), name);
-      if (!final) row.append(node('span', 'points-earned', `+${earned}`));
+      const recent = node('span', 'points-earned');
+      recent.append(node('strong', '', `+${earned}`), node('small', '', detail));
+      row.append(recent);
       const points = node('span', 'standing-points');
       points.append(node('strong', '', String(player.points)), node('small', '', 'pts'));
       row.append(points);
@@ -94,13 +113,21 @@ export class SetView {
     table.append(head, body);
     $('history-table').replaceChildren(table);
     $('set-history').hidden = !final;
+    $('intermission-countdown').hidden = final;
+  }
+
+  renderReady(room, container, playerId) {
+    const key = JSON.stringify(room.players.map(player => [player.id, player.ready, player.connected]));
+    if (container.dataset.state === key) return;
+    container.dataset.state = key;
+    container.replaceChildren(...room.players.map(player => node('span', `ready-chip${player.ready ? ' is-ready' : ''}`, `${player.ready ? '✓' : '○'} ${player.name}${player.id === playerId ? ' · You' : ''}${!player.connected ? ' · Reconnecting' : ''}`)));
   }
 
   animate(room, serverNow) {
     const set = room.set;
     if (set?.phase !== 'intermission') return;
     const seconds = Math.max(0, Math.ceil((set.nextStartAt - serverNow) / 1000));
-    const text = set.waitReason === 'sync' ? 'Synchronizing clocks…' : set.waitReason === 'players' ? 'Waiting for a player to reconnect…' : seconds ? `Continuing in ${seconds}s…` : 'Starting the next round…';
+    const text = set.mode === 'arcade' ? seconds ? `Continuing in ${seconds}s…` : 'Continuing…' : set.waitReason === 'sync' ? 'Synchronizing clocks…' : set.waitReason === 'players' ? 'Waiting for a friend to reconnect…' : set.waitReason === 'ready' ? 'Ready for another round?' : seconds ? `Starting in ${seconds}s…` : 'Starting the next round…';
     if ($('intermission-countdown').textContent !== text) $('intermission-countdown').textContent = text;
   }
 }

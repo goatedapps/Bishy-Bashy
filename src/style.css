@@ -10,6 +10,9 @@
   --blue:#6bc8f4;
   --purple:#a583e8
 }
+html {
+  overflow-y:scroll
+}
 * {
   box-sizing:border-box
 }

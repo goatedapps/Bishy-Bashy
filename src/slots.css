@@ -1,83 +1,71 @@
-.face-portrait { display:block; flex-shrink:0; aspect-ratio:1; background-image:url('/assets/facial-slot-faces.png'); background-size:300% 200%; background-repeat:no-repeat; border-radius:15px; background-color:#382043; }
+.face-portrait { display:block; flex-shrink:0; aspect-ratio:1; background-image:url('/assets/facial-slot-faces.png'); background-size:300% 200%; background-repeat:no-repeat; border-radius:10px; background-color:#382043; }
 .slot-theme { background-color:#83ded5; background-image:radial-gradient(#49bbbf 1px,transparent 1px); }
-.slot-theme .game-title { font-size:clamp(28px,4vw,43px); }
+.slot-theme .game-top { padding-top:6px; }
+.slot-theme .game-top .brand { font-size:24px; }
+.slot-theme .game-title { font-size:32px; margin:6px 0 8px; }
+.slot-theme .room-toolbar { margin-bottom:8px; }
+.slot-theme .room-pill,.slot-theme .room-toolbar .text-button { padding:5px 8px; }
+.slot-theme .set-progress { padding:4px 12px; margin-bottom:8px; }
 .slot-theme .arcade-frame { background:#fff4db; box-shadow:0 7px 0 #47a4a4; }
-.slot-theme .match-hud { background:#fff5d5; }
-.slot-guide { display:flex; justify-content:center; align-items:center; gap:15px; padding:10px 16px; border-bottom:3px solid var(--ink); background:#f9bfce; }
-.slot-guide .face-portrait { width:60px; border:3px solid var(--ink); box-shadow:0 3px 0 #bf7fa1; }
+.slot-theme .match-hud { background:#fff5d5; min-height:50px; padding:8px 16px; }
+.slot-guide { display:flex; justify-content:center; align-items:center; gap:14px; padding:8px 16px; border-bottom:3px solid var(--ink); background:#f9bfce; }
+.slot-guide .face-portrait { width:58px; border:2px solid var(--ink); }
 .slot-guide-copy { text-align:left; }
 .slot-guide-copy strong { display:block; font:25px 'Lilita One',system-ui,sans-serif; }
-.slot-guide-copy span { display:block; font-size:12px; font-weight:900; margin-top:3px; }
-.slot-guide-copy small { display:block; font-size:11px; margin-top:4px; }
-.slot-theme .arena { background:#ffe9b2; background-image:repeating-linear-gradient(90deg,transparent,transparent 24px,#ffd67e33 24px,#ffd67e33 48px); }
-.slot-theme .lane { padding:12px 8px 9px; border-color:#e5bd7c; }
-.slot-theme .lane.you { background:#ffffff55; }
-.slot-theme .lane h3 { height:24px; }
-.slot-theme .tower-zone { height:120px; justify-content:center; overflow:visible; padding:10px 0; }
-.slot-cabinet { width:100%; max-width:220px; padding:12px 7px; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:5px; border:3px solid var(--ink); border-radius:22px; background:#f6a9c6; box-shadow:0 6px 0 #ab6c99,inset 0 5px #ffe2ee; }
-.slot-window { position:relative; min-width:0; border:2px solid var(--ink); border-radius:13px; padding:2px; background:#382043; transition:border-color .1s; }
-.slot-window .face-portrait { width:100%; border-radius:9px; }
-.reel-badge { position:absolute; left:50%; transform:translateX(-50%); bottom:-17px; background:#fffcdf; border:2px solid var(--ink); border-radius:50%; width:22px; height:22px; display:grid; place-items:center; font-size:12px; font-weight:900; line-height:1; }
-.slot-window.current { border-color:#fff2b4; outline:3px solid var(--ink); outline-offset:1px; }
-.slot-window.current .reel-badge { background:#ffda47; }
-.slot-window.locked { border-color:#2a956b; }
-.slot-window.locked .reel-badge { background:#84e0ae; }
-.slot-window.miss { border-color:#f05268; }
-.slot-window.miss .reel-badge { background:#ff8192; }
+.slot-guide-copy span { display:block; font-size:12px; font-weight:900; margin-top:2px; }
+.slot-guide-copy small { display:block; font-size:11px; margin-top:3px; }
+.slot-theme .arena { background:#ffe9b2; }
+.slot-theme .lane { padding:10px 8px 8px; border-color:#d8ad6b; }
+.slot-theme .lane.you { background:#ffffff66; }
+.slot-theme .lane h3 { height:23px; }
+.slot-theme .tower-zone { --slot-zone-height:clamp(140px,calc(100dvh - 540px),250px); height:var(--slot-zone-height); justify-content:center; overflow:visible; padding:5px 0; }
+.slot-cabinet { --face-size:clamp(25px,calc((var(--slot-zone-height) - 66px) / 3),63px); width:100%; padding:7px; display:grid; grid-template-columns:1fr; gap:8px; border:3px solid var(--ink); border-radius:16px; background:#fbd15c; box-shadow:0 5px 0 #bb874c; }
+.slot-window { position:relative; min-width:0; border:2px solid var(--ink); border-radius:9px; padding:3px 0; }
+.reel-red { background:#ff686e; }
+.reel-green { background:#72dba0; }
+.reel-blue { background:#6bc8f4; }
+.reel-viewport { position:relative; overflow:hidden; height:var(--face-size); width:100%; }
+.reel-viewport:after { content:''; position:absolute; left:50%; top:0; bottom:0; width:var(--face-size); transform:translateX(-50%); border-left:2px solid #fff8ce; border-right:2px solid #fff8ce; box-shadow:0 0 0 1px #3b214d66; pointer-events:none; }
+.reel-strip { display:flex; width:calc(var(--face-size) * 5); position:absolute; top:0; left:50%; transform:translateX(calc(-50% - var(--face-size) * var(--reel-shift,0))); will-change:transform; }
+.reel-strip .face-portrait { width:var(--face-size); border-radius:5px; }
+.reel-badge { position:absolute; left:-5px; top:-6px; border:1.5px solid var(--ink); border-radius:50%; background:#fff8d8; width:19px; height:19px; display:grid; place-items:center; font-size:10px; font-weight:900; line-height:1; z-index:1; }
+.slot-window.locked .reel-viewport { width:var(--face-size); margin:auto; }
+.slot-window.locked .reel-badge { background:#baf0cb; }
+.slot-window.miss .reel-badge { background:#ffb2b2; }
+.slot-window.miss { box-shadow:inset 0 0 0 2px #a52450; }
 .slot-theme .base { display:none; }
-.slot-theme .remaining { margin:8px 0 7px; }
-.slot-theme .seat-status { min-height:17px; }
+.slot-theme .remaining { margin:6px 0; }
+.slot-theme .seat-status { min-height:15px; margin-top:4px; }
 .slot-theme .lane.forfeit .slot-cabinet { filter:grayscale(1); opacity:.5; }
 .slot-theme .lane.finished .tower-zone:after { display:none; }
 .slot-theme .lane.frozen .tower-zone { background:transparent; }
-.slot-stop { width:280px; max-width:100%; background:#ff706d; font:30px 'Lilita One',system-ui,sans-serif; }
-.slot-stop small { font:800 10px Nunito,system-ui,sans-serif; position:absolute; bottom:6px; right:12px; }
-.slot-stop .stop-icon { font-size:25px; }
-.slot-theme .control-deck { padding:12px 16px 16px; }
-.slot-theme .hit-button { height:68px; }
-.slot-theme .podium .face-portrait { width:85px; margin:auto; }
 .game-choice-art .face-portrait { width:70px; transform:rotate(-8deg); border:2px solid var(--ink); }
 .choice-facial-slot-machine[aria-pressed=true] { background:#ffdf9b!important; }
-@media(max-width:900px) {
-  .slot-theme .tower-zone { height:260px; }
-  .slot-cabinet { grid-template-columns:1fr; width:85px; padding:7px 8px; gap:8px; border-radius:18px; }
-  .slot-window { padding:1px; border-radius:11px; }
-  .slot-window .face-portrait { border-radius:7px; }
-  .reel-badge { left:-5px; top:-5px; bottom:auto; transform:none; width:18px; height:18px; font-size:10px; }
-}
 @media(max-width:620px) {
-  .slot-theme .game-top { padding:6px 12px 0; }
-  .slot-theme .game-top .brand { font-size:20px; }
-  .slot-theme .icon-button { width:32px; height:32px; }
-  .slot-theme .sound-off:after { top:14px; left:2px; }
-  .slot-theme .game-title { font-size:26px; margin:6px 0 8px; }
-  .slot-theme .room-toolbar { margin-bottom:8px; }
-  .slot-theme .room-pill,.slot-theme .room-toolbar .text-button { padding:5px 8px; }
-  .slot-theme .set-progress { font-size:10px; padding:4px 10px; margin-bottom:8px; }
-  .slot-theme .match-hud { min-height:46px; padding:7px 10px; }
-  .slot-theme .timer { font-size:26px; }
-  .slot-theme .lanes { padding:0 4px; }
-  .slot-theme .lane { padding:8px 3px 5px; }
-  .slot-theme .lane h3 { font-size:10px; height:18px; }
-  .slot-theme .tower-zone { --slot-zone-height:clamp(138px,calc(100dvh - 465px),218px); height:var(--slot-zone-height); }
-  .slot-cabinet { width:min(100%,73px,calc((var(--slot-zone-height) + 20px) / 3)); padding:7px 5px; gap:8px; border-width:2px; border-radius:14px; }
-  .slot-window { border-width:1.5px; }
-  .slot-window.current { outline-width:2px; }
-  .slot-guide { gap:12px; padding:7px 10px; }
-  .slot-guide .face-portrait { width:48px; border-width:2px; }
-  .slot-guide-copy strong { font-size:21px; }
-  .slot-guide-copy span { font-size:10px; }
-  .slot-guide-copy small { font-size:10px; }
-  .slot-theme .remaining { font-size:9px; min-height:22px; margin:5px 0; }
-  .slot-theme .remaining strong { font-size:21px; }
-  .slot-theme .seat-status { font-size:9px; height:15px; min-height:15px; margin:3px 0 0; }
-  .slot-theme .control-deck { padding:10px 12px 14px; }
-  .slot-theme .hit-button { height:60px; }
-  .slot-stop { width:250px; }
-  .game-choice-art .face-portrait { width:47px; }
-  #game-picker { grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); }
+ .slot-theme .game-top { padding:6px 12px 0; }
+ .slot-theme .game-top .brand { font-size:20px; }
+ .slot-theme .icon-button { width:32px; height:32px; }
+ .slot-theme .sound-off:after { top:14px; left:2px; }
+ .slot-theme .game-title { font-size:26px; margin:6px 0 8px; }
+ .slot-theme .room-toolbar { margin-bottom:8px; }
+ .slot-theme .room-pill,.slot-theme .room-toolbar .text-button { padding:5px 8px; }
+ .slot-theme .set-progress { font-size:10px; padding:4px 10px; margin-bottom:8px; }
+ .slot-theme .match-hud { min-height:46px; padding:7px 10px; }
+ .slot-theme .timer { font-size:26px; }
+ .slot-theme .lanes { padding:0 3px; }
+ .slot-theme .lane { padding:8px 3px 5px; }
+ .slot-theme .lane h3 { font-size:10px; height:18px; }
+ .slot-theme .tower-zone { height:clamp(150px,calc(100dvh - 490px),210px); }
+ .slot-cabinet { --face-size:clamp(29px,7.8vw,47px); padding:5px 2px; gap:10px; border-width:2px; border-radius:10px; }
+ .slot-window { padding:5px 0; border-width:1.5px; border-radius:6px; }
+ .reel-badge { left:-3px; top:-6px; width:15px; height:15px; font-size:8px; }
+ .slot-guide { gap:12px; padding:7px 10px; }
+ .slot-guide .face-portrait { width:44px; }
+ .slot-guide-copy strong { font-size:21px; }
+ .slot-guide-copy span,.slot-guide-copy small { font-size:10px; }
+ .slot-theme .remaining { font-size:9px; min-height:22px; margin:5px 0; }
+ .slot-theme .remaining strong { font-size:21px; }
+ .slot-theme .seat-status { font-size:9px; height:15px; min-height:15px; margin:3px 0 0; }
+ .game-choice-art .face-portrait { width:47px; }
+ #game-picker { grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); }
 }
-@media(max-width:370px) {
-  .slot-cabinet { padding:6px 4px; }
-}
-@media(prefers-reduced-motion:reduce) { .slot-window { transition:none; } }
