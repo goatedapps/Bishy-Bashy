@@ -1,7 +1,8 @@
-import { randomBytes, randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID, randomInt } from 'node:crypto';
 import { TOTEM_GAME } from '../shared/totem.js';
 import { GAMES, roundSettings } from '../shared/games.js';
 import { PERM_GAME } from '../shared/perm.js';
+import { MODES, INTERMISSION_MS, createSetPlan, awardRound } from '../shared/sets.js';
 
 export const ROUND_MS = 10_000;
 export const GRACE_MS = 10_000;
@@ -22,7 +23,7 @@ export class RoomService {
 
   snapshot(room) {
     return {
-      code: room.code, hostId: room.hostId, testNumber: room.testNumber, selectedGame: room.selectedGame,
+      code: room.code, hostId: room.hostId, testNumber: room.testNumber, selectedGame: room.selectedGame, mode: room.mode, set: room.set,
       players: room.players.map(({ id, name, connected, ready, sync, result, progress, disconnectedAt }) => ({ id, name, connected, ready, sync, result, progress, disconnectedAt })),
       round: room.round ? { ...room.round } : null,
     };
@@ -41,13 +42,14 @@ export class RoomService {
     if (message.type === 'create') {
       let code;
       do { code = Array.from(randomBytes(6), byte => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[byte % 32]).join(''); } while (this.rooms.has(code));
-      room = { code, players: [], hostId: null, round: null, testNumber: 0, selectedGame: GAMES[message.game] ? message.game : TOTEM_GAME, updatedAt: this.now() };
+      room = { code, players: [], hostId: null, round: null, set: null, mode: MODES[message.mode] ? message.mode : 'arcade', testNumber: 0, selectedGame: GAMES[message.game] ? message.game : TOTEM_GAME, updatedAt: this.now() };
       this.rooms.set(code, room);
     } else {
       room = this.rooms.get(String(message.code).toUpperCase());
       if (!room) return this.error(client, 'That room could not be found. Check the code or create a new room.');
     }
     const returning = typeof message.token === 'string' && room.players.find(player => player.token === message.token);
+    if (!returning && room.set && room.set.phase !== 'complete') return this.error(client, 'A set is underway. Join after the full set finishes.');
     if (!returning && room.round && room.round.phase !== 'results') return this.error(client, 'A round is underway. Join after it finishes.');
     if (!returning && room.players.length >= 4) return this.error(client, 'This room already has four players.');
     if (returning?.connected) return this.error(client, 'This player is already connected. Open a new tab to join as another player.');
@@ -60,7 +62,7 @@ export class RoomService {
     if (!returning) room.players.push(player);
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 3, token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 4, token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -81,37 +83,38 @@ export class RoomService {
       return this.broadcast(room);
     }
     if (message.type === 'ready') {
+      if (room.set && room.set.phase !== 'complete') return;
       if (room.round && room.round.phase !== 'results') return;
       if (message.ready && !this.isSynced(player)) return this.error(client, 'Wait for at least three fresh clock samples before getting ready.');
       player.ready = Boolean(message.ready);
       return this.broadcast(room);
     }
-    if (message.type === 'select-game') {
-      if (player.id !== room.hostId) return this.error(client, 'Only the room host can choose the game.');
-      if (room.round && room.round.phase !== 'results' || !GAMES[message.game] || room.selectedGame === message.game) return;
-      room.selectedGame = message.game;
+    if (message.type === 'configure' || message.type === 'select-game') {
+      if (player.id !== room.hostId) return this.error(client, 'Only the room host can choose the mode and game.');
+      if (room.set && room.set.phase !== 'complete' || room.round && room.round.phase !== 'results') return;
+      const mode = message.type === 'select-game' ? 'game-select' : message.mode;
+      const game = message.game || room.selectedGame;
+      if (!MODES[mode] || !GAMES[game] || room.selectedGame === game && room.mode === mode) return;
+      room.selectedGame = game;
+      room.mode = mode;
       room.players.forEach(p => { p.ready = false; });
       return this.broadcast(room);
     }
     if (message.type === 'start') {
       if (player.id !== room.hostId) return this.error(client, 'Only the room host can start the round.');
+      if (room.set && room.set.phase !== 'complete') return;
       if (room.round && room.round.phase !== 'results') return;
       const participants = room.players.filter(p => p.connected);
       if (room.players.some(p => !p.connected && received - p.disconnectedAt < RECONNECT_WAIT_MS)) return this.error(client, 'Waiting up to 15 seconds for a disconnected player.');
       if (!participants.every(p => p.ready && this.isSynced(p))) return this.error(client, 'Everyone connected must be synchronized and ready.');
-      room.testNumber++;
-      room.players.forEach(p => {
-        p.result = p.connected ? null : { status: 'missing', elapsed: null, reason: 'Missed this round' };
-        p.ready = false;
-        p.progress = { cleared: 0, mistakes: 0 };
-        p.lastProgressAt = -Infinity;
-      });
-      const startAt = received + COUNTDOWN_MS;
-      const game = message.mode === 'sync' ? 'sync' : room.selectedGame;
-      const settings = game === 'sync' ? { duration: ROUND_MS } : roundSettings(game, randomBytes(4).readUInt32LE());
-      const duration = settings.duration;
-      room.round = { id: randomUUID(), game, phase: 'countdown', startAt, endAt: startAt + duration, expiresAt: startAt + duration + GRACE_MS, duration, playerIds: participants.map(p => p.id) };
-      Object.assign(room.round, settings);
+      if (message.mode === 'sync') room.set = null;
+      else room.set = {
+        id: randomUUID(), mode: room.mode, phase: 'playing', roundIndex: 0,
+        plan: createSetPlan(room.mode, room.selectedGame, randomInt),
+        players: room.players.map(p => ({ id: p.id, name: p.name, points: 0 })),
+        history: [], nextStartAt: null, waitReason: null,
+      };
+      this.beginRound(room, message.mode === 'sync');
       return this.broadcast(room);
     }
     if (message.type === 'progress') return this.progress(room, player, message, received);
@@ -129,6 +132,63 @@ export class RoomService {
 
   isSynced(player) {
     return player.sync && player.sync.count >= 3 && player.sync.rtt <= 1500 && this.now() - player.sync.at < 20_000;
+  }
+
+  beginRound(room, sync = false, participants = room.players.filter(player => player.connected)) {
+    const set = room.set;
+    const game = sync ? 'sync' : set.plan[set.roundIndex];
+    const difficulty = set?.mode === 'game-select' ? set.roundIndex + 1 : 1;
+    const settings = sync ? { duration: ROUND_MS } : roundSettings(game, randomBytes(4).readUInt32LE(), difficulty);
+    const startAt = this.now() + COUNTDOWN_MS;
+    room.testNumber++;
+    room.players.forEach(player => {
+      player.result = participants.includes(player) ? null : { status: 'missing', elapsed: null, reason: 'Missed this round' };
+      player.ready = false;
+      player.progress = { cleared: 0, mistakes: 0 };
+      player.lastProgressAt = -Infinity;
+    });
+    room.round = {
+      id: randomUUID(), game, phase: 'countdown', startAt,
+      endAt: startAt + settings.duration, expiresAt: startAt + settings.duration + GRACE_MS,
+      playerIds: participants.map(player => player.id),
+      ...settings,
+      ...(set ? { setId: set.id, setRound: set.roundIndex + 1, totalRounds: set.plan.length } : {}),
+    };
+    if (set) { set.phase = 'playing'; set.nextStartAt = null; set.waitReason = null; }
+  }
+
+  settleRound(room) {
+    const set = room.set;
+    if (!set || room.round.scored) return;
+    room.round.scored = true;
+    const rows = awardRound(set.players.map(member => ({ ...member, result: room.players.find(player => player.id === member.id)?.result })), room.round.game);
+    for (const row of rows) set.players.find(member => member.id === row.playerId).points += row.points;
+    set.history.push({ roundId: room.round.id, game: room.round.game, difficulty: room.round.difficulty, blockCount: room.round.blockCount, bpm: room.round.bpm, rows });
+    set.phase = set.roundIndex + 1 === set.plan.length ? 'complete' : 'intermission';
+    set.nextStartAt = set.phase === 'intermission' ? this.now() + INTERMISSION_MS : null;
+    set.resumeAt = set.nextStartAt;
+    set.waitReason = null;
+    if (set.phase === 'complete') set.completedAt = this.now();
+  }
+
+  advanceSet(room) {
+    const set = room.set;
+    if (set?.phase !== 'intermission') return false;
+    const disconnected = room.players.filter(player => !player.connected);
+    let nextStartAt = Math.max(set.resumeAt, ...disconnected.map(player => player.disconnectedAt + RECONNECT_WAIT_MS));
+    const connected = room.players.filter(player => player.connected);
+    const synced = connected.filter(player => this.isSynced(player));
+    const syncDeadline = set.resumeAt - INTERMISSION_MS + RECONNECT_WAIT_MS;
+    const waitingForSync = synced.length < connected.length && this.now() < syncDeadline;
+    if (waitingForSync) nextStartAt = Math.max(nextStartAt, syncDeadline);
+    const waitReason = !connected.length ? 'players' : waitingForSync || !synced.length ? 'sync' : null;
+    const changed = set.nextStartAt !== nextStartAt || set.waitReason !== waitReason;
+    set.nextStartAt = nextStartAt;
+    set.waitReason = waitReason;
+    if (this.now() < nextStartAt || waitReason) return changed;
+    set.roundIndex++;
+    this.beginRound(room, false, synced);
+    return true;
   }
 
   progress(room, player, message, received) {
@@ -177,7 +237,10 @@ export class RoomService {
   }
 
   finishIfComplete(room) {
-    if (room.round && room.round.playerIds.every(id => terminal(room.players.find(p => p.id === id)))) room.round.phase = 'results';
+    if (room.round && room.round.playerIds.every(id => terminal(room.players.find(p => p.id === id)))) {
+      room.round.phase = 'results';
+      this.settleRound(room);
+    }
   }
 
   chooseHost(room) {
@@ -200,13 +263,15 @@ export class RoomService {
     for (const [code, room] of this.rooms) {
       if (!room.players.some(p => p.connected) && now - room.updatedAt > 30 * 60_000) { this.rooms.delete(code); continue; }
       const round = room.round;
-      if (!round || round.phase === 'results') continue;
+      if (!round) continue;
+      if (round.phase === 'results') { if (this.advanceSet(room)) this.broadcast(room); continue; }
       let changed = false;
       if (now >= round.startAt && round.phase === 'countdown') { round.phase = 'running'; changed = true; }
       if (now >= round.endAt && round.phase === 'running') { round.phase = 'collecting'; changed = true; }
       if (now >= round.expiresAt) {
         room.players.forEach(player => { if (round.playerIds.includes(player.id) && !player.result) player.result = { status: 'missing', elapsed: null, reason: 'No result received before the deadline' }; });
         round.phase = 'results';
+        this.settleRound(room);
         changed = true;
       }
       if (changed) this.broadcast(room);

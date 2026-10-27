@@ -2,8 +2,10 @@ import QRCode from 'qrcode';
 import { SyncedClock } from './clock.js';
 import { TOTEM_GAME } from '../shared/totem.js';
 import { PERM_GAME, demoCues } from '../shared/perm.js';
-import { GAMES, createRun } from '../shared/games.js';
+import { GAMES, createRun, roundSettings } from '../shared/games.js';
+import { MODES, roundDetail } from '../shared/sets.js';
 import { GameView } from './game-view.js';
+import { SetView } from './set-view.js';
 import { GameAudio } from './audio.js';
 
 const $ = id => document.getElementById(id);
@@ -23,8 +25,10 @@ let lastPong = 0, lastSyncSent = 0, lastPendingSent = -Infinity, lastProgressSen
 let inviteUrl = '', lanUrls = [], events = [];
 let hiddenSince = document.hidden ? performance.now() : null;
 let selectedGame = GAMES[localStorage.getItem('bb-game')] ? localStorage.getItem('bb-game') : TOTEM_GAME;
+let selectedMode = MODES[localStorage.getItem('bb-mode')] ? localStorage.getItem('bb-mode') : 'arcade';
 let timingOffset = Math.max(-150, Math.min(150, Number(localStorage.getItem('bb-timing-offset')) || 0));
 const view = new GameView();
+const setView = new SetView();
 const audio = new GameAudio({ onChange: () => updateSound() });
 const buttons = [...document.querySelectorAll('.hit-button')];
 
@@ -103,7 +107,7 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 3) {
+      if (message.protocol !== 4) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -170,7 +174,7 @@ function enter(type) {
   serverUrl = $('server-url').value.trim() || defaultServer;
   if (!serverUrl) return notice('Enter the hosted multiplayer server address in Connection settings.');
   localStorage.setItem('bb-server', serverUrl);
-  entryRequest = { type, name: $('name').value.trim(), code, game: selectedGame };
+  entryRequest = { type, name: $('name').value.trim(), code, game: selectedGame, mode: selectedMode };
   joining = true; intentionalClose = false;
   audio.unlock();
   notice('Connecting to the room…');
@@ -217,7 +221,7 @@ function setupLocalRound() {
 function synchronizeAudio() {
   const round = room?.round;
   if (document.hidden || !localRound || round?.phase === 'results' || localRound.done && localRound.status !== 'finished') return;
-  audio.scheduleRound(localRound.id, localRound.start, localRound.end, round.playerIds[0] === playerId, localRound.done, { game: round.game, cues: round.game === PERM_GAME ? demoCues(round.seed) : [] });
+  audio.scheduleRound(localRound.id, localRound.start, localRound.end, round.playerIds[0] === playerId, localRound.done, { game: round.game, bpm: round.bpm || 128, cues: round.game === PERM_GAME ? demoCues(round.seed, round.bpm) : [] });
 }
 
 function clearPending() {
@@ -310,10 +314,12 @@ function updateMetrics() {
   $('disconnect').disabled = !connected;
   $('create').disabled = joining;
   if (!room) return;
-  const idle = !room.round || room.round.phase === 'results';
+  const inSet = room.set && room.set.phase !== 'complete';
+  const idle = !inSet && (!room.round || room.round.phase === 'results');
   const mine = room.players.find(player => player.id === playerId);
   $('ready').disabled = !idle || !connected || !estimate || estimate.count < 3 || estimate.rtt > 1500;
   $('ready').textContent = mine?.ready ? 'Not ready' : 'Ready';
+  $('start').textContent = room.set?.phase === 'complete' ? 'Start new set' : 'Start set';
   const serverNow = time + (estimate?.offset || 0);
   const disconnected = room.players.filter(player => !player.connected);
   const wait = Math.max(0, ...disconnected.map(player => 15_000 - (serverNow - player.disconnectedAt)));
@@ -322,6 +328,7 @@ function updateMetrics() {
   let status = '';
   if (!connected) status = 'Reconnecting… Keep playing; your result stays saved on this device.';
   else if (idle) status = wait > 0 ? `Waiting ${Math.ceil(wait / 1000)}s for a friend to reconnect…` : !estimate || estimate.count < 3 ? 'Synchronizing clocks…' : allReady ? playerId === room.hostId ? 'Everyone’s ready!' : 'Waiting for the host to start.' : mine?.ready ? 'Waiting for friends to get ready…' : 'Tap Ready when you’re set.';
+  else if (room.set?.phase === 'intermission') status = '';
   else if (localRound?.done) status = 'Waiting for the other players…';
   else if (!room.round.playerIds.includes(playerId)) status = 'You can play in the next round.';
   $('lobby-status').textContent = status;
@@ -336,11 +343,12 @@ function renderRoom() {
   $('room-code').textContent = room.code;
   $('occupancy').textContent = `· ${room.players.length}/4`;
   $('leave').disabled = Boolean(active);
-  $('ready-actions').hidden = Boolean(active);
+  $('ready-actions').hidden = Boolean(active || room.set && room.set.phase !== 'complete');
   $('start').hidden = playerId !== room.hostId;
   $('control-deck').hidden = !active || !room.round.playerIds.includes(playerId);
-  $('round-label').textContent = active ? `Round ${room.testNumber}` : 'Lobby';
+  $('round-label').textContent = active ? room.set ? roundDetail(room.round) : `Round ${room.testNumber}` : 'Lobby';
   view.render(room, playerId, localRound, performance.now());
+  setView.render(room, playerId);
 }
 
 function updateControls(time) {
@@ -371,6 +379,7 @@ function animate() {
   const ownIndex = room?.players.findIndex(player => player.id === playerId) ?? -1;
   if (ownIndex >= 0) view.lanes[ownIndex].lane.classList.toggle('frozen', frozen);
   if (room) view.animate(room, localRound, time);
+  if (room) setView.animate(room, time + (clock.estimate(time)?.offset ?? Date.now() - time));
   updateControls(time);
   requestAnimationFrame(animate);
 }
@@ -400,7 +409,7 @@ function updateSound() {
     $(`${id}-value`).textContent = `${value}%`;
   }
   $('audio-status').textContent = ({ off: 'Sound is off.', loading: 'Loading sounds…', ready: 'Sound ready.', waiting: 'Tap Preview sound to try it.', unavailable: 'Some sounds could not load. Tap Preview sound to retry.' })[audio.status];
-  const active = room?.round && room.round.phase !== 'results';
+  const active = room?.set && room.set.phase !== 'complete' || room?.round && room.round.phase !== 'results';
   $('audio-preview').disabled = Boolean(active) || audio.status === 'loading';
   $('audio-preview').textContent = audio.previewing ? 'Stop preview' : 'Preview sound';
   $('timing-offset').value = timingOffset;
@@ -410,26 +419,49 @@ function updateSound() {
 
 function updateGameProfile() {
   const active = room?.round && room.round.phase !== 'results';
-  const game = active ? room.round.game : room?.selectedGame || selectedGame;
+  const inSet = room?.set && room.set.phase !== 'complete';
+  const mode = room?.mode || selectedMode;
+  const profile = displayRound();
+  const game = profile.game;
   const perm = game === PERM_GAME;
   audio.selectGame(game);
-  document.body.classList.toggle('perm-theme', perm);
-  document.querySelector('.game-title').textContent = GAMES[game]?.title || 'Bishy Bashy';
-  document.title = `${GAMES[game]?.title || 'Bishy Bashy'} · Bishy Bashy`;
-  $('totem-entry').hidden = perm;
-  $('perm-entry').hidden = !perm;
+  document.body.classList.toggle('perm-theme', Boolean(room && perm));
+  document.body.classList.toggle('in-set', Boolean(inSet));
+  const title = !room ? 'Choose your mode' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'intermission' ? `Next: ${GAMES[game].title}` : active ? GAMES[game].title : MODES[mode].title;
+  if (document.querySelector('.game-title').textContent !== title) document.querySelector('.game-title').textContent = title;
+  document.title = `${room ? title : 'Party games'} · Bishy Bashy`;
+  $('lobby-setup').hidden = Boolean(inSet);
+  $('game-picker').hidden = mode !== 'game-select';
   $('rhythm-guide').hidden = !perm || !active;
   for (const button of document.querySelectorAll('[data-game]')) {
-    button.setAttribute('aria-pressed', String(button.dataset.game === game));
-    button.disabled = Boolean(active || room && room.hostId !== playerId);
+    button.setAttribute('aria-pressed', String(button.dataset.game === (room?.selectedGame || selectedGame)));
+    button.disabled = Boolean(inSet || active || room && room.hostId !== playerId);
+  }
+  for (const button of document.querySelectorAll('[data-mode]')) {
+    button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
+    button.disabled = Boolean(inSet || active || room && room.hostId !== playerId);
   }
 }
 
+function displayRound() {
+  if (room?.round && room.round.phase !== 'results') return room.round;
+  const set = room?.set;
+  if (set?.phase === 'intermission') {
+    const index = set.roundIndex + 1;
+    const game = set.plan[index];
+    return { game, ...roundSettings(game, 0, set.mode === 'game-select' ? index + 1 : 1) };
+  }
+  const game = room?.selectedGame || selectedGame;
+  return { game, ...roundSettings(game, 0) };
+}
+
 function showRules() {
-  const game = room?.round && room.round.phase !== 'results' ? room.round.game : room?.selectedGame || selectedGame;
+  const profile = displayRound();
+  const game = profile.game;
   const perm = game === PERM_GAME;
-  $('rules-title').textContent = GAMES[game].title;
-  const rules = perm ? ['Watch the four-beat rhythm, then copy it with any button.', 'One mistake or fewer in a phrase grows your hair. Eight phrases, 30 seconds.', 'Biggest hair wins. Timing score breaks ties; extra taps count as mistakes.'] : ['Match the bottom block with red, green, or blue.', 'Clear all 30 blocks as fast as you can.', 'A wrong tap freezes your controls for 0.3 seconds.'];
+  const activeSet = room?.set && room.set.phase !== 'complete';
+  $('rules-title').textContent = activeSet ? GAMES[game].title : 'How to play a set';
+  const rules = !activeSet ? ['Arcade plays two different random games. Game Select plays five rounds of one game, getting harder each round.', 'Tap Ready once. The host starts the set; the next rounds follow automatically.', 'Each round awards 10 / 7 / 4 / 1 set points by place. Ties share points; unfinished and forfeited rounds earn zero. Most total points wins.'] : perm ? ['Watch the four-beat rhythm, then copy it with any button.', `One mistake or fewer in a phrase grows your hair. Eight phrases at ${profile.bpm} BPM.`, 'Biggest hair wins. Rhythm score breaks ties; extra taps count as mistakes.'] : ['Match the bottom block with red, green, or blue.', `Clear all ${profile.blockCount} blocks as fast as you can.`, 'A wrong tap freezes your controls for 0.3 seconds.'];
   $('rules-list').replaceChildren(...rules.map(text => { const item = document.createElement('li'); item.textContent = text; return item; }));
   $('rules-note').textContent = 'Stay on this screen during the round; switching apps or reloading forfeits it.';
   $('rules').showModal();
@@ -459,8 +491,12 @@ $('timing-offset').addEventListener('input', () => {
   updateSound();
 });
 for (const button of document.querySelectorAll('[data-game]')) button.addEventListener('click', () => {
-  if (room) send({ type: 'select-game', game: button.dataset.game });
+  if (room) send({ type: 'configure', mode: room.mode, game: button.dataset.game });
   else { selectedGame = button.dataset.game; localStorage.setItem('bb-game', selectedGame); updateGameProfile(); }
+});
+for (const button of document.querySelectorAll('[data-mode]')) button.addEventListener('click', () => {
+  if (room) send({ type: 'configure', mode: button.dataset.mode, game: room.selectedGame });
+  else { selectedMode = button.dataset.mode; localStorage.setItem('bb-mode', selectedMode); updateGameProfile(); }
 });
 $('share').addEventListener('click', async () => { $('invite').showModal(); await prepareInvite(); });
 $('copy-link').addEventListener('click', async () => {

@@ -7,6 +7,66 @@ import { createSequence, TotemRun } from '../shared/totem.js';
 import { PermRun, PERM_GAME } from '../shared/perm.js';
 import { comparePlayers } from '../shared/games.js';
 
+function receiveProtocol(socket, predicate) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => { socket.off('message', listener); reject(new Error('Timed out waiting for set state')); }, 2000);
+    function listener(data) {
+      const message = JSON.parse(data.toString());
+      if (predicate(message)) { clearTimeout(timer); socket.off('message', listener); resolve(message); }
+    }
+    socket.on('message', listener);
+  });
+}
+
+for (const [mode, game, length] of [['arcade', 'totem-shrinker', 2], ['game-select', 'totem-shrinker', 5], ['game-select', PERM_GAME, 5]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
+  const app = await createApp();
+  let time = 1_000_000;
+  app.rooms.now = () => time;
+  app.server.listen(0, '127.0.0.1'); await once(app.server, 'listening');
+  t.after(() => app.close());
+  const url = `ws://127.0.0.1:${app.server.address().port}/ws`;
+  const clients = [];
+  const send = (socket, message) => socket.send(JSON.stringify(message));
+  let code;
+  for (let index = 0; index < 4; index++) {
+    const socket = new WebSocket(url); await once(socket, 'open'); clients.push(socket);
+    let waiting = receiveProtocol(socket, message => message.type === 'joined');
+    send(socket, { type: index ? 'join' : 'create', name: `Player ${index}`, mode, game, code });
+    const joined = await waiting; code = joined.code;
+    waiting = receiveProtocol(socket, message => message.type === 'state' && message.room.players.some(player => player.id === joined.playerId && player.ready));
+    send(socket, { type: 'sync', rtt: 20, uncertainty: 10, count: 5 });
+    send(socket, { type: 'ready', ready: true }); await waiting;
+  }
+  let waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.round);
+  send(clients[0], { type: 'start' });
+  let state = (await waiting).room;
+  assert.equal(state.set.plan.length, length);
+  if (mode === 'arcade') assert.equal(new Set(state.set.plan).size, 2);
+  for (let index = 0; index < length; index++) {
+    const round = state.round;
+    assert.equal(round.difficulty, mode === 'arcade' ? 1 : index + 1);
+    if (mode === 'game-select') assert.equal(round.game, game);
+    time = round.game === PERM_GAME ? round.endAt + 100 : round.startAt + 4000;
+    waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.history.length === index + 1);
+    clients.forEach((socket, place) => send(socket, { type: 'result', roundId: round.id, status: 'finished', elapsed: round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: round.goal, mistakes: 0, ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) }));
+    state = (await waiting).room;
+    assert.deepEqual(state.set.players.map(player => player.points), [10, 7, 4, 1].map(points => points * (index + 1)));
+    if (index + 1 < length) {
+      assert.equal(state.set.phase, 'intermission');
+      time = state.set.nextStartAt;
+      const next = receiveProtocol(clients[0], message => message.type === 'state' && message.room.round.id !== round.id);
+      const synced = receiveProtocol(clients[0], message => message.type === 'state' && message.room.players.every(player => player.sync?.at === time));
+      clients.forEach(socket => send(socket, { type: 'sync', rtt: 20, uncertainty: 10, count: 5 }));
+      await synced; app.rooms.tick();
+      state = (await next).room;
+      assert.equal(state.set.roundIndex, index + 1);
+      assert.ok(state.players.every(player => !player.ready));
+    }
+  }
+  assert.equal(state.set.phase, 'complete');
+  assert.equal(state.set.history.length, length);
+});
+
 for (const game of ['totem-shrinker', PERM_GAME]) test(`${game}: four real connections share progress and accept a delayed finish once`, async t => {
   const app = await createApp();
   let time = 1_000_000;
@@ -30,9 +90,9 @@ for (const game of ['totem-shrinker', PERM_GAME]) test(`${game}: four real conne
     const socket = new WebSocket(url);
     await once(socket, 'open');
     const waiting = receive(socket, message => message.type === 'joined');
-    send(socket, { type: index ? 'join' : 'create', game, code, name: `Player ${index + 1}` });
+    send(socket, { type: index ? 'join' : 'create', game, mode: 'game-select', code, name: `Player ${index + 1}` });
     const joined = await waiting;
-    assert.equal(joined.protocol, 3);
+    assert.equal(joined.protocol, 4);
     code = joined.code;
     clients.push({ socket, ...joined });
     const ready = receive(socket, message => message.type === 'state' && message.room.players.some(player => player.id === joined.playerId && player.ready));
@@ -117,7 +177,7 @@ test('real WebSocket clients can create, synchronize, and join a room', async t 
   assert.equal(state.room.players[1].name, 'Friend 1');
   assert.equal(JSON.stringify(state).includes(joined.token), false);
   const health = await fetch(`http://127.0.0.1:${port}/health`);
-  assert.deepEqual(await health.json(), { ok: true, protocol: 3 });
+  assert.deepEqual(await health.json(), { ok: true, protocol: 4 });
   const info = await fetch(`http://127.0.0.1:${port}/connection-info`);
   assert.ok(Array.isArray((await info.json()).lanUrls));
 });

@@ -1,5 +1,5 @@
 import { COLORS, createSequence } from '../shared/totem.js';
-import { PERM_GAME, BEAT_MS } from '../shared/perm.js';
+import { PERM_GAME } from '../shared/perm.js';
 import { GAMES, comparePlayers } from '../shared/games.js';
 
 const SHAPES = ['●', '▲', '◆'];
@@ -118,7 +118,7 @@ export class GameView {
       pip.dataset.note = String(phase.steps.includes(step));
       pip.textContent = phase.steps.includes(step) ? '●' : '·';
     });
-    const pulse = Math.max(0, 1 - ((time - local.start) % BEAT_MS) / BEAT_MS * 4);
+    const pulse = Math.max(0, 1 - ((time - local.start) % local.run.beatMs) / local.run.beatMs * 4);
     $('arena').style.setProperty('--disco-pulse', pulse.toFixed(3));
     const own = this.lanes.find(lane => lane.lane.classList.contains('you'));
     if (own && local.run.feedback && time - local.run.feedback.at < 600) own.status.textContent = local.run.feedback.kind;
@@ -132,11 +132,11 @@ export class GameView {
     const perm = game === PERM_GAME;
     $('results').classList.toggle('perm-results', perm);
     const sorted = room.players.filter(player => room.round.playerIds.includes(player.id)).sort((a, b) => comparePlayers(a, b, game));
-    const finishers = sorted.filter(player => player.result?.status === 'finished');
+    const finishers = sorted.filter(player => player.result?.status === 'finished' && (!perm || player.result.score > 0));
     const rank = player => finishers.findIndex(other => comparePlayers(other, player, game) === 0) + 1;
     const winners = finishers.filter(player => comparePlayers(player, finishers[0], game) === 0);
-    $('result-round').textContent = `${GAMES[game]?.title || 'Round'} · Round ${room.testNumber}`;
-    $('result-title').textContent = winners.length > 1 ? 'It’s a tie!' : winners.length ? `${winners[0].name} wins!` : 'Time’s up!';
+    $('result-round').textContent = `${GAMES[game]?.title || 'Round'} · Round ${room.round.setRound || room.testNumber}`;
+    $('result-title').textContent = winners.length > 1 ? 'This round is a tie!' : winners.length ? `${winners[0].name} wins this round!` : 'Time’s up!';
     $('podium').replaceChildren(...finishers.slice(0, 3).map((player, index) => {
       const seat = node('div', 'podium-seat');
       const step = node('div', 'podium-step');

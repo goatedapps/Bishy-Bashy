@@ -8,31 +8,48 @@ The static website runs on GitHub Pages; a separate Node WebSocket server coordi
 - [Multiplayer server health](https://bishy-bashy-server.onrender.com/health)
 - [Approved visual mockup](mockups/totem-shrinker.html)
 
-## Play Totem Shrinker
+## Choose a mode
 
 Create a room, share its QR code or invitation link, and join from up to four phones or tablets.
-Choose a game using the buttons above the room; only the host can switch it after joining.
-Changing games resets everyone's Ready state and is locked during a round.
+Choose **Arcade** for two different games selected at random, played once each in a random order.
+Choose **Game Select** for five rounds of one game, with difficulty increasing each round.
+Only the host can change the mode or chosen game after joining.
+Changing the setup resets everyone's Ready state; setup stays locked throughout the full set.
 Wait for clock synchronization, then each player taps **Ready**.
-The host taps **Start round** and everyone receives the same five-second countdown.
+The host taps **Start set** and everyone receives the same five-second countdown.
+After each round, standings appear for eight seconds before the next countdown starts automatically.
+Players do not need to tap Ready again between rounds.
+
+Each round awards **10 / 7 / 4 / 1 set points** by placement.
+Ties share placement points and skip the following occupied places: two tied first-place players earn 10 each, and the next player earns 4 for third.
+Unfinished rounds, forfeits, missing results, and Perm rounds with zero rhythm score earn zero set points.
+The highest accumulated total wins the set; equal highest totals share victory, and a set with no points has no winner.
+Final standings include a round-by-round points table.
+The server awards points once per round and retains earned points if a player leaves between rounds.
+New guests can join only after the full set ends; original players can reconnect during it.
+The Arcade length and Game Select round count live in `shared/sets.js`, and new games join the shared catalog in `shared/games.js`.
+
+## Play Totem Shrinker
 
 Match the bottom block using red circle, green triangle, or blue diamond.
 The controls also accept **1 / 2 / 3** or **J / K / L** on a keyboard.
 Each correct tap clears one block immediately on that device.
 Only the next five blocks are displayed, with the next block at the bottom.
-All players receive the same 30-block sequence.
+All players receive the same seeded block sequence.
 A wrong tap freezes that player's inputs for 300 milliseconds.
-The first player to clear all 30 wins, ranked by locally measured elapsed time.
+The first player to clear the tower wins, ranked by locally measured elapsed time.
+Arcade uses 30 blocks; Game Select uses **30, 40, 50, 60, and 70 blocks** across its five rounds.
 The round ends after 45 seconds; unfinished players time out.
-These initial block, freeze, and duration settings are provisional and live in `shared/totem.js`.
+Base gameplay settings live in `shared/totem.js`; difficulty settings live in `shared/games.js`.
 
 Switching apps, hiding the tab, or reloading during a round forfeits that round.
 A network disconnection alone does not forfeit: local play continues and a saved result retries after reconnecting.
 The server accepts submissions for ten seconds after the round deadline.
-Between rounds, the host waits up to 15 seconds for a disconnected player before starting with the connected players.
+Between rounds, automatic progression waits up to 15 seconds for a disconnected player to return or a connected player's stale clock measurements to refresh.
+It then continues with synchronized players; skipped players earn zero for that round and may return for the next one.
+If no synchronized players remain, the set waits until at least one is available.
 The disconnected player's slot remains reserved, and they can play the next round after returning.
 Hosting moves to a connected player if the host disconnects.
-There is no automatic tournament progression yet.
 
 Sound is optional and off by default.
 Use the music-note button to enable music and effects, and the gear button for separate volume controls and a sound preview.
@@ -73,18 +90,23 @@ Listen on target phones, headphones, and speakers to tune the final balance.
 
 ## Play Perm Mania
 
-Select **Perm Mania** before creating a room, or let the host choose it between rounds.
-Every player receives the same eight seeded rhythm phrases at 128 BPM.
+Choose **Game Select → Perm Mania** before creating a room, or let the host choose it before starting a set.
+Arcade can also select Perm Mania randomly.
+Every player receives the same eight seeded rhythm phrases.
+Arcade uses 128 BPM; Game Select increases to **128, 136, 144, 152, and 160 BPM**.
 Each phrase demonstrates four beats, then asks the player to repeat that rhythm over four beats.
 Tap any colored button, **1 / 2 / 3**, or **J / K / L** in time with the notes.
 Watching taps do not score; missing notes and extra response taps count as mistakes.
 A phrase with at most one mistake grows the dancer's hair by one stage.
-The round lasts exactly 30 seconds, and the final result is submitted locally at its end.
+The round lasts eight complete phrases: 30 seconds at 128 BPM, down to 24 seconds at 160 BPM.
+The final result is submitted locally at that exact round duration.
 Rankings use hair growth first and timing score second, with exact ties sharing a rank.
 Completed rhythm rounds outrank forfeits and missing results; completion packet arrival order does not affect ranking.
 
 The initial hit window is ±140 ms, with **Perfect** feedback within 55 ms.
-Accurate hits award up to 1,000 points each; stray response taps subtract 250 points without reducing the score below zero.
+These windows shrink proportionally with the higher tempo, and backing music, demonstrations, and visual beats speed up together.
+Accurate hits award up to 1,000 rhythm-score points each; stray response taps subtract 250 without reducing that score below zero.
+Rhythm score determines round placement after hair growth; placement then awards the shared set points.
 An 80 ms input guard ignores simultaneous keys or accidental double input, while repeated mashing still fails phrases.
 These are provisional casual-play settings, rather than a certified rhythm-game timing tolerance.
 The **Rhythm timing** setting ranges from −150 to +150 ms and freezes when the local round is scheduled.
@@ -159,14 +181,16 @@ npm test
 npm run build
 ```
 
-Automated checks cover deterministic gameplay, freezes, deadline boundaries, shared schedules, room ownership and capacity, progress throttling, delayed and duplicate results, reconnection, the between-round wait, missing players, and real four-client WebSocket rounds.
+Automated checks cover deterministic gameplay, all five difficulty levels, shared schedules, room ownership and capacity, progress throttling, delayed and duplicate results, reconnection, and missing players.
+Four-client WebSocket tests complete entire Arcade and Game Select sets, checking automatic progression and cumulative scoring.
+Additional checks cover tied points, host migration, locked setup, skipped players, and tempo-scaled audio playback.
 Physical phone/tablet playtesting remains necessary.
 
 ## Hosting
 
 `npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
 `npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
-The health endpoint reports protocol version 3 for the two-game platform.
+The health endpoint reports protocol version 4 for automatic multiplayer sets.
 Deploy the frontend and backend together when changing the multiplayer protocol.
 
 The Pages workflow tests, builds, and deploys `main`.
@@ -186,8 +210,11 @@ A sleeping hosted service may take time to wake up, and redeploying it clears ro
 ## Artwork and source layout
 
 `shared/totem.js` defines the game rules and deterministic local run.
+`shared/perm.js` defines the rhythm rules; `shared/games.js` supplies the catalog and difficulty settings.
+`shared/sets.js` supplies mode lengths, random selection, placement awards, and cumulative ranking.
 `src/main.js` coordinates lifecycle, timing, input, rooms, and the result outbox.
 `src/game-view.js` renders towers and results; `src/audio.js` owns audio loading, mixing, and lifecycle.
+`src/set-view.js` renders the mode choices, intermission, and cumulative standings.
 `scripts/audio/` contains the original composition and synthesis; `public/audio/` contains its rendered runtime assets.
 `server/rooms.js` owns multiplayer room state and protocol validation.
 `public/assets/totem-blocks.png` contains original generated character artwork reused from the approved mockup.

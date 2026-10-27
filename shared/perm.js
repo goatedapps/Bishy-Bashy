@@ -14,23 +14,29 @@ export function createPhrases(seed) {
   return Array.from({ length: PHRASE_COUNT }, (_, index) => [...PATTERNS[index === 0 ? 0 : (digits[index * 2] * 3 + digits[index * 2 + 1]) % PATTERNS.length]]);
 }
 
-export function permNotes(seed) {
-  return createPhrases(seed).flatMap((steps, phrase) => steps.map(step => ({ phrase, step, at: phrase * PHRASE_MS + BEAT_MS * 4 + step * BEAT_MS / 2 })));
+export function permNotes(seed, bpm = PERM_BPM) {
+  const beat = 60_000 / bpm;
+  return createPhrases(seed).flatMap((steps, phrase) => steps.map(step => ({ phrase, step, at: phrase * beat * 8 + beat * 4 + step * beat / 2 })));
 }
 
-export function demoCues(seed) {
-  return createPhrases(seed).flatMap((steps, phrase) => steps.map(step => phrase * PHRASE_MS + step * BEAT_MS / 2));
+export function demoCues(seed, bpm = PERM_BPM) {
+  const beat = 60_000 / bpm;
+  return createPhrases(seed).flatMap((steps, phrase) => steps.map(step => phrase * beat * 8 + step * beat / 2));
 }
 
 export class PermRun {
   constructor(round, localStart, timingOffset = 0) {
     this.id = round.id;
     this.start = localStart;
+    this.duration = round.duration;
     this.end = localStart + round.duration;
+    this.beatMs = 60_000 / (round.bpm || PERM_BPM);
+    this.phraseMs = this.beatMs * 8;
+    this.perfectWindow = 55 * PERM_BPM / (round.bpm || PERM_BPM);
     this.offset = Math.max(-150, Math.min(150, Number(timingOffset) || 0));
     this.window = round.hitWindow || HIT_WINDOW_MS;
     this.phrases = createPhrases(round.seed);
-    this.notes = permNotes(round.seed).map(note => ({ ...note, hit: false, missed: false }));
+    this.notes = permNotes(round.seed, round.bpm || PERM_BPM).map(note => ({ ...note, hit: false, missed: false }));
     this.phraseMistakes = Array(PHRASE_COUNT).fill(0);
     this.settled = 0;
     this.cleared = 0;
@@ -47,11 +53,11 @@ export class PermRun {
   }
 
   phase(time) {
-    const elapsed = Math.max(0, Math.min(time - this.start, PERM_DURATION_MS - 1));
-    const phrase = Math.min(PHRASE_COUNT - 1, Math.floor(elapsed / PHRASE_MS));
-    const within = elapsed - phrase * PHRASE_MS;
-    const answering = within >= BEAT_MS * 4 + this.offset - this.window;
-    return { phrase, mode: answering ? 'play' : 'watch', steps: this.phrases[phrase], within, position: Math.min(7, Math.max(0, Math.floor((within - (answering ? BEAT_MS * 4 : 0)) / (BEAT_MS / 2)))) };
+    const elapsed = Math.max(0, Math.min(time - this.start, this.duration - 1));
+    const phrase = Math.min(PHRASE_COUNT - 1, Math.floor(elapsed / this.phraseMs));
+    const within = elapsed - phrase * this.phraseMs;
+    const answering = within >= this.beatMs * 4 + this.offset - this.window;
+    return { phrase, mode: answering ? 'play' : 'watch', steps: this.phrases[phrase], within, position: Math.min(7, Math.max(0, Math.floor((within - (answering ? this.beatMs * 4 : 0)) / (this.beatMs / 2)))) };
   }
 
   advance(time) {
@@ -65,14 +71,14 @@ export class PermRun {
         this.feedback = { kind: 'Miss', at: time };
       }
     }
-    while (this.settled < PHRASE_COUNT && elapsed >= (this.settled + 1) * PHRASE_MS) {
+    while (this.settled < PHRASE_COUNT && elapsed >= (this.settled + 1) * this.phraseMs - .001) {
       const phrase = this.settled++;
       if (this.phraseMistakes[phrase] <= 1) {
         this.cleared++;
         this.events.push({ type: 'growth', phrase, at: time });
       }
     }
-    if (time >= this.end) { this.done = true; this.elapsed = this.end - this.start; }
+    if (time >= this.end) { this.done = true; this.elapsed = this.duration; }
   }
 
   tap(color, time) {
@@ -87,7 +93,7 @@ export class PermRun {
     if (error <= this.window && !nearest.hit && !nearest.missed) {
       nearest.hit = true;
       this.hits++;
-      const perfect = error <= 55;
+      const perfect = error <= this.perfectWindow;
       if (perfect) this.perfects++;
       this.score += Math.round(1000 - error / this.window * 500);
       this.feedback = { kind: perfect ? 'Perfect!' : 'Good!', at: time };

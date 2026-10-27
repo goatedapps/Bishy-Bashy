@@ -231,3 +231,19 @@ test('Perm Mania loads its own bank and schedules each demonstration on the audi
   audio.stopRound();
   assert.equal([...audio.voices].filter(voice => voice.group === 'round').length, 0);
 });
+
+test('faster Perm rounds speed up backing tracks and preserve the correct phase after unmuting', async () => {
+  const { audio, context, setTime } = setup();
+  audio.selectGame('perm-mania');
+  await audio.unlock();
+  audio.scheduleRound('fast', 0, 24_000, true, false, { game: 'perm-mania', bpm: 160, cues: demoCues(123, 160) });
+  const backing = [...audio.voices].find(voice => voice.id === 'permMusic');
+  assert.equal(backing.source.playbackRate.value, 1.25);
+  audio.setEnabled(false);
+  setTime(12_000); context.currentTime += 12;
+  audio.setEnabled(true); await audio.unlock();
+  const resumed = [...audio.voices].find(voice => voice.id === 'permMusic');
+  assert.equal(resumed.source.playbackRate.value, 1.25);
+  assert.equal(resumed.source.started.offset, 0);
+  assert.ok([...audio.voices].filter(voice => voice.id === 'permDemo').every(voice => voice.source.started.at >= context.currentTime));
+});

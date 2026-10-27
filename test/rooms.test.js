@@ -7,7 +7,7 @@ function setup(count = 2) {
   const sent = new Map();
   const service = new RoomService({ now: () => time, send: (client, message) => { if (!sent.has(client)) sent.set(client, []); sent.get(client).push(structuredClone(message)); } });
   const clients = Array.from({ length: count }, () => ({}));
-  service.handle(clients[0], { type: 'create', name: 'First' });
+  service.handle(clients[0], { type: 'create', name: 'First', mode: 'game-select' });
   const code = clients[0].room;
   for (let i = 1; i < count; i++) service.handle(clients[i], { type: 'join', code, name: `Player ${i + 1}` });
   const room = service.rooms.get(code);

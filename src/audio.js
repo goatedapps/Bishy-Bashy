@@ -188,20 +188,21 @@ export class GameAudio {
     }
   }
 
-  scheduleRound(id, start, end, musicOwner, playerDone = false, { game = this.game, cues = [] } = {}) {
+  scheduleRound(id, start, end, musicOwner, playerDone = false, { game = this.game, cues = [], bpm = 128 } = {}) {
     this.selectGame(game);
     if (this.target?.id !== id) {
       this.stopRound();
       this.stopPreview();
-      this.target = { id, start, end, musicOwner, playerDone, game, cues };
+      this.target = { id, start, end, musicOwner, playerDone, game, cues, bpm };
     } else Object.assign(this.target, { musicOwner, playerDone });
     this.synchronize();
   }
 
   synchronize() {
     if (!this.enabled || this.context?.state !== 'running' || !this.target || !this.buffers.size) return;
-    const { id, start, end, musicOwner, playerDone, game, cues } = this.target;
+    const { id, start, end, musicOwner, playerDone, game, cues, bpm } = this.target;
     const perm = game === 'perm-mania';
+    const rate = perm ? bpm / 128 : 1;
     const now = this.now();
     if (now >= end) { this.stopRound(); return; }
     const audioNow = this.context.currentTime;
@@ -224,7 +225,7 @@ export class GameAudio {
     }
     const baseId = perm ? 'permMusic' : 'music';
     const urgencyId = perm ? 'permUrgency' : 'urgency';
-    const musicKey = `${id}:${baseId}:${this.buffers.has(urgencyId)}`;
+    const musicKey = `${id}:${baseId}:${this.buffers.has(urgencyId)}:${rate}`;
     if (this.musicKey === musicKey || !this.buffers.has(baseId)) return;
     this.stopVoices(voice => voice.group === 'music');
     this.musicKey = musicKey;
@@ -232,13 +233,14 @@ export class GameAudio {
     const at = audioNow + Math.max(0, (start - now) / 1000);
     const audioEnd = audioNow + (end - now) / 1000;
     const base = this.buffers.get(baseId);
-    this.source(baseId, { at, group: 'music', loop: true, offset: elapsed % base.duration, end: audioEnd });
-    const urgencyBeat = Math.ceil(Math.max(0, (end - start - 10_000) / 1000) / BEAT) * BEAT;
+    this.source(baseId, { at, group: 'music', loop: true, offset: elapsed * rate % base.duration, end: audioEnd, rate });
+    const beat = BEAT / rate;
+    const urgencyBeat = Math.ceil(Math.max(0, (end - start - 10_000) / 1000) / beat) * beat;
     const urgentAt = Math.max(now, start + urgencyBeat * 1000);
     const urgency = this.buffers.get(urgencyId);
     if (urgency) this.source(urgencyId, {
       at: audioNow + (urgentAt - now) / 1000, group: 'music', loop: true,
-      offset: ((urgentAt - start) / 1000) % urgency.duration, end: audioEnd,
+      offset: ((urgentAt - start) / 1000 * rate) % urgency.duration, end: audioEnd, rate,
     });
   }
 

@@ -10,38 +10,47 @@
   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/src/style.css" />
   <link rel="stylesheet" href="/src/games.css" />
+  <link rel="stylesheet" href="/src/sets.css" />
 </head>
 <body>
   <header class="game-top">
     <a class="brand" href="./" aria-label="Bishy Bashy home">Bishy<br />Bashy<span>!</span></a>
     <nav aria-label="Game settings">
+      <a class="join-shortcut" href="#entry-form">Join friends</a>
       <button id="sound" class="icon-button sound-off" aria-label="Enable sound" aria-pressed="false">♪</button>
       <button id="rules-open" class="icon-button" aria-label="How to play">?</button>
       <button id="settings-open" class="icon-button" aria-label="Settings">⚙</button>
     </nav>
   </header>
   <main>
-    <h1 class="game-title">Totem Shrinker</h1>
-    <nav id="game-picker" class="game-picker" aria-label="Choose a game">
-      <button type="button" data-game="totem-shrinker" aria-pressed="true">Totem Shrinker</button>
-      <button type="button" data-game="perm-mania" aria-pressed="false">Perm Mania</button>
-    </nav>
+    <h1 class="game-title">Choose your mode</h1>
+    <section id="lobby-setup" aria-label="Party setup">
+      <nav id="mode-picker" class="mode-picker" aria-label="Choose a mode">
+        <button type="button" data-mode="arcade" class="mode-card arcade-card" aria-pressed="true">
+          <span class="mode-art arcade-art" aria-hidden="true"><span class="arcade-stack"><span class="block blue"></span><span class="block green"></span><span class="block red"></span></span><span class="perm-character"><span class="perm-hair"></span><span class="perm-dancer dancer-0"></span></span></span>
+          <span class="mode-card-copy"><strong>Arcade</strong><span class="mode-count" id="arcade-count">2 games</span><small>Random picks. Total points wins.</small></span>
+        </button>
+        <button type="button" data-mode="game-select" class="mode-card select-card" aria-pressed="false">
+          <span class="mode-art select-art" aria-hidden="true"><span class="block green"></span><span class="perm-character"><span class="perm-hair"></span><span class="perm-dancer dancer-1"></span></span><span class="round-coins">1 2 3 4 5</span></span>
+          <span class="mode-card-copy"><strong>Game Select</strong><span class="mode-count" id="select-count">5 rounds</span><small>Pick a game. Step up each round.</small></span>
+        </button>
+      </nav>
+      <nav id="game-picker" class="game-picker" aria-label="Choose a game" hidden></nav>
+    </section>
     <section id="welcome" class="entry-layout" aria-label="Join the game">
-      <div class="entry-art" aria-hidden="true"><div id="totem-entry"><div class="block blue"></div><div class="block green"></div><div class="block red"></div></div><div id="perm-entry" class="perm-character" hidden><div class="perm-hair"></div><div class="perm-dancer dancer-0"></div></div></div>
       <form id="entry-form" class="entry-panel">
-        <label for="name">Your name</label>
-        <input id="name" maxlength="20" autocomplete="nickname" required placeholder="Player name" />
-        <button id="create" type="button" class="primary">Create room</button>
-        <div class="join-divider">or join friends</div>
-        <label for="room-input">Room code</label>
-        <div class="join-row"><input id="room-input" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABC234" /><button type="submit">Join</button></div>
+        <div class="host-entry"><label for="name">Your name<input id="name" maxlength="20" autocomplete="nickname" required placeholder="Player name" /></label><button id="create" type="button" class="primary">Create room</button></div>
+        <div class="join-entry"><label for="room-input">Joining friends? Enter their room code</label><div class="join-row"><input id="room-input" maxlength="6" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="ABC234" /><button type="submit">Join</button></div></div>
       </form>
+      <details id="scoring-info" class="scoring-info"><summary>How set points work</summary><p>Each round awards 10, 7, 4, and 1 points by place. Tied places share points. Unfinished, forfeited, and empty-score rounds earn zero. Most points at the end wins; equal totals share the win.</p></details>
     </section>
     <section id="room-view" hidden>
       <div class="room-toolbar">
         <button id="share" class="room-pill" aria-label="Invite friends"><span class="online-dot"></span>Room <strong id="room-code"></strong><span id="occupancy"></span><span aria-hidden="true">↗</span></button>
         <button id="leave" class="text-button">Leave</button>
       </div>
+      <div id="set-progress" class="set-progress" hidden></div>
+      <section id="intermission" class="intermission" hidden aria-live="polite"><strong id="next-game"></strong><span id="next-detail"></span><p id="intermission-countdown"></p></section>
       <section id="play-view" class="arcade-frame">
         <div class="match-hud"><strong id="round-label">Lobby</strong><div class="timer"><span aria-hidden="true">◷</span> <span id="timer">00.00</span><small>sec</small></div><span id="connection-dot" class="online-dot" role="status" aria-label="Connecting"></span></div>
         <div id="rhythm-guide" class="rhythm-guide" hidden>
@@ -59,6 +68,7 @@
       <section id="results" class="arcade-frame results-screen" hidden aria-label="Round results">
         <span id="result-round" class="ribbon"></span><h2 id="result-title"></h2><div id="podium" class="podium"></div><div id="result-rows" class="result-rows"></div>
       </section>
+      <section id="standings-panel" class="standings-panel" hidden aria-label="Set standings"><span id="standings-label" class="ribbon"></span><h2 id="standings-title">Set standings</h2><div id="standings-rows"></div><details id="set-history"><summary>Round-by-round points</summary><div id="history-table"></div></details></section>
       <div id="ready-actions" class="ready-actions"><button id="ready" class="primary" disabled>Ready</button><button id="start" hidden disabled>Start round</button></div>
       <p id="lobby-status" class="status" role="status"></p><p id="submission-status" class="status" hidden role="status"></p>
     </section>
