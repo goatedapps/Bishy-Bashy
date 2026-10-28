@@ -405,6 +405,7 @@ function animate() {
   const ownIndex = room?.players.findIndex(player => player.id === playerId) ?? -1;
   if (ownIndex >= 0) view.lanes[ownIndex].lane.classList.toggle('frozen', frozen);
   if (room) view.animate(room, localRound, time, time + (clock.estimate(time)?.offset ?? Date.now() - time) - (room.round?.startAt || 0));
+  view.updateFeedback(room, localRound, time);
   if (room) setView.animate(room, time + (clock.estimate(time)?.offset ?? Date.now() - time));
   updateControls(time);
   requestAnimationFrame(animate);
@@ -585,6 +586,7 @@ document.addEventListener('visibilitychange', () => {
   const time = performance.now();
   if (document.hidden) {
     hiddenSince = time; audio.cancel();
+    view.feedback.clear();
     if (localRound && time >= localRound.start && time < localRound.end && !localRound.done) complete('forfeit');
   } else {
     if (hiddenSince !== null && localRound && !localRound.done && hiddenSince < localRound.end && time >= localRound.start) {
@@ -596,6 +598,7 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', () => {
   audio.cancel();
+  view.feedback.clear();
   if (localRound && performance.now() >= localRound.start && !localRound.done) complete('forfeit');
 });
 window.addEventListener('pageshow', event => {

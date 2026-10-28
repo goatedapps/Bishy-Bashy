@@ -59,6 +59,7 @@ export class JumpStage {
     this.element.classList.toggle('jump-boosted', Boolean(boosted));
     this.element.classList.toggle('jump-perfect-boost', Boolean(boosted && feedback.perfect));
     this.feedback.hidden = !showingFeedback;
+    this.feedback.style.setProperty('--feedback-rise', `${showingFeedback ? Math.min(1, age / 650) * 12 : 0}px`);
     this.feedback.textContent = !showingFeedback ? '' : feedback.kind === 'miss' ? feedback.label : feedback.perfect ? `Perfect! +${feedback.gain}` : `Nice! +${feedback.gain}`;
     const launchAge = run ? time - run.launchedAt : Infinity;
     const stretch = boosted && launchAge >= 0 && launchAge < 220 ? .15 * (1 - launchAge / 220) : 0;

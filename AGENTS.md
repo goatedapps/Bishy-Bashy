@@ -54,6 +54,7 @@ Original generated sprites and their provenance live in `public/assets/`.
 The portable design mockup remains in `mockups/`, with editable source/provenance in `.lavish/totem-shrinker/`.
 Keep screens visually driven; avoid redundant captions, decorative microcopy, and repeated instructions outside the rules screen.
 Audio playback belongs in `src/audio.js`, starts only after a user gesture, and must have visual equivalents.
+`src/feedback.js` owns bounded local success and finish effects; keep them off reaction targets and timing guides, cancel them across round/lifecycle changes, and honor reduced motion.
 The original disco score and synthesis live in `scripts/audio/`; regenerate `public/audio/` with `npm run audio:render` after changing them.
 Facial Slot Machine's original carousel-funk score and match cues live in `scripts/audio/slots.js`, using the existing mix and lifecycle controls.
 Load audio banks per game and schedule Perm Mania demonstrations from the same frozen clock mapping as its visual guide.

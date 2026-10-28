@@ -405,7 +405,7 @@ main {
   opacity:.4
 }
 .lane.frozen .tower {
-  animation:wobble .12s alternate infinite
+  animation:wobble .1s alternate 2
 }
 .lane.frozen .tower-zone {
   background:#ff65681a

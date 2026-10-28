@@ -9,6 +9,7 @@ import { JUMP_GAME } from '../shared/jump.js';
 import { JumpStage, dinoPortrait } from './jump-view.js';
 import { SlotStage, facePortrait, renderTarget } from './slot-view.js';
 import { GAMES, comparePlayers, isRoundActive } from '../shared/games.js';
+import { GameFeedback } from './feedback.js';
 
 const SHAPES = ['●', '▲', '◆'];
 const $ = id => document.getElementById(id);
@@ -40,6 +41,7 @@ function dancer(index, growth = 0) {
 
 export class GameView {
   constructor() {
+    this.feedback = new GameFeedback();
     this.lanes = Array.from({ length: 4 }, (_, index) => {
       const lane = node('article', 'lane');
       const name = node('h3', '');
@@ -52,6 +54,12 @@ export class GameView {
       const monkeys = new MonkeyStage();
       const jump = new JumpStage();
       zone.append(tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element);
+      const effects = node('div', 'game-feedback');
+      effects.setAttribute('aria-hidden', 'true');
+      const ring = node('span', 'feedback-ring');
+      const particles = Array.from({ length: 12 }, () => node('i', 'feedback-particle'));
+      effects.append(ring, ...particles);
+      zone.append(effects);
       const remaining = node('div', 'remaining');
       const progress = node('div', 'progress');
       const fill = node('span', '');
@@ -59,7 +67,7 @@ export class GameView {
       const status = node('p', 'seat-status');
       lane.append(name, zone, node('div', 'base'), remaining, progress, status);
       $('player-lanes').append(lane);
-      return { lane, name, tower, avatar, slots, fireworks, monkeys, jump, remaining, fill, status, towerKey: '' };
+      return { lane, name, tower, avatar, slots, fireworks, monkeys, jump, remaining, fill, status, effects, ring, particles, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -128,10 +136,16 @@ export class GameView {
       const score = ownRun?.run.score ?? player?.progress?.score ?? 0;
       elements.status.textContent = !player ? 'Waiting to join' : !player.connected ? 'Reconnecting…' : active ? status ? resultLabel(status, perm) : frozen ? 'Oops!' : perm ? `${score.toLocaleString()} pts` : '' : player.ready ? '✓ Ready' : player.sync?.count >= 3 ? (player.id === room.hostId ? 'Host' : 'Not ready') : 'Syncing…';
     });
+    this.updateFeedback(room, local, time);
     const hasResults = round?.phase === 'results';
     $('play-view').hidden = hasResults;
     $('results').hidden = !hasResults;
     if (hasResults) this.results(room, playerId);
+  }
+
+  updateFeedback(room, local, time) {
+    const lane = room && this.lanes.find(elements => elements.lane.classList.contains('you'));
+    this.feedback.update(room?.round, local, lane, time);
   }
 
   animate(room, local, time, elapsed) {

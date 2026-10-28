@@ -70,6 +70,9 @@ Hosting moves to a connected player if the host disconnects.
 Sound is optional and off by default.
 Use the music-note button to enable music and effects, and the gear button for separate volume controls and a sound preview.
 All essential cues also appear visually.
+Local successes use brief, proportional feedback: colored chips for cleared Totem blocks, dancer pops and growth bursts in Perm Mania, matched reel badge pops in Slots, and copied-move dots and stage bursts in Monkeys.
+Fireworks retain their expanding bursts with an impact ring, while Jump retains its boost sparks and squash-and-stretch with rising landing feedback.
+Finishes receive a larger lane-local burst; feedback never moves reaction targets, changes timing windows, or blocks input, and optional motion follows the device's reduced-motion preference.
 Physical phone audio and touch latency still need playtesting.
 
 ## Music and sound
