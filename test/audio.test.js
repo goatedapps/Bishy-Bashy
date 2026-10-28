@@ -6,6 +6,7 @@ import { AUDIO_FILES, BEAT, LOOP_SECONDS, audioAssetIds } from '../scripts/audio
 import { demoCues } from '../shared/perm.js';
 import { FireworkRun } from '../shared/fireworks.js';
 import { roundSettings } from '../shared/games.js';
+import { FacingRun } from '../shared/facing.js';
 
 test('Jump loads an existing flourish for perfect landings without requiring the full Perm bank', async () => {
   const { audio, requests } = setup();
@@ -82,7 +83,7 @@ class MenuMedia {
   pause() { this.pauses++; }
 }
 
-test('Burger catches and picture answers share one Ding MP3, while other games keep their own hit cues', async () => {
+test('Burger, picture, dice, and direction successes reuse one Ding MP3, while Totem retains its colored hit cues', async () => {
   const { audio, requests } = setup();
   audio.selectGame('burger-girl');
   await audio.unlock();
@@ -92,12 +93,57 @@ test('Burger catches and picture answers share one Ding MP3, while other games k
   await audio.load();
   audio.play('hit', { game: 'me-find-mistake' });
   assert.equal([...audio.voices].at(-1).id, 'ding');
+  for (const game of ['dice-dice-more-dice', 'facing-which-way']) {
+    audio.selectGame(game);
+    await audio.load();
+    audio.play('hit', { game });
+    assert.equal([...audio.voices].at(-1).id, 'ding');
+  }
   assert.equal(requests.filter(url => url.includes('Ding.mp3')).length, 1);
   audio.play('hit', { game: 'totem-shrinker', color: 2 });
   assert.equal([...audio.voices].at(-1).id, 'blue');
   audio.setEnabled(false);
   audio.play('hit', { game: 'burger-girl' });
   assert.equal(audio.voices.size, 0);
+});
+
+test('facing turns reuse slot-lock audio at local cue times and cancel old cues on replay, mute, and finish', async () => {
+  const { audio, context, requests, setTime } = setup();
+  const round = { id: 'facing', game: 'facing-which-way', ...roundSettings('facing-which-way', 123) };
+  const run = new FacingRun(round, 1000);
+  audio.selectGame(round.game);
+  await audio.unlock();
+  assert.ok(requests.some(url => url.includes('slot-lock.wav')));
+  assert.ok(!requests.some(url => url.includes('slot-carousel.wav')));
+  audio.scheduleRound(run.id, run.start, run.end, true, false, { game: round.game });
+  setTime(run.turnsAt - 100);
+  audio.facingTurns(run);
+  const voices = () => [...audio.voices].filter(voice => voice.group === 'facing-demo');
+  assert.equal(voices().length, 1);
+  assert.equal(voices()[0].id, 'slotLock');
+  assert.equal(voices()[0].source.started.at, context.currentTime + .1);
+  audio.facingTurns(run);
+  assert.equal(voices().length, 1);
+  const at = run.playAt;
+  run.tap((run.puzzle.answer + 1) % 3, at);
+  setTime(at);
+  audio.facingTurns(run);
+  assert.equal(voices().length, 0);
+  setTime(run.turnsAt - 100);
+  audio.facingTurns(run);
+  assert.equal(voices().length, 1);
+  audio.setEnabled(false);
+  assert.equal(voices().length, 0);
+  audio.setEnabled(true);
+  await audio.unlock();
+  setTime(run.turnsAt + 300);
+  audio.facingTurns(run);
+  assert.equal(voices().length, 0);
+  setTime(run.cues[1].at - 100);
+  audio.facingTurns(run);
+  assert.equal(voices().length, 1);
+  audio.endPlayer();
+  assert.equal(voices().length, 0);
 });
 
 test('wheel audio follows the current spin, never duplicates on redraw, and stops on navigation or mute', async () => {

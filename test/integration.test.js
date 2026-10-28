@@ -12,6 +12,8 @@ import { JUMP_GAME, JumpRun } from '../shared/jump.js';
 import { comparePlayers, createRun } from '../shared/games.js';
 import { BURGER_GAME } from '../shared/burger.js';
 import { MISTAKE_GAME } from '../shared/mistake.js';
+import { DICE_GAME } from '../shared/dice.js';
+import { FACING_GAME } from '../shared/facing.js';
 
 function receiveProtocol(socket, predicate) {
   return new Promise((resolve, reject) => {
@@ -24,7 +26,7 @@ function receiveProtocol(socket, predicate) {
   });
 }
 
-for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-select', 'totem-shrinker', 5], ['game-select', PERM_GAME, 5], ['game-select', SLOT_GAME, 5], ['game-select', FIREWORK_GAME, 5], ['game-select', MONKEY_GAME, 5], ['game-select', JUMP_GAME, 5], ['game-select', BURGER_GAME, 5], ['game-select', MISTAKE_GAME, 5]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
+for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-select', 'totem-shrinker', 5], ['game-select', PERM_GAME, 5], ['game-select', SLOT_GAME, 5], ['game-select', FIREWORK_GAME, 5], ['game-select', MONKEY_GAME, 5], ['game-select', JUMP_GAME, 5], ['game-select', BURGER_GAME, 5], ['game-select', MISTAKE_GAME, 5], ['game-select', DICE_GAME, 5], ['game-select', FACING_GAME, 5]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
   const app = await createApp();
   let time = 1_000_000;
   app.rooms.now = () => time;
@@ -76,7 +78,7 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
       }
       assert.equal(run.done, true);
       return run;
-    }) : [BURGER_GAME, MISTAKE_GAME].includes(round.game) ? clients.map((_, place) => {
+    }) : [BURGER_GAME, MISTAKE_GAME, DICE_GAME, FACING_GAME].includes(round.game) ? clients.map((_, place) => {
       const run = createRun(round, 0);
       if (round.game === BURGER_GAME) {
         for (let miss = 0; miss < place; miss++) {
@@ -87,7 +89,7 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
           run.tap(run.column, run.launchedAt + 1);
           run.advance(run.landAt);
         }
-      } else while (!run.done) run.tap(run.puzzle.odd, run.readyAt + 100 + place * 25);
+      } else while (!run.done) run.tap(round.game === MISTAKE_GAME ? run.puzzle.odd : run.puzzle.answer, (round.game === FACING_GAME ? run.playAt : run.readyAt) + 100 + place * 25);
       assert.equal(run.done, true);
       return run;
     }) : null;

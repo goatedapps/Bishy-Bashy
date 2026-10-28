@@ -6,6 +6,8 @@ import { MONKEY_GAME, MonkeyRun, MONKEY_STAGES, MONKEY_DURATION_MS } from './mon
 import { JUMP_GAME, JumpRun, JUMP_GOAL, JUMP_DURATION_MS } from './jump.js';
 import { BURGER_GAME, BurgerRun, BURGER_GOAL, BURGER_DURATION_MS } from './burger.js';
 import { MISTAKE_GAME, MistakeRun, MISTAKE_GOAL, MISTAKE_DURATION_MS } from './mistake.js';
+import { DICE_GAME, DiceRun, DICE_GOAL, DICE_DURATION_MS } from './dice.js';
+import { FACING_GAME, FacingRun, FACING_GOAL, FACING_DURATION_MS } from './facing.js';
 
 export const COUNTDOWN_MS = 3_000;
 
@@ -18,10 +20,14 @@ export const GAMES = Object.assign(Object.create(null), {
   [JUMP_GAME]: { id: JUMP_GAME, title: 'Jump for the Meat', subtitle: 'Land, boost, reach the feast', duration: JUMP_DURATION_MS, goal: JUMP_GOAL },
   [BURGER_GAME]: { id: BURGER_GAME, title: 'Burger Girl', subtitle: 'Catch a fresh stack of ingredients', duration: BURGER_DURATION_MS, goal: BURGER_GOAL },
   [MISTAKE_GAME]: { id: MISTAKE_GAME, title: 'Me Find Mistake', subtitle: 'Find the picture that does not match', duration: MISTAKE_DURATION_MS, goal: MISTAKE_GOAL },
+  [DICE_GAME]: { id: DICE_GAME, title: 'Dice, Dice, More Dice', subtitle: 'Spot the highest roll', duration: DICE_DURATION_MS, goal: DICE_GOAL },
+  [FACING_GAME]: { id: FACING_GAME, title: 'Facing Which Way', subtitle: 'Follow the turns and flips', duration: FACING_DURATION_MS, goal: FACING_GOAL },
 });
 
 export function roundSettings(game, seed, difficulty = 1) {
   const level = Math.max(1, Math.min(5, Math.trunc(difficulty) || 1));
+  if (game === DICE_GAME) return { seed, difficulty: level, goal: DICE_GOAL + (level - 1) * 2, duration: DICE_DURATION_MS, rollMs: 180 - (level - 1) * 20 };
+  if (game === FACING_GAME) return { seed, difficulty: level, goal: FACING_GOAL + level - 1, duration: FACING_DURATION_MS, turnCount: level + 1, stepMs: 650 - (level - 1) * 50 };
   if (game === BURGER_GAME) return { seed, difficulty: level, goal: BURGER_GOAL, duration: BURGER_DURATION_MS, fallMs: 1100 - (level - 1) * 110 };
   if (game === MISTAKE_GAME) return { seed, difficulty: level, goal: MISTAKE_GOAL + level - 1, duration: MISTAKE_DURATION_MS };
   if (game === JUMP_GAME) return { seed, difficulty: level, goal: JUMP_GOAL + level - 1, duration: JUMP_DURATION_MS, periodMs: 1200 - (level - 1) * 50, windowMs: 150 - (level - 1) * 15, perfectMs: Math.round((150 - (level - 1) * 15) * .3) };
@@ -38,6 +44,8 @@ export function roundSettings(game, seed, difficulty = 1) {
 }
 
 export function createRun(round, localStart, timingOffset = 0) {
+  if (round.game === DICE_GAME) return new DiceRun(round, localStart);
+  if (round.game === FACING_GAME) return new FacingRun(round, localStart);
   if (round.game === BURGER_GAME) return new BurgerRun(round, localStart);
   if (round.game === MISTAKE_GAME) return new MistakeRun(round, localStart);
   if (round.game === JUMP_GAME) return new JumpRun(round, localStart);
@@ -50,6 +58,8 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game, round) {
+  if (game === DICE_GAME) return ['Pick the die with the most dots in your lane. There is always one highest die.', 'Red = top, green = middle, blue = bottom. A wrong choice briefly locks your buttons; keep your completed rolls.', `Win ${round.goal} rolls fastest. Later rounds add more rolls and tilt the dice.`];
+  if (game === FACING_GAME) return ['Remember which way the duck points. Its card turns face down; follow the turn and left-right flip symbols.', 'When Answer appears: red = left, green = up, blue = right. A wrong answer replays the same trick.', `Solve ${round.goal} tricks fastest. Later rounds add more turns; completed tricks stay yours.`];
   if (game === BURGER_GAME) return ['Red = left, green = middle, blue = right. Move the plate under the falling food.', 'Catch lettuce, patty, tomato, then a bun to serve a burger. Misses cost time; keep your layers.', `Serve ${round.goal / 4} burgers fastest. Later rounds drop ingredients faster.`];
   if (game === MISTAKE_GAME) return ['Two pictures match and one is different. Spot the odd picture in your lane.', 'Red = top, green = middle, blue = bottom. Wrong answers briefly lock your buttons.', `Find ${round.goal} odd pictures fastest. Later rounds add more puzzles and picture types.`];
   if (game === JUMP_GAME) return ['Press any button as the dinosaur lands. Gold gives +1 boost; aim for the small green center for a Perfect +2.', 'Bigger boosts reach the meat faster. Early taps and missed landings cost time, but keep your height progress.', `Earn ${round.goal} boosts, then grab the meat at the top of your final jump. Fastest time wins.`];

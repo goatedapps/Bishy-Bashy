@@ -51,6 +51,16 @@ export const ASSETS = [
     "hash": "8efa644bbe165751"
   },
   {
+    "path": "assets/optimized/dice-jester-0db45dfe5886.webp",
+    "bytes": 52864,
+    "hash": "0db45dfe58864d6a"
+  },
+  {
+    "path": "assets/optimized/facing-duck-ccbad1c0ed63.webp",
+    "bytes": 49446,
+    "hash": "ccbad1c0ed635fa1"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",

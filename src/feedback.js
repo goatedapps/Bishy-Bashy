@@ -75,12 +75,14 @@ export class GameFeedback {
     }
     if (game === 'burger-girl' && gained) this.animate(lane.burger.stack, POP, 220);
     if (game === 'me-find-mistake' && gained && feedback) this.animate(lane.mistake.cards[feedback.color].picture, POP, 180);
+    if (game === 'dice-dice-more-dice' && gained && feedback) this.animate(lane.dice.cards[feedback.color].face, POP, 180);
+    if (game === 'facing-which-way' && gained) this.animate(lane.facing.cue, POP, 210);
     if (missed) {
       this.animate(lane.status, [{ opacity: .45 }, { opacity: 1 }], 220);
       return;
     }
     // Existing jump sparks and firework explosions already carry routine impacts.
-    const burst = finished || gained && !['jump-for-the-meat', 'fireworks-craze', 'facial-slot-machine', 'me-find-mistake'].includes(game);
+    const burst = finished || gained && !['jump-for-the-meat', 'fireworks-craze', 'facial-slot-machine', 'me-find-mistake', 'dice-dice-more-dice', 'facing-which-way'].includes(game);
     if (!burst) return;
     const count = finished ? 12 : game === 'totem-shrinker' ? 4 : 6;
     lane.particles.forEach((particle, index) => {

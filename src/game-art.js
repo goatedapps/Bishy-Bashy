@@ -3,6 +3,7 @@ import { monkeyPortrait } from './monkey-view.js';
 import { fireworkBadge } from './firework-view.js';
 import { dinoPortrait } from './jump-view.js';
 import { chefPortrait, ingredientPortrait, picturePortrait } from './catch-spot-view.js';
+import { diePortrait, diceMascot, duckPortrait } from './dice-facing-view.js';
 
 const node = (tag, className, text) => {
   const element = document.createElement(tag);
@@ -14,7 +15,9 @@ const node = (tag, className, text) => {
 export function gameArt(game) {
   const art = node('span', `game-art art-${game}`);
   art.setAttribute('aria-hidden', 'true');
-  if (game === 'burger-girl') art.append(chefPortrait());
+  if (game === 'dice-dice-more-dice') art.append(diceMascot());
+  else if (game === 'facing-which-way') art.append(duckPortrait());
+  else if (game === 'burger-girl') art.append(chefPortrait());
   else if (game === 'me-find-mistake') art.append(picturePortrait(0));
   else if (game === 'jump-for-the-meat') art.append(dinoPortrait());
   else if (game === 'mimicking-monkeys') art.append(monkeyPortrait());
@@ -39,7 +42,19 @@ export function ruleVisual(game) {
   const first = node('div', 'rule-example');
   const second = node('div', 'rule-example');
   let label;
-  if (game === 'burger-girl') {
+  if (game === 'dice-dice-more-dice') {
+    const dice = node('div', 'tutorial-dice');
+    dice.append(diePortrait(2), diePortrait(6), diePortrait(4));
+    first.append(dice, node('strong', '', 'Find the most dots'));
+    second.append(shapes([1], 'tutorial-buttons'), node('strong', '', 'Pick the middle die'));
+    label = 'The dice show 2, 6, and 4. Six is highest: choose green for the middle die.';
+  } else if (game === 'facing-which-way') {
+    const trick = node('div', 'tutorial-turn');
+    trick.append(duckPortrait(), node('span', '', '↔'));
+    first.append(trick, node('strong', '', 'Right, then a left-right flip'));
+    second.append(shapes([0], 'tutorial-buttons'), node('strong', '', 'Now it points left'));
+    label = 'Remember the duck pointing right. A left-right flip makes it point left. Red answers left, green up, blue right.';
+  } else if (game === 'burger-girl') {
     const ingredient = node('div', 'tutorial-ingredient');
     ingredient.append(ingredientPortrait(0));
     first.append(ingredient, gameArt(game), node('strong', '', 'Watch the falling food'));

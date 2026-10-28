@@ -3,15 +3,30 @@ import assert from 'node:assert/strict';
 import { RoomService } from '../server/rooms.js';
 import { GAMES } from '../shared/games.js';
 import { wheelRotation } from '../src/arcade-wheel.js';
+import { arcadeGameIds, createSetPlan } from '../shared/sets.js';
 
 test('every wheel segment lands exactly at the pointer and easing slows toward its chosen game', () => {
-  const ids = Object.keys(GAMES);
+  const ids = arcadeGameIds();
   for (const [index, id] of ids.entries()) {
     assert.equal(wheelRotation(id, -1), 0);
     assert.equal(wheelRotation(id, 1), 2160 - index * 360 / ids.length);
     assert.equal(wheelRotation(id, 2), wheelRotation(id, 1));
     assert.ok(wheelRotation(id, .1) > wheelRotation(id, 1) - wheelRotation(id, .9));
   }
+});
+
+test('Arcade and its wheel expand only on four-game milestones, with new games available in Game Select immediately', () => {
+  for (let count = 8; count <= 19; count++) {
+    const catalog = Array.from({ length: count }, (_, index) => `game-${index}`);
+    const eligible = arcadeGameIds(catalog);
+    assert.deepEqual(eligible, catalog.slice(0, Math.floor(count / 4) * 4));
+    assert.ok(createSetPlan('arcade', null, () => 0, catalog).every(id => eligible.includes(id)));
+    assert.deepEqual(createSetPlan('game-select', catalog.at(-1)), Array(5).fill(catalog.at(-1)));
+  }
+  assert.equal(Object.keys(GAMES).length, 10);
+  assert.equal(arcadeGameIds().length, 8);
+  assert.ok(!arcadeGameIds().includes('dice-dice-more-dice'));
+  assert.ok(!arcadeGameIds().includes('facing-which-way'));
 });
 
 test('Arcade shares one selection, ignores repeated starts and premature readiness, and supports cancelling the wheel', () => {

@@ -7,8 +7,10 @@ const MUSIC_MODES = ['auto', 'on', 'off'];
 const MENU_TRACKS = { menu: 'Background-ActionRock.mp3', instructions: 'game-instructions.mp3' };
 const MENU_TRACK_GAINS = { menu: 1, instructions: 2 };
 const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.wav', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3', wheelSpin: 'wheelspin.mp3' };
-const GAME_AUDIO_FILES = { 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' } };
+const GAME_AUDIO_FILES = { 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3' }, 'facing-which-way': { ding: 'Ding.mp3' } };
 const PROFILES = {
+  'dice-dice-more-dice': { music: 'music', urgency: 'urgency', go: 'go' },
+  'facing-which-way': { music: 'music', urgency: 'urgency', go: 'go' },
   'burger-girl': { music: 'music', urgency: 'urgency', go: 'go' },
   'me-find-mistake': { music: 'music', urgency: 'urgency', go: 'go' },
   'jump-for-the-meat': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -56,6 +58,8 @@ export class GameAudio {
     this.game = 'totem-shrinker';
     this.demonstrationKey = null;
     this.demonstrationNotes = new Set();
+    this.turnKey = null;
+    this.turnNotes = new Set();
     this.buttonRequest = 0;
     this.launchKey = null;
     this.launchVoice = null;
@@ -221,7 +225,7 @@ export class GameAudio {
 
   play(id, { color = 0, progress = 0, at = this.context?.currentTime, group = 'effects', game = this.game } = {}) {
     if (id === 'jumpPerfect') id = 'permGrow';
-    if (id === 'hit') id = ['burger-girl', 'me-find-mistake'].includes(game) ? 'ding' : game === 'perm-mania' ? 'permHit' : ['red', 'green', 'blue'][color] || 'red';
+    if (id === 'hit') id = ['burger-girl', 'me-find-mistake', 'dice-dice-more-dice', 'facing-which-way'].includes(game) ? 'ding' : game === 'perm-mania' ? 'permHit' : ['red', 'green', 'blue'][color] || 'red';
     if (id === 'mistake' && game === 'perm-mania') id = 'permMiss';
     const voice = this.source(id, { at, group, rate: ['red', 'green', 'blue'].includes(id) ? 1 + clamp(progress) * .04 : 1 });
     if (voice && group === 'effects') {
@@ -276,6 +280,23 @@ export class GameAudio {
       if (remaining < 0 || remaining > 150 || cue.at >= this.target.end || this.demonstrationNotes.has(index)) return;
       const voice = this.source(['red', 'green', 'blue'][cue.color], { at: this.context.currentTime + remaining / 1000, group: 'demonstration' });
       if (voice) this.demonstrationNotes.add(index);
+    });
+  }
+
+  facingTurns(run) {
+    const key = `${run.id}/${run.cleared}/${run.demoVersion}`;
+    if (key !== this.turnKey) {
+      this.stopVoices(voice => voice.group === 'facing-demo');
+      this.turnKey = key;
+      this.turnNotes.clear();
+    }
+    if (!this.enabled || this.preferences.effectsVolume === 0 || this.context?.state !== 'running' || this.target?.game !== 'facing-which-way' || this.target.id !== run.id || this.target.playerDone || run.done) return;
+    const now = this.now();
+    run.cues.forEach((cue, index) => {
+      const remaining = cue.at - now;
+      if (remaining < 0 || remaining > 150 || cue.at >= run.end || this.turnNotes.has(index)) return;
+      const voice = this.source('slotLock', { at: this.context.currentTime + remaining / 1000, group: 'facing-demo' });
+      if (voice) this.turnNotes.add(index);
     });
   }
 
@@ -456,12 +477,13 @@ export class GameAudio {
     this.launchKey = null; this.launchVoice = null;
     this.target = null; this.musicKey = null; this.countdownKey = null;
     this.demonstrationKey = null; this.demonstrationNotes.clear();
-    this.stopVoices(voice => voice.group === 'round' || voice.group === 'music' || voice.group === 'demonstration');
+    this.turnKey = null; this.turnNotes.clear();
+    this.stopVoices(voice => voice.group === 'round' || voice.group === 'music' || voice.group === 'demonstration' || voice.group === 'facing-demo');
   }
 
   endPlayer() {
     if (this.target) this.target.playerDone = true;
-    this.stopVoices(voice => voice.group === 'round' || voice.group === 'demonstration');
+    this.stopVoices(voice => voice.group === 'round' || voice.group === 'demonstration' || voice.group === 'facing-demo');
   }
 
   cancel() {

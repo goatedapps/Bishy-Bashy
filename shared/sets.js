@@ -9,15 +9,20 @@ export const ARCADE_LENGTH = 5;
 export const GAME_SELECT_LENGTH = 5;
 export const INTERMISSION_MS = 8_000;
 export const WHEEL_SPIN_MS = 5_500;
+export const ARCADE_BATCH_SIZE = 4;
 export const PLACE_POINTS = [10, 7, 4, 1];
 export const MODES = Object.assign(Object.create(null), {
   arcade: { title: 'Arcade', length: ARCADE_LENGTH },
   'game-select': { title: 'Game Select', length: GAME_SELECT_LENGTH },
 });
 
+export function arcadeGameIds(gameIds = Object.keys(GAMES)) {
+  return gameIds.slice(0, Math.floor(gameIds.length / ARCADE_BATCH_SIZE) * ARCADE_BATCH_SIZE);
+}
+
 export function createSetPlan(mode, game, chooseIndex = max => Math.floor(Math.random() * max), gameIds = Object.keys(GAMES)) {
   if (mode === 'game-select') return Array(GAME_SELECT_LENGTH).fill(game);
-  const shuffled = [...gameIds];
+  const shuffled = arcadeGameIds(gameIds);
   for (let index = shuffled.length - 1; index > 0; index--) {
     const other = chooseIndex(index + 1);
     [shuffled[index], shuffled[other]] = [shuffled[other], shuffled[index]];
@@ -39,6 +44,8 @@ export function setStandings(players) {
 }
 
 export function roundDetail(round) {
+  if (round.game === 'dice-dice-more-dice') return `${round.goal} rolls · Level ${round.difficulty}`;
+  if (round.game === 'facing-which-way') return `${round.goal} tricks · ${round.turnCount} turns`;
   if (round.game === 'burger-girl') return `${round.goal / 4} burgers · Speed ${round.difficulty}`;
   if (round.game === 'me-find-mistake') return `${round.goal} puzzles · Level ${round.difficulty}`;
   if (round.game === JUMP_GAME) return `${round.goal} boosts · Speed ${round.difficulty}`;

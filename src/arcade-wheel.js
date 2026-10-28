@@ -1,15 +1,16 @@
 import { GAMES } from '../shared/games.js';
+import { arcadeGameIds } from '../shared/sets.js';
 import { gameArt } from './game-art.js';
 
 const COLORS = ['#ff7895', '#ffe06d', '#80d8a1', '#85c9ff', '#c5a1f5', '#ffb377', '#80ded3', '#f5a6d8'];
-export function wheelRotation(game, progress, ids = Object.keys(GAMES)) {
+export function wheelRotation(game, progress, ids = arcadeGameIds()) {
   const index = Math.max(0, ids.indexOf(game));
   return (360 * 6 - index * 360 / ids.length) * (1 - (1 - Math.max(0, Math.min(1, progress))) ** 4);
 }
 
 export class ArcadeWheel {
   constructor() {
-    this.ids = Object.keys(GAMES);
+    this.ids = arcadeGameIds();
     this.disc = document.getElementById('wheel-disc');
     const angle = 360 / this.ids.length;
     this.disc.style.background = `conic-gradient(from ${-angle / 2}deg, ${this.ids.map((id, i) => `${COLORS[i % COLORS.length]} ${i * angle}deg ${(i + 1) * angle}deg`).join(',')})`;

@@ -8,6 +8,8 @@ import { MONKEY_GAME } from '../shared/monkeys.js';
 import { JUMP_GAME } from '../shared/jump.js';
 import { BURGER_GAME } from '../shared/burger.js';
 import { MISTAKE_GAME } from '../shared/mistake.js';
+import { DICE_GAME } from '../shared/dice.js';
+import { FACING_GAME } from '../shared/facing.js';
 import { GAMES, createRun, roundSettings, isRoundActive, gameRules } from '../shared/games.js';
 import { MODES, roundDetail } from '../shared/sets.js';
 import { GameView } from './game-view.js';
@@ -322,7 +324,7 @@ function tap(color) {
   if (room.round.game === FIREWORK_GAME) audio.fireworkLaunch(localRound.run);
   if (localRound.goDelay === null) localRound.goDelay = Math.max(0, time - localRound.start);
   if (action.type === 'finished') {
-    if (room.round.game === MISTAKE_GAME) audio.play('hit', { color, game: MISTAKE_GAME });
+    if ([MISTAKE_GAME, DICE_GAME, FACING_GAME].includes(room.round.game)) audio.play('hit', { color, game: room.round.game });
     complete('finished', action.elapsed);
   }
   else if (action.type !== 'move') audio.play(action.type, { color, progress: localRound.run.cleared / room.round.goal, game: room.round.game });
@@ -440,7 +442,7 @@ function prepareRoundAssets() {
 }
 
 function updateControls(time) {
-  const disabled = !localRound || localRound.done || document.hidden || time < localRound.start || time >= localRound.end || time < localRound.run.blockedUntil || room?.round?.phase === 'results' || room?.round?.game === PERM_GAME && localRound.run.phase(time).mode === 'watch' || room?.round?.game === MONKEY_GAME && localRound.run.phase(time).mode !== 'play' || room?.round?.game === MISTAKE_GAME && time < localRound.run.readyAt;
+  const disabled = !localRound || localRound.done || document.hidden || time < localRound.start || time >= localRound.end || time < localRound.run.blockedUntil || room?.round?.phase === 'results' || room?.round?.game === PERM_GAME && localRound.run.phase(time).mode === 'watch' || [MONKEY_GAME, FACING_GAME].includes(room?.round?.game) && localRound.run.phase(time).mode !== 'play' || [MISTAKE_GAME, DICE_GAME].includes(room?.round?.game) && time < localRound.run.readyAt;
   for (const button of buttons) {
     const color = Number(button.dataset.color);
     button.disabled = disabled || Boolean(room?.round?.game === SLOT_GAME && localRound && ((localRound.run.reelMask & (1 << color)) || time < localRound.run.blockedReels[color]));
@@ -453,6 +455,7 @@ function animate() {
   const round = room?.round;
   let overlay = '', small = false;
   if (round?.game === FIREWORK_GAME && localRound) audio.fireworkLaunch(localRound.run);
+  if (round?.game === FACING_GAME && localRound) audio.facingTurns(localRound.run);
   synchronizeScreenAudio();
   if (isRoundActive(round)) {
     if (!localRound) { overlay = round.playerIds.includes(playerId) ? 'Syncing…' : 'Next round'; small = true; }
@@ -528,6 +531,8 @@ function updateGameProfile() {
   document.body.classList.toggle('jump-theme', Boolean(themed && game === JUMP_GAME));
   document.body.classList.toggle('burger-theme', Boolean(themed && game === BURGER_GAME));
   document.body.classList.toggle('mistake-theme', Boolean(themed && game === MISTAKE_GAME));
+  document.body.classList.toggle('dice-theme', Boolean(themed && game === DICE_GAME));
+  document.body.classList.toggle('facing-theme', Boolean(themed && game === FACING_GAME));
   document.body.classList.toggle('in-set', Boolean(inSet));
   const title = !room ? 'Bishy Bashy!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'selecting' ? 'Spin the wheel!' : room.set?.phase === 'intermission' ? 'Standings' : room.set?.phase === 'instructions' || active ? GAMES[game].title : room.arcadePreview ? 'Arcade' : 'Choose your mode';
   if (document.querySelector('.game-title').textContent !== title) document.querySelector('.game-title').textContent = title;

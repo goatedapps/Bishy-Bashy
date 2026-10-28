@@ -1,6 +1,6 @@
 # Bishy Bashy
 
-A four-player browser party game with Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, and Me Find Mistake.
+A four-player browser party game with Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, and Facing Which Way.
 Everyone sees all four players and controls only their own player.
 The static website runs on GitHub Pages; a separate Node WebSocket server coordinates rooms and results.
 
@@ -16,7 +16,7 @@ The Bishy Bashy! title and a cast of original game characters introduce the game
 After creating or joining a room, choose a mode on the room screen.
 Game Select uses equal-sized illustrated cards in a scrollable library, with a title search for a larger catalog.
 Choose **Arcade** for five different games selected at random, played once each in a random order.
-Selecting Arcade opens a wheel showing every game; the host taps **Spin & start** once friends have joined.
+Selecting Arcade opens a wheel showing every game in the current Arcade batch; the host taps **Spin & start** once friends have joined.
 Before each Arcade game, the wheel spins for 5.5 seconds and lands on the same server-chosen game on every device, with `wheelspin.mp3` when sound is enabled.
 The five-game plan has no repeats, and repeated starts or reconnects do not reroll it.
 Choose **Game Select** for five rounds of one game, with difficulty increasing each round.
@@ -47,7 +47,9 @@ The accompanying Last game column shows each player's most recent performance an
 The server awards points once per round and retains earned points if a player leaves between rounds.
 New guests can join only after the full set ends; original players can reconnect during it.
 The Arcade length and Game Select round count live in `shared/sets.js`, and new games join the shared catalog in `shared/games.js`.
-Arcade selects five distinct games from the catalog, which currently contains eight games.
+The catalog currently contains ten games, all available in Game Select.
+Arcade expands only at four-game milestones: it currently selects five distinct games from the first eight, and will add the next four together when the catalog reaches twelve.
+`arcadeGameIds()` in `shared/sets.js` supplies the same eligible pool to server selection and the wheel, so a spin cannot land on an omitted game.
 
 ## Play Totem Shrinker
 
@@ -314,6 +316,52 @@ The new games use the same instructions, Ready gates, Arcade selection, cumulati
 Deploy the frontend and room service together; protocol 6 now advertises the `arcade-wheel` and `asset-readiness` capabilities required by this frontend.
 Original artwork and full generation prompts for both games are preserved in [artwork notes](public/assets/catch-spot-artwork.md).
 
+## Play Dice, Dice, More Dice
+
+Choose **Game Select → Dice, Dice, More Dice**.
+The new game joins Arcade at the next four-game milestone, when the catalog reaches twelve.
+Three dice appear vertically in your lane; choose the die with the most dots using red for top, green for middle, or blue for bottom.
+Each roll contains three distinct values from one to six, so there is always exactly one highest choice.
+All devices receive the same seeded rolls.
+
+Win **12, 14, 16, 18, or 20 rolls** across the five Game Select rounds.
+Dice settle for **180 to 100 ms** across those rounds before revealing their values, then allow **180 ms** to observe the new board before inputs count.
+Higher levels also tilt the dice by up to 40 degrees while preserving readable pip patterns.
+A correct choice shows its check and retains the solved dice for **220 ms** before the next roll.
+A wrong choice marks only the selected die and locks inputs for **600 ms**, retaining the board and all previous wins.
+Finish within **35 seconds**, ranked by locally measured elapsed time.
+These speeds and counts are provisional until phone playtests.
+
+`shared/dice.js` owns seeded rolls and input gates.
+`src/dice-facing-view.js` and `src/dice-facing.css` combine the generated dice jester with a velvet table, exact code-native die pips, rolling anticipation, and brief success pops.
+Remote lanes show covered dice and progress rather than live choices, and successful feedback never reveals the next board early.
+Existing Punch button feedback, Ding successes, mistake cues, finish cues, and disco music are reused without creating audio files.
+
+## Play Facing Which Way
+
+Choose **Game Select → Facing Which Way**.
+This game also joins Arcade at the twelve-game milestone.
+Remember which way the duck points, then follow its covered card through clockwise turns, counterclockwise turns, and left-right flips.
+The visible move symbol states a 90-degree turn, 180-degree turn, or horizontal flip; the picture stays hidden until a correct answer.
+When **Answer** appears, red answers left, green up, and blue right.
+Generated tricks never end a move pointing down, so every possible answer has one of the three shared buttons.
+
+Solve **5 to 9 tricks**, with **2 to 6 moves per trick**, across five rounds.
+Each trick shows the initial duck for **700 ms**, covers it for **180 ms**, and demonstrates moves at **650 to 450 ms per move** across the levels.
+A **200 ms** handoff separates the final move from the answer phase; all demonstration inputs are ignored.
+A correct answer reveals the final direction for **260 ms** and advances the trick count.
+A wrong answer waits **450 ms**, then replays the same initial picture and moves while keeping completed tricks.
+The deadline is **60 seconds**, ranked by local elapsed time; these initial timings are provisional until phone playtests.
+
+`shared/facing.js` owns the seeded transformations, replay gates, and local timing.
+The renderer uses a generated aviator duck with an unmistakable right-facing beak and a symmetric card back that does not disclose its final orientation.
+Remote lanes never show the local player's actual picture or moves.
+Reduced-motion settings replace decorative card motion with the same readable move symbols and phase timing.
+Correct answers reuse Ding, and the move demonstration reuses `slot-lock.wav` on the local audio timeline with bounded lookahead, stale-cue skipping, and replay/finish cancellation.
+Both games use original image-generated characters, delivered as resized WebP files with their PNG masters retained.
+The complete prompts and source image details are in [Dice and Facing artwork notes](public/assets/dice-facing-artwork.md).
+No new audio was downloaded or created.
+
 ## Loading and delivery assets
 
 An animated dinosaur and orbiting star introduce the game while all runtime artwork and audio download.
@@ -322,7 +370,7 @@ Images are decoded before entry opens, and the three display fonts are warmed wi
 After joining, Ready also waits for the selected game's audio bank to decode when sound is enabled; players can retry a failed bank or turn sound off to play muted.
 The room service enforces the asset acknowledgment for this frontend, independently of clock synchronization and readiness.
 
-Ten optimized WebP images total **1,081,100 bytes**, down from **15,963,577 bytes** of PNG masters, a **93.2%** reduction.
+Twelve optimized WebP images total **1,183,410 bytes**, down from **18,516,512 bytes** of PNG masters, a **93.6%** reduction.
 Original generated PNGs and provenance remain in `public/assets/`; runtime styles use the smaller hashed files in `public/assets/optimized/`.
 Run `python scripts/optimize-images.py` with Pillow after changing the PNG masters to regenerate delivery images and their CSS references.
 The predev/prebuild script `scripts/asset-manifest.mjs` versions every runtime asset by content and derives gzip delivery files for suitable WAVs.
