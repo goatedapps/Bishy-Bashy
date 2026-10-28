@@ -213,6 +213,22 @@ test('gameplay presses use a separate cached punch effect and obey effects volum
   assert.equal(audio.voices.size, 0);
 });
 
+test('instruction reveals use their own WAV without changing menu or gameplay button sounds', async () => {
+  const { audio, requests } = setup();
+  await audio.unlock();
+  audio.pressButton('instructions');
+  assert.equal([...audio.voices].at(-1).id, 'instructionReveal');
+  audio.pressButton();
+  assert.equal([...audio.voices].at(-1).id, 'buttonPress');
+  audio.pressButton('gameplay');
+  assert.equal([...audio.voices].at(-1).id, 'gameplayPress');
+  audio.selectGame('perm-mania'); await audio.load();
+  assert.equal(requests.filter(url => url.includes('how-to-play.wav')).length, 1);
+  audio.setEnabled(false);
+  audio.pressButton('instructions');
+  assert.equal(audio.voices.size, 0);
+});
+
 test('firework launch sounds load only for Fireworks and follow each local launch and retry once', async () => {
   const { audio, context, requests, setTime } = setup();
   await audio.unlock();
@@ -400,7 +416,7 @@ test('audio is opt-in, loads once after a gesture, and preferences survive unava
   assert.equal(await state.audio.unlock(), true);
   await state.audio.unlock();
   assert.equal(state.created, 1);
-  assert.equal(state.requests.length, audioAssetIds().length + 4);
+  assert.equal(state.requests.length, audioAssetIds().length + 5);
   state.audio.setPreferences({ musicVolume: 2, effectsVolume: -1, musicMode: 'off' });
   assert.deepEqual(JSON.parse(state.values.get('bb-audio')), { musicMode: 'off', musicVolume: 1, effectsVolume: 0 });
   const blocked = setup({ storage: { getItem() { throw new Error('Blocked'); }, setItem() { throw new Error('Blocked'); } } });
@@ -573,7 +589,7 @@ test('Perm Mania loads its own bank and schedules each demonstration on the audi
   await audio.unlock();
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), true);
-  assert.equal(requests.length, audioAssetIds('perm-mania').length + 4);
+  assert.equal(requests.length, audioAssetIds('perm-mania').length + 5);
   const cues = demoCues(123);
   audio.scheduleRound('perm', 5000, 35_000, true, false, { game: 'perm-mania', cues });
   const guide = [...audio.voices].filter(voice => voice.id === 'permDemo');
@@ -609,7 +625,7 @@ test('Facial Slot Machine uses its own bank, bounded match feedback, and a finis
   const { audio, requests } = setup();
   audio.selectGame('facial-slot-machine');
   await audio.unlock();
-  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 4);
+  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 5);
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), false);
   audio.scheduleRound('slots', 5000, 35_000, true, false, { game: 'facial-slot-machine' });

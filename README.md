@@ -21,7 +21,7 @@ Only the host can change the mode or chosen game after joining.
 The host can use **Back to modes** to keep everyone in the same room and choose again.
 Before the first countdown this returns immediately; during an active round or an unfinished set with scores, confirmation explains that the current set and scores will be cleared for everyone.
 Rules screens include visual examples using the same artwork and color/shape controls as the game.
-The instructions card reveals its playful “How to play” heading, illustration, and three rules in sequence, with one punch sound per step when effects are enabled.
+The instructions card reveals its playful “How to play” heading, illustration, and three rules over about 1.6 seconds, with `public/audio/how-to-play.wav` once per step when effects are enabled.
 Ready becomes available once the final line is visible; redraws do not restart the sequence, and reduced-motion settings remove the entrance animation.
 **Leave** stays available during play and asks for confirmation before leaving an active set.
 Leaving forfeits only an unfinished round; an already accepted finish and previously earned points remain credited, and the other players can continue.

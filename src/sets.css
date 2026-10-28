@@ -98,7 +98,7 @@
 }
 .instruction-step { transform-origin:center; }
 .instruction-step:not(.is-revealed) { visibility:hidden; }
-.instruction-step.is-revealed { animation:instruction-pop .3s cubic-bezier(.2,.8,.3,1) both; }
+.instruction-step.is-revealed { animation:instruction-pop .15s cubic-bezier(.2,.8,.3,1) both; }
 #instructions-list .instruction-step { transform-origin:5% 50%; }
 @keyframes instruction-pop {
   0% { opacity:0; scale:.86; }

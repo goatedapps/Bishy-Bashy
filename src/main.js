@@ -36,7 +36,7 @@ let selectedMode = MODES[localStorage.getItem('bb-mode')] ? localStorage.getItem
 let timingOffset = Math.max(-150, Math.min(150, Number(localStorage.getItem('bb-timing-offset')) || 0));
 const view = new GameView();
 const audio = new GameAudio({ onChange: () => updateSound() });
-const setView = new SetView({ onInstructionStep: () => audio.pressButton('gameplay') });
+const setView = new SetView({ onInstructionStep: () => audio.pressButton('instructions') });
 const buttons = [...document.querySelectorAll('.hit-button')];
 
 $('name').value = session?.name || localStorage.getItem('bb-name') || '';

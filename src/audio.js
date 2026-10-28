@@ -4,7 +4,7 @@ import { COUNTDOWN_MS } from '../shared/games.js';
 const BASE_URL = import.meta.env?.BASE_URL || '/';
 const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
-const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3' };
+const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.wav', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3' };
 const GAME_AUDIO_FILES = { 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3' } };
 const PROFILES = {
   'jump-for-the-meat': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -228,7 +228,7 @@ export class GameAudio {
 
   pressButton(kind = 'menu') {
     if (!this.enabled || this.preferences.effectsVolume === 0) return;
-    const id = kind === 'gameplay' ? 'gameplayPress' : 'buttonPress';
+    const id = kind === 'instructions' ? 'instructionReveal' : kind === 'gameplay' ? 'gameplayPress' : 'buttonPress';
     const request = ++this.buttonRequest;
     if (this.context?.state === 'running' && this.buffers.has(id)) {
       this.play(id);
