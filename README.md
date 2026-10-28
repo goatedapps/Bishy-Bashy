@@ -83,6 +83,8 @@ Physical phone audio and touch latency still need playtesting.
 Menus, game selection, rules, intermissions, and standings loop the user-supplied `public/audio/Background-ActionRock.mp3` through the existing music volume and mute controls.
 The track streams after a user gesture, preserves its position between menus, pauses for the round countdown and gameplay, and resumes when the next transition screen appears.
 The same one-device-per-room policy and personal music overrides apply; hiding the page or previewing gameplay sounds pauses menu music.
+Each post-game podium plays `public/audio/podium-winner.mp3` once through the effects controls before background music resumes, including the final set podium.
+Repeated score updates do not restart the podium cue, and leaving the podium or muting cancels it without replaying it later.
 
 The original soundtrack is a 128 BPM funky disco arcade loop, with an octave bass groove, four-on-the-floor drums, electric-piano-style chord stabs, and a bright melody.
 An additional percussion and melody layer enters on a beat near the final ten seconds.

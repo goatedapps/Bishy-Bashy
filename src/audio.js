@@ -4,7 +4,7 @@ import { COUNTDOWN_MS } from '../shared/games.js';
 const BASE_URL = import.meta.env?.BASE_URL || '/';
 const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
-const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', countdown: 'countdown.mp3' };
+const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3' };
 const GAME_AUDIO_FILES = { 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3' } };
 const PROFILES = {
   'jump-for-the-meat': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -24,6 +24,7 @@ export class GameAudio {
     this.menu = { active: false, musicOwner: true };
     this.menuPlaying = false;
     this.menuRequest = 0;
+    this.podium = null;
     this.now = now;
     this.fetchFile = fetchFile;
     this.onChange = onChange;
@@ -76,6 +77,7 @@ export class GameAudio {
     this.applyVolumes();
     this.context.addEventListener('statechange', () => {
       if (this.context.state !== 'running') {
+        this.stopPodium();
         this.stopVoices(() => true, true);
         this.stopMenu();
       }
@@ -141,6 +143,7 @@ export class GameAudio {
     this.write('bb-sound', this.enabled ? 'on' : 'off');
     if (!this.enabled) {
       this.buttonRequest++;
+      this.stopPodium();
       this.stopMenu();
       this.stopPreview();
       this.stopVoices(() => true);
@@ -194,6 +197,10 @@ export class GameAudio {
     source.onended = () => {
       this.voices.delete(voice);
       source.disconnect(); gain.disconnect();
+      if (group === 'podium' && this.podium?.voice === voice) {
+        this.podium.voice = null;
+        this.synchronizeMenu();
+      }
       if (group.startsWith('preview-') && ![...this.voices].some(other => other.group.startsWith('preview-'))) {
         this.previewing = false;
         this.synchronizeMenu();
@@ -328,15 +335,43 @@ export class GameAudio {
     });
   }
 
-  setMenuScreen(active, musicOwner = true) {
-    if (this.menu.active === active && this.menu.musicOwner === musicOwner) return;
-    this.menu = { active, musicOwner };
+  setMenuScreen(active, musicOwner = true, podiumId = null) {
+    if (this.menu.active === active && this.menu.musicOwner === musicOwner && this.menu.podiumId === podiumId) return;
+    this.menu = { active, musicOwner, podiumId };
+    if (!active || podiumId !== this.podium?.id) this.stopPodium();
+    if (podiumId && podiumId !== this.podium?.id) this.podium = { id: podiumId, played: false, voice: null };
     this.synchronizeMenu();
   }
 
+  stopPodium() {
+    const voice = this.podium?.voice;
+    if (!voice) return;
+    this.podium.voice = null;
+    this.stopVoice(voice);
+  }
+
+  synchronizePodium() {
+    if (!this.menu.active || !this.menu.podiumId || !this.enabled || this.context?.state !== 'running' || this.previewing || this.preferences.effectsVolume === 0) {
+      this.stopPodium();
+      return false;
+    }
+    if (this.podium.voice) return true;
+    if (this.podium.played) return false;
+    if (!this.buffers.has('podiumWinner')) {
+      if (!this.loadFailed) return true;
+      this.podium.played = true;
+      return false;
+    }
+    this.stopMenu();
+    const voice = this.source('podiumWinner', { group: 'podium' });
+    if (voice) { this.podium.voice = voice; this.podium.played = true; }
+    return Boolean(voice);
+  }
+
   synchronizeMenu() {
+    const podiumPlaying = this.synchronizePodium();
     const allowed = this.preferences.musicMode === 'on' || this.preferences.musicMode === 'auto' && this.menu.musicOwner;
-    if (!this.menu.active || !allowed || !this.enabled || this.preferences.musicVolume === 0 || this.previewing || this.context?.state !== 'running') {
+    if (podiumPlaying || !this.menu.active || !allowed || !this.enabled || this.preferences.musicVolume === 0 || this.previewing || this.context?.state !== 'running') {
       this.stopMenu();
       return;
     }
@@ -405,6 +440,7 @@ export class GameAudio {
   cancel() {
     this.buttonRequest++;
     this.menu.active = false;
+    this.stopPodium();
     this.stopMenu();
     this.stopRound();
     this.stopPreview();

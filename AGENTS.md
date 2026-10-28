@@ -57,6 +57,7 @@ The portable design mockup remains in `mockups/`, with editable source/provenanc
 Keep screens visually driven; avoid redundant captions, decorative microcopy, and repeated instructions outside the rules screen.
 Audio playback belongs in `src/audio.js`, starts only after a user gesture, and must have visual equivalents.
 Menu and transition screens stream `public/audio/Background-ActionRock.mp3` through the music bus; pause it for countdown/gameplay and previews, preserving its position and existing mute/ownership settings.
+Post-game podiums play `podium-winner.mp3` once per round before menu music resumes; preserve deduplication across redraws and cancel the cue on navigation, mute, or interruption.
 Enabled menu buttons use the cached `Button-Press.mp3` effect; the three gameplay buttons and their keyboard shortcuts use `Punch-button.mp3` once through the shared tap handler, preserving game-specific sound cues.
 `src/feedback.js` owns bounded local success and finish effects; keep them off reaction targets and timing guides, cancel them across round/lifecycle changes, and honor reduced motion.
 The original disco score and synthesis live in `scripts/audio/`; regenerate `public/audio/` with `npm run audio:render` after changing them.

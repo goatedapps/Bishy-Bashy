@@ -82,6 +82,79 @@ class MenuMedia {
   pause() { this.pauses++; }
 }
 
+test('each podium plays one winner cue before menu music, preserving accepted finish cues', async () => {
+  const media = new MenuMedia();
+  const { audio } = setup({ createMedia: () => media });
+  await audio.unlock();
+  audio.setMenuScreen(true);
+  assert.equal(media.plays, 1);
+  audio.play('finish');
+  const finish = [...audio.voices].find(voice => voice.id === 'finish');
+  audio.setMenuScreen(true, true, 'round-one');
+  const podium = [...audio.voices].find(voice => voice.id === 'podiumWinner');
+  assert.ok(podium);
+  assert.equal(podium.group, 'podium');
+  assert.equal(audio.menuPlaying, false);
+  assert.equal(finish.stopped, false);
+  for (let index = 0; index < 10; index++) {
+    audio.setMenuScreen(true, true, 'round-one');
+    audio.synchronize();
+  }
+  assert.equal([...audio.voices].filter(voice => voice.id === 'podiumWinner').length, 1);
+  assert.equal(media.plays, 1);
+  podium.source.onended();
+  assert.equal(audio.menuPlaying, true);
+  assert.equal(media.plays, 2);
+  audio.setMenuScreen(true, true, 'round-one');
+  assert.equal([...audio.voices].filter(voice => voice.id === 'podiumWinner').length, 0);
+  audio.setMenuScreen(true, true, 'round-two');
+  assert.equal([...audio.voices].filter(voice => voice.id === 'podiumWinner').length, 1);
+  assert.equal(audio.menuPlaying, false);
+});
+
+test('podium navigation and mute cancel the cue without stale replay or a late music restart during gameplay', async () => {
+  const media = new MenuMedia();
+  const { audio } = setup({ createMedia: () => media });
+  await audio.unlock();
+  audio.setMenuScreen(true, true, 'round-one');
+  const first = audio.podium.voice;
+  audio.setMenuScreen(false);
+  assert.equal(first.stopped, true);
+  first.source.onended();
+  assert.equal(media.plays, 0);
+  audio.setMenuScreen(true, true, 'round-two');
+  const second = audio.podium.voice;
+  audio.setEnabled(false);
+  assert.equal(second.stopped, true);
+  audio.setEnabled(true); await audio.unlock();
+  assert.equal(audio.podium.voice, null);
+  assert.equal(audio.menuPlaying, true);
+  assert.equal([...audio.voices].filter(voice => voice.id === 'podiumWinner').length, 0);
+  audio.setMenuScreen(true, true, 'round-three');
+  assert.ok(audio.podium.voice);
+  audio.cancel();
+  assert.equal(audio.podium.voice, null);
+  assert.equal(audio.menuPlaying, false);
+});
+
+test('podium effects follow effects volume and never permanently block music after a failed load', async () => {
+  const media = new MenuMedia();
+  const { audio } = setup({ createMedia: () => media });
+  await audio.unlock();
+  audio.setPreferences({ effectsVolume: 0 });
+  audio.setMenuScreen(true, true, 'quiet-podium');
+  assert.equal(audio.podium.voice, null);
+  assert.equal(audio.menuPlaying, true);
+  audio.setPreferences({ effectsVolume: .5 });
+  assert.ok(audio.podium.voice);
+  audio.setMenuScreen(true);
+  audio.buffers.delete('podiumWinner');
+  audio.loadFailed = true;
+  audio.setMenuScreen(true, true, 'failed-podium');
+  assert.equal(audio.podium.voice, null);
+  assert.equal(audio.menuPlaying, true);
+});
+
 test('button presses share one cached MP3 across games and use bounded effects with mute and volume controls', async () => {
   const { audio, requests } = setup();
   await audio.unlock();
@@ -327,7 +400,7 @@ test('audio is opt-in, loads once after a gesture, and preferences survive unava
   assert.equal(await state.audio.unlock(), true);
   await state.audio.unlock();
   assert.equal(state.created, 1);
-  assert.equal(state.requests.length, audioAssetIds().length + 3);
+  assert.equal(state.requests.length, audioAssetIds().length + 4);
   state.audio.setPreferences({ musicVolume: 2, effectsVolume: -1, musicMode: 'off' });
   assert.deepEqual(JSON.parse(state.values.get('bb-audio')), { musicMode: 'off', musicVolume: 1, effectsVolume: 0 });
   const blocked = setup({ storage: { getItem() { throw new Error('Blocked'); }, setItem() { throw new Error('Blocked'); } } });
@@ -500,7 +573,7 @@ test('Perm Mania loads its own bank and schedules each demonstration on the audi
   await audio.unlock();
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), true);
-  assert.equal(requests.length, audioAssetIds('perm-mania').length + 3);
+  assert.equal(requests.length, audioAssetIds('perm-mania').length + 4);
   const cues = demoCues(123);
   audio.scheduleRound('perm', 5000, 35_000, true, false, { game: 'perm-mania', cues });
   const guide = [...audio.voices].filter(voice => voice.id === 'permDemo');
@@ -536,7 +609,7 @@ test('Facial Slot Machine uses its own bank, bounded match feedback, and a finis
   const { audio, requests } = setup();
   audio.selectGame('facial-slot-machine');
   await audio.unlock();
-  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 3);
+  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 4);
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), false);
   audio.scheduleRound('slots', 5000, 35_000, true, false, { game: 'facial-slot-machine' });

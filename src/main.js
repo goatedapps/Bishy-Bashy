@@ -374,6 +374,13 @@ function renderRoom() {
   $('round-label').textContent = active ? room.set ? roundDetail(room.round) : `Round ${room.testNumber}` : 'Lobby';
   view.render(room, playerId, localRound, performance.now());
   setView.render(room, playerId);
+  synchronizeScreenAudio();
+}
+
+function synchronizeScreenAudio() {
+  const round = room?.round;
+  const podiumId = round?.phase === 'results' && (!room.set || ['intermission', 'complete'].includes(room.set.phase)) ? round.id : null;
+  audio.setMenuScreen(!document.hidden && !isRoundActive(round), !room || room.players[0]?.id === playerId, podiumId);
 }
 
 function updateControls(time) {
@@ -390,7 +397,7 @@ function animate() {
   const round = room?.round;
   let overlay = '', small = false;
   if (round?.game === FIREWORK_GAME && localRound) audio.fireworkLaunch(localRound.run);
-  audio.setMenuScreen(!document.hidden && !isRoundActive(round), !room || room.players[0]?.id === playerId);
+  synchronizeScreenAudio();
   if (isRoundActive(round)) {
     if (!localRound) { overlay = round.playerIds.includes(playerId) ? 'Syncing…' : 'Next round'; small = true; }
     else if (time < localRound.start) overlay = String(Math.ceil((localRound.start - time) / 1000));
