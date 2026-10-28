@@ -3,6 +3,7 @@ import { AUDIO_FILES, BEAT, audioAssetIds } from '../scripts/audio/score.js';
 const BASE_URL = import.meta.env?.BASE_URL || '/';
 const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
+const UI_AUDIO_FILES = { buttonPress: 'Button-Press.mp3' };
 const PROFILES = {
   'jump-for-the-meat': { music: 'music', urgency: 'urgency', go: 'go' },
   'mimicking-monkeys': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -45,6 +46,7 @@ export class GameAudio {
     this.game = 'totem-shrinker';
     this.demonstrationKey = null;
     this.demonstrationNotes = new Set();
+    this.buttonRequest = 0;
   }
 
   read(key) { try { return this.storage?.getItem(key); } catch { return null; } }
@@ -98,7 +100,7 @@ export class GameAudio {
   async load() {
     if (this.loading) { await this.loading; return this.load(); }
     const bank = this.game;
-    const missing = audioAssetIds(bank).filter(id => !this.buffers.has(id)).map(id => [id, AUDIO_FILES[id]]);
+    const missing = [...audioAssetIds(bank), ...Object.keys(UI_AUDIO_FILES)].filter(id => !this.buffers.has(id)).map(id => [id, AUDIO_FILES[id] || UI_AUDIO_FILES[id]]);
     if (!missing.length) { this.loadFailed = false; return; }
     this.loading = Promise.allSettled(missing.map(async ([id, file]) => {
       const controller = new AbortController();
@@ -133,6 +135,7 @@ export class GameAudio {
     this.enabled = Boolean(enabled);
     this.write('bb-sound', this.enabled ? 'on' : 'off');
     if (!this.enabled) {
+      this.buttonRequest++;
       this.stopMenu();
       this.stopPreview();
       this.stopVoices(() => true);
@@ -209,6 +212,20 @@ export class GameAudio {
       this.duck.gain.linearRampToValueAtTime(id === 'mistake' ? .4 : .66, time + .012);
       this.duck.gain.setTargetAtTime(1, time + .09, .06);
     }
+  }
+
+  pressButton() {
+    if (!this.enabled || this.preferences.effectsVolume === 0) return;
+    const request = ++this.buttonRequest;
+    if (this.context?.state === 'running' && this.buffers.has('buttonPress')) {
+      this.play('buttonPress');
+      return;
+    }
+    const pressedAt = this.now();
+    // A loading bank must not release a backlog of clicks or play stale feedback.
+    this.unlock().then(ready => {
+      if (ready && request === this.buttonRequest && this.now() - pressedAt < 250) this.play('buttonPress');
+    });
   }
 
   demonstrate(key, cues) {
@@ -361,6 +378,7 @@ export class GameAudio {
   }
 
   cancel() {
+    this.buttonRequest++;
     this.menu.active = false;
     this.stopMenu();
     this.stopRound();

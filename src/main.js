@@ -518,6 +518,12 @@ const unlockAudioFromGesture = () => {
 };
 document.addEventListener('pointerdown', unlockAudioFromGesture, { capture: true });
 document.addEventListener('keydown', unlockAudioFromGesture, { capture: true });
+document.addEventListener('click', event => {
+  const button = event.target.closest('button');
+  if (!button || button.disabled || button.id === 'sound') return;
+  if (button.classList.contains('hit-button') && event.detail !== 0) return;
+  audio.pressButton();
+}, { capture: true });
 $('entry-form').addEventListener('submit', event => { event.preventDefault(); enter('join'); });
 $('ready').addEventListener('click', () => { notice(''); audio.unlock(); send({ type: 'ready', ready: !room.players.find(player => player.id === playerId)?.ready }); });
 $('start').addEventListener('click', () => { audio.unlock(); send({ type: 'start' }); });
@@ -537,6 +543,7 @@ $('rules-open').addEventListener('click', showRules);
 $('settings-open').addEventListener('click', () => { updateSound(); $('settings').showModal(); });
 $('sound').addEventListener('click', async () => {
   audio.toggle(); updateSound();
+  audio.pressButton();
   await audio.unlock();
   synchronizeAudio();
 });
@@ -565,7 +572,7 @@ $('copy-link').addEventListener('click', async () => {
   catch { $('invite-link').select(); $('invite-note').textContent = 'Select and copy the invitation link.'; }
 });
 for (const button of buttons) {
-  button.addEventListener('pointerdown', event => { if (event.button !== 0) return; event.preventDefault(); tap(Number(button.dataset.color)); });
+  button.addEventListener('pointerdown', event => { if (event.button !== 0) return; event.preventDefault(); audio.pressButton(); tap(Number(button.dataset.color)); });
   button.addEventListener('click', event => { if (event.detail === 0) tap(Number(button.dataset.color)); });
 }
 const keys = { '1': 0, j: 0, '2': 1, k: 1, '3': 2, l: 2 };
@@ -573,6 +580,7 @@ document.addEventListener('keydown', event => {
   if (event.repeat || event.ctrlKey || event.metaKey || event.altKey || document.querySelector('dialog[open]') || ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return;
   const color = keys[event.key.toLowerCase()];
   if (color === undefined) return;
+  if (!buttons[color].disabled) audio.pressButton();
   event.preventDefault(); tap(color);
 });
 $('disconnect').addEventListener('click', () => {

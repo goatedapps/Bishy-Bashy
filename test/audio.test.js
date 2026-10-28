@@ -41,6 +41,7 @@ class Context {
   async resume() { this.state = 'running'; this.stateChange?.(); }
   async decodeAudioData(data) {
     const view = new DataView(data);
+    if (view.getUint32(0) !== 0x52494646) return { duration: .6 };
     return { duration: view.getUint32(40, true) / view.getUint32(24, true) / 2 };
   }
   createBufferSource() {
@@ -78,6 +79,42 @@ class MenuMedia {
   async play() { this.plays++; }
   pause() { this.pauses++; }
 }
+
+test('button presses share one cached MP3 across games and use bounded effects with mute and volume controls', async () => {
+  const { audio, requests } = setup();
+  await audio.unlock();
+  audio.pressButton();
+  assert.equal([...audio.voices].at(-1).id, 'buttonPress');
+  assert.equal([...audio.voices].at(-1).group, 'effects');
+  audio.selectGame('perm-mania');
+  await audio.load();
+  assert.equal(requests.filter(url => url.includes('Button-Press.mp3')).length, 1);
+  for (let index = 0; index < 30; index++) audio.pressButton();
+  assert.equal([...audio.voices].filter(voice => voice.group === 'effects').length, 8);
+  audio.setPreferences({ effectsVolume: 0 });
+  const count = audio.context.sources.length;
+  audio.pressButton();
+  assert.equal(audio.context.sources.length, count);
+  audio.setEnabled(false);
+  audio.pressButton();
+  assert.equal(audio.voices.size, 0);
+});
+
+test('loading button feedback never catches up after interruption or a slow download', async () => {
+  const { audio, setTime } = setup();
+  audio.pressButton();
+  audio.cancel();
+  await audio.unlock();
+  assert.ok(![...audio.voices].some(voice => voice.id === 'buttonPress'));
+  audio.buffers.delete('buttonPress');
+  audio.pressButton();
+  setTime(300);
+  await audio.load();
+  await Promise.resolve();
+  assert.ok(![...audio.voices].some(voice => voice.id === 'buttonPress'));
+  audio.pressButton();
+  assert.equal([...audio.voices].at(-1).id, 'buttonPress');
+});
 
 test('menu track streams after unlock, survives menu changes, and yields to rounds without restarting its position', async () => {
   const media = new MenuMedia();
@@ -211,7 +248,7 @@ test('audio is opt-in, loads once after a gesture, and preferences survive unava
   assert.equal(await state.audio.unlock(), true);
   await state.audio.unlock();
   assert.equal(state.created, 1);
-  assert.equal(state.requests.length, audioAssetIds().length);
+  assert.equal(state.requests.length, audioAssetIds().length + 1);
   state.audio.setPreferences({ musicVolume: 2, effectsVolume: -1, musicMode: 'off' });
   assert.deepEqual(JSON.parse(state.values.get('bb-audio')), { musicMode: 'off', musicVolume: 1, effectsVolume: 0 });
   const blocked = setup({ storage: { getItem() { throw new Error('Blocked'); }, setItem() { throw new Error('Blocked'); } } });
@@ -358,7 +395,7 @@ test('Perm Mania loads its own bank and schedules each demonstration on the audi
   await audio.unlock();
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), true);
-  assert.equal(requests.length, audioAssetIds('perm-mania').length);
+  assert.equal(requests.length, audioAssetIds('perm-mania').length + 1);
   const cues = demoCues(123);
   audio.scheduleRound('perm', 5000, 35_000, true, false, { game: 'perm-mania', cues });
   const guide = [...audio.voices].filter(voice => voice.id === 'permDemo');
@@ -394,7 +431,7 @@ test('Facial Slot Machine uses its own bank, bounded match feedback, and a finis
   const { audio, requests } = setup();
   audio.selectGame('facial-slot-machine');
   await audio.unlock();
-  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length);
+  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 1);
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), false);
   audio.scheduleRound('slots', 5000, 35_000, true, false, { game: 'facial-slot-machine' });
