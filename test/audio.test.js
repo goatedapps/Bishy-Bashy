@@ -82,6 +82,40 @@ class MenuMedia {
   pause() { this.pauses++; }
 }
 
+test('instructions use a separate music track, preserve menu position, and yield to countdown and podium audio', async () => {
+  const media = [];
+  const { audio } = setup({ createMedia: () => { const item = new MenuMedia(); media.push(item); return item; } });
+  await audio.unlock();
+  audio.setMenuScreen(true);
+  const actionRock = media[0];
+  actionRock.currentTime = 20;
+  audio.setMenuScreen(true, true, null, 'instructions');
+  const instructions = media[1];
+  assert.equal(actionRock.pauses, 1);
+  assert.equal(instructions.src, '/audio/game-instructions.mp3');
+  assert.equal(instructions.loop, true);
+  assert.equal(instructions.plays, 1);
+  instructions.currentTime = 2;
+  audio.setMenuScreen(true, true, null, 'instructions');
+  assert.equal(instructions.plays, 1);
+  audio.scheduleRound('round', 3000, 48000, true);
+  assert.equal(instructions.pauses, 1);
+  assert.equal(audio.menuPlaying, false);
+  audio.stopRound();
+  audio.setMenuScreen(true, true, 'round');
+  assert.ok(audio.podium.voice);
+  assert.equal(actionRock.plays, 1);
+  audio.podium.voice.source.onended();
+  assert.equal(actionRock.plays, 2);
+  assert.equal(actionRock.currentTime, 20);
+  audio.setMenuScreen(true, true, null, 'instructions');
+  assert.equal(instructions.plays, 2);
+  assert.equal(instructions.currentTime, 2);
+  assert.equal(media.length, 2);
+  audio.setEnabled(false);
+  assert.equal(audio.menuPlaying, false);
+});
+
 test('each podium plays one winner cue before menu music, preserving accepted finish cues', async () => {
   const media = new MenuMedia();
   const { audio } = setup({ createMedia: () => media });

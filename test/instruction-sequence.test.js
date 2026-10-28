@@ -13,7 +13,7 @@ function setup() {
       setAttribute: (name, value) => attributes.set(name, value),
     };
   });
-  const sequence = new InstructionSequence({ onReveal: () => reveals.push(sequence.revealed) });
+  const sequence = new InstructionSequence({ onReveal: step => reveals.push(step) });
   sequence.start('round', elements, 0);
   return { sequence, elements, reveals };
 }

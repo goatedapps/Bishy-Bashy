@@ -28,7 +28,7 @@ export class InstructionSequence {
     const element = this.elements[this.revealed];
     element.classList.add('is-revealed');
     element.setAttribute('aria-hidden', 'false');
-    this.onReveal();
+    this.onReveal(this.revealed);
     // Delayed frames reveal one step, rather than playing a backlog of reveal sounds.
     this.nextAt = time + (GAPS_MS[this.revealed] ?? 450);
     this.revealed++;

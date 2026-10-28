@@ -4,6 +4,7 @@ import { COUNTDOWN_MS } from '../shared/games.js';
 const BASE_URL = import.meta.env?.BASE_URL || '/';
 const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
+const MENU_TRACKS = { menu: 'Background-ActionRock.mp3', instructions: 'game-instructions.mp3' };
 const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.wav', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3' };
 const GAME_AUDIO_FILES = { 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3' } };
 const PROFILES = {
@@ -21,7 +22,8 @@ export class GameAudio {
     this.storage = storage;
     this.createContext = createContext;
     this.createMedia = createMedia;
-    this.menu = { active: false, musicOwner: true };
+    this.menu = { active: false, musicOwner: true, podiumId: null, track: 'menu' };
+    this.menuTracks = new Map();
     this.menuPlaying = false;
     this.menuRequest = 0;
     this.podium = null;
@@ -335,9 +337,10 @@ export class GameAudio {
     });
   }
 
-  setMenuScreen(active, musicOwner = true, podiumId = null) {
-    if (this.menu.active === active && this.menu.musicOwner === musicOwner && this.menu.podiumId === podiumId) return;
-    this.menu = { active, musicOwner, podiumId };
+  setMenuScreen(active, musicOwner = true, podiumId = null, track = 'menu') {
+    if (this.menu.active === active && this.menu.musicOwner === musicOwner && this.menu.podiumId === podiumId && this.menu.track === track) return;
+    if (this.menu.track !== track) this.stopMenu();
+    this.menu = { active, musicOwner, podiumId, track };
     if (!active || podiumId !== this.podium?.id) this.stopPodium();
     if (podiumId && podiumId !== this.podium?.id) this.podium = { id: podiumId, played: false, voice: null };
     this.synchronizeMenu();
@@ -377,16 +380,21 @@ export class GameAudio {
     }
     if (this.menuPlaying) return;
     try {
-      if (!this.menuMedia) {
+      const trackId = this.menu.track;
+      if (!this.menuTracks.has(trackId)) {
         // Stream the full-length MP3 instead of retaining a decoded music buffer on every phone.
-        this.menuMedia = this.createMedia();
-        this.menuMedia.src = `${BASE_URL}audio/Background-ActionRock.mp3`;
-        this.menuMedia.loop = true;
-        this.menuMedia.preload = 'none';
-        this.menuMedia.addEventListener('error', () => { this.menuPlaying = false; });
-        this.menuGain = this.context.createGain();
-        this.context.createMediaElementSource(this.menuMedia).connect(this.menuGain).connect(this.musicBus);
+        const media = this.createMedia();
+        media.src = `${BASE_URL}audio/${MENU_TRACKS[trackId] || MENU_TRACKS.menu}`;
+        media.loop = true;
+        media.preload = 'none';
+        media.addEventListener('error', () => { if (this.menuMedia === media) this.menuPlaying = false; });
+        const gain = this.context.createGain();
+        this.context.createMediaElementSource(media).connect(gain).connect(this.musicBus);
+        this.menuTracks.set(trackId, { media, gain });
       }
+      const track = this.menuTracks.get(trackId);
+      this.menuMedia = track.media;
+      this.menuGain = track.gain;
       const request = ++this.menuRequest;
       this.menuPlaying = true;
       const at = this.context.currentTime;

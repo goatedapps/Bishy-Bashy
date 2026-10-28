@@ -36,7 +36,7 @@ let selectedMode = MODES[localStorage.getItem('bb-mode')] ? localStorage.getItem
 let timingOffset = Math.max(-150, Math.min(150, Number(localStorage.getItem('bb-timing-offset')) || 0));
 const view = new GameView();
 const audio = new GameAudio({ onChange: () => updateSound() });
-const setView = new SetView({ onInstructionStep: () => audio.pressButton('instructions') });
+const setView = new SetView({ onInstructionStep: step => audio.pressButton(step === 0 ? 'instructions' : 'gameplay') });
 const buttons = [...document.querySelectorAll('.hit-button')];
 
 $('name').value = session?.name || localStorage.getItem('bb-name') || '';
@@ -381,7 +381,8 @@ function renderRoom() {
 function synchronizeScreenAudio() {
   const round = room?.round;
   const podiumId = round?.phase === 'results' && (!room.set || ['intermission', 'complete'].includes(room.set.phase)) ? round.id : null;
-  audio.setMenuScreen(!document.hidden && !isRoundActive(round), !room || room.players[0]?.id === playerId, podiumId);
+  const track = room?.set?.phase === 'instructions' ? 'instructions' : 'menu';
+  audio.setMenuScreen(!document.hidden && !isRoundActive(round), !room || room.players[0]?.id === playerId, podiumId, track);
 }
 
 function updateControls(time) {

@@ -45,7 +45,7 @@ Shared styles live in `src/style.css`; the pink disco stage lives in `src/games.
 The landing page and set standings use `src/sets.css` and `src/set-view.js`.
 The landing screen only creates or joins rooms; choose modes and games inside the room, with a short explanation visible on each mode card.
 Use the shared `src/game-art.js` artwork for the home cast, equal-sized scrollable game cards, and illustrated rules; the library filters titles and accommodates future games without a wider page.
-`src/instruction-sequence.js` reveals the rules heading, artwork, and three lines over about 1.6 seconds, with `how-to-play.wav` cues and no hidden-tab catch-up; enable Ready only after the last line is visible.
+`src/instruction-sequence.js` reveals the rules heading, artwork, and three lines over about 1.6 seconds, with `how-to-play.wav` for the heading and `Punch-button.mp3` for later steps; avoid hidden-tab catch-up and enable Ready only after the last line is visible.
 The host's Back to modes action resets the shared set while keeping the room; confirm if a round has begun or scores exist.
 Players may explicitly leave active sets after confirmation; preserve accepted finishes, forfeit unfinished rounds, and let remaining players continue without a missing-player wait.
 The join handshake advertises `room-navigation`; show an actionable update message if a new frontend is connected to a server lacking Back/active-Leave support.
@@ -58,6 +58,7 @@ The portable design mockup remains in `mockups/`, with editable source/provenanc
 Keep screens visually driven; avoid redundant captions, decorative microcopy, and repeated instructions outside the rules screen.
 Audio playback belongs in `src/audio.js`, starts only after a user gesture, and must have visual equivalents.
 Menu and transition screens stream `public/audio/Background-ActionRock.mp3` through the music bus; pause it for countdown/gameplay and previews, preserving its position and existing mute/ownership settings.
+The illustrated instructions screen streams `game-instructions.mp3` instead; pause the previous track before switching and preserve each track's position.
 Post-game podiums play `podium-winner.mp3` once per round before menu music resumes; preserve deduplication across redraws and cancel the cue on navigation, mute, or interruption.
 Enabled menu buttons use the cached `Button-Press.mp3` effect; the three gameplay buttons and their keyboard shortcuts use `Punch-button.mp3` once through the shared tap handler, preserving game-specific sound cues.
 `src/feedback.js` owns bounded local success and finish effects; keep them off reaction targets and timing guides, cancel them across round/lifecycle changes, and honor reduced motion.
