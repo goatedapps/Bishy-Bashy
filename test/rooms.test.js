@@ -105,7 +105,7 @@ test('all devices receive the same scheduled start and need fresh samples', () =
   service.handle(clients[0], { type: 'ready', ready: true });
   assert.equal(room.players[0].ready, false);
   start();
-  assert.equal(room.round.startAt, 1_005_000);
+  assert.equal(room.round.startAt, 1_003_000);
   for (const client of clients) assert.equal(sent.get(client).at(-1).room.round.startAt, room.round.startAt);
   setTime(room.round.expiresAt); service.tick();
   room.players.forEach(player => { player.ready = true; });

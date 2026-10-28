@@ -41,7 +41,7 @@ class Context {
   async resume() { this.state = 'running'; this.stateChange?.(); }
   async decodeAudioData(data) {
     const view = new DataView(data);
-    if (view.getUint32(0) !== 0x52494646) return { duration: .6 };
+    if (view.getUint32(0) !== 0x52494646) return { duration: 3 };
     return { duration: view.getUint32(40, true) / view.getUint32(24, true) / 2 };
   }
   createBufferSource() {
@@ -248,7 +248,7 @@ test('audio is opt-in, loads once after a gesture, and preferences survive unava
   assert.equal(await state.audio.unlock(), true);
   await state.audio.unlock();
   assert.equal(state.created, 1);
-  assert.equal(state.requests.length, audioAssetIds().length + 1);
+  assert.equal(state.requests.length, audioAssetIds().length + 2);
   state.audio.setPreferences({ musicVolume: 2, effectsVolume: -1, musicMode: 'off' });
   assert.deepEqual(JSON.parse(state.values.get('bb-audio')), { musicMode: 'off', musicVolume: 1, effectsVolume: 0 });
   const blocked = setup({ storage: { getItem() { throw new Error('Blocked'); }, setItem() { throw new Error('Blocked'); } } });
@@ -260,7 +260,9 @@ test('countdown and music share the scheduled start without duplicating on redra
   await audio.unlock();
   audio.scheduleRound('round', 5000, 50_000, true);
   const round = [...audio.voices].filter(voice => voice.group === 'round');
-  assert.deepEqual(round.map(voice => voice.source.started.at), [102, 103, 104, 105]);
+  assert.deepEqual(round.map(voice => voice.source.started.at), [102]);
+  assert.deepEqual(round.map(voice => voice.id), ['countdown']);
+  assert.equal(round[0].source.stoppedAt, undefined);
   const music = [...audio.voices].filter(voice => voice.group === 'music');
   assert.equal(music[0].source.started.at, 105);
   assert.equal(music[0].source.started.offset, 0);
@@ -269,6 +271,30 @@ test('countdown and music share the scheduled start without duplicating on redra
   const voices = context.sources.length;
   for (let index = 0; index < 10; index++) audio.scheduleRound('round', 5000, 50_000, true);
   assert.equal(context.sources.length, voices);
+});
+
+test('a late or resumed three-second countdown seeks forward, preserves its tail, and never replays after GO', async () => {
+  const { audio, context, setTime, requests } = setup();
+  await audio.unlock();
+  assert.ok(requests.some(url => url.includes('countdown.mp3')));
+  assert.ok(!requests.some(url => url.includes('countdown.wav')));
+  setTime(4500);
+  audio.scheduleRound('late', 6000, 51000, true);
+  let countdown = [...audio.voices].find(voice => voice.id === 'countdown');
+  assert.equal(countdown.source.started.at, context.currentTime);
+  assert.equal(countdown.source.started.offset, 1.5);
+  assert.equal(countdown.source.stoppedAt, undefined);
+  audio.setEnabled(false);
+  setTime(5000);
+  audio.setEnabled(true);
+  await audio.unlock();
+  countdown = [...audio.voices].find(voice => voice.id === 'countdown');
+  assert.equal(countdown.source.started.offset, 2);
+  audio.setEnabled(false);
+  setTime(6001);
+  audio.setEnabled(true);
+  await audio.unlock();
+  assert.ok(![...audio.voices].some(voice => voice.group === 'round'));
 });
 
 test('one-device music policy can be overridden without losing the round position', async () => {
@@ -395,7 +421,7 @@ test('Perm Mania loads its own bank and schedules each demonstration on the audi
   await audio.unlock();
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), true);
-  assert.equal(requests.length, audioAssetIds('perm-mania').length + 1);
+  assert.equal(requests.length, audioAssetIds('perm-mania').length + 2);
   const cues = demoCues(123);
   audio.scheduleRound('perm', 5000, 35_000, true, false, { game: 'perm-mania', cues });
   const guide = [...audio.voices].filter(voice => voice.id === 'permDemo');
@@ -431,12 +457,13 @@ test('Facial Slot Machine uses its own bank, bounded match feedback, and a finis
   const { audio, requests } = setup();
   audio.selectGame('facial-slot-machine');
   await audio.unlock();
-  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 1);
+  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 2);
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), false);
   audio.scheduleRound('slots', 5000, 35_000, true, false, { game: 'facial-slot-machine' });
   assert.equal([...audio.voices].filter(voice => voice.id === 'slotMusic').length, 1);
-  assert.equal([...audio.voices].filter(voice => voice.id === 'slotGo').length, 1);
+  assert.equal([...audio.voices].filter(voice => voice.id === 'slotGo').length, 0);
+  assert.equal([...audio.voices].filter(voice => voice.id === 'countdown').length, 1);
   for (let index = 0; index < 20; index++) audio.play(index % 2 ? 'slotMiss' : 'slotLock');
   assert.equal([...audio.voices].filter(voice => voice.group === 'effects').length, 8);
   audio.endPlayer(); audio.play('slotWin'); audio.stopRound();

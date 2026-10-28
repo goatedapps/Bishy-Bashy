@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID, randomInt } from 'node:crypto';
 import { TOTEM_GAME } from '../shared/totem.js';
-import { GAMES, roundSettings, isRoundActive } from '../shared/games.js';
+import { COUNTDOWN_MS, GAMES, roundSettings, isRoundActive } from '../shared/games.js';
 import { PERM_GAME } from '../shared/perm.js';
 import { SLOT_GAME, validReelMask } from '../shared/slots.js';
 import { FIREWORK_GAME } from '../shared/fireworks.js';
@@ -10,7 +10,7 @@ import { MODES, INTERMISSION_MS, createSetPlan, awardRound } from '../shared/set
 
 export const ROUND_MS = 10_000;
 export const GRACE_MS = 10_000;
-export const COUNTDOWN_MS = 5_000;
+export { COUNTDOWN_MS };
 export const RECONNECT_WAIT_MS = 15_000;
 const terminal = player => Boolean(player.result);
 

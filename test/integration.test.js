@@ -210,7 +210,7 @@ test('real WebSocket clients can create, synchronize, and join a room', async t 
   assert.equal(state.room.players[1].name, 'Friend 1');
   assert.equal(JSON.stringify(state).includes(joined.token), false);
   const health = await fetch(`http://127.0.0.1:${port}/health`);
-  assert.deepEqual(await health.json(), { ok: true, protocol: 6 });
+  assert.deepEqual(await health.json(), { ok: true, protocol: 6, countdownMs: 3000 });
   const info = await fetch(`http://127.0.0.1:${port}/connection-info`);
   assert.ok(Array.isArray((await info.json()).lanUrls));
 });

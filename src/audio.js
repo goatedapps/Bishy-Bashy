@@ -1,9 +1,10 @@
 import { AUDIO_FILES, BEAT, audioAssetIds } from '../scripts/audio/score.js';
+import { COUNTDOWN_MS } from '../shared/games.js';
 
 const BASE_URL = import.meta.env?.BASE_URL || '/';
 const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
-const UI_AUDIO_FILES = { buttonPress: 'Button-Press.mp3' };
+const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', countdown: 'countdown.mp3' };
 const PROFILES = {
   'jump-for-the-meat': { music: 'music', urgency: 'urgency', go: 'go' },
   'mimicking-monkeys': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -100,7 +101,7 @@ export class GameAudio {
   async load() {
     if (this.loading) { await this.loading; return this.load(); }
     const bank = this.game;
-    const missing = [...audioAssetIds(bank), ...Object.keys(UI_AUDIO_FILES)].filter(id => !this.buffers.has(id)).map(id => [id, AUDIO_FILES[id] || UI_AUDIO_FILES[id]]);
+    const missing = [...audioAssetIds(bank), ...Object.keys(EXTRA_AUDIO_FILES)].filter(id => !this.buffers.has(id)).map(id => [id, AUDIO_FILES[id] || EXTRA_AUDIO_FILES[id]]);
     if (!missing.length) { this.loadFailed = false; return; }
     this.loading = Promise.allSettled(missing.map(async ([id, file]) => {
       const controller = new AbortController();
@@ -268,10 +269,16 @@ export class GameAudio {
     const audioNow = this.context.currentTime;
     if (!playerDone && this.countdownKey !== id) {
       this.countdownKey = id;
-      for (let count = 3; count >= 0; count--) {
-        const remaining = (start - count * 1000 - now) / 1000;
-        if (remaining >= 0) this.play(count ? 'tick' : profile.go, { at: audioNow + remaining, group: 'round' });
+      if (now < start) {
+        const countdownAt = start - COUNTDOWN_MS;
+        const offset = Math.max(0, (now - countdownAt) / 1000);
+        // The clip's final beat lands on GO; preserve its decay without a second GO cue.
+        if (offset < (this.buffers.get('countdown')?.duration || 0)) this.source('countdown', {
+          at: audioNow + Math.max(0, (countdownAt - now) / 1000), offset,
+          group: 'round',
+        });
       }
+      if (!this.buffers.has('countdown') && now <= start) this.play(profile.go, { at: audioNow + (start - now) / 1000, group: 'round' });
       if (perm) for (const cue of cues) {
         const remaining = (start + cue - now) / 1000;
         if (remaining >= 0) this.play('permDemo', { at: audioNow + remaining, group: 'round' });
@@ -402,7 +409,8 @@ export class GameAudio {
     this.stopMenu();
     const at = this.context.currentTime + .03;
     if (this.preferences.musicMode !== 'off' && this.preferences.musicVolume > 0) this.source((PROFILES[game] || PROFILES['totem-shrinker']).music, { at, group: 'preview-music', loop: true, end: at + 8 });
-    const cues = game === 'facial-slot-machine' ? [['slotGo', .3], ['slotLock', 1.1], ['slotMiss', 1.8], ['slotLock', 3], ['slotWin', 4.5]] : game === 'perm-mania' ? [['permDemo', .5], ['permDemo', .5 + BEAT], ['permDemo', .5 + BEAT * 2], ['permDemo', .5 + BEAT * 3], ['permHit', .5 + BEAT * 4], ['permHit', .5 + BEAT * 5], ['permHit', .5 + BEAT * 6], ['permHit', .5 + BEAT * 7], ['permGrow', .5 + BEAT * 8], ['finish', 6.3]] : [['red', .5], ['green', .8], ['blue', 1.1], ['mistake', 1.6], ['tick', 2.5], ['tick', 3.5], ['tick', 4.5], ['go', 5.5], ['finish', 6.3]];
+    const cues = game === 'facial-slot-machine' ? [['slotGo', .3], ['slotLock', 1.1], ['slotMiss', 1.8], ['slotLock', 3], ['slotWin', 4.5]] : game === 'perm-mania' ? [['permDemo', .5], ['permDemo', .5 + BEAT], ['permDemo', .5 + BEAT * 2], ['permDemo', .5 + BEAT * 3], ['permHit', .5 + BEAT * 4], ['permHit', .5 + BEAT * 5], ['permHit', .5 + BEAT * 6], ['permHit', .5 + BEAT * 7], ['permGrow', .5 + BEAT * 8], ['finish', 6.3]] : [['red', .5], ['green', .8], ['blue', 1.1], ['mistake', 1.6], ['finish', 7.2]];
+    if (!['facial-slot-machine', 'perm-mania'].includes(game)) this.source('countdown', { at: at + 2.5, group: 'preview-effects' });
     for (const [id, delay] of cues) this.play(id, { at: at + delay, group: 'preview-effects' });
     this.onChange();
   }

@@ -36,6 +36,7 @@ Keep the timing cursor, landing ring, +1/+2 feedback, and optional Perfect flour
 Arcade shows a cumulative podium for eight seconds, then the next game's three-point rules and an all-player Ready gate.
 Game Select shows rules once and uses the podium's all-player Ready gate between subsequent rounds, with an eight-second minimum intermission.
 Readiness never carries across a round or instructions screen, and countdowns require every connected player to be ready and freshly synchronized.
+`shared/games.js` defines the three-second countdown for both room scheduling and the single `countdown.mp3` cue; resume at the current offset, preserve its tail past GO, and avoid layering the old GO cue.
 The host may configure modes and games only outside an active set, resetting readiness; new guests must wait until the set finishes.
 Game Select increases Totem blocks from 30 to 70 and Perm tempo from 128 to 160 BPM across five rounds.
 Every device displays all four lanes, with controls for its own player only.

@@ -25,7 +25,7 @@ Rules screens include visual examples using the same artwork and color/shape con
 Leaving forfeits only an unfinished round; an already accepted finish and previously earned points remain credited, and the other players can continue.
 Changing the setup resets everyone's Ready state; setup stays locked throughout the full set.
 The host taps **Start set** to show the game's instructions, with no more than three points.
-After clock synchronization, every connected player taps **Ready** on that screen before the shared five-second countdown can begin.
+After clock synchronization, every connected player taps **Ready** on that screen before the shared three-second countdown can begin.
 In Arcade, each completed game shows a cumulative podium for eight seconds, followed by the next game's instructions and a fresh all-player Ready gate.
 The Arcade transition does not announce the next game.
 In Game Select, instructions appear only once; subsequent rounds use a Ready button on the podium screen instead of repeating them.
@@ -87,6 +87,7 @@ The original soundtrack is a 128 BPM funky disco arcade loop, with an octave bas
 An additional percussion and melody layer enters on a beat near the final ten seconds.
 Correct taps have three wooden pop tones corresponding to the block colors; a wrong tap produces a springy falling sound.
 Countdown, GO, finish, and timeout each have a distinct cue.
+The countdown plays the user-supplied `public/audio/countdown.mp3` once across the three-second countdown, preserving its final beat and decay after GO without layering the old GO cue; rejoining audio mid-countdown skips to the current position rather than replaying it.
 
 Music defaults to **One device per room**, using the first participant in that round's fixed player list.
 Other players can enable effects without duplicating the room music.

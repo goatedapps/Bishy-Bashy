@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { networkInterfaces } from 'node:os';
 import { WebSocketServer, WebSocket } from 'ws';
 import { RoomService } from './rooms.js';
+import { COUNTDOWN_MS } from '../shared/games.js';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -13,7 +14,7 @@ export async function createApp({ dev = false, allowedOrigins = [] } = {}) {
   const now = () => epoch + performance.now();
   const vite = dev ? await (await import('vite')).createServer({ root, server: { middlewareMode: true, hmr: false, ws: false }, appType: 'spa' }) : null;
   const server = http.createServer(async (req, res) => {
-    if (req.url === '/health') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: true, protocol: 6 })); }
+    if (req.url === '/health') { res.writeHead(200, { 'Content-Type': 'application/json' }); return res.end(JSON.stringify({ ok: true, protocol: 6, countdownMs: COUNTDOWN_MS })); }
     if (req.url === '/connection-info') {
       const port = server.address()?.port;
       const addresses = Object.values(networkInterfaces()).flat().filter(address => address && address.family === 'IPv4' && !address.internal && /^(192\.168\.|10\.|172\.(1[6-9]|2\d|3[01])\.)/.test(address.address));

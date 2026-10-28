@@ -5,6 +5,8 @@ import { FIREWORK_GAME, FireworkRun, FIREWORK_GOAL, FIREWORK_DURATION_MS } from 
 import { MONKEY_GAME, MonkeyRun, MONKEY_STAGES, MONKEY_DURATION_MS } from './monkeys.js';
 import { JUMP_GAME, JumpRun, JUMP_GOAL, JUMP_DURATION_MS } from './jump.js';
 
+export const COUNTDOWN_MS = 3_000;
+
 export const GAMES = Object.assign(Object.create(null), {
   [TOTEM_GAME]: { id: TOTEM_GAME, title: 'Totem Shrinker', subtitle: 'A taller tower each round', duration: GAME_DURATION_MS, goal: BLOCK_COUNT },
   [PERM_GAME]: { id: PERM_GAME, title: 'Perm Mania', subtitle: 'A faster groove each round', duration: PERM_DURATION_MS, goal: PHRASE_COUNT },
