@@ -8,6 +8,7 @@ import { JUMP_GAME } from './jump.js';
 export const ARCADE_LENGTH = 5;
 export const GAME_SELECT_LENGTH = 5;
 export const INTERMISSION_MS = 8_000;
+export const WHEEL_SPIN_MS = 5_500;
 export const PLACE_POINTS = [10, 7, 4, 1];
 export const MODES = Object.assign(Object.create(null), {
   arcade: { title: 'Arcade', length: ARCADE_LENGTH },

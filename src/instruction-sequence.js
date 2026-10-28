@@ -1,4 +1,4 @@
-const GAPS_MS = [600, 700, 850, 850];
+const GAPS_MS = [1400, 700, 850, 850];
 
 export class InstructionSequence {
   constructor({ onReveal = () => {} } = {}) {

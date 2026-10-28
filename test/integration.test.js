@@ -46,6 +46,12 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
   let waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.round);
   send(clients[0], { type: 'start' });
   let state = (await waiting).room;
+  if (mode === 'arcade') {
+    assert.equal(state.set.phase, 'selecting');
+    time = state.set.spinEndAt;
+    waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.phase === 'instructions');
+    app.rooms.tick(); state = (await waiting).room;
+  }
   assert.equal(state.round.phase, 'instructions');
   waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.round.phase === 'countdown');
   clients.forEach(socket => send(socket, { type: 'ready', ready: true }));
@@ -99,7 +105,8 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
       await synced; app.rooms.tick();
       if (mode === 'arcade') {
         const instructions = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.phase === 'instructions');
-        send(clients[0], { type: 'sync', rtt: 20, uncertainty: 10, count: 5 });
+        time = app.rooms.rooms.get(code).set.spinEndAt;
+        app.rooms.tick();
         await instructions;
       }
       clients.forEach(socket => send(socket, { type: 'ready', ready: true }));

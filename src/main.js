@@ -14,6 +14,7 @@ import { GameView } from './game-view.js';
 import { SetView } from './set-view.js';
 import { GameAudio } from './audio.js';
 import { ruleVisual } from './game-art.js';
+import { AssetLoader } from './asset-loader.js';
 
 const $ = id => document.getElementById(id);
 const readStored = key => { try { return JSON.parse(sessionStorage.getItem(key)); } catch { return null; } };
@@ -37,7 +38,9 @@ let selectedGame = GAMES[localStorage.getItem('bb-game')] ? localStorage.getItem
 let selectedMode = MODES[localStorage.getItem('bb-mode')] ? localStorage.getItem('bb-mode') : 'arcade';
 let timingOffset = Math.max(-150, Math.min(150, Number(localStorage.getItem('bb-timing-offset')) || 0));
 const view = new GameView();
-const audio = new GameAudio({ onChange: () => updateSound() });
+const assets = new AssetLoader();
+let startupReady = false, preparingAssets = null;
+const audio = new GameAudio({ fetchFile: (url, options) => assets.fetchAudio(url, options), mediaUrl: file => assets.mediaUrl(file), onChange: () => updateSound() });
 const setView = new SetView({ onInstructionStep: step => audio.pressButton(step === 0 ? 'instructions' : 'gameplay') });
 const buttons = [...document.querySelectorAll('.hit-button')];
 
@@ -97,7 +100,7 @@ function connect() {
     notice('');
     const saved = readStored('bb-session');
     if (entryRequest) send(entryRequest);
-    else if (saved) send({ type: 'join', code: saved.code, name: saved.name, token: saved.token });
+    else if (saved) send({ type: 'join', code: saved.code, name: saved.name, token: saved.token, assetGates: true });
     for (let i = 0; i < 8; i++) setTimeout(() => { if (socket === connection && connection.readyState === WebSocket.OPEN) ping(); }, i * 200);
   });
   connection.addEventListener('message', event => {
@@ -116,12 +119,13 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 6) {
+      if (message.protocol !== 6 || !message.capabilities?.includes('arcade-wheel') || !message.capabilities?.includes('asset-readiness')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
       }
       playerId = message.playerId;
+      preparingAssets = null;
       supportsRoomNavigation = message.capabilities?.includes('room-navigation') === true;
       joined = true;
       const name = entryRequest?.name || readStored('bb-session')?.name || $('name').value;
@@ -179,13 +183,13 @@ function connect() {
 }
 
 function enter(type) {
-  if (joining || !$('name').reportValidity()) return;
+  if (!startupReady || joining || !$('name').reportValidity()) return;
   const code = $('room-input').value.trim().toUpperCase();
   if (type === 'join' && !/^[A-Z2-9]{6}$/.test(code)) return notice('Enter the six-character room code.');
   serverUrl = $('server-url').value.trim() || defaultServer;
   if (!serverUrl) return notice('Enter the hosted multiplayer server address in Connection settings.');
   localStorage.setItem('bb-server', serverUrl);
-  entryRequest = { type, name: $('name').value.trim(), code, game: selectedGame, mode: selectedMode };
+  entryRequest = { type, name: $('name').value.trim(), code, game: selectedGame, mode: selectedMode, assetGates: true };
   joining = true; intentionalClose = false;
   audio.unlock();
   notice('Connecting to the room…');
@@ -317,7 +321,10 @@ function tap(color) {
   if (action.type === 'ignored') return;
   if (room.round.game === FIREWORK_GAME) audio.fireworkLaunch(localRound.run);
   if (localRound.goDelay === null) localRound.goDelay = Math.max(0, time - localRound.start);
-  if (action.type === 'finished') complete('finished', action.elapsed);
+  if (action.type === 'finished') {
+    if (room.round.game === MISTAKE_GAME) audio.play('hit', { color, game: MISTAKE_GAME });
+    complete('finished', action.elapsed);
+  }
   else if (action.type !== 'move') audio.play(action.type, { color, progress: localRound.run.cleared / room.round.goal, game: room.round.game });
   view.render(room, playerId, localRound, time);
   updateControls(time);
@@ -352,9 +359,9 @@ function updateMetrics() {
   const idle = !inSet && (!room.round || room.round.phase === 'results');
   const gate = room.set?.phase === 'instructions' || room.set?.phase === 'intermission' && room.mode === 'game-select';
   const mine = room.players.find(player => player.id === playerId);
-  $('ready').disabled = !gate || room.set?.phase === 'instructions' && !setView.instructionsComplete(room.round?.id) || !connected || !estimate || estimate.count < 3 || estimate.rtt > 1500 || !mine?.sync || mine.sync.count < 3 || time + estimate.offset - mine.sync.at >= 20_000;
+  $('ready').disabled = !gate || !preparingAssets?.ready || room.set?.phase === 'instructions' && !setView.instructionsComplete(room.round?.id) || !connected || !estimate || estimate.count < 3 || estimate.rtt > 1500 || !mine?.sync || mine.sync.count < 3 || time + estimate.offset - mine.sync.at >= 20_000;
   $('ready').textContent = mine?.ready ? 'Not ready' : 'Ready';
-  $('start').textContent = room.set?.phase === 'complete' ? 'Start new set' : 'Start set';
+  $('start').textContent = room.mode === 'arcade' ? 'Spin & start' : room.set?.phase === 'complete' ? 'Start new set' : 'Start set';
   const serverNow = time + (estimate?.offset || 0);
   const disconnected = room.players.filter(player => !player.connected);
   const wait = Math.max(0, ...disconnected.map(player => 15_000 - (serverNow - player.disconnectedAt)));
@@ -363,7 +370,7 @@ function updateMetrics() {
   if (!connected) status = 'Reconnecting… Keep playing; your result stays saved on this device.';
   else if (idle) status = playerId === room.hostId ? 'Start the set when your friends have joined.' : 'Waiting for the host to start.';
   else if (gate) status = wait > 0 ? `Waiting ${Math.ceil(wait / 1000)}s for a friend to reconnect…` : !estimate || estimate.count < 3 ? 'Synchronizing clocks…' : mine?.ready ? 'Waiting for everyone to be ready…' : 'Tap Ready when you’re set.';
-  else if (room.set?.phase === 'intermission') status = '';
+  else if (['intermission', 'selecting'].includes(room.set?.phase)) status = '';
   else if (localRound?.done) status = 'Waiting for the other players…';
   else if (!room.round.playerIds.includes(playerId)) status = 'You can play in the next round.';
   $('lobby-status').textContent = status;
@@ -372,22 +379,24 @@ function updateMetrics() {
 
 
 function renderRoom() {
-  updateMetrics();
   if (!room) return;
   updateGameProfile();
+  prepareRoundAssets();
+  updateMetrics();
   const active = isRoundActive(room.round);
   const gate = room.set?.phase === 'instructions' || room.set?.phase === 'intermission' && room.mode === 'game-select';
   $('room-code').textContent = room.code;
   $('occupancy').textContent = `· ${room.players.length}/4`;
   $('leave').disabled = false;
-  $('back').hidden = playerId !== room.hostId || !room.set;
-  $('ready-actions').hidden = Boolean(active || room.set?.phase === 'intermission' && room.mode === 'arcade');
+  $('back').hidden = playerId !== room.hostId || !room.set && !room.arcadePreview;
+  $('ready-actions').hidden = Boolean(active || room.set?.phase === 'selecting' || room.set?.phase === 'intermission' && room.mode === 'arcade');
   $('ready').hidden = !gate;
   $('start').hidden = playerId !== room.hostId || gate;
   $('control-deck').hidden = !active || !room.round.playerIds.includes(playerId);
   $('round-label').textContent = active ? room.set ? roundDetail(room.round) : `Round ${room.testNumber}` : 'Lobby';
   view.render(room, playerId, localRound, performance.now());
   setView.render(room, playerId);
+  if (room.set?.phase === 'selecting' || room.mode === 'arcade' && room.arcadePreview && !room.set) $('play-view').hidden = true;
   synchronizeScreenAudio();
 }
 
@@ -395,7 +404,39 @@ function synchronizeScreenAudio() {
   const round = room?.round;
   const podiumId = round?.phase === 'results' && (!room.set || ['intermission', 'complete'].includes(room.set.phase)) ? round.id : null;
   const track = room?.set?.phase === 'instructions' ? 'instructions' : 'menu';
-  audio.setMenuScreen(!document.hidden && !isRoundActive(round), !room || room.players[0]?.id === playerId, podiumId, track);
+  const spinning = room?.set?.phase === 'selecting';
+  audio.setMenuScreen(startupReady && !document.hidden && !spinning && !isRoundActive(round), !room || room.players[0]?.id === playerId, podiumId, track);
+  const serverNow = performance.now() + (clock.estimate(performance.now())?.offset ?? Date.now() - performance.now());
+  audio.spinWheel(!document.hidden && spinning ? round.id : null, serverNow - (room?.set?.spinStartAt || 0), (room?.set?.spinEndAt || 0) - (room?.set?.spinStartAt || 0));
+}
+
+function prepareRoundAssets() {
+  const gate = room?.set?.phase === 'instructions' || room?.set?.phase === 'intermission' && room.mode === 'game-select';
+  if (!gate) { preparingAssets = null; $('asset-preparation').hidden = true; $('round-assets-retry').hidden = true; return; }
+  const key = `${room.code}/${room.round.id}/${audio.enabled}/${joined}`;
+  if (preparingAssets?.key === key) return;
+  const preparation = preparingAssets = { key, ready: false };
+  const roundId = room.round.id;
+  send({ type: 'assets-ready', roundId, ready: false });
+  $('asset-preparation').hidden = !audio.enabled;
+  $('asset-preparation').textContent = 'Getting the sounds ready…';
+  $('round-assets-retry').hidden = true;
+  (async () => {
+    if (audio.enabled) {
+      if (!audio.context) audio.initialize();
+      await audio.load();
+      if (audio.loadFailed) throw new Error('Sound loading failed');
+    }
+    if (preparingAssets !== preparation || !joined) return;
+    preparation.ready = true;
+    $('asset-preparation').hidden = true;
+    send({ type: 'assets-ready', roundId, ready: true });
+    updateMetrics();
+  })().catch(() => {
+    if (preparingAssets !== preparation) return;
+    $('asset-preparation').textContent = 'Some sounds could not load. Retry, or turn sound off to play muted.';
+    $('round-assets-retry').hidden = false;
+  });
 }
 
 function updateControls(time) {
@@ -479,18 +520,19 @@ function updateGameProfile() {
   const perm = game === PERM_GAME;
   const slots = game === SLOT_GAME;
   audio.selectGame(game);
-  document.body.classList.toggle('perm-theme', Boolean(room && perm));
-  document.body.classList.toggle('slot-theme', Boolean(room && slots));
-  document.body.classList.toggle('firework-theme', Boolean(room && game === FIREWORK_GAME));
-  document.body.classList.toggle('monkey-theme', Boolean(room && game === MONKEY_GAME));
-  document.body.classList.toggle('jump-theme', Boolean(room && game === JUMP_GAME));
-  document.body.classList.toggle('burger-theme', Boolean(room && game === BURGER_GAME));
-  document.body.classList.toggle('mistake-theme', Boolean(room && game === MISTAKE_GAME));
+  const themed = room && room.set?.phase !== 'selecting';
+  document.body.classList.toggle('perm-theme', Boolean(themed && perm));
+  document.body.classList.toggle('slot-theme', Boolean(themed && slots));
+  document.body.classList.toggle('firework-theme', Boolean(themed && game === FIREWORK_GAME));
+  document.body.classList.toggle('monkey-theme', Boolean(themed && game === MONKEY_GAME));
+  document.body.classList.toggle('jump-theme', Boolean(themed && game === JUMP_GAME));
+  document.body.classList.toggle('burger-theme', Boolean(themed && game === BURGER_GAME));
+  document.body.classList.toggle('mistake-theme', Boolean(themed && game === MISTAKE_GAME));
   document.body.classList.toggle('in-set', Boolean(inSet));
-  const title = !room ? 'Bishy Bashy!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'intermission' ? 'Standings' : room.set?.phase === 'instructions' || active ? GAMES[game].title : 'Choose your mode';
+  const title = !room ? 'Bishy Bashy!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'selecting' ? 'Spin the wheel!' : room.set?.phase === 'intermission' ? 'Standings' : room.set?.phase === 'instructions' || active ? GAMES[game].title : room.arcadePreview ? 'Arcade' : 'Choose your mode';
   if (document.querySelector('.game-title').textContent !== title) document.querySelector('.game-title').textContent = title;
   document.title = `${room ? title : 'Party games'} · Bishy Bashy`;
-  $('lobby-setup').hidden = !room || Boolean(inSet);
+  $('lobby-setup').hidden = !room || Boolean(inSet) || Boolean(room.arcadePreview && !room.set);
   $('game-browser').hidden = mode !== 'game-select';
   $('rhythm-guide').hidden = !perm || !active;
   $('slot-guide').hidden = !slots || !active;
@@ -540,6 +582,7 @@ function showRules() {
 }
 
 $('create').addEventListener('click', () => enter('create'));
+$('round-assets-retry').addEventListener('click', () => { preparingAssets = null; renderRoom(); });
 const unlockAudioFromGesture = () => {
   if (audio.enabled && (!audio.context || audio.context.state !== 'running' || audio.menu.active && !audio.menuPlaying)) audio.unlock();
 };
@@ -645,7 +688,7 @@ window.addEventListener('pagehide', () => {
 });
 window.addEventListener('pageshow', event => {
   if (event.persisted && localRound && !localRound.done && performance.now() >= localRound.start) complete('forfeit');
-  if (readStored('bb-session') && !intentionalClose) connect();
+  if (startupReady && readStored('bb-session') && !intentionalClose) connect();
 });
 setInterval(() => {
   const time = performance.now();
@@ -655,4 +698,31 @@ setInterval(() => {
 setInterval(() => { if (socket?.readyState === WebSocket.OPEN) ping(); }, 3000);
 requestAnimationFrame(animate);
 if (!isGitHubPages) fetch('/connection-info').then(response => response.json()).then(info => { lanUrls = info.lanUrls || []; }).catch(() => {});
-if (session) connect();
+async function loadStartup() {
+  $('asset-retry').hidden = true;
+  document.querySelector('header').inert = true;
+  document.querySelector('main').inert = true;
+  try {
+    await assets.preload((loaded, total) => {
+      const percent = Math.round(loaded / total * 100);
+      $('asset-progress').value = percent;
+      $('asset-status').textContent = `Loading the party… ${percent}%`;
+    });
+    await assets.applyImages(document.documentElement.style);
+    if (document.fonts) await Promise.race([
+      Promise.all(['Lilita One', 'Luckiest Guy', 'Nunito'].map(font => document.fonts.load(`16px "${font}"`))).catch(() => {}),
+      new Promise(resolve => setTimeout(resolve, 3000)),
+    ]);
+    startupReady = true;
+    $('asset-loader').hidden = true;
+    document.querySelector('header').inert = false;
+    document.querySelector('main').inert = false;
+    synchronizeScreenAudio();
+    if (session && !joined) connect();
+  } catch (error) {
+    $('asset-status').textContent = error.message.includes('files could not load') ? error.message : 'Couldn’t finish loading. Check your connection and try again.';
+    $('asset-retry').hidden = false;
+  }
+}
+$('asset-retry').addEventListener('click', loadStartup);
+loadStartup();

@@ -11,7 +11,7 @@
 .jump-theme .lane.finished .tower-zone:after { display:none; }
 .jump-stage { display:flex; flex-direction:column; width:100%; height:100%; gap:6px; }
 .jump-scene { position:relative; flex:1; min-height:0; }
-.jump-dino { display:block; background:url('/assets/jump-dino.png') center / contain no-repeat; width:64px; height:70px; }
+.jump-dino { display:block; background:var(--image-jump-dino,url('/assets/optimized/jump-dino-be5816364a56.webp')) center / contain no-repeat; width:64px; height:70px; }
 .jump-scene .jump-dino { position:absolute; left:50%; transform:translateX(-50%) scale(calc(1 - var(--dino-stretch,0) * .5),calc(1 + var(--dino-stretch,0))); transform-origin:center bottom; bottom:calc(10px + var(--jump-height,0) * (100% - 65px)); width:clamp(42px,8vw,64px); height:64px; }
 .jump-landing { position:absolute; bottom:5px; left:50%; transform:translateX(-50%); width:min(80%,64px); height:12px; border:2px solid #855b40; background:#e3b586; border-radius:50%; }
 .jump-stage[data-phase=land] .jump-landing { background:#ffce45; border-color:#996812; box-shadow:0 0 0 4px #ffda6577; }
@@ -28,7 +28,7 @@
 .jump-perfect-zone { width:var(--perfect-width); background:#65cd8c; border-inline:1px solid #277448; }
 .jump-timing-cursor { position:absolute; top:0; bottom:0; width:3px; transform:translateX(-50%); background:#523529; box-shadow:0 0 0 1px #fff6d6; }
 .jump-stage[data-phase=land] .jump-timing-fill { background:#eab12f; }
-.jump-meat { display:block; position:relative; width:64px; height:56px; background:url('/assets/jump-meat.png') center / contain no-repeat; filter:drop-shadow(0 3px 1px #754a3433); }
+.jump-meat { display:block; position:relative; width:64px; height:56px; background:var(--image-jump-meat,url('/assets/optimized/jump-meat-f7acac1891f4.webp')) center / contain no-repeat; filter:drop-shadow(0 3px 1px #754a3433); }
 .jump-scene>.jump-meat { position:absolute; bottom:min(calc(100% - 50px),calc(48px + .76 * (100% - 65px))); left:calc(50% - 32px); }
 .jump-stage[data-phase=reaching] .jump-meat { animation:meat-wiggle .2s ease-in-out infinite alternate; }
 .jump-feedback { position:absolute; top:32%; left:50%; transform:translateX(-50%); white-space:nowrap; background:#fff7dc; padding:3px 7px; border-radius:12px; color:#875b25; font:16px/1.2 'Lilita One',system-ui,sans-serif; z-index:2; box-shadow:0 2px 0 #bb8d5b44; }

@@ -16,20 +16,23 @@ The Bishy Bashy! title and a cast of original game characters introduce the game
 After creating or joining a room, choose a mode on the room screen.
 Game Select uses equal-sized illustrated cards in a scrollable library, with a title search for a larger catalog.
 Choose **Arcade** for five different games selected at random, played once each in a random order.
+Selecting Arcade opens a wheel showing every game; the host taps **Spin & start** once friends have joined.
+Before each Arcade game, the wheel spins for 5.5 seconds and lands on the same server-chosen game on every device, with `wheelspin.mp3` when sound is enabled.
+The five-game plan has no repeats, and repeated starts or reconnects do not reroll it.
 Choose **Game Select** for five rounds of one game, with difficulty increasing each round.
 Only the host can change the mode or chosen game after joining.
 The host can use **Back to modes** to keep everyone in the same room and choose again.
 Before the first countdown this returns immediately; during an active round or an unfinished set with scores, confirmation explains that the current set and scores will be cleared for everyone.
 Rules screens include visual examples using the same artwork and color/shape controls as the game.
-The instructions card reveals its playful “How to play” heading, illustration, and three rules over about three seconds, using `public/audio/how-to-play.wav` for the heading and `public/audio/Punch-button.mp3` for the illustration and each rule when effects are enabled.
+The instructions card pauses for 1.4 seconds after its playful “How to play” heading, then reveals the illustration and three rules with 700/850/850 ms gaps, finishing at about 3.8 seconds.
+It uses `public/audio/how-to-play.wav` for the heading and `public/audio/Punch-button.mp3` for the illustration and each rule when effects are enabled.
 Ready becomes available once the final line is visible; redraws do not restart the sequence, and reduced-motion settings remove the entrance animation.
 **Leave** stays available during play and asks for confirmation before leaving an active set.
 Leaving forfeits only an unfinished round; an already accepted finish and previously earned points remain credited, and the other players can continue.
 Changing the setup resets everyone's Ready state; setup stays locked throughout the full set.
 The host taps **Start set** to show the game's instructions, with no more than three points.
 After clock synchronization, every connected player taps **Ready** on that screen before the shared three-second countdown can begin.
-In Arcade, each completed game shows a cumulative podium for eight seconds, followed by the next game's instructions and a fresh all-player Ready gate.
-The Arcade transition does not announce the next game.
+In Arcade, each completed game shows a cumulative podium for eight seconds, followed by a fresh wheel spin, the next game's instructions, and an all-player Ready gate.
 In Game Select, instructions appear only once; subsequent rounds use a Ready button on the podium screen instead of repeating them.
 Game Select intermissions last at least eight seconds and wait until every connected player is ready.
 Players may toggle readiness off again before the countdown starts.
@@ -85,7 +88,7 @@ Physical phone audio and touch latency still need playtesting.
 Menus, game selection, intermissions, and standings loop the user-supplied `public/audio/Background-ActionRock.mp3` through the existing music volume and mute controls.
 The illustrated instructions screen uses `public/audio/game-instructions.mp3` instead, with each track retaining its playback position when paused.
 The instructions track has a +6 dB playback boost through the existing music volume control to compensate for its softer recording.
-Both tracks stream after a user gesture and pause for the round countdown and gameplay, with Action Rock returning on transition screens after the podium cue.
+Both tracks play after a user gesture and pause for the round countdown and gameplay, with Action Rock returning on transition screens after the podium cue.
 The same one-device-per-room policy and personal music overrides apply; hiding the page or previewing gameplay sounds pauses menu music.
 Each post-game podium plays `public/audio/podium-winner.mp3` once through the effects controls before background music resumes, including the final set podium.
 Repeated score updates do not restart the podium cue, and leaving the podium or muting cancels it without replaying it later.
@@ -109,7 +112,7 @@ Sound loading and playback never gate gameplay or the result submission path.
 Effects duck the music briefly, independent category gains control the balance, and a master limiter provides additional headroom.
 Transient effects are capped at eight voices; the music uses two looping buffers.
 
-Each game's mono WAV bank totals less than 2.5 MB and loads only after sound is enabled for that game.
+Each game's mono WAV bank totals less than 2.5 MB and decodes only after sound is enabled for that game.
 The normal and urgency loops each last 15 seconds at 32 kHz, with equal sample counts for phase alignment.
 The gameplay score and synthesis are in `scripts/audio/` and use no third-party recordings or music services.
 Regenerate the runtime files and their numerical analysis with:
@@ -285,7 +288,7 @@ These initial speeds are provisional until phone playtesting.
 
 The chef, ingredient sprites, building stack, and delivered-burger flourish stay inside each player's lane.
 Only local scheduled catches produce gameplay sounds; remote movement is cosmetic.
-The common music bank, punch-button controls, catch tones, and miss cues use the existing opt-in audio system.
+The common music bank, punch-button controls, `Ding.mp3` for every successful local catch, and miss cues use the existing opt-in audio system.
 `shared/burger.js` owns the seed and catch rules; `src/catch-spot-view.js` and `src/catch-spot.css` draw the diner stage.
 
 ## Play Me Find Mistake
@@ -305,10 +308,30 @@ These initial timings and picture pools are provisional until phone playtesting.
 
 Remote lanes show progress and colored card backs, never live answer boards.
 Only the local answered card pops on success; reduced-motion preferences remove decorative motion.
+Every correct local answer plays `Ding.mp3`, including the final answer, through the existing effects volume and mute controls.
 `shared/mistake.js` owns the seeded puzzle rules; `src/catch-spot-view.js` and `src/catch-spot.css` draw the picture cards.
 The new games use the same instructions, Ready gates, Arcade selection, cumulative podium, reconnect handling, and result acknowledgments as the rest of the catalog.
-Deploy the frontend and room service together so both know the new game IDs; the protocol 6 message schema is unchanged.
+Deploy the frontend and room service together; protocol 6 now advertises the `arcade-wheel` and `asset-readiness` capabilities required by this frontend.
 Original artwork and full generation prompts for both games are preserved in [artwork notes](public/assets/catch-spot-artwork.md).
+
+## Loading and delivery assets
+
+An animated dinosaur and orbiting star introduce the game while all runtime artwork and audio download.
+The progress bar reflects completed delivery bytes; failed or incomplete files keep the loader visible with a retry button, while successful downloads are retained.
+Images are decoded before entry opens, and the three display fonts are warmed with a bounded wait and native font fallbacks.
+After joining, Ready also waits for the selected game's audio bank to decode when sound is enabled; players can retry a failed bank or turn sound off to play muted.
+The room service enforces the asset acknowledgment for this frontend, independently of clock synchronization and readiness.
+
+Ten optimized WebP images total **1,081,100 bytes**, down from **15,963,577 bytes** of PNG masters, a **93.2%** reduction.
+Original generated PNGs and provenance remain in `public/assets/`; runtime styles use the smaller hashed files in `public/assets/optimized/`.
+Run `python scripts/optimize-images.py` with Pillow after changing the PNG masters to regenerate delivery images and their CSS references.
+The predev/prebuild script `scripts/asset-manifest.mjs` versions every runtime asset by content and derives gzip delivery files for suitable WAVs.
+Gzip restores the exact original WAV bytes, preserving loop lengths and rhythm phase; browsers without decompression support download the original WAV instead.
+Current audio delivery is **10,582,412 bytes**, compared with **12,756,440 bytes** before this lossless compression.
+User-supplied MP3s retain their original encoding.
+Persistent browser caching reuses validated files across visits, and content changes invalidate only the affected files.
+Music MP3s use preloaded blob URLs without expanding full songs into decoded PCM buffers; gameplay banks decode only when needed.
+Physical phone memory, startup speed on slow networks, audio balance, and touch latency still need device playtests.
 
 ## Run locally
 

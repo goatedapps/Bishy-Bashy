@@ -8,7 +8,7 @@ import { MONKEY_GAME } from '../shared/monkeys.js';
 import { JUMP_GAME } from '../shared/jump.js';
 import { BURGER_GAME } from '../shared/burger.js';
 import { MISTAKE_GAME } from '../shared/mistake.js';
-import { MODES, INTERMISSION_MS, createSetPlan, awardRound } from '../shared/sets.js';
+import { MODES, INTERMISSION_MS, WHEEL_SPIN_MS, createSetPlan, awardRound } from '../shared/sets.js';
 
 export const ROUND_MS = 10_000;
 export const GRACE_MS = 10_000;
@@ -29,7 +29,7 @@ export class RoomService {
 
   snapshot(room) {
     return {
-      code: room.code, hostId: room.hostId, testNumber: room.testNumber, selectedGame: room.selectedGame, mode: room.mode, set: room.set,
+      code: room.code, hostId: room.hostId, testNumber: room.testNumber, selectedGame: room.selectedGame, mode: room.mode, arcadePreview: room.arcadePreview, set: room.set,
       players: room.players.map(({ id, name, connected, ready, sync, result, progress, disconnectedAt }) => ({ id, name, connected, ready, sync, result, progress, disconnectedAt })),
       round: room.round ? { ...room.round } : null,
     };
@@ -65,10 +65,12 @@ export class RoomService {
     player.disconnectedAt = null;
     player.ready = false;
     player.sync = null;
+    player.requiresAssets = message.assetGates === true;
+    player.assetRound = null;
     if (!returning) room.players.push(player);
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 6, capabilities: ['room-navigation'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 6, capabilities: ['room-navigation', 'arcade-wheel', 'asset-readiness'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -88,10 +90,17 @@ export class RoomService {
       player.sync = { rtt, uncertainty, count, at: received };
       return this.broadcast(room);
     }
+    if (message.type === 'assets-ready') {
+      if (message.roundId !== room.round?.id || !['instructions', 'intermission'].includes(room.set?.phase)) return;
+      player.assetRound = message.ready === true ? room.round.id : null;
+      if (!message.ready) player.ready = false;
+      return this.broadcast(room);
+    }
     if (message.type === 'ready') {
       const gate = room.set?.phase === 'instructions' || room.set?.phase === 'intermission' && room.mode === 'game-select';
       if (!gate && (room.set && room.set.phase !== 'complete' || isRoundActive(room.round))) return;
       if (message.ready && !this.isSynced(player)) return this.error(client, 'Wait for at least three fresh clock samples before getting ready.');
+      if (message.ready && player.requiresAssets && player.assetRound !== room.round?.id) return this.error(client, 'Wait for the game assets to finish loading.');
       player.ready = Boolean(message.ready);
       if (room.set?.phase === 'instructions') this.tryBeginPrepared(room);
       else if (gate) this.advanceSet(room);
@@ -102,9 +111,10 @@ export class RoomService {
       if (room.set && room.set.phase !== 'complete' || room.round && room.round.phase !== 'results') return;
       const mode = message.type === 'select-game' ? 'game-select' : message.mode;
       const game = message.game || room.selectedGame;
-      if (!MODES[mode] || !GAMES[game] || room.selectedGame === game && room.mode === mode) return;
+      if (!MODES[mode] || !GAMES[game] || room.selectedGame === game && room.mode === mode && (mode !== 'arcade' || room.arcadePreview)) return;
       room.selectedGame = game;
       room.mode = mode;
+      room.arcadePreview = mode === 'arcade';
       room.players.forEach(p => { p.ready = false; });
       return this.broadcast(room);
     }
@@ -130,9 +140,11 @@ export class RoomService {
     if (message.type === 'result') return this.result(client, room, player, message, received);
     if (message.type === 'back-to-modes') {
       if (player.id !== room.hostId) return this.error(client, 'Only the host can return everyone to mode selection.');
+      if (!room.set && room.arcadePreview) { room.arcadePreview = false; return this.broadcast(room); }
       if (!room.set || message.setId !== room.set.id) return;
       room.set = null;
       room.round = null;
+      room.arcadePreview = false;
       room.players.forEach(member => { member.ready = false; member.result = null; member.progress = { cleared: 0, mistakes: 0 }; });
       return this.broadcast(room);
     }
@@ -162,6 +174,7 @@ export class RoomService {
     if (!connected.length) return 'players';
     if (room.players.some(player => !player.connected && this.now() - player.disconnectedAt < RECONNECT_WAIT_MS)) return 'players';
     if (connected.some(player => !this.isSynced(player))) return 'sync';
+    if (connected.some(player => player.requiresAssets && player.assetRound !== room.round?.id)) return 'assets';
     if (connected.some(player => !player.ready)) return 'ready';
     return null;
   }
@@ -171,10 +184,15 @@ export class RoomService {
     const game = set.plan[set.roundIndex];
     const difficulty = set.mode === 'game-select' ? set.roundIndex + 1 : 1;
     room.round = { id: randomUUID(), game, phase: 'instructions', playerIds: [], ...roundSettings(game, randomBytes(4).readUInt32LE(), difficulty), setId: set.id, setRound: set.roundIndex + 1, totalRounds: set.plan.length };
-    room.players.forEach(player => { player.ready = false; });
+    room.players.forEach(player => { player.ready = false; player.assetRound = null; });
     set.phase = 'instructions';
     set.nextStartAt = null;
     set.waitReason = 'ready';
+    if (set.mode === 'arcade') {
+      set.phase = room.round.phase = 'selecting';
+      set.spinStartAt = this.now();
+      set.spinEndAt = set.spinStartAt + WHEEL_SPIN_MS;
+    }
   }
 
   tryBeginPrepared(room) {
@@ -320,6 +338,14 @@ export class RoomService {
       if (!room.players.some(p => p.connected) && now - room.updatedAt > 30 * 60_000) { this.rooms.delete(code); continue; }
       const round = room.round;
       if (!round) continue;
+      if (round.phase === 'selecting') {
+        if (now >= room.set.spinEndAt) {
+          round.phase = room.set.phase = 'instructions';
+          room.set.waitReason = 'ready';
+          this.broadcast(room);
+        }
+        continue;
+      }
       if (round.phase === 'instructions') { if (this.tryBeginPrepared(room)) this.broadcast(room); continue; }
       if (round.phase === 'results') { if (this.advanceSet(room)) this.broadcast(room); continue; }
       let changed = false;

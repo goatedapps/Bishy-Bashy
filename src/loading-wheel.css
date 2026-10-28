@@ -1,0 +1,26 @@
+.asset-loader { position:fixed; inset:0; z-index:1000; background:#ffdf62; color:#3b214d; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px; text-align:center; padding:25px; }
+.asset-loader h2 { font:38px 'Lilita One',system-ui,sans-serif; margin:0; }
+.loader-art { position:relative; width:170px; height:170px; border-radius:50%; background:#fff4c1; display:grid; place-items:center; box-shadow:0 8px 0 #3b214d; }
+.loader-art .jump-dino { width:110px; height:125px; animation:loader-bounce .85s cubic-bezier(.36,0,.66,1) infinite alternate; }
+.loader-orbit { position:absolute; inset:-12px; border:3px dashed #3b214d; border-radius:50%; animation:loader-orbit 10s linear infinite; }
+.loader-orbit:before { content:'★'; position:absolute; top:-17px; left:calc(50% - 12px); color:#e74f76; font-size:32px; background:#ffdf62; }
+.asset-loader progress { width:min(310px,85vw); height:20px; accent-color:#bd47bb; }
+.asset-loader p { max-width:360px; margin:0; font-weight:900; }
+#asset-retry { background:#fff8df; }
+.arcade-wheel { max-width:640px; margin:12px auto 20px; padding:22px; text-align:center; border:3px solid var(--ink); border-radius:28px; background:#fff9e9; box-shadow:0 7px 0 #cfa947; }
+.arcade-wheel h2 { margin:0 0 20px; font:clamp(25px,5vw,37px) 'Luckiest Guy',system-ui,sans-serif; }
+.wheel-housing { position:relative; width:min(290px,70vw); aspect-ratio:1; margin:0 auto; }
+.wheel-pointer { position:absolute; left:calc(50% - 17px); top:-15px; width:34px; height:36px; background:var(--ink); clip-path:polygon(0 0,100% 0,50% 100%); z-index:2; }
+.wheel-disc { position:relative; width:100%; height:100%; border:7px solid var(--ink); border-radius:50%; box-shadow:0 6px 0 #3b214d25; }
+.wheel-disc:after { content:'★'; position:absolute; inset:38%; background:#fff9e9; border:3px solid var(--ink); border-radius:50%; display:grid; place-items:center; font-size:28px; }
+.wheel-label { position:absolute; left:calc(50% - 32px); top:calc(50% - 28px); width:64px; height:56px; transform:rotate(var(--angle)) translateY(clamp(-100px,-24vw,-82px)) rotate(calc(-1 * var(--angle))); }
+.wheel-label .game-art { display:block; position:absolute; left:50%; top:0; width:70px; height:76px; transform:translateX(-50%) scale(.5); transform-origin:top center; border:0; box-shadow:none; border-radius:50%; }
+.wheel-label small { position:absolute; top:40px; width:100%; display:block; font:900 8px/1.1 Nunito,system-ui,sans-serif; }
+#wheel-result { min-height:1.5em; margin:19px 0 0; font:27px 'Lilita One',system-ui,sans-serif; }
+.wheel-settled #wheel-result { color:#28734a; animation:wheel-result-pop .3s ease-out both; }
+.asset-preparation { margin:10px 0 0; font-size:13px; font-weight:900; }
+@keyframes loader-bounce { from { transform:translateY(7px) scale(1.06,.94); } to { transform:translateY(-17px) scale(.96,1.04); } }
+@keyframes loader-orbit { to { transform:rotate(360deg); } }
+@keyframes wheel-result-pop { from { transform:scale(.85); } to { transform:scale(1); } }
+@media(max-width:620px) { .arcade-wheel { padding:20px 12px 15px; } #wheel-result { font-size:23px; } }
+@media(prefers-reduced-motion:reduce) { .loader-art .jump-dino,.loader-orbit { animation:none; } .wheel-settled #wheel-result { animation:none; } }

@@ -6,8 +6,8 @@ const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
 const MENU_TRACKS = { menu: 'Background-ActionRock.mp3', instructions: 'game-instructions.mp3' };
 const MENU_TRACK_GAINS = { menu: 1, instructions: 2 };
-const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.wav', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3' };
-const GAME_AUDIO_FILES = { 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3' } };
+const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.wav', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3', wheelSpin: 'wheelspin.mp3' };
+const GAME_AUDIO_FILES = { 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' } };
 const PROFILES = {
   'burger-girl': { music: 'music', urgency: 'urgency', go: 'go' },
   'me-find-mistake': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -21,10 +21,12 @@ const PROFILES = {
 const clamp = value => Math.max(0, Math.min(1, value));
 
 export class GameAudio {
-  constructor({ storage = globalThis.localStorage, createContext = () => new AudioContext(), createMedia = () => new Audio(), now = () => performance.now(), fetchFile = (url, options) => fetch(url, options), onChange = () => {} } = {}) {
+  constructor({ storage = globalThis.localStorage, createContext = () => new AudioContext(), createMedia = () => new Audio(), mediaUrl = file => `${BASE_URL}audio/${file}`, now = () => performance.now(), fetchFile = (url, options) => fetch(url, options), onChange = () => {} } = {}) {
     this.storage = storage;
     this.createContext = createContext;
     this.createMedia = createMedia;
+    this.mediaUrl = mediaUrl;
+    this.wheel = null;
     this.menu = { active: false, musicOwner: true, podiumId: null, track: 'menu' };
     this.menuTracks = new Map();
     this.menuPlaying = false;
@@ -219,7 +221,7 @@ export class GameAudio {
 
   play(id, { color = 0, progress = 0, at = this.context?.currentTime, group = 'effects', game = this.game } = {}) {
     if (id === 'jumpPerfect') id = 'permGrow';
-    if (id === 'hit') id = game === 'perm-mania' ? 'permHit' : ['red', 'green', 'blue'][color] || 'red';
+    if (id === 'hit') id = ['burger-girl', 'me-find-mistake'].includes(game) ? 'ding' : game === 'perm-mania' ? 'permHit' : ['red', 'green', 'blue'][color] || 'red';
     if (id === 'mistake' && game === 'perm-mania') id = 'permMiss';
     const voice = this.source(id, { at, group, rate: ['red', 'green', 'blue'].includes(id) ? 1 + clamp(progress) * .04 : 1 });
     if (voice && group === 'effects') {
@@ -244,6 +246,20 @@ export class GameAudio {
     this.unlock().then(ready => {
       if (ready && request === this.buttonRequest && this.now() - pressedAt < 250) this.play(id);
     });
+  }
+
+  spinWheel(id, elapsed, duration) {
+    if (!id || !this.enabled || this.context?.state !== 'running' || this.preferences.effectsVolume === 0) {
+      this.stopVoices(voice => voice.group === 'wheel');
+      return;
+    }
+    if (this.wheel?.id === id) return;
+    const buffer = this.buffers.get('wheelSpin');
+    if (!buffer) return;
+    this.stopVoices(voice => voice.group === 'wheel');
+    this.wheel = { id };
+    if (elapsed >= buffer.duration * 1000 || elapsed >= duration) return;
+    this.source('wheelSpin', { group: 'wheel', offset: Math.max(0, elapsed / 1000), end: this.context.currentTime + (duration - Math.max(0, elapsed)) / 1000 });
   }
 
   demonstrate(key, cues) {
@@ -387,7 +403,7 @@ export class GameAudio {
       if (!this.menuTracks.has(trackId)) {
         // Stream the full-length MP3 instead of retaining a decoded music buffer on every phone.
         const media = this.createMedia();
-        media.src = `${BASE_URL}audio/${MENU_TRACKS[trackId] || MENU_TRACKS.menu}`;
+        media.src = this.mediaUrl(MENU_TRACKS[trackId] || MENU_TRACKS.menu);
         media.loop = true;
         media.preload = 'none';
         media.addEventListener('error', () => { if (this.menuMedia === media) this.menuPlaying = false; });

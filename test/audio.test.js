@@ -82,6 +82,42 @@ class MenuMedia {
   pause() { this.pauses++; }
 }
 
+test('Burger catches and picture answers share one Ding MP3, while other games keep their own hit cues', async () => {
+  const { audio, requests } = setup();
+  audio.selectGame('burger-girl');
+  await audio.unlock();
+  audio.play('hit', { game: 'burger-girl' });
+  assert.equal([...audio.voices].at(-1).id, 'ding');
+  audio.selectGame('me-find-mistake');
+  await audio.load();
+  audio.play('hit', { game: 'me-find-mistake' });
+  assert.equal([...audio.voices].at(-1).id, 'ding');
+  assert.equal(requests.filter(url => url.includes('Ding.mp3')).length, 1);
+  audio.play('hit', { game: 'totem-shrinker', color: 2 });
+  assert.equal([...audio.voices].at(-1).id, 'blue');
+  audio.setEnabled(false);
+  audio.play('hit', { game: 'burger-girl' });
+  assert.equal(audio.voices.size, 0);
+});
+
+test('wheel audio follows the current spin, never duplicates on redraw, and stops on navigation or mute', async () => {
+  const { audio } = setup();
+  await audio.unlock();
+  audio.spinWheel('spin-1', 1000, 5500);
+  const voice = [...audio.voices].find(item => item.group === 'wheel');
+  assert.equal(voice.id, 'wheelSpin');
+  assert.equal(voice.source.started.offset, 1);
+  audio.spinWheel('spin-1', 1100, 5500);
+  assert.equal([...audio.voices].filter(item => item.group === 'wheel').length, 1);
+  audio.spinWheel(null, 0, 0);
+  assert.equal([...audio.voices].filter(item => item.group === 'wheel').length, 0);
+  audio.spinWheel('spin-1', 1200, 5500);
+  assert.equal([...audio.voices].filter(item => item.group === 'wheel').length, 0);
+  audio.spinWheel('spin-2', 0, 5500);
+  audio.setEnabled(false);
+  assert.equal(audio.voices.size, 0);
+});
+
 test('instructions use a separate music track, preserve menu position, and yield to countdown and podium audio', async () => {
   const media = [];
   const { audio } = setup({ createMedia: () => { const item = new MenuMedia(); media.push(item); return item; } });
@@ -453,7 +489,7 @@ test('audio is opt-in, loads once after a gesture, and preferences survive unava
   assert.equal(await state.audio.unlock(), true);
   await state.audio.unlock();
   assert.equal(state.created, 1);
-  assert.equal(state.requests.length, audioAssetIds().length + 5);
+  assert.equal(state.requests.length, audioAssetIds().length + 6);
   state.audio.setPreferences({ musicVolume: 2, effectsVolume: -1, musicMode: 'off' });
   assert.deepEqual(JSON.parse(state.values.get('bb-audio')), { musicMode: 'off', musicVolume: 1, effectsVolume: 0 });
   const blocked = setup({ storage: { getItem() { throw new Error('Blocked'); }, setItem() { throw new Error('Blocked'); } } });
@@ -626,7 +662,7 @@ test('Perm Mania loads its own bank and schedules each demonstration on the audi
   await audio.unlock();
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), true);
-  assert.equal(requests.length, audioAssetIds('perm-mania').length + 5);
+  assert.equal(requests.length, audioAssetIds('perm-mania').length + 6);
   const cues = demoCues(123);
   audio.scheduleRound('perm', 5000, 35_000, true, false, { game: 'perm-mania', cues });
   const guide = [...audio.voices].filter(voice => voice.id === 'permDemo');
@@ -662,7 +698,7 @@ test('Facial Slot Machine uses its own bank, bounded match feedback, and a finis
   const { audio, requests } = setup();
   audio.selectGame('facial-slot-machine');
   await audio.unlock();
-  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 5);
+  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 6);
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), false);
   audio.scheduleRound('slots', 5000, 35_000, true, false, { game: 'facial-slot-machine' });

@@ -1,5 +1,5 @@
 .firework-theme .arena {
-  background:#251440 url('/assets/fireworks-festival.png') center / cover no-repeat;
+  background:#251440 var(--image-fireworks-festival,url('/assets/optimized/fireworks-festival-60a7d6733b66.webp')) center / cover no-repeat;
   color:#fff4dc;
 }
 .firework-theme .lane { border-color:#d1b4f24d; }

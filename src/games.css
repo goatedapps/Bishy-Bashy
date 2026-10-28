@@ -102,7 +102,7 @@
 }
 .perm-dancer,.perm-hair,.disco-ball {
   position:absolute;
-  background-image:url('/assets/perm-disco-sprites.png');
+  background-image:var(--image-perm-disco-sprites,url('/assets/optimized/perm-disco-sprites-b505dbfc28d6.webp'));
   background-size:300% 200%;
   background-repeat:no-repeat
 }

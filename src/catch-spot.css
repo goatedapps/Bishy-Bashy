@@ -12,8 +12,8 @@
 .burger-theme .lane.forfeit .catch-stage,.mistake-theme .lane.forfeit .mistake-stage { opacity:.45; filter:grayscale(1); }
 .catch-stage,.mistake-stage { position:relative; width:100%; height:100%; min-height:0; }
 .catch-stage.unoccupied,.mistake-stage.unoccupied { visibility:hidden; }
-.burger-chef { display:block; width:90px; height:90px; background:url('/assets/burger-chef-chibi.png') center / contain no-repeat; }
-.burger-ingredient { display:block; width:100%; aspect-ratio:1; background-image:url('/assets/burger-ingredients.png'); background-size:200% 200%; background-repeat:no-repeat; }
+.burger-chef { display:block; width:90px; height:90px; background:var(--image-burger-chef-chibi,url('/assets/optimized/burger-chef-chibi-118b2754863a.webp')) center / contain no-repeat; }
+.burger-ingredient { display:block; width:100%; aspect-ratio:1; background-image:var(--image-burger-ingredients,url('/assets/optimized/burger-ingredients-39ee0b264fee.webp')); background-size:200% 200%; background-repeat:no-repeat; }
 .catch-stage { --catch-floor:43px; --chef-size:86px; }
 .catch-chutes { position:absolute; inset:0 12.5%; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:3px; }
 .catch-chute { display:flex; align-items:end; justify-content:center; padding-bottom:3px; border-inline:1px dashed #ac8e7177; border-radius:18px 18px 0 0; font-size:12px; background:linear-gradient(transparent 82%,#ffffff66); }
@@ -32,7 +32,7 @@
 .catch-success .catch-toast { color:#237447; }
 .mistake-stage { display:grid; grid-template-rows:repeat(3,minmax(0,1fr)); gap:7px; padding:2px; }
 .mistake-card { position:relative; display:grid; place-items:center; min-height:0; border:2px solid currentColor; border-radius:15px; background:#fff9ed; box-shadow:0 3px 0 #3b214d20; }
-.odd-picture { display:block; width:72px; aspect-ratio:1; background-image:url('/assets/odd-pictures.png'); background-size:400% 400%; background-repeat:no-repeat; }
+.odd-picture { display:block; width:72px; aspect-ratio:1; background-image:var(--image-odd-pictures,url('/assets/optimized/odd-pictures-8efa644bbe16.webp')); background-size:400% 400%; background-repeat:no-repeat; }
 .mistake-card>.odd-picture { width:min(calc(100% - 14px),calc((var(--tower-height) - 24px) / 3)); height:auto; }
 .picture-button { position:absolute; top:4px; left:5px; font:900 12px/1 Nunito,system-ui,sans-serif; }
 .picture-stamp { position:absolute; right:3px; bottom:2px; font:25px/1 'Lilita One',system-ui,sans-serif; color:#267747; text-shadow:0 2px #fff; }

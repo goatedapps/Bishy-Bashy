@@ -1,4 +1,4 @@
-.face-portrait { display:block; flex-shrink:0; aspect-ratio:1; background-image:url('/assets/facial-slot-faces.png'); background-size:300% 200%; background-repeat:no-repeat; border-radius:10px; background-color:#382043; }
+.face-portrait { display:block; flex-shrink:0; aspect-ratio:1; background-image:var(--image-facial-slot-faces,url('/assets/optimized/facial-slot-faces-0078b71dc4b6.webp')); background-size:300% 200%; background-repeat:no-repeat; border-radius:10px; background-color:#382043; }
 .slot-theme { background-color:#83ded5; background-image:radial-gradient(#49bbbf 1px,transparent 1px); }
 .slot-theme .game-top { padding-top:6px; }
 .slot-theme .game-top .brand { font-size:24px; }

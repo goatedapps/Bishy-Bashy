@@ -2,6 +2,7 @@ import { GAMES, gameRules } from '../shared/games.js';
 import { MODES, setStandings } from '../shared/sets.js';
 import { gameArt, ruleVisual } from './game-art.js';
 import { InstructionSequence } from './instruction-sequence.js';
+import { ArcadeWheel } from './arcade-wheel.js';
 
 const $ = id => document.getElementById(id);
 const node = (tag, className, text) => {
@@ -14,6 +15,7 @@ const node = (tag, className, text) => {
 export class SetView {
   constructor({ onInstructionStep = () => {} } = {}) {
     this.key = '';
+    this.wheel = new ArcadeWheel();
     this.instructionSequence = new InstructionSequence({ onReveal: onInstructionStep });
     $('home-cast').append(...Object.keys(GAMES).slice(-5).map(gameArt));
     for (const game of Object.values(GAMES)) {
@@ -49,7 +51,7 @@ export class SetView {
     $('standings-panel').hidden = !standingsVisible;
     if (!set) return;
     $('results').hidden = true;
-    if (instructions || standingsVisible) $('play-view').hidden = true;
+    if (instructions || standingsVisible || set.phase === 'selecting') $('play-view').hidden = true;
     $('set-progress').textContent = `${MODES[set.mode].title} · ${set.mode === 'arcade' ? 'Game' : 'Round'} ${set.roundIndex + 1} of ${set.plan.length}`;
     if (instructions) {
       if (this.instructionSequence.key !== room.round.id) {
@@ -134,10 +136,11 @@ export class SetView {
 
   animate(room, serverNow) {
     const set = room.set;
+    this.wheel.render(room, serverNow);
     if (set?.phase === 'instructions') this.instructionSequence.advance(performance.now(), !document.hidden);
     if (set?.phase !== 'intermission') return;
     const seconds = Math.max(0, Math.ceil((set.nextStartAt - serverNow) / 1000));
-    const text = set.mode === 'arcade' ? seconds ? `Continuing in ${seconds}s…` : 'Continuing…' : set.waitReason === 'sync' ? 'Synchronizing clocks…' : set.waitReason === 'players' ? 'Waiting for a friend to reconnect…' : set.waitReason === 'ready' ? 'Ready for another round?' : seconds ? `Starting in ${seconds}s…` : 'Starting the next round…';
+    const text = set.mode === 'arcade' ? seconds ? `Continuing in ${seconds}s…` : 'Continuing…' : set.waitReason === 'sync' ? 'Synchronizing clocks…' : set.waitReason === 'assets' ? 'Waiting for sounds to load…' : set.waitReason === 'players' ? 'Waiting for a friend to reconnect…' : set.waitReason === 'ready' ? 'Ready for another round?' : seconds ? `Starting in ${seconds}s…` : 'Starting the next round…';
     if ($('intermission-countdown').textContent !== text) $('intermission-countdown').textContent = text;
   }
 }

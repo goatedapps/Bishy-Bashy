@@ -4,10 +4,13 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "predev": "node scripts/asset-manifest.mjs",
     "dev": "node server/index.js --dev",
+    "prebuild": "node scripts/asset-manifest.mjs",
     "build": "vite build --base=./",
     "start": "node server/index.js",
     "audio:render": "node scripts/render-audio.mjs",
+    "postaudio:render": "node scripts/asset-manifest.mjs",
     "test": "node --test"
   },
   "dependencies": {
