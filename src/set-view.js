@@ -1,6 +1,7 @@
 import { GAMES, gameRules } from '../shared/games.js';
 import { MODES, setStandings } from '../shared/sets.js';
 import { gameArt, ruleVisual } from './game-art.js';
+import { InstructionSequence } from './instruction-sequence.js';
 
 const $ = id => document.getElementById(id);
 const node = (tag, className, text) => {
@@ -11,8 +12,9 @@ const node = (tag, className, text) => {
 };
 
 export class SetView {
-  constructor() {
+  constructor({ onInstructionStep = () => {} } = {}) {
     this.key = '';
+    this.instructionSequence = new InstructionSequence({ onReveal: onInstructionStep });
     $('home-cast').append(...Object.keys(GAMES).slice(-5).map(gameArt));
     for (const game of Object.values(GAMES)) {
       const button = node('button', `game-choice choice-${game.id}`);
@@ -43,18 +45,19 @@ export class SetView {
     const instructions = set?.phase === 'instructions';
     const standingsVisible = set && ['intermission', 'complete'].includes(set.phase);
     $('game-instructions').hidden = !instructions;
+    if (!instructions) this.instructionSequence.cancel();
     $('standings-panel').hidden = !standingsVisible;
     if (!set) return;
     $('results').hidden = true;
     if (instructions || standingsVisible) $('play-view').hidden = true;
     $('set-progress').textContent = `${MODES[set.mode].title} · ${set.mode === 'arcade' ? 'Game' : 'Round'} ${set.roundIndex + 1} of ${set.plan.length}`;
     if (instructions) {
-      if (this.instructionsKey !== room.round.id) {
-        this.instructionsKey = room.round.id;
-        $('instructions-title').textContent = GAMES[room.round.game].title;
+      if (this.instructionSequence.key !== room.round.id) {
         $('instructions-visual').replaceChildren(ruleVisual(room.round.game));
         $('instructions-list').replaceChildren(...gameRules(room.round.game, room.round).map(text => node('li', '', text)));
+        this.instructionSequence.start(room.round.id, [$('instructions-title'), $('instructions-visual'), ...$('instructions-list').children], performance.now());
       }
+      this.instructionSequence.advance(performance.now(), !document.hidden);
       this.renderReady(room, $('ready-players'), playerId);
     }
     if (!standingsVisible || !set.history.length) return;
@@ -118,6 +121,10 @@ export class SetView {
     $('intermission-countdown').hidden = final;
   }
 
+  instructionsComplete(roundId) {
+    return this.instructionSequence.key === roundId && this.instructionSequence.complete;
+  }
+
   renderReady(room, container, playerId) {
     const key = JSON.stringify(room.players.map(player => [player.id, player.ready, player.connected]));
     if (container.dataset.state === key) return;
@@ -127,6 +134,7 @@ export class SetView {
 
   animate(room, serverNow) {
     const set = room.set;
+    if (set?.phase === 'instructions') this.instructionSequence.advance(performance.now(), !document.hidden);
     if (set?.phase !== 'intermission') return;
     const seconds = Math.max(0, Math.ceil((set.nextStartAt - serverNow) / 1000));
     const text = set.mode === 'arcade' ? seconds ? `Continuing in ${seconds}s…` : 'Continuing…' : set.waitReason === 'sync' ? 'Synchronizing clocks…' : set.waitReason === 'players' ? 'Waiting for a friend to reconnect…' : set.waitReason === 'ready' ? 'Ready for another round?' : seconds ? `Starting in ${seconds}s…` : 'Starting the next round…';

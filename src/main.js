@@ -35,8 +35,8 @@ let selectedGame = GAMES[localStorage.getItem('bb-game')] ? localStorage.getItem
 let selectedMode = MODES[localStorage.getItem('bb-mode')] ? localStorage.getItem('bb-mode') : 'arcade';
 let timingOffset = Math.max(-150, Math.min(150, Number(localStorage.getItem('bb-timing-offset')) || 0));
 const view = new GameView();
-const setView = new SetView();
 const audio = new GameAudio({ onChange: () => updateSound() });
+const setView = new SetView({ onInstructionStep: () => audio.pressButton('gameplay') });
 const buttons = [...document.querySelectorAll('.hit-button')];
 
 $('name').value = session?.name || localStorage.getItem('bb-name') || '';
@@ -192,6 +192,7 @@ function enter(type) {
 }
 
 function resetSession() {
+  setView.instructionSequence.cancel();
   intentionalClose = true; joined = false;
   socket?.close(); clearTimeout(reconnectTimer);
   room = null; localRound = null; playerId = null;
@@ -338,7 +339,7 @@ function updateMetrics() {
   const idle = !inSet && (!room.round || room.round.phase === 'results');
   const gate = room.set?.phase === 'instructions' || room.set?.phase === 'intermission' && room.mode === 'game-select';
   const mine = room.players.find(player => player.id === playerId);
-  $('ready').disabled = !gate || !connected || !estimate || estimate.count < 3 || estimate.rtt > 1500 || !mine?.sync || mine.sync.count < 3 || time + estimate.offset - mine.sync.at >= 20_000;
+  $('ready').disabled = !gate || room.set?.phase === 'instructions' && !setView.instructionsComplete(room.round?.id) || !connected || !estimate || estimate.count < 3 || estimate.rtt > 1500 || !mine?.sync || mine.sync.count < 3 || time + estimate.offset - mine.sync.at >= 20_000;
   $('ready').textContent = mine?.ready ? 'Not ready' : 'Ready';
   $('start').textContent = room.set?.phase === 'complete' ? 'Start new set' : 'Start set';
   const serverNow = time + (estimate?.offset || 0);
@@ -609,6 +610,7 @@ document.addEventListener('visibilitychange', () => {
   const time = performance.now();
   if (document.hidden) {
     hiddenSince = time; audio.cancel();
+    setView.instructionSequence.advance(time, false);
     view.feedback.clear();
     if (localRound && time >= localRound.start && time < localRound.end && !localRound.done) complete('forfeit');
   } else {
@@ -621,6 +623,7 @@ document.addEventListener('visibilitychange', () => {
 });
 window.addEventListener('pagehide', () => {
   audio.cancel();
+  setView.instructionSequence.advance(performance.now(), false);
   view.feedback.clear();
   if (localRound && performance.now() >= localRound.start && !localRound.done) complete('forfeit');
 });

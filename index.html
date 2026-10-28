@@ -7,7 +7,7 @@
   <title>Bishy Bashy</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Luckiest+Guy&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/src/style.css" />
   <link rel="stylesheet" href="/src/games.css" />
   <link rel="stylesheet" href="/src/sets.css" />
@@ -53,7 +53,7 @@
         <section id="game-browser" aria-label="Game library" hidden><div class="game-browser-heading"><h2>Choose a game</h2><label for="game-search">Find a game<input id="game-search" type="search" placeholder="Search games" autocomplete="off" /></label></div><nav id="game-picker" class="game-picker" aria-label="Choose a game" tabindex="0"></nav><p id="game-empty" hidden>No games match your search.</p></section>
       </section>
       <div id="set-progress" class="set-progress" hidden></div>
-      <section id="game-instructions" class="game-instructions" hidden aria-label="Game instructions"><span class="ribbon">How to play</span><h2 id="instructions-title"></h2><div id="instructions-visual"></div><ol id="instructions-list"></ol><div id="ready-players" class="ready-players"></div></section>
+      <section id="game-instructions" class="game-instructions" hidden aria-label="Game instructions"><h2 id="instructions-title">How to play</h2><div id="instructions-visual"></div><ol id="instructions-list" aria-live="polite" aria-relevant="additions text"></ol><div id="ready-players" class="ready-players"></div></section>
       <section id="play-view" class="arcade-frame">
         <div class="match-hud"><strong id="round-label">Lobby</strong><div class="timer"><span aria-hidden="true">◷</span> <span id="timer">00.00</span><small>sec</small></div><span id="connection-dot" class="online-dot" role="status" aria-label="Connecting"></span></div>
         <div id="rhythm-guide" class="rhythm-guide" hidden>
