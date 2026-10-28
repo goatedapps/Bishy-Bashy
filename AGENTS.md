@@ -45,7 +45,7 @@ Shared styles live in `src/style.css`; the pink disco stage lives in `src/games.
 The landing page and set standings use `src/sets.css` and `src/set-view.js`.
 The landing screen only creates or joins rooms; choose modes and games inside the room, with a short explanation visible on each mode card.
 Use the shared `src/game-art.js` artwork for the home cast, equal-sized scrollable game cards, and illustrated rules; the library filters titles and accommodates future games without a wider page.
-`src/instruction-sequence.js` reveals the rules heading, artwork, and three lines over about 1.6 seconds, with `how-to-play.wav` for the heading and `Punch-button.mp3` for later steps; avoid hidden-tab catch-up and enable Ready only after the last line is visible.
+`src/instruction-sequence.js` reveals the rules heading, artwork, and three lines over about three seconds, with `how-to-play.wav` for the heading and `Punch-button.mp3` for later steps; avoid hidden-tab catch-up and enable Ready only after the last line is visible.
 The host's Back to modes action resets the shared set while keeping the room; confirm if a round has begun or scores exist.
 Players may explicitly leave active sets after confirmation; preserve accepted finishes, forfeit unfinished rounds, and let remaining players continue without a missing-player wait.
 The join handshake advertises `room-navigation`; show an actionable update message if a new frontend is connected to a server lacking Back/active-Leave support.

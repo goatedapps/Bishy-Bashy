@@ -18,20 +18,20 @@ function setup() {
   return { sequence, elements, reveals };
 }
 
-test('instructions reveal heading, artwork, and three rules in order with one sound per step', () => {
+test('instructions reveal heading, artwork, and three rules over three seconds with one sound per step', () => {
   const { sequence, elements, reveals } = setup();
   assert.equal(sequence.complete, false);
   assert.ok(elements.every(element => element.attributes.get('aria-hidden') === 'true'));
   sequence.advance(0);
-  sequence.advance(324);
+  sequence.advance(599);
   assert.deepEqual(reveals, [0]);
-  sequence.advance(325);
-  sequence.advance(700);
-  sequence.advance(1150);
-  sequence.advance(1599);
+  sequence.advance(600);
+  sequence.advance(1300);
+  sequence.advance(2150);
+  sequence.advance(2999);
   assert.deepEqual(reveals, [0, 1, 2, 3]);
   assert.equal(sequence.complete, false);
-  sequence.advance(1600);
+  sequence.advance(3000);
   assert.equal(sequence.complete, true);
   assert.deepEqual(reveals, [0, 1, 2, 3, 4]);
   assert.ok(elements.every(element => element.classes.has('is-revealed') && element.attributes.get('aria-hidden') === 'false'));

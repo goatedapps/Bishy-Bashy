@@ -1,4 +1,4 @@
-const GAPS_MS = [325, 375, 450, 450];
+const GAPS_MS = [600, 700, 850, 850];
 
 export class InstructionSequence {
   constructor({ onReveal = () => {} } = {}) {
@@ -30,7 +30,7 @@ export class InstructionSequence {
     element.setAttribute('aria-hidden', 'false');
     this.onReveal(this.revealed);
     // Delayed frames reveal one step, rather than playing a backlog of reveal sounds.
-    this.nextAt = time + (GAPS_MS[this.revealed] ?? 450);
+    this.nextAt = time + (GAPS_MS[this.revealed] ?? 850);
     this.revealed++;
   }
 
