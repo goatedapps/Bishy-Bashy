@@ -1,3 +1,5 @@
+import { COIN_GAME } from '../shared/coins.js';
+import { DODGE_GAME, JUMP_MS, MOVE_MS } from '../shared/dodge.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
@@ -26,7 +28,7 @@ function receiveProtocol(socket, predicate) {
   });
 }
 
-for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-select', 'totem-shrinker', 5], ['game-select', PERM_GAME, 5], ['game-select', SLOT_GAME, 5], ['game-select', FIREWORK_GAME, 5], ['game-select', MONKEY_GAME, 5], ['game-select', JUMP_GAME, 5], ['game-select', BURGER_GAME, 5], ['game-select', MISTAKE_GAME, 5], ['game-select', DICE_GAME, 5], ['game-select', FACING_GAME, 5]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
+for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-select', 'totem-shrinker', 5], ['game-select', PERM_GAME, 5], ['game-select', SLOT_GAME, 5], ['game-select', FIREWORK_GAME, 5], ['game-select', MONKEY_GAME, 5], ['game-select', JUMP_GAME, 5], ['game-select', BURGER_GAME, 5], ['game-select', MISTAKE_GAME, 5], ['game-select', DICE_GAME, 5], ['game-select', FACING_GAME, 5], ['game-select', COIN_GAME, 5], ['game-select', DODGE_GAME, 5]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
   const app = await createApp();
   let time = 1_000_000;
   app.rooms.now = () => time;
@@ -64,7 +66,28 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
     const round = state.round;
     assert.equal(round.difficulty, mode === 'arcade' ? 1 : index + 1);
     if (mode === 'game-select') assert.equal(round.game, game);
-    const simulatedRuns = round.game === JUMP_GAME ? clients.map((_, place) => {
+    const simulatedRuns = [COIN_GAME, DODGE_GAME].includes(round.game) ? clients.map((_, place) => {
+      const run = createRun(round, 0);
+      while (!run.done && (round.game === COIN_GAME ? run.landAt : run.impactAt) < run.end) {
+        const fail = run.index < place;
+        if (round.game === COIN_GAME) {
+          run.tap(fail ? run.wave.decoy : run.wave.column, run.launchedAt + 1);
+          run.advance(run.landAt);
+        } else {
+          const at = run.impactAt;
+          if (run.obstacle.kind === 'hurdle') {
+            if (!fail) run.tap(1, at - JUMP_MS / 2);
+          } else {
+            const target = fail ? (run.obstacle.safe + 1) % 3 : run.obstacle.safe;
+            let moveAt = run.launchedAt + 1;
+            while (run.position !== target) { run.tap(run.position > target ? 0 : 2, moveAt); moveAt += MOVE_MS; }
+          }
+          run.advance(at);
+        }
+      }
+      assert.equal(run.done, true);
+      return run;
+    }) : round.game === JUMP_GAME ? clients.map((_, place) => {
       const run = new JumpRun(round, 0);
       for (let boost = 0; boost < round.goal; boost++) run.tap(boost % 3, run.landAt + place * 15);
       run.advance(run.finishAt);
@@ -95,7 +118,7 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
     }) : null;
     time = simulatedRuns ? round.startAt + Math.max(...simulatedRuns.map(run => run.elapsed)) + 100 : round.game === PERM_GAME ? round.endAt + 100 : round.startAt + 4000;
     waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.history.length === index + 1);
-    clients.forEach((socket, place) => send(socket, { type: 'result', roundId: round.id, status: 'finished', elapsed: simulatedRuns ? simulatedRuns[place].elapsed : round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: round.goal, mistakes: 0, ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}), ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) }));
+    clients.forEach((socket, place) => send(socket, { type: 'result', roundId: round.id, status: 'finished', elapsed: simulatedRuns ? simulatedRuns[place].elapsed : round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: round.goal, mistakes: simulatedRuns ? simulatedRuns[place].mistakes : 0, ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}), ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) }));
     state = (await waiting).room;
     assert.deepEqual(state.set.players.map(player => player.points), [10, 7, 4, 1].map(points => points * (index + 1)));
     if (index + 1 < length) {

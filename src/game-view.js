@@ -1,3 +1,6 @@
+import { COIN_GAME } from '../shared/coins.js';
+import { DODGE_GAME } from '../shared/dodge.js';
+import { CoinStage, DodgeStage } from './coins-dodge-view.js';
 import { COLORS, createSequence } from '../shared/totem.js';
 import { PERM_GAME } from '../shared/perm.js';
 import { SLOT_GAME, slotLayout } from '../shared/slots.js';
@@ -17,7 +20,7 @@ import { DICE_GAME } from '../shared/dice.js';
 import { FACING_GAME } from '../shared/facing.js';
 import { DiceStage, FacingStage, diceMascot, duckPortrait } from './dice-facing-view.js';
 
-const STAGES = { [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake', [DICE_GAME]: 'dice', [FACING_GAME]: 'facing' };
+const STAGES = { [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake', [DICE_GAME]: 'dice', [FACING_GAME]: 'facing' };
 
 const SHAPES = ['●', '▲', '◆'];
 const $ = id => document.getElementById(id);
@@ -65,7 +68,9 @@ export class GameView {
       const mistake = new MistakeStage();
       const dice = new DiceStage();
       const facing = new FacingStage();
-      zone.append(tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element, burger.element, mistake.element, dice.element, facing.element);
+      const coins = new CoinStage();
+      const dodge = new DodgeStage();
+      zone.append(tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element, burger.element, mistake.element, dice.element, facing.element, coins.element, dodge.element);
       const effects = node('div', 'game-feedback');
       effects.setAttribute('aria-hidden', 'true');
       const ring = node('span', 'feedback-ring');
@@ -79,7 +84,7 @@ export class GameView {
       const status = node('p', 'seat-status');
       lane.append(name, zone, node('div', 'base'), remaining, progress, status);
       $('player-lanes').append(lane);
-      return { lane, name, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, dice, facing, remaining, fill, status, effects, ring, particles, towerKey: '' };
+      return { lane, name, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, dice, facing, coins, dodge, remaining, fill, status, effects, ring, particles, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -115,7 +120,7 @@ export class GameView {
       const frozen = ownRun && !ownRun.done && time < ownRun.run.blockedUntil;
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';
-      elements.tower.hidden = perm || slots || fireworks || monkeys || jump || burger || mistake || dice || facing;
+      elements.tower.hidden = perm || slots || fireworks || monkeys || jump || burger || mistake || dice || facing || game === COIN_GAME || game === DODGE_GAME;
       elements.avatar.hidden = !perm;
       elements.slots.cabinet.hidden = !slots;
       elements.fireworks.element.hidden = !fireworks;
@@ -125,6 +130,8 @@ export class GameView {
       elements.mistake.element.hidden = !mistake;
       elements.dice.element.hidden = !dice;
       elements.facing.element.hidden = !facing;
+      elements.coins.element.hidden = game !== COIN_GAME;
+      elements.dodge.element.hidden = game !== DODGE_GAME;
       if (STAGES[game]) {
         elements[STAGES[game]].render(round || {}, ownRun?.run, time, 0, active, Boolean(player), cleared, Boolean(status));
       } else if (jump) {

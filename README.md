@@ -1,6 +1,6 @@
 # Bishy Bashy
 
-A four-player browser party game with Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, and Facing Which Way.
+A four-player browser party game with Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, and Dodge or Die!!
 Everyone sees all four players and controls only their own player.
 The static website runs on GitHub Pages; a separate Node WebSocket server coordinates rooms and results.
 
@@ -49,8 +49,8 @@ The accompanying Last game column shows each player's most recent performance an
 The server awards points once per round and retains earned points if a player leaves between rounds.
 New guests can join only after the full set ends; original players can reconnect during it.
 The Arcade length and Game Select round count live in `shared/sets.js`, and new games join the shared catalog in `shared/games.js`.
-The catalog currently contains ten games, all available in Game Select.
-Arcade expands only at four-game milestones: it currently selects five distinct games from the first eight, and will add the next four together when the catalog reaches twelve.
+The catalog currently contains twelve games, all available in Game Select.
+Arcade expands only at four-game milestones: it now selects five distinct games from twelve, adding the next batch when the catalog reaches sixteen.
 `arcadeGameIds()` in `shared/sets.js` supplies the same eligible pool to server selection and the reel, so a spin cannot land on an omitted game.
 
 ## Play Totem Shrinker
@@ -315,13 +315,13 @@ Only the local answered card pops on success; reduced-motion preferences remove 
 Every correct local answer plays `Ding.mp3`, including the final answer, through the existing effects volume and mute controls.
 `shared/mistake.js` owns the seeded puzzle rules; `src/catch-spot-view.js` and `src/catch-spot.css` draw the picture cards.
 The new games use the same instructions, Ready gates, Arcade selection, cumulative podium, reconnect handling, and result acknowledgments as the rest of the catalog.
-Deploy the frontend and room service together; protocol 6 now advertises the `arcade-reel` and `asset-readiness` capabilities required by this frontend.
+Deploy the frontend and room service together; protocol 6 now advertises the `arcade-reel`, `asset-readiness`, and `coins-dodge` capabilities required by this frontend.
 Original artwork and full generation prompts for both games are preserved in [artwork notes](public/assets/catch-spot-artwork.md).
 
 ## Play Dice, Dice, More Dice
 
 Choose **Game Select → Dice, Dice, More Dice**.
-The new game joins Arcade at the next four-game milestone, when the catalog reaches twelve.
+This game is included in the twelve-game Arcade batch.
 Three dice appear vertically in your lane; choose the die with the most dots using red for top, green for middle, or blue for bottom.
 Each roll contains three distinct values from one to six, so there is always exactly one highest choice.
 All devices receive the same seeded rolls.
@@ -342,7 +342,7 @@ Existing Punch button feedback, Ding successes, mistake cues, finish cues, and d
 ## Play Facing Which Way
 
 Choose **Game Select → Facing Which Way**.
-This game also joins Arcade at the twelve-game milestone.
+This game is included in the twelve-game Arcade batch.
 Remember which way the duck points, then follow its covered card through clockwise turns, counterclockwise turns, and left-right flips.
 The visible move symbol states a 90-degree turn, 180-degree turn, or horizontal flip; the picture stays hidden until a correct answer.
 When **Answer** appears, red answers left, green up, and blue right.
@@ -363,6 +363,33 @@ Correct answers reuse Ding, and the move demonstration reuses `slot-lock.wav` on
 Both games use original image-generated characters, delivered as resized WebP files with their PNG masters retained.
 The complete prompts and source image details are in [Dice and Facing artwork notes](public/assets/dice-facing-artwork.md).
 No new audio was downloaded or created.
+
+## Play It's Raining Coins
+
+Move the raccoon with **red = left, green = middle, blue = right** to catch gold star coins while avoiding the cracked purple fakes.
+The three marked chutes match the shared control bar, whose captions show Left / Middle / Right during this game.
+Collect 18 coins before the 40-second deadline; fastest completion wins.
+A missed gold coin or a caught fake adds a mistake and a 400 ms recovery, keeping all collected coins.
+Game Select shortens each fall from 1100 to 740 ms across five rounds, with a 100 ms handoff after a successful catch.
+`shared/coins.js` owns seeded chute pairs and resolves landings at their scheduled local timestamp, accepting a lane change exactly at landing.
+
+## Play Dodge or Die!!
+
+Guide the helmeted fox with **red = one lane left, green = jump, blue = one lane right** using the same three gameplay buttons.
+Tall walls block two lanes, leaving one open lane; striped low hurdles span all three lanes and require a jump at the landing line.
+Clear 12 obstacles in Arcade; Game Select increases the goal from 12 to 16 and shortens each approach from 1350 to 950 ms.
+Every round has a 40-second deadline, and fastest completion wins.
+A bump adds a 550 ms recovery and keeps completed obstacles; clear obstacles have a 180 ms handoff.
+Jumps last 640 ms and clear a hurdle when their normalized height is at least 0.6 at impact, giving roughly a 378 ms valid launch window.
+Tall walls require the open lane even while airborne; lane steps have a 100 ms cooldown and a jump cannot restart in midair.
+`shared/dodge.js` owns the seeded wall lanes and alternating wall/hurdle schedule; delayed frames use scheduled impacts rather than frame arrival time.
+
+Both games use the existing Ding success cue, mistake cue, gameplay button sound, countdown, and podium music without adding or creating audio.
+Their initial difficulty values are provisional tuning, verified by deterministic simulations and desktop UI checks; player trials on phones can inform later pacing adjustments.
+The new generated raccoon and fox are retained as PNG masters with hashed 512-pixel WebP delivery images totaling 105,204 bytes.
+[Artwork prompts and provenance](public/assets/coins-dodge-artwork.md) record the built-in image-generation prompts and selected outputs.
+Both games enter Game Select and the twelve-game Arcade batch immediately, together with Dice and Facing Which Way.
+
 
 ## Loading and delivery assets
 

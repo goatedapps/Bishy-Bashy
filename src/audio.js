@@ -7,7 +7,7 @@ const MUSIC_MODES = ['auto', 'on', 'off'];
 const MENU_TRACKS = { menu: 'Background-ActionRock.mp3', instructions: 'game-instructions.mp3' };
 const MENU_TRACK_GAINS = { menu: 1, instructions: 2 };
 const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.wav', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3', wheelSpin: 'roulette.mp3', gameSelect: 'Game-select.mp3' };
-const GAME_AUDIO_FILES = { 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3' }, 'facing-which-way': { ding: 'Ding.mp3' } };
+const GAME_AUDIO_FILES = { 'its-raining-coins': { ding: 'Ding.mp3' }, 'dodge-or-die': { ding: 'Ding.mp3' }, 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3' }, 'facing-which-way': { ding: 'Ding.mp3' } };
 const PROFILES = {
   'dice-dice-more-dice': { music: 'music', urgency: 'urgency', go: 'go' },
   'facing-which-way': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -225,7 +225,7 @@ export class GameAudio {
 
   play(id, { color = 0, progress = 0, at = this.context?.currentTime, group = 'effects', game = this.game } = {}) {
     if (id === 'jumpPerfect') id = 'permGrow';
-    if (id === 'hit') id = ['burger-girl', 'me-find-mistake', 'dice-dice-more-dice', 'facing-which-way'].includes(game) ? 'ding' : game === 'perm-mania' ? 'permHit' : ['red', 'green', 'blue'][color] || 'red';
+    if (id === 'hit') id = ['burger-girl', 'me-find-mistake', 'dice-dice-more-dice', 'facing-which-way', 'its-raining-coins', 'dodge-or-die'].includes(game) ? 'ding' : game === 'perm-mania' ? 'permHit' : ['red', 'green', 'blue'][color] || 'red';
     if (id === 'mistake' && game === 'perm-mania') id = 'permMiss';
     const voice = this.source(id, { at, group, rate: ['red', 'green', 'blue'].includes(id) ? 1 + clamp(progress) * .04 : 1 });
     if (voice && group === 'effects') {

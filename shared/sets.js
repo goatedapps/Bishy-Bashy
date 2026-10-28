@@ -45,6 +45,8 @@ export function setStandings(players) {
 }
 
 export function roundDetail(round) {
+  if (round.game === 'its-raining-coins') return `${round.goal} coins · Speed ${round.difficulty}`;
+  if (round.game === 'dodge-or-die') return `${round.goal} obstacles · Speed ${round.difficulty}`;
   if (round.game === 'dice-dice-more-dice') return `${round.goal} rolls · Level ${round.difficulty}`;
   if (round.game === 'facing-which-way') return `${round.goal} tricks · ${round.turnCount} turns`;
   if (round.game === 'burger-girl') return `${round.goal / 4} burgers · Speed ${round.difficulty}`;

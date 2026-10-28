@@ -1,0 +1,57 @@
+.coin-theme { background-color:#c8eee5; }
+.coin-theme .arena { background:linear-gradient(#cbe8f8 0%,#ecf7e7 70%,#c3dfb8 70%); }
+.dodge-theme { background-color:#f2c6a2; }
+.dodge-theme .arena { background:linear-gradient(#e2f1da,#e4d4a9); }
+.coin-theme .tower-zone,.dodge-theme .tower-zone { --tower-height:clamp(210px,calc(100dvh - 520px),350px); }
+.coin-theme .base,.dodge-theme .base,.coin-theme .lane:before,.dodge-theme .lane:before { display:none; }
+.coin-theme .lane,.dodge-theme .lane { padding-inline:5px; }
+.coin-theme .lane.you,.dodge-theme .lane.you { background:#fffbee70; }
+.coin-theme .lane.finished .tower-zone:after,.dodge-theme .lane.finished .tower-zone:after { display:none; }
+.coin-theme .lane.forfeit .lane-stage,.dodge-theme .lane.forfeit .lane-stage { opacity:.45; filter:grayscale(1); }
+.coin-raccoon,.dodge-fox { display:block; width:90px; height:90px; background-position:center; background-size:contain; background-repeat:no-repeat; }
+.coin-raccoon { background-image:var(--image-coin-raccoon,url('/assets/optimized/coin-raccoon-441eaa2c2084.webp')); }
+.dodge-fox { background-image:var(--image-dodge-fox,url('/assets/optimized/dodge-fox-8c2d782072ee.webp')); }
+.art-its-raining-coins { background:#c5eee3; }
+.art-dodge-or-die { background:#ffe0a8; }
+.game-art>.coin-raccoon,.game-art>.dodge-fox { position:absolute; inset:0; width:100%; height:100%; }
+.lane-stage { position:relative; width:100%; height:100%; min-height:0; overflow:hidden; border-radius:12px; --lane-floor:64px; }
+.lane-stage.unoccupied { visibility:hidden; }
+.lane-tracks { position:absolute; inset:0 12.5%; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+.track-mark { display:flex; align-items:end; justify-content:center; border-inline:1px dashed #667c7c66; padding-bottom:3px; background:linear-gradient(transparent,#ffffff44); font-size:12px; }
+.track-0 { color:#bd3457; }.track-1 { color:#087d59; }.track-2 { color:#2873b5; }
+.lane-impact-line { position:absolute; inset-inline:0; bottom:var(--lane-floor); height:4px; border-radius:4px; background:#ffe780; box-shadow:0 0 0 1px #876e43; z-index:1; }
+.lane-runner,.lane-shadow { position:absolute; left:calc((var(--runner-column,1) + 1) * 25%); bottom:17px; transform:translateX(-50%); width:min(74px,43%); aspect-ratio:1; transition:left .085s cubic-bezier(.18,.75,.3,1); }
+.lane-runner { z-index:4; }
+.lane-runner>.coin-raccoon,.lane-runner>.dodge-fox { position:absolute; width:100%; height:100%; transform:translateY(calc(var(--jump-height,0) * -55px)); }
+.lane-shadow { height:9px; aspect-ratio:auto; width:27%; bottom:15px; background:#3b214d44; border-radius:50%; }
+.rain-coin { display:grid; place-items:center; width:30px; height:30px; border-radius:50%; color:#926027; font-size:20px; font-weight:900; background:radial-gradient(circle at 35% 25%,#fff7ba,#ffd958 65%,#e4a838); border:2px solid #bc8130; box-shadow:inset 0 0 0 2px #ffe59b,0 3px #b88235; line-height:1; }
+.fake-coin { background:#bc9de1; color:#562d75; border-color:#674282; box-shadow:inset 0 0 0 2px #d6beee,0 3px #674282; border-radius:30% 48% 35% 48%; }
+.coin-drop,.road-obstacle { position:absolute; left:calc((var(--drop-column) + 1) * 25%); bottom:calc(var(--lane-floor) + (1 - var(--fall-progress,0)) * (100% - var(--lane-floor) - 35px)); transform:translate(-50%,50%); z-index:2; }
+.coin-drop { width:clamp(17px,3vw,32px); aspect-ratio:1; }
+.coin-drop .rain-coin { width:100%; height:100%; font-size:clamp(12px,2vw,21px); }
+.lane-toast { position:absolute; top:38%; left:0; width:100%; z-index:6; font:clamp(16px,2.5vw,26px) 'Lilita One',sans-serif; text-align:center; color:#18774e; text-shadow:0 1px #fff9e4; }
+.lane-crash .lane-toast { color:#b44157; }
+.lane-success .lane-runner { filter:brightness(1.1); }
+.lane-crash .lane-runner { animation:runner-bump .25s ease-out; }
+.coin-stage:before { content:''; position:absolute; left:4%; right:4%; top:0; height:22px; border-radius:50%; background:#ffffffe0; box-shadow:12px 5px #ffffffbb,-10px 8px #ffffffbb; }
+.dodge-stage { --lane-floor:25px; background:repeating-linear-gradient(0deg,#bd9f79 0 2px,#ddbf93 2px 34px); border-inline:2px solid #8f9871; }
+.dodge-stage .lane-tracks { background:linear-gradient(#658c7122,transparent); }
+.dodge-stage .lane-impact-line { background:#78dba3; }
+.dodge-stage.hurdle-coming .lane-impact-line { background:#ffe780; }
+.road-obstacle { width:23%; height:65px; transform:translate(-50%,50%) scale(calc(.65 + var(--fall-progress,0) * .35)); transform-origin:bottom; }
+.obstacle-face { display:block; position:absolute; inset:0; border:2px solid #704364; border-radius:6px 6px 3px 3px; background:repeating-linear-gradient(-45deg,#d77586 0 8px,#e9ad9b 8px 16px); box-shadow:inset 0 -5px #a15776,0 4px #3b214d33; }
+.low-hurdle { height:18px; }
+.low-hurdle .obstacle-face { border-color:#8e692f; background:repeating-linear-gradient(-45deg,#ffe381 0 7px,#885d42 7px 14px); box-shadow:0 4px #3b214d33; border-radius:3px; }
+.road-warning { position:absolute; top:4px; inset-inline:0; text-align:center; font:clamp(12px,2vw,20px) 'Lilita One',sans-serif; background:#fff9dcdd; z-index:5; padding:4px 0; border-radius:6px; }
+@keyframes runner-bump { 25% { translate:-3px; } 65% { translate:3px; } }
+@media(max-width:620px) { .coin-theme .tower-zone,.dodge-theme .tower-zone { --tower-height:clamp(200px,calc(100dvh - 440px),290px); } .lane-stage { --lane-floor:44px; } .lane-runner { width:50%; bottom:16px; } .road-obstacle { height:46px; } .low-hurdle { height:14px; } .track-mark { font-size:9px; } .lane-runner>.dodge-fox { transform:translateY(calc(var(--jump-height,0) * -38px)); } }
+@media(prefers-reduced-motion:reduce) { .lane-runner,.lane-shadow { transition:none; } .lane-crash .lane-runner { animation:none; } }
+
+@media(max-width:620px) { .dodge-stage { --lane-floor:22px; } }
+
+.tutorial-road { position:relative; width:125px; height:92px; border-radius:8px; background:#ddbf93; }
+.tutorial-road .game-art { position:absolute; left:calc(50% - 25px); bottom:0; width:50px; height:60px; }
+.tutorial-wall { position:absolute; top:7px; width:30px; height:55px; border:2px solid #704364; border-radius:6px; background:repeating-linear-gradient(-45deg,#d77586 0 8px,#e9ad9b 8px 16px); }
+.wall-left { left:3px; }.wall-right { right:3px; }
+.tutorial-hurdle { position:absolute; inset-inline:4px; bottom:9px; height:13px; border:2px solid #8e692f; border-radius:3px; background:repeating-linear-gradient(-45deg,#ffe381 0 7px,#885d42 7px 14px); }
+.tutorial-road-jump .game-art { bottom:27px; }

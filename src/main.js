@@ -1,3 +1,5 @@
+import { COIN_GAME } from '../shared/coins.js';
+import { DODGE_GAME } from '../shared/dodge.js';
 import './arcade-reel.css';
 import QRCode from 'qrcode';
 import { SyncedClock } from './clock.js';
@@ -122,7 +124,7 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 6 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness')) {
+      if (message.protocol !== 6 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -289,9 +291,9 @@ function flushPending() {
   if (send(pending.message)) lastPendingSent = performance.now();
 }
 
-function flushBurgerEvents(time) {
+function flushLaneEvents(time) {
   const events = localRound.run.events.splice(0);
-  for (const event of events) if (time - event.at <= 150) audio.play(event.type, { color: event.color, game: BURGER_GAME });
+  for (const event of events) if (time - event.at <= 150) audio.play(event.type, { color: event.color, game: room.round.game });
   if (events.length) view.render(room, playerId, localRound, time);
 }
 
@@ -304,9 +306,9 @@ function enforceLifecycle(time, beforeInput = false) {
     if (localRound.run.done) complete('finished', localRound.run.elapsed);
   } else {
     if (room.round.game === FIREWORK_GAME || room.round.game === JUMP_GAME) localRound.run.advance(time);
-    if (room.round.game === BURGER_GAME) {
+    if ([BURGER_GAME, COIN_GAME, DODGE_GAME].includes(room.round.game)) {
       localRound.run.advance(time, !beforeInput);
-      flushBurgerEvents(time);
+      flushLaneEvents(time);
     }
     if (localRound.run.done) complete('finished', localRound.run.elapsed);
     else if (time >= localRound.end) complete('timeout');
@@ -320,7 +322,7 @@ function tap(color) {
   if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
   if (!buttons[color]?.disabled) audio.pressButton('gameplay');
   const action = localRound.run.tap(color, time);
-  if (room.round.game === BURGER_GAME) flushBurgerEvents(time);
+  if ([BURGER_GAME, COIN_GAME, DODGE_GAME].includes(room.round.game)) flushLaneEvents(time);
   if (action.type === 'ignored') return;
   if (room.round.game === FIREWORK_GAME) audio.fireworkLaunch(localRound.run);
   if (localRound.goDelay === null) localRound.goDelay = Math.max(0, time - localRound.start);
@@ -534,6 +536,14 @@ function updateGameProfile() {
   document.body.classList.toggle('mistake-theme', Boolean(themed && game === MISTAKE_GAME));
   document.body.classList.toggle('dice-theme', Boolean(themed && game === DICE_GAME));
   document.body.classList.toggle('facing-theme', Boolean(themed && game === FACING_GAME));
+  buttons.forEach((button, index) => {
+    const action = game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
+    button.children[1].textContent = action;
+    const label = ['Red circle', 'Green triangle', 'Blue diamond'][index];
+    button.setAttribute('aria-label', [COIN_GAME, DODGE_GAME].includes(game) ? `${label}: ${action}` : label);
+  });
+  document.body.classList.toggle('coin-theme', Boolean(themed && game === COIN_GAME));
+  document.body.classList.toggle('dodge-theme', Boolean(themed && game === DODGE_GAME));
   document.body.classList.toggle('in-set', Boolean(inSet));
   const title = !room ? 'Bishy Bashy!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'selecting' ? 'Pick our next game!' : room.set?.phase === 'intermission' ? 'Standings' : room.set?.phase === 'instructions' || active ? GAMES[game].title : room.arcadePreview ? 'Arcade' : 'Choose your mode';
   if (document.querySelector('.game-title').textContent !== title) document.querySelector('.game-title').textContent = title;

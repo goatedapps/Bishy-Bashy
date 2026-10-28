@@ -61,6 +61,16 @@ export const ASSETS = [
     "hash": "ccbad1c0ed635fa1"
   },
   {
+    "path": "assets/optimized/coin-raccoon-441eaa2c2084.webp",
+    "bytes": 50294,
+    "hash": "441eaa2c20843b8d"
+  },
+  {
+    "path": "assets/optimized/dodge-fox-8c2d782072ee.webp",
+    "bytes": 54910,
+    "hash": "8c2d782072ee86aa"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",

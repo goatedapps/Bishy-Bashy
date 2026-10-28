@@ -1,6 +1,6 @@
 # Bishy Bashy
 
-This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, and Facing Which Way.
+This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, and Dodge or Die!!
 The Vite frontend deploys independently to GitHub Pages; `server/` is a separate Node WebSocket room service on Render.
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
@@ -41,6 +41,9 @@ Keep the timing cursor, landing ring, +1/+2 feedback, and optional Perfect flour
 `shared/dice.js` owns seeded rolls with one unique maximum; red/green/blue choose top/middle/bottom, and misses preserve the current roll and completed progress.
 `shared/facing.js` owns covered-card turns and left-right mirrors; red/green/blue answer left/up/right only after the demonstration, and misses replay the current trick.
 `src/dice-facing-view.js` combines exact code-native die pips with the generated dice jester and aviator duck artwork; never expose local future boards or remote answers, and preserve the revealed direction during success effects.
+`shared/coins.js` owns seeded gold/fake drops; red/green/blue select left/middle/right, and catches settle at the scheduled local landing time.
+`shared/dodge.js` owns alternating tall walls and low hurdles; red/blue step left/right, green jumps, and collisions use the jump height at the scheduled impact.
+Both games keep completed progress after mistakes; `src/coins-dodge-view.js` renders the current local challenge while remote targets remain hidden.
 `shared/sets.js` defines five-game Arcade, five-round Game Select, shared placement points, and cumulative standings.
 `server/rooms.js` owns the fixed set roster, idempotent point awards, intermissions, and readiness gates.
 Selecting Arcade automatically starts a shared single reel; it spins for 4.7 seconds, holds the chosen game for two seconds, then opens instructions.
@@ -62,7 +65,7 @@ Use the shared `src/game-art.js` artwork for the home cast, equal-sized scrollab
 Avoid hidden-tab reveal catch-up and enable Ready only after the last line and selected audio bank are ready.
 The host's Back to modes action resets the shared set while keeping the room; confirm if a round has begun or scores exist.
 Players may explicitly leave active sets after confirmation; preserve accepted finishes, forfeit unfinished rounds, and let remaining players continue without a missing-player wait.
-The join handshake advertises `room-navigation`, `arcade-reel`, and `asset-readiness`; deploy frontend and backend together and show an actionable update message if required capabilities are absent.
+The join handshake advertises `room-navigation`, `arcade-reel`, `asset-readiness`, and `coins-dodge`; deploy frontend and backend together and show an actionable update message if required capabilities are absent.
 Facial Slot Machine uses `src/slot-view.js` and `src/slots.css`; remote reel animation is cosmetic and must not reset to zero on progress snapshots.
 Use the same three buttons and shared fixed control bar in every current and future game; do not add game-specific button layouts or replace them with a single Stop button.
 Show three horizontal scrolling slot rows per player, stacked red, green, and blue, with upcoming faces visible at narrow widths too.
@@ -75,7 +78,7 @@ The portable design mockup remains in `mockups/`, with editable source/provenanc
 Keep screens visually driven; avoid redundant captions, decorative microcopy, and repeated instructions outside the rules screen.
 Audio playback belongs in `src/audio.js`, starts only after a user gesture, and must have visual equivalents.
 Burger catches and correct picture answers use `Ding.mp3`, including final successes; the Arcade reel loops `roulette.mp3` while spinning and plays `Game-select.mp3` once on landing.
-Dice and direction successes also reuse `Ding.mp3`; Facing turn cues reuse `slot-lock.wav` with bounded local-clock lookahead and cancellation on replay, mute, interruption, or finish.
+Coin catches, cleared obstacles, dice, and direction successes also reuse `Ding.mp3`; Facing turn cues reuse `slot-lock.wav` with bounded local-clock lookahead and cancellation on replay, mute, interruption, or finish.
 Menu and transition screens stream `public/audio/Background-ActionRock.mp3` through the music bus; pause it for countdown/gameplay and previews, preserving its position and existing mute/ownership settings.
 The illustrated instructions screen streams `game-instructions.mp3` instead; pause the previous track before switching and preserve each track's position.
 Post-game podiums play `podium-winner.mp3` once per round before menu music resumes; preserve deduplication across redraws and cancel the cue on navigation, mute, or interruption.
@@ -113,8 +116,8 @@ Mark each entry complete as its game is implemented.
 5. [x] Me Find Mistake — spotting the odd picture out.
 6. [x] Dice, Dice, More Dice — quickly choosing the highest die.
 7. [x] Facing Which Way — tracking a picture through flips.
-8. [ ] It's Raining Coins — moving to catch falling coins.
-9. [ ] Dodge or Die!! — avoiding obstacles and timing jumps.
+8. [x] It's Raining Coins — moving to catch falling coins.
+9. [x] Dodge or Die!! — avoiding obstacles and timing jumps.
 10. [ ] Horse Speeder — accelerating and weaving between horses.
 11. [ ] Shark Jumper — following colored input sequences.
 12. [ ] Blaster Soda Race — alternating buttons to accelerate.

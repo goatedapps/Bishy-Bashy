@@ -1,3 +1,4 @@
+import { raccoonPortrait, runnerPortrait, coinPortrait } from './coins-dodge-view.js';
 import { facePortrait } from './slot-view.js';
 import { monkeyPortrait } from './monkey-view.js';
 import { fireworkBadge } from './firework-view.js';
@@ -15,7 +16,9 @@ const node = (tag, className, text) => {
 export function gameArt(game) {
   const art = node('span', `game-art art-${game}`);
   art.setAttribute('aria-hidden', 'true');
-  if (game === 'dice-dice-more-dice') art.append(diceMascot());
+  if (game === 'its-raining-coins') art.append(raccoonPortrait());
+  else if (game === 'dodge-or-die') art.append(runnerPortrait());
+  else if (game === 'dice-dice-more-dice') art.append(diceMascot());
   else if (game === 'facing-which-way') art.append(duckPortrait());
   else if (game === 'burger-girl') art.append(chefPortrait());
   else if (game === 'me-find-mistake') art.append(picturePortrait(0));
@@ -42,7 +45,19 @@ export function ruleVisual(game) {
   const first = node('div', 'rule-example');
   const second = node('div', 'rule-example');
   let label;
-  if (game === 'dice-dice-more-dice') {
+  if (game === 'its-raining-coins') {
+    first.append(coinPortrait(), gameArt(game), node('strong', '', 'Catch the gold'));
+    second.append(coinPortrait(true), shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Avoid the fakes'));
+    label = 'Move the raccoon under gold star coins. Avoid cracked purple fakes. Red selects left, green middle, blue right.';
+  } else if (game === 'dodge-or-die') {
+    const road = node('div', 'tutorial-road');
+    road.append(node('span', 'tutorial-wall wall-left'), node('span', 'tutorial-wall wall-right'), gameArt(game));
+    first.append(road, node('strong', '', 'Dodge tall walls'));
+    const jump = node('div', 'tutorial-road tutorial-road-jump');
+    jump.append(node('span', 'tutorial-hurdle'), gameArt(game));
+    second.append(jump, shapes([1], 'tutorial-buttons'), node('strong', '', 'Jump low hurdles'));
+    label = 'Red moves left, green jumps, blue moves right. Move into the gap between tall walls and jump low hurdles before the landing line.';
+  } else if (game === 'dice-dice-more-dice') {
     const dice = node('div', 'tutorial-dice');
     dice.append(diePortrait(2), diePortrait(6), diePortrait(4));
     first.append(dice, node('strong', '', 'Find the most dots'));

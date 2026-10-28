@@ -65,7 +65,7 @@ export class RoomService {
     if (!returning) room.players.push(player);
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 6, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 6, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 

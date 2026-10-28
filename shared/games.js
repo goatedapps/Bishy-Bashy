@@ -1,3 +1,5 @@
+import { COIN_GAME, CoinRun, COIN_GOAL, COIN_DURATION_MS } from './coins.js';
+import { DODGE_GAME, DodgeRun, DODGE_GOAL, DODGE_DURATION_MS } from './dodge.js';
 import { TOTEM_GAME, TotemRun, BLOCK_COUNT, GAME_DURATION_MS, MISTAKE_FREEZE_MS } from './totem.js';
 import { PERM_GAME, PermRun, PHRASE_COUNT, PERM_DURATION_MS, PERM_BPM, HIT_WINDOW_MS, permNotes } from './perm.js';
 import { SLOT_GAME, SlotRun, SLOT_DURATION_MS, REEL_COUNT, RETRY_MS } from './slots.js';
@@ -22,10 +24,14 @@ export const GAMES = Object.assign(Object.create(null), {
   [MISTAKE_GAME]: { id: MISTAKE_GAME, title: 'Me Find Mistake', subtitle: 'Find the picture that does not match', duration: MISTAKE_DURATION_MS, goal: MISTAKE_GOAL },
   [DICE_GAME]: { id: DICE_GAME, title: 'Dice, Dice, More Dice', subtitle: 'Spot the highest roll', duration: DICE_DURATION_MS, goal: DICE_GOAL },
   [FACING_GAME]: { id: FACING_GAME, title: 'Facing Which Way', subtitle: 'Follow the turns and flips', duration: FACING_DURATION_MS, goal: FACING_GOAL },
+  [COIN_GAME]: { id: COIN_GAME, title: "It's Raining Coins", subtitle: 'Catch the gold, dodge the fakes', duration: COIN_DURATION_MS, goal: COIN_GOAL },
+  [DODGE_GAME]: { id: DODGE_GAME, title: 'Dodge or Die!!', subtitle: 'Switch lanes and leap the hurdles', duration: DODGE_DURATION_MS, goal: DODGE_GOAL },
 });
 
 export function roundSettings(game, seed, difficulty = 1) {
   const level = Math.max(1, Math.min(5, Math.trunc(difficulty) || 1));
+  if (game === COIN_GAME) return { seed, difficulty: level, goal: COIN_GOAL, duration: COIN_DURATION_MS, fallMs: 1100 - (level - 1) * 90 };
+  if (game === DODGE_GAME) return { seed, difficulty: level, goal: DODGE_GOAL + level - 1, duration: DODGE_DURATION_MS, approachMs: 1350 - (level - 1) * 100 };
   if (game === DICE_GAME) return { seed, difficulty: level, goal: DICE_GOAL + (level - 1) * 2, duration: DICE_DURATION_MS, rollMs: 180 - (level - 1) * 20 };
   if (game === FACING_GAME) return { seed, difficulty: level, goal: FACING_GOAL + level - 1, duration: FACING_DURATION_MS, turnCount: level + 1, stepMs: 650 - (level - 1) * 50 };
   if (game === BURGER_GAME) return { seed, difficulty: level, goal: BURGER_GOAL, duration: BURGER_DURATION_MS, fallMs: 1100 - (level - 1) * 110 };
@@ -44,6 +50,8 @@ export function roundSettings(game, seed, difficulty = 1) {
 }
 
 export function createRun(round, localStart, timingOffset = 0) {
+  if (round.game === COIN_GAME) return new CoinRun(round, localStart);
+  if (round.game === DODGE_GAME) return new DodgeRun(round, localStart);
   if (round.game === DICE_GAME) return new DiceRun(round, localStart);
   if (round.game === FACING_GAME) return new FacingRun(round, localStart);
   if (round.game === BURGER_GAME) return new BurgerRun(round, localStart);
@@ -58,6 +66,8 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game, round) {
+  if (game === COIN_GAME) return ['Red = left, green = middle, blue = right. Move the raccoon under the gold coin.', 'Catch the gold star coins. Cracked purple coins are fakes; misses cost time but keep your gold.', `Collect ${round.goal} coins fastest. Later rounds make the rain fall faster.`];
+  if (game === DODGE_GAME) return ['Red moves one lane left, blue one lane right. Green jumps.', 'Find the open lane beside tall walls. Jump the striped low hurdles just before they reach the landing line.', `Clear ${round.goal} obstacles fastest. Bumps cost time but keep your progress; later rounds approach faster.`];
   if (game === DICE_GAME) return ['Pick the die with the most dots in your lane. There is always one highest die.', 'Red = top, green = middle, blue = bottom. A wrong choice briefly locks your buttons; keep your completed rolls.', `Win ${round.goal} rolls fastest. Later rounds add more rolls and tilt the dice.`];
   if (game === FACING_GAME) return ['Remember which way the duck points. Its card turns face down; follow the turn and left-right flip symbols.', 'When Answer appears: red = left, green = up, blue = right. A wrong answer replays the same trick.', `Solve ${round.goal} tricks fastest. Later rounds add more turns; completed tricks stay yours.`];
   if (game === BURGER_GAME) return ['Red = left, green = middle, blue = right. Move the plate under the falling food.', 'Catch lettuce, patty, tomato, then a bun to serve a burger. Misses cost time; keep your layers.', `Serve ${round.goal / 4} burgers fastest. Later rounds drop ingredients faster.`];

@@ -93,7 +93,7 @@ test('Burger, picture, dice, and direction successes reuse one Ding MP3, while T
   await audio.load();
   audio.play('hit', { game: 'me-find-mistake' });
   assert.equal([...audio.voices].at(-1).id, 'ding');
-  for (const game of ['dice-dice-more-dice', 'facing-which-way']) {
+  for (const game of ['dice-dice-more-dice', 'facing-which-way', 'its-raining-coins', 'dodge-or-die']) {
     audio.selectGame(game);
     await audio.load();
     audio.play('hit', { game });
