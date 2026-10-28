@@ -186,39 +186,33 @@ test('returning after a reel landing skips stale selection audio', async () => {
   assert.equal([...audio.voices].filter(voice => voice.group === 'wheel').length, 0);
 });
 
-test('instructions use a separate music track, preserve menu position, and yield to countdown and podium audio', async () => {
-  const media = [];
-  const { audio } = setup({ createMedia: () => { const item = new MenuMedia(); media.push(item); return item; } });
+test('instructions reuse the gesture-authorized media element on first entry and preserve each track position', async () => {
+  const media = new MenuMedia();
+  let creations = 0;
+  const { audio } = setup({ createMedia: () => { creations++; return media; } });
   await audio.unlock();
   audio.setMenuScreen(true);
-  const actionRock = media[0];
-  assert.equal(audio.menuGain.gain.value, 1);
-  actionRock.currentTime = 20;
+  media.currentTime = 20;
   audio.setMenuScreen(true, true, null, 'instructions');
-  const instructions = media[1];
+  assert.equal(creations, 1);
+  assert.equal(media.src, '/audio/game-instructions.mp3');
+  assert.equal(media.currentTime, 0);
   assert.equal(audio.menuGain.gain.value, 2);
-  assert.equal(actionRock.pauses, 1);
-  assert.equal(instructions.src, '/audio/game-instructions.mp3');
-  assert.equal(instructions.loop, true);
-  assert.equal(instructions.plays, 1);
-  instructions.currentTime = 2;
+  assert.equal(media.plays, 2);
+  media.currentTime = 2;
   audio.setMenuScreen(true, true, null, 'instructions');
-  assert.equal(instructions.plays, 1);
+  assert.equal(media.plays, 2);
   audio.scheduleRound('round', 3000, 48000, true);
-  assert.equal(instructions.pauses, 1);
   assert.equal(audio.menuPlaying, false);
   audio.stopRound();
   audio.setMenuScreen(true, true, 'round');
   assert.ok(audio.podium.voice);
-  assert.equal(actionRock.plays, 1);
   audio.podium.voice.source.onended();
-  assert.equal(actionRock.plays, 2);
-  assert.equal(actionRock.currentTime, 20);
-  assert.equal(audio.menuGain.gain.value, 1);
+  assert.equal(media.src, '/audio/Background-ActionRock.mp3');
+  assert.equal(media.currentTime, 20);
   audio.setMenuScreen(true, true, null, 'instructions');
-  assert.equal(instructions.plays, 2);
-  assert.equal(instructions.currentTime, 2);
-  assert.equal(media.length, 2);
+  assert.equal(media.currentTime, 2);
+  assert.equal(creations, 1);
   audio.setEnabled(false);
   assert.equal(audio.menuPlaying, false);
 });
@@ -780,4 +774,19 @@ test('Facial Slot Machine uses its own bank, bounded match feedback, and a finis
   assert.equal([...audio.voices].filter(voice => voice.id === 'slotWin').length, 1);
   audio.cancel();
   assert.equal(audio.voices.size, 0);
+});
+
+test('first menu playback is issued before awaiting a suspended audio context resume', async () => {
+  let resumed = false, requested = false, finishResume;
+  const media = new MenuMedia();
+  media.play = () => { requested = true; assert.equal(resumed, false); return Promise.resolve(); };
+  const { audio, context } = setup({createMedia:()=>media});
+  context.state='suspended';
+  context.resume=()=>new Promise(resolve=>{finishResume=()=>{resumed=true;context.state='running';resolve();};});
+  audio.setMenuScreen(true,true,null,'instructions');
+  const unlocking=audio.unlock();
+  assert.equal(requested,true);
+  finishResume();await unlocking;
+  assert.equal(audio.menuPlaying,true);
+  assert.equal(media.src,'/audio/game-instructions.mp3');
 });

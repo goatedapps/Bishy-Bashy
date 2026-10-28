@@ -33,7 +33,7 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
   return { service, clients, room, messages, sync, ready, finish, setTime: value => { time = value; }, get now() { return time; } };
 }
 
-test('Arcade selects five distinct games from the expanding catalog; Game Select repeats five', () => {
+test('Arcade selects five distinct games from the expanding catalog; Game Select repeats three', () => {
   const ids = Object.keys(GAMES);
   const current = createSetPlan('arcade', ids[0], () => 0);
   assert.equal(current.length, 5);
@@ -43,7 +43,7 @@ test('Arcade selects five distinct games from the expanding catalog; Game Select
   const plan = createSetPlan('arcade', null, max => max - 1, future);
   assert.equal(plan.length, 5);
   assert.equal(new Set(plan).size, 5);
-  assert.deepEqual(createSetPlan('game-select', PERM_GAME), Array(5).fill(PERM_GAME));
+  assert.deepEqual(createSetPlan('game-select', PERM_GAME), Array(3).fill(PERM_GAME));
 });
 
 test('set points share tied places, skip forfeits and empty rhythm results, and total ties remain ties', () => {
@@ -53,23 +53,23 @@ test('set points share tied places, skip forfeits and empty rhythm results, and 
   assert.deepEqual(setStandings([{ id: 1, points: 17 }, { id: 2, points: 20 }, { id: 3, points: 20 }]).map(player => [player.id, player.placement]), [[2, 1], [3, 1], [1, 3]]);
 });
 
-test('five automatic Totem rounds increase block counts and crown the total-points leader', () => {
+test('three automatic Totem rounds increase block counts and crown the total-points leader', () => {
   const state = setup();
   const { service, clients, room, finish, sync, setTime } = state;
   const setId = room.set.id;
-  for (let index = 0; index < 5; index++) {
+  for (let index = 0; index < 3; index++) {
     assert.equal(room.round.blockCount, 30 + index * 10);
     assert.equal(room.round.setRound, index + 1);
-    assert.equal(room.round.totalRounds, 5);
+    assert.equal(room.round.totalRounds, 3);
     assert.ok(room.players.every(player => !player.ready));
-    finish([3, 2, 1, 0], index < 3 ? 0 : 1);
+    finish([3, 2, 1, 0], index < 2 ? 0 : 1);
     const points = room.set.players[0].points;
     const historyLength = room.set.history.length;
     service.handle(clients[0], { type: 'result', roundId: room.round.id, status: 'finished', elapsed: 1, cleared: room.round.goal, mistakes: 0 });
     service.tick();
     assert.equal(room.set.players[0].points, points);
     assert.equal(room.set.history.length, historyLength);
-    if (index < 4) {
+    if (index < 2) {
       assert.equal(room.set.phase, 'intermission');
       service.handle(clients[0], { type: 'configure', mode: 'arcade', game: PERM_GAME });
       assert.equal(room.mode, 'game-select');
@@ -83,11 +83,14 @@ test('five automatic Totem rounds increase block counts and crown the total-poin
     }
   }
   assert.equal(room.set.phase, 'complete');
-  assert.deepEqual(room.set.players.map(player => player.points), [44, 41, 20, 5]);
+  assert.deepEqual(room.set.players.map(player => player.points), [27, 24, 12, 3]);
   assert.equal(setStandings(room.set.players)[0].id, room.players[0].id);
-  assert.equal(room.set.history.length, 5);
-  service.tick(); assert.equal(room.set.history.length, 5);
-  state.ready(); service.handle(clients[0], { type: 'start' }); state.ready();
+  assert.equal(room.set.history.length, 3);
+  service.tick(); assert.equal(room.set.history.length, 3);
+  service.handle(clients[0], { type: 'start' });
+  assert.equal(room.set.id, setId);
+  service.handle(clients[0], { type: 'back-to-modes', setId });
+  service.handle(clients[0], { type: 'start' }); state.ready();
   assert.notEqual(room.set.id, setId);
   assert.ok(room.set.players.every(player => player.points === 0));
   assert.equal(room.set.history.length, 0);

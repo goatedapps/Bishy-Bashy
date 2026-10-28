@@ -6,8 +6,8 @@ import { MONKEY_GAME } from './monkeys.js';
 import { JUMP_GAME } from './jump.js';
 
 export const ARCADE_LENGTH = 5;
-export const GAME_SELECT_LENGTH = 5;
-export const INTERMISSION_MS = 8_000;
+export const GAME_SELECT_LENGTH = 3;
+export const INTERMISSION_MS = 5_000;
 export const WHEEL_SPIN_MS = 4_700;
 export const REEL_HOLD_MS = 2_000;
 export const ARCADE_BATCH_SIZE = 4;

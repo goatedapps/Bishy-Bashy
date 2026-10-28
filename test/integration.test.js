@@ -1,3 +1,4 @@
+import { captureVisual, RemoteRuns } from '../shared/visual-state.js';
 import { COIN_GAME } from '../shared/coins.js';
 import { DODGE_GAME, JUMP_MS, MOVE_MS } from '../shared/dodge.js';
 import test from 'node:test';
@@ -28,7 +29,7 @@ function receiveProtocol(socket, predicate) {
   });
 }
 
-for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-select', 'totem-shrinker', 5], ['game-select', PERM_GAME, 5], ['game-select', SLOT_GAME, 5], ['game-select', FIREWORK_GAME, 5], ['game-select', MONKEY_GAME, 5], ['game-select', JUMP_GAME, 5], ['game-select', BURGER_GAME, 5], ['game-select', MISTAKE_GAME, 5], ['game-select', DICE_GAME, 5], ['game-select', FACING_GAME, 5], ['game-select', COIN_GAME, 5], ['game-select', DODGE_GAME, 5]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
+for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-select', 'totem-shrinker', 3], ['game-select', PERM_GAME, 3], ['game-select', SLOT_GAME, 3], ['game-select', FIREWORK_GAME, 3], ['game-select', MONKEY_GAME, 3], ['game-select', JUMP_GAME, 3], ['game-select', BURGER_GAME, 3], ['game-select', MISTAKE_GAME, 3], ['game-select', DICE_GAME, 3], ['game-select', FACING_GAME, 3], ['game-select', COIN_GAME, 3], ['game-select', DODGE_GAME, 3]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
   const app = await createApp();
   let time = 1_000_000;
   app.rooms.now = () => time;
@@ -279,4 +280,31 @@ test('WebSocket upgrade allows the configured GitHub Pages origin', async t => {
   const socket = new WebSocket(`ws://127.0.0.1:${app.server.address().port}/ws`, { origin: 'https://goatedapps.github.io' });
   await once(socket, 'open');
   assert.equal(socket.readyState, WebSocket.OPEN);
+});
+
+for (const game of ['burger-girl','its-raining-coins','dodge-or-die']) test(`${game}: four real connections receive the same live object state`, async t => {
+  const app=await createApp();let time=100000;app.rooms.now=()=>time;
+  app.server.listen(0,'127.0.0.1');await once(app.server,'listening');t.after(()=>app.close());
+  const url=`ws://127.0.0.1:${app.server.address().port}/ws`,clients=[];
+  const send=(socket,message)=>socket.send(JSON.stringify(message));let code;
+  for(let index=0;index<4;index++){
+    const socket=new WebSocket(url);await once(socket,'open');clients.push(socket);
+    const joined=receiveProtocol(socket,message=>message.type==='joined');
+    send(socket,{type:index?'join':'create',name:`Peer ${index}`,mode:'game-select',game,code});code=(await joined).code;
+  }
+  let waiting=receiveProtocol(clients[0],message=>message.type==='state'&&message.room.set?.phase==='instructions');
+  send(clients[0],{type:'start'});await waiting;
+  waiting=receiveProtocol(clients[0],message=>message.type==='state'&&message.room.round?.phase==='countdown');
+  clients.forEach(socket=>{send(socket,{type:'sync',rtt:10,uncertainty:5,count:5});send(socket,{type:'ready',ready:true});});
+  const round=(await waiting).room.round,run=createRun(round,5000);
+  run.position=2;
+  time=round.startAt+500;
+  const snapshots=clients.map(socket=>receiveProtocol(socket,message=>message.type==='state'&&message.room.players[1]?.progress.visual?.sample===500));
+  send(clients[1],{type:'progress',roundId:round.id,cleared:0,mistakes:0,visual:captureVisual(game,run,5500)});
+  for(const snapshot of await Promise.all(snapshots)){
+    const peer=snapshot.room.players[1],remote=new RemoteRuns().get(round,peer,2000);
+    assert.equal(remote.position,run.position);
+    assert.deepEqual(game==='dodge-or-die'?remote.obstacle:game==='burger-girl'?remote.column:remote.wave,game==='dodge-or-die'?run.obstacle:game==='burger-girl'?run.column:run.wave);
+    assert.equal(remote.launchedAt-remote.start,run.launchedAt-run.start);
+  }
 });

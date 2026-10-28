@@ -19,44 +19,48 @@ Show the next five blocks with the next input at the bottom, and size the comple
 Perm Mania ranks growth, then timing score; Totem Shrinker ranks elapsed time.
 `shared/slots.js` owns seeded portrait reels and local stops; Facial Slot Machine ranks elapsed time after matching all three reels.
 Red, green, and blue stop their own continuously scrolling slot rows in any order; misses pause only that row for 450 ms and resume its motion without a jump.
-Reels show approaching faces and judge the portrait nearest the center marker; Game Select reduces travel time per portrait from 320 to 200 ms across five rounds.
+Reels show approaching faces and judge the portrait nearest the center marker; Game Select reduces travel time per portrait from 320 to 260 ms across three Game Select rounds.
 Track slot locks as a monotonic three-bit `reelMask`, rather than assuming the first N rows were stopped.
 `shared/games.js` is the common game registry, difficulty settings, and result ordering.
 `shared/fireworks.js` owns Fireworks Craze's seeded rockets, reveal windows, and local elapsed-time race to 12 bursts.
 Early, wrong, and expired rockets advance the attempt and cost 300 ms; keep unrevealed colors hidden and render only the local player's actual reaction targets.
-`src/firework-view.js` and `src/fireworks.css` draw the live cues over the generated festival backdrop; remote bursts follow cosmetic progress.
+`src/firework-view.js` and `src/fireworks.css` draw the live cues over the generated festival backdrop; remote cues follow published player state.
 Fireworks launch audio follows the local run's `launchedAt` timestamp with bounded lookahead; deduplicate attempts and skip stale launches after interruption.
 `shared/monkeys.js` owns Mimicking Monkeys' seeded expanding prefix, watch/play gates, and elapsed-time race through 5–9 stages.
 Wrong responses replay the current prefix after recovery; completed stages persist, and demonstration inputs are ignored.
-`src/monkey-view.js` and `src/monkeys.css` show the original monkey, color/shape flashes, and answer dots without revealing future answers or animating remote demonstrations.
+`src/monkey-view.js` and `src/monkeys.css` show the original monkey, color/shape flashes, and answer dots without revealing future answers; remote demonstrations use published player timing.
 Memory demonstration tones use the local run's cue timestamps and a bounded audio lookahead; cancel them on replay, mute, finish, or interruption, and skip past cues on resume.
 `shared/jump.js` owns seeded bounce arcs, inclusive landing windows, recovery, and the elapsed-time race to the final meat-reaching apex.
 Any of the three buttons boosts a valid landing; preserve successful boosts after a miss and resolve final completion at its scheduled local apex, even on a delayed frame.
 The wide gold landing window earns one boost; its green Perfect center (30% of the half-window) earns two, capped at the remaining goal.
 Keep the timing cursor, landing ring, +1/+2 feedback, and optional Perfect flourish consistent with the same local input timestamp.
-`src/jump-view.js` and `src/jump.css` draw the original dinosaur and landing guide; remote bounces remain cosmetic, and the home cast stays bounded to five characters as the catalog grows.
+`src/jump-view.js` and `src/jump.css` draw the original dinosaur and landing guide; remote bounces follow published jump timing, and the home cast stays bounded to five characters as the catalog grows.
 `shared/burger.js` owns seeded falling ingredients and automatic local catches; red/green/blue move the plate left/middle/right, misses keep completed layers, and delayed frames preserve scheduled landing times.
 `shared/mistake.js` owns seeded odd-picture boards; red/green/blue choose top/middle/bottom, wrong answers keep the board, and correct answers retain their feedback before revealing the next board.
-`src/catch-spot-view.js` and `src/catch-spot.css` render both games with original generated sprites; keep remote pictures hidden and never show a future local board during success feedback.
+`src/catch-spot-view.js` and `src/catch-spot.css` render both games with original generated sprites; show the published current peer board and never show a future board during success feedback.
 `shared/dice.js` owns seeded rolls with one unique maximum; red/green/blue choose top/middle/bottom, and misses preserve the current roll and completed progress.
 `shared/facing.js` owns covered-card turns and left-right mirrors; red/green/blue answer left/up/right only after the demonstration, and misses replay the current trick.
-`src/dice-facing-view.js` combines exact code-native die pips with the generated dice jester and aviator duck artwork; never expose local future boards or remote answers, and preserve the revealed direction during success effects.
+`src/dice-facing-view.js` combines exact code-native die pips with the generated dice jester and aviator duck artwork; never expose future boards, and preserve the revealed direction during success effects.
 `shared/coins.js` owns seeded gold/fake drops; red/green/blue select left/middle/right, and catches settle at the scheduled local landing time.
 `shared/dodge.js` owns alternating tall walls and low hurdles; red/blue step left/right, green jumps, and collisions use the jump height at the scheduled impact.
-Both games keep completed progress after mistakes; `src/coins-dodge-view.js` renders the current local challenge while remote targets remain hidden.
-`shared/sets.js` defines five-game Arcade, five-round Game Select, shared placement points, and cumulative standings.
+Both games keep completed progress after mistakes; `src/coins-dodge-view.js` renders local and published remote challenges using the same seeded models.
+`shared/sets.js` defines five-game Arcade, three-round Game Select, shared placement points, and cumulative standings.
 `server/rooms.js` owns the fixed set roster, idempotent point awards, intermissions, and readiness gates.
-Selecting Arcade automatically starts a shared single reel; it spins for 4.7 seconds, holds the chosen game for two seconds, then opens instructions.
+Selecting Arcade stays in the lobby; Start set begins the shared single reel, which spins for 4.7 seconds, holds the chosen game for two seconds, then opens instructions.
 The server owns the result, selection timestamps, and five-game plan without repeats; render only seven recycled reel rows.
 Expand the Arcade reel and selection pool only at catalog counts divisible by four (8, 12, 16, and so on); games added between those milestones are available immediately in Game Select.
 `shared/sets.js` owns the common `arcadeGameIds()` batch boundary for both server selection and reel artwork.
-After each Arcade podium's eight seconds, show the next spin, then three-point rules and an all-player Ready gate.
-Game Select shows rules once and uses the podium's all-player Ready gate between subsequent rounds, with an eight-second minimum intermission.
+After each Arcade podium's five seconds, show the next spin, then three-point rules and an all-player Ready gate.
+Game Select shows rules once and uses the podium's all-player Ready gate between subsequent rounds, with an five-second minimum intermission.
 Readiness never carries across a round or instructions screen, and countdowns require every connected player to be ready and freshly synchronized.
 `shared/games.js` defines the three-second countdown for both room scheduling and the single `countdown.mp3` cue; resume at the current offset, preserve its tail past GO, and avoid layering the old GO cue.
 The host may configure modes and games only outside an active set, resetting readiness; new guests must wait until the set finishes.
-Game Select increases Totem blocks from 30 to 70 and Perm tempo from 128 to 160 BPM across five rounds.
+Game Select increases Totem blocks from 30 to 50 and Perm tempo from 128 to 144 BPM across three rounds.
 Every device displays all four lanes, with controls for its own player only.
+`shared/visual-state.js` publishes bounded scene snapshots at 4 Hz and maps round-relative timestamps to each viewer's clock; projections never advance gameplay or award results.
+`src/viewport.js` and `src/viewport.css` fit the active arena and shared controls inside the visual viewport, with controls outside the arena and instructions keeping Ready visible.
+Final standings hide setup and restart controls until the host explicitly returns everyone to modes.
+Facing turns take 1000–700 ms across five available difficulties; Arcade coin falls take 800 ms, while Game Select starts at 1100 ms.
 Shared styles live in `src/style.css`; the pink disco stage lives in `src/games.css`.
 The landing page and set standings use `src/sets.css` and `src/set-view.js`.
 The landing screen only creates or joins rooms; choose modes and games inside the room, with a short explanation visible on each mode card.
@@ -65,8 +69,8 @@ Use the shared `src/game-art.js` artwork for the home cast, equal-sized scrollab
 Avoid hidden-tab reveal catch-up and enable Ready only after the last line and selected audio bank are ready.
 The host's Back to modes action resets the shared set while keeping the room; confirm if a round has begun or scores exist.
 Players may explicitly leave active sets after confirmation; preserve accepted finishes, forfeit unfinished rounds, and let remaining players continue without a missing-player wait.
-The join handshake advertises `room-navigation`, `arcade-reel`, `asset-readiness`, and `coins-dodge`; deploy frontend and backend together and show an actionable update message if required capabilities are absent.
-Facial Slot Machine uses `src/slot-view.js` and `src/slots.css`; remote reel animation is cosmetic and must not reset to zero on progress snapshots.
+The join handshake advertises `room-navigation`, `arcade-reel`, `asset-readiness`, `coins-dodge`, and `live-gameplay-v2`; deploy frontend and backend together and show an actionable update message if required capabilities are absent.
+Facial Slot Machine uses `src/slot-view.js` and `src/slots.css`; remote reels use the published lock masks, per-row pauses, and stopped positions without resetting on snapshots.
 Use the same three buttons and shared fixed control bar in every current and future game; do not add game-specific button layouts or replace them with a single Stop button.
 Show three horizontal scrolling slot rows per player, stacked red, green, and blue, with upcoming faces visible at narrow widths too.
 Set podium positions and points use cumulative totals; the separate Last game column shows that round's performance and earned points.
@@ -80,6 +84,7 @@ Audio playback belongs in `src/audio.js`, starts only after a user gesture, and 
 Burger catches and correct picture answers use `Ding.mp3`, including final successes; the Arcade reel loops `roulette.mp3` while spinning and plays `Game-select.mp3` once on landing.
 Coin catches, cleared obstacles, dice, and direction successes also reuse `Ding.mp3`; Facing turn cues reuse `slot-lock.wav` with bounded local-clock lookahead and cancellation on replay, mute, interruption, or finish.
 Menu and transition screens stream `public/audio/Background-ActionRock.mp3` through the music bus; pause it for countdown/gameplay and previews, preserving its position and existing mute/ownership settings.
+Menu tracks reuse one gesture-authorized media element and retain separate playback positions to support first-entry playback on tablets.
 The illustrated instructions screen streams `game-instructions.mp3` instead; pause the previous track before switching and preserve each track's position.
 Post-game podiums play `podium-winner.mp3` once per round before menu music resumes; preserve deduplication across redraws and cancel the cue on navigation, mute, or interruption.
 Enabled menu buttons use the cached `Button-Press.mp3` effect; the three gameplay buttons and their keyboard shortcuts use `Punch-button.mp3` once through the shared tap handler, preserving game-specific sound cues.

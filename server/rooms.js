@@ -1,3 +1,4 @@
+import { sanitizeVisual } from '../shared/visual-state.js';
 import { randomBytes, randomUUID, randomInt } from 'node:crypto';
 import { TOTEM_GAME } from '../shared/totem.js';
 import { COUNTDOWN_MS, GAMES, roundSettings, isRoundActive } from '../shared/games.js';
@@ -65,7 +66,7 @@ export class RoomService {
     if (!returning) room.players.push(player);
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 6, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 6, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -103,20 +104,19 @@ export class RoomService {
     }
     if (message.type === 'configure' || message.type === 'select-game') {
       if (player.id !== room.hostId) return this.error(client, 'Only the room host can choose the mode and game.');
-      if (room.set && room.set.phase !== 'complete' || room.round && room.round.phase !== 'results') return;
+      if (room.set || room.round && room.round.phase !== 'results') return;
       const mode = message.type === 'select-game' ? 'game-select' : message.mode;
       const game = message.game || room.selectedGame;
-      if (!MODES[mode] || !GAMES[game] || room.selectedGame === game && room.mode === mode && (mode !== 'arcade' || room.arcadePreview)) return;
+      if (!MODES[mode] || !GAMES[game] || room.selectedGame === game && room.mode === mode) return;
       room.selectedGame = game;
       room.mode = mode;
       room.arcadePreview = false;
       room.players.forEach(p => { p.ready = false; });
-      if (mode === 'arcade') return this.handle(client, { type: 'start' });
       return this.broadcast(room);
     }
     if (message.type === 'start') {
       if (player.id !== room.hostId) return this.error(client, 'Only the room host can start the round.');
-      if (room.set && room.set.phase !== 'complete') return;
+      if (room.set) return;
       if (room.round && room.round.phase !== 'results') return;
       const participants = room.players.filter(p => p.connected);
       if (message.mode === 'sync' && room.players.some(p => !p.connected && received - p.disconnectedAt < RECONNECT_WAIT_MS)) return this.error(client, 'Waiting up to 15 seconds for a disconnected player.');
@@ -179,7 +179,7 @@ export class RoomService {
     const set = room.set;
     const game = set.plan[set.roundIndex];
     const difficulty = set.mode === 'game-select' ? set.roundIndex + 1 : 1;
-    room.round = { id: randomUUID(), game, phase: 'instructions', playerIds: [], ...roundSettings(game, randomBytes(4).readUInt32LE(), difficulty), setId: set.id, setRound: set.roundIndex + 1, totalRounds: set.plan.length };
+    room.round = { id: randomUUID(), game, phase: 'instructions', playerIds: [], ...roundSettings(game, randomBytes(4).readUInt32LE(), difficulty, set.mode), setId: set.id, setRound: set.roundIndex + 1, totalRounds: set.plan.length };
     room.players.forEach(player => { player.ready = false; player.assetRound = null; });
     set.phase = 'instructions';
     set.nextStartAt = null;
@@ -206,7 +206,7 @@ export class RoomService {
     const set = room.set;
     const game = sync ? 'sync' : set.plan[set.roundIndex];
     const difficulty = set?.mode === 'game-select' ? set.roundIndex + 1 : 1;
-    const settings = sync ? { duration: ROUND_MS } : roundSettings(game, room.round?.phase === 'instructions' ? room.round.seed : randomBytes(4).readUInt32LE(), difficulty);
+    const settings = sync ? { duration: ROUND_MS } : roundSettings(game, room.round?.phase === 'instructions' ? room.round.seed : randomBytes(4).readUInt32LE(), difficulty, set?.mode);
     const startAt = this.now() + COUNTDOWN_MS;
     room.testNumber++;
     room.players.forEach(player => {
@@ -265,7 +265,9 @@ export class RoomService {
     if (!Number.isInteger(cleared) || cleared < player.progress.cleared || cleared > round.goal || !Number.isInteger(mistakes) || mistakes < player.progress.mistakes || mistakes > 1000 || received - player.lastProgressAt < 150) return;
     if (round.game === PERM_GAME && (!Number.isInteger(message.score) || message.score < 0 || message.score > round.maxScore)) return;
     if (round.game === SLOT_GAME && (!validReelMask(message.reelMask, cleared) || (message.reelMask & player.progress.reelMask) !== player.progress.reelMask)) return;
-    player.progress = { cleared, mistakes, ...(round.game === SLOT_GAME ? { reelMask: message.reelMask } : {}), ...(round.game === PERM_GAME ? { score: message.score } : {}) };
+    const visual = sanitizeVisual(round, message.visual, received - round.startAt);
+    if (visual && visual.sample < (player.progress.visual?.sample ?? -1)) return;
+    player.progress = { cleared, mistakes, ...(visual ? { visual } : player.progress.visual ? { visual: player.progress.visual } : {}), ...(round.game === SLOT_GAME ? { reelMask: message.reelMask } : {}), ...(round.game === PERM_GAME ? { score: message.score } : {}) };
     player.lastProgressAt = received;
     this.broadcast(room);
   }
@@ -303,6 +305,8 @@ export class RoomService {
     };
     if (elapsedRace && message.status === 'finished') player.progress = { cleared: round.goal, mistakes: message.mistakes, ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}) };
     if (round.game === PERM_GAME && message.status === 'finished') player.progress = { cleared, mistakes: message.mistakes, score: message.score };
+    const visual = sanitizeVisual(round, message.visual, received - round.startAt);
+    if (visual && visual.sample >= (player.progress.visual?.sample ?? -1)) player.progress = { ...player.progress, cleared, mistakes: player.result.mistakes ?? player.progress.mistakes, visual };
     this.send(client, { type: 'result-ack', roundId: round.id, status: player.result.status });
     this.finishIfComplete(room);
     this.broadcast(room);

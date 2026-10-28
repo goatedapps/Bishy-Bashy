@@ -16,12 +16,12 @@ The Bishy Bashy! title and a cast of original game characters introduce the game
 After creating or joining a room, choose a mode on the room screen.
 Game Select uses equal-sized illustrated cards in a scrollable library, with a title search for a larger catalog.
 Choose **Arcade** for five different games selected at random, played once each in a random order.
-Once friends have joined, the host selects Arcade to start the single reel automatically.
+Selecting Arcade keeps everyone in the room lobby; once friends have joined, the host taps **Start set** to start the single reel.
 Before each Arcade game, the reel spins for 4.7 seconds and lands on the same server-chosen game on every device.
 With sound enabled, `roulette.mp3` loops during the spin and `Game-select.mp3` plays once on landing.
 The selected game stays visible for two seconds before How to play; there is no separate Spin button.
 The five-game plan has no repeats, and repeated starts or reconnects do not reroll it.
-Choose **Game Select** for five rounds of one game, with difficulty increasing each round.
+Choose **Game Select** for three rounds of one game, with difficulty increasing each round.
 Only the host can change the mode or chosen game after joining.
 The host can use **Back to modes** to keep everyone in the same room and choose again.
 Before the first countdown this returns immediately; during an active round or an unfinished set with scores, confirmation explains that the current set and scores will be cleared for everyone.
@@ -32,16 +32,17 @@ Ready becomes available once the final line is visible; redraws do not restart t
 **Leave** stays available during play and asks for confirmation before leaving an active set.
 Leaving forfeits only an unfinished round; an already accepted finish and previously earned points remain credited, and the other players can continue.
 Changing the setup resets everyone's Ready state; setup stays locked throughout the full set.
-The host taps **Start set** to show the game's instructions, with no more than three points.
+In Game Select, the host taps **Start set** to show the game's instructions, with no more than three points.
 After clock synchronization, every connected player taps **Ready** on that screen before the shared three-second countdown can begin.
-In Arcade, each completed game shows a cumulative podium for eight seconds, followed by a fresh reel spin, the next game's instructions, and an all-player Ready gate.
+In Arcade, each completed game shows a cumulative podium for five seconds, followed by a fresh reel spin, the next game's instructions, and an all-player Ready gate.
 In Game Select, instructions appear only once; subsequent rounds use a Ready button on the podium screen instead of repeating them.
-Game Select intermissions last at least eight seconds and wait until every connected player is ready.
+Game Select intermissions last at least five seconds and wait until every connected player is ready.
 Players may toggle readiness off again before the countdown starts.
 
 Each round awards **10 / 7 / 4 / 1 set points** by placement.
 Ties share placement points and skip the following occupied places: two tied first-place players earn 10 each, and the next player earns 4 for third.
 Unfinished rounds, forfeits, missing results, and Perm rounds with zero rhythm score earn zero set points.
+Final standings keep mode and game selection hidden until the host uses **Back to modes**; starting or configuring another set requires that exit first.
 The highest accumulated total wins the set; equal highest totals share victory, and a set with no points has no winner.
 Final standings include a round-by-round points table.
 Every transition and final screen restores a first/second/third podium using cumulative placement and total points.
@@ -62,7 +63,7 @@ Only the next five blocks are displayed, with the next block at the bottom.
 All players receive the same seeded block sequence.
 A wrong tap freezes that player's inputs for 300 milliseconds.
 The first player to clear the tower wins, ranked by locally measured elapsed time.
-Arcade uses 30 blocks; Game Select uses **30, 40, 50, 60, and 70 blocks** across its five rounds.
+Arcade uses 30 blocks; Game Select uses **30, 40, and 50 blocks** across its three rounds.
 The round ends after 45 seconds; unfinished players time out.
 Base gameplay settings live in `shared/totem.js`; difficulty settings live in `shared/games.js`.
 
@@ -81,7 +82,7 @@ Use the music-note button to enable music and effects, and the gear button for s
 All essential cues also appear visually.
 Enabled menu buttons play the user-supplied `public/audio/Button-Press.mp3` once per activation through the existing effects volume and mute controls.
 The three gameplay buttons and their keyboard shortcuts play `public/audio/Punch-button.mp3` once per enabled press, alongside the game's success and mistake cues.
-Fireworks Craze loads `public/audio/Fireworks.mp3` for each local rocket launch, including retries, without playing sounds for remote cosmetic rockets or replaying launches missed while muted or interrupted.
+Fireworks Craze loads `public/audio/Fireworks.mp3` for each local rocket launch, including retries, without playing sounds for remote player rockets or replaying launches missed while muted or interrupted.
 Local successes use brief, proportional feedback: colored chips for cleared Totem blocks, dancer pops and growth bursts in Perm Mania, matched reel badge pops in Slots, and copied-move dots and stage bursts in Monkeys.
 Fireworks retain their expanding bursts with an impact ring, while Jump retains its boost sparks and squash-and-stretch with rising landing feedback.
 Finishes receive a larger lane-local burst; feedback never moves reaction targets, changes timing windows, or blocks input, and optional motion follows the device's reduced-motion preference.
@@ -133,12 +134,12 @@ Listen on target phones, headphones, and speakers to tune the final balance.
 Choose **Game Select → Perm Mania** before creating a room, or let the host choose it before starting a set.
 Arcade can also select Perm Mania randomly.
 Every player receives the same eight seeded rhythm phrases.
-Arcade uses 128 BPM; Game Select increases to **128, 136, 144, 152, and 160 BPM**.
+Arcade uses 128 BPM; Game Select increases to **128, 136, and 144 BPM**.
 Each phrase demonstrates four beats, then asks the player to repeat that rhythm over four beats.
 Tap any colored button, **1 / 2 / 3**, or **J / K / L** in time with the notes.
 Watching taps do not score; missing notes and extra response taps count as mistakes.
 A phrase with at most one mistake grows the dancer's hair by one stage.
-The round lasts eight complete phrases: 30 seconds at 128 BPM, down to 24 seconds at 160 BPM.
+The round lasts eight complete phrases: 30 seconds at 128 BPM, down to about 26.7 seconds at the third round's 144 BPM.
 The final result is submitted locally at that exact round duration.
 Rankings use hair growth first and timing score second, with exact ties sharing a rank.
 Completed rhythm rounds outrank forfeits and missing results; completion packet arrival order does not affect ranking.
@@ -175,9 +176,9 @@ Unfinished players receive zero set points.
 Every player receives the same seeded target and reel order, calculated from the agreed round start.
 There are six visually distinct portraits: Robot, Frog, Lion, Cat, Yeti, and Octopus.
 Each reel cycles through all six once, begins away from the target, and repeats deterministically.
-In Arcade, a portrait travels one position every 320 ms; Game Select uses **320, 290, 260, 230, and 200 ms** across its five rounds.
+In Arcade, a portrait travels one position every 320 ms; Game Select uses **320, 290, and 260 ms** across its three rounds.
 These are provisional casual-play timings and should be tuned from phone playtests.
-Local input never waits for the server, and cosmetic remote spinning follows the shared clock while lock counts update at most four times a second.
+Local input never waits for the server, and remote spinning follows the player's published pauses and lock positions at most four times a second.
 
 The game uses a turquoise, pink, and butter-yellow photo-booth stage, with three colored horizontal reel strips stacked inside each player's cabinet.
 The same three colored buttons retain their design and fixed position in all games, including future additions.
@@ -201,12 +202,12 @@ Early presses, wrong colors, and expired reaction windows discard that rocket an
 Completed bursts remain credited after mistakes; unfinished players receive zero set points.
 
 All players receive the same seeded colors and reveal delays, with each player's attempts advancing locally.
-The flight time is **550, 500, 450, 400, and 350 ms** across Game Select, plus a seeded delay of 0, 90, or 180 ms per rocket.
-Reaction windows shrink from **900 to 500 ms**, in 100 ms steps, while Arcade uses the first difficulty.
+The flight time is **550, 500, and 450 ms** across Game Select, plus a seeded delay of 0, 90, or 180 ms per rocket.
+Reaction windows shrink from **900 to 700 ms**, in 100 ms steps, while Arcade uses the first difficulty.
 These are provisional casual-play settings pending phone playtests.
 Color stays hidden during flight, and matching shapes provide a color-independent visual cue once revealed.
 The fuse bar shows time remaining; bursts and a cross provide visual success and miss feedback during muted play.
-Other lanes show cosmetic bursts from progress reports rather than claiming to reproduce another device's private reaction timing.
+Other lanes reproduce the current published rocket, reveal timing, and accepted burst, with normal network delay.
 
 The original generated festival background lives in `public/assets/fireworks-festival.png`, with the prompt preserved in [artwork notes](public/assets/fireworks-artwork.md).
 Live rockets, reaction symbols, and burst particles are drawn by `src/firework-view.js` and `src/fireworks.css` for precise local feedback.
@@ -225,8 +226,8 @@ Neutral dots show sequence length during demonstrations and fill as response mov
 Repeated colors have a blank interval between flashes so they remain separate moves.
 
 Arcade requires five stages, ending with a six-move sequence.
-Game Select requires **5, 6, 7, 8, and 9 stages**, ending with sequences of **6 through 10 moves**.
-Demonstration steps take **650, 610, 570, 530, and 490 ms**, with each shape visible for 65% of its step.
+Game Select requires **5, 6, and 7 stages**, ending with sequences of **6 through 8 moves**.
+Demonstration steps take **650, 610, and 570 ms**, with each shape visible for 65% of its step.
 Each demonstration has a 550 ms lead-in and a 250 ms pause before answering.
 A wrong answer resets only the current response and adds 600 ms recovery before that sequence is demonstrated again.
 Completed stages remain credited, and a 100 ms input guard prevents simultaneous presses from submitting multiple answers.
@@ -234,7 +235,7 @@ Finish every stage before the 45-second deadline; fastest local elapsed time win
 These are provisional casual-play timings pending physical phone playtests.
 
 Every device uses the same seeded prefix and freezes its local clock mapping when the round is scheduled.
-Other lanes display each player's stage progress without reproducing their private demonstration or response timing.
+Other lanes display the peer's actual demonstration phase and accepted response progress from published timing.
 Optional demonstration tones reuse the existing three color sounds and are scheduled from the same local timestamps as the shape flashes, with a 150 ms audio lookahead.
 Mute, replay, finish, and interruption cancel queued demonstration sounds; resuming skips past notes, and muted play remains fully supported.
 Backing music, local hit/miss feedback, and finish cues reuse the original disco bank and shared audio controls.
@@ -258,12 +259,12 @@ An early tap or missed landing causes a 450 ms recovery before another attempt, 
 A 100 ms input guard ignores simultaneous buttons and accidental double presses.
 Unfinished players time out after 30 seconds and receive zero set points.
 
-Arcade requires six boosts; Game Select requires **6, 7, 8, 9, and 10 boosts**.
-Base bounce periods shorten from **1,200 to 1,000 ms** in 50 ms steps, with a seeded −80, 0, or +80 ms adjustment per height shared by all players.
-Landing windows narrow from **±150 to ±90 ms** in 15 ms steps; both window boundaries are inclusive.
+Arcade requires six boosts; Game Select requires **6, 7, and 8 boosts**.
+Base bounce periods shorten from **1,200 to 1,100 ms** in 50 ms steps, with a seeded −80, 0, or +80 ms adjustment per height shared by all players.
+Landing windows narrow from **±150 to ±120 ms** in 15 ms steps; both window boundaries are inclusive.
 The Perfect half-window is 30% of the landing half-window, rounded to **45, 41, 36, 32, and 27 ms** across the five difficulties, with inclusive boundaries.
 Input judgments use the frozen local round clock, and a delayed animation frame cannot extend a missed landing or move the final apex time.
-Remote bounces are cosmetic; only local inputs determine a player's result.
+Remote bounces follow published launch timing and height; only local inputs determine a player's result.
 These initial settings are provisional until playtested on phones.
 
 The game uses an original generated dinosaur and roasted drumstick on a peach-and-sand stage, with landing rings, impact particles, and timing guides drawn in code.
@@ -286,12 +287,12 @@ Catch lettuce, patty, tomato, and a top bun to serve one burger.
 Serve **three burgers / twelve ingredients** to finish, ranked by local elapsed time; perfect runs can tie.
 A miss costs **300 ms** of recovery and repeats that ingredient in a new seeded chute, keeping completed layers and served burgers.
 Successful catches leave **160 ms** before the next ingredient starts.
-Game Select shortens each fall from **1,100 to 660 ms** in 110 ms steps across its five rounds.
+Game Select shortens each fall from **1,100, 990, and 880 ms** across its three rounds.
 The deadline is **35 seconds**, and unfinished rounds earn zero points.
 These initial speeds are provisional until phone playtesting.
 
 The chef, ingredient sprites, building stack, and delivered-burger flourish stay inside each player's lane.
-Only local scheduled catches produce gameplay sounds; remote movement is cosmetic.
+Only local scheduled catches produce gameplay sounds; remote movement follows each player's published scene.
 The common music bank, punch-button controls, `Ding.mp3` for every successful local catch, and miss cues use the existing opt-in audio system.
 `shared/burger.js` owns the seed and catch rules; `src/catch-spot-view.js` and `src/catch-spot.css` draw the diner stage.
 
@@ -302,7 +303,7 @@ Each local board shows three vertically stacked pictures: two identical copies a
 Red circle chooses the top picture, green triangle the middle picture, and blue diamond the bottom picture.
 Differences include silhouette, direction, hats, eyes, badges, and accessories rather than color alone.
 
-Find **8, 9, 10, 11, or 12** odd pictures across the five Game Select rounds.
+Find **8, 9, or 10** odd pictures across the three Game Select rounds.
 The picture pool grows from four to eight pairs, and all devices derive the same boards from the shared seed.
 Each newly shown board has a **250 ms** observation gate before answers are accepted.
 A correct answer shows a check and keeps the solved board for **260 ms** before revealing the next one.
@@ -310,12 +311,12 @@ A wrong answer marks only the selected picture, keeps the same puzzle, and locks
 Finish within **35 seconds**, ranked by local elapsed time.
 These initial timings and picture pools are provisional until phone playtesting.
 
-Remote lanes show progress and colored card backs, never live answer boards.
+Remote lanes show the current published picture board and selected-answer feedback.
 Only the local answered card pops on success; reduced-motion preferences remove decorative motion.
 Every correct local answer plays `Ding.mp3`, including the final answer, through the existing effects volume and mute controls.
 `shared/mistake.js` owns the seeded puzzle rules; `src/catch-spot-view.js` and `src/catch-spot.css` draw the picture cards.
 The new games use the same instructions, Ready gates, Arcade selection, cumulative podium, reconnect handling, and result acknowledgments as the rest of the catalog.
-Deploy the frontend and room service together; protocol 6 now advertises the `arcade-reel`, `asset-readiness`, and `coins-dodge` capabilities required by this frontend.
+Deploy the frontend and room service together; protocol 6 now advertises the `arcade-reel`, `asset-readiness`, `coins-dodge`, and `live-gameplay-v2` capabilities required by this frontend.
 Original artwork and full generation prompts for both games are preserved in [artwork notes](public/assets/catch-spot-artwork.md).
 
 ## Play Dice, Dice, More Dice
@@ -326,9 +327,9 @@ Three dice appear vertically in your lane; choose the die with the most dots usi
 Each roll contains three distinct values from one to six, so there is always exactly one highest choice.
 All devices receive the same seeded rolls.
 
-Win **12, 14, 16, 18, or 20 rolls** across the five Game Select rounds.
-Dice settle for **180 to 100 ms** across those rounds before revealing their values, then allow **180 ms** to observe the new board before inputs count.
-Higher levels also tilt the dice by up to 40 degrees while preserving readable pip patterns.
+Win **12, 14, or 16 rolls** across the three Game Select rounds.
+Dice settle for **180 to 140 ms** across those rounds before revealing their values, then allow **180 ms** to observe the new board before inputs count.
+Higher levels also tilt the dice by up to 20 degrees while preserving readable pip patterns.
 A correct choice shows its check and retains the solved dice for **220 ms** before the next roll.
 A wrong choice marks only the selected die and locks inputs for **600 ms**, retaining the board and all previous wins.
 Finish within **35 seconds**, ranked by locally measured elapsed time.
@@ -336,7 +337,7 @@ These speeds and counts are provisional until phone playtests.
 
 `shared/dice.js` owns seeded rolls and input gates.
 `src/dice-facing-view.js` and `src/dice-facing.css` combine the generated dice jester with a velvet table, exact code-native die pips, rolling anticipation, and brief success pops.
-Remote lanes show covered dice and progress rather than live choices, and successful feedback never reveals the next board early.
+Remote lanes show the published current dice and progress, and successful feedback never reveals the next board early.
 Existing Punch button feedback, Ding successes, mistake cues, finish cues, and disco music are reused without creating audio files.
 
 ## Play Facing Which Way
@@ -348,8 +349,8 @@ The visible move symbol states a 90-degree turn, 180-degree turn, or horizontal 
 When **Answer** appears, red answers left, green up, and blue right.
 Generated tricks never end a move pointing down, so every possible answer has one of the three shared buttons.
 
-Solve **5 to 9 tricks**, with **2 to 6 moves per trick**, across five rounds.
-Each trick shows the initial duck for **700 ms**, covers it for **180 ms**, and demonstrates moves at **650 to 450 ms per move** across the levels.
+Solve **5, 6, and 7 tricks**, with **2, 3, and 4 moves per trick**, across three rounds.
+Each trick shows the initial duck for **700 ms**, covers it for **180 ms**, and demonstrates moves at **1000, 925, and 850 ms per move** across the three rounds.
 A **200 ms** handoff separates the final move from the answer phase; all demonstration inputs are ignored.
 A correct answer reveals the final direction for **260 ms** and advances the trick count.
 A wrong answer waits **450 ms**, then replays the same initial picture and moves while keeping completed tricks.
@@ -357,7 +358,7 @@ The deadline is **60 seconds**, ranked by local elapsed time; these initial timi
 
 `shared/facing.js` owns the seeded transformations, replay gates, and local timing.
 The renderer uses a generated aviator duck with an unmistakable right-facing beak and a symmetric card back that does not disclose its final orientation.
-Remote lanes never show the local player's actual picture or moves.
+Remote lanes follow the peer's published current card phase, turns, and answer feedback.
 Reduced-motion settings replace decorative card motion with the same readable move symbols and phase timing.
 Correct answers reuse Ding, and the move demonstration reuses `slot-lock.wav` on the local audio timeline with bounded lookahead, stale-cue skipping, and replay/finish cancellation.
 Both games use original image-generated characters, delivered as resized WebP files with their PNG masters retained.
@@ -370,14 +371,14 @@ Move the raccoon with **red = left, green = middle, blue = right** to catch gold
 The three marked chutes match the shared control bar, whose captions show Left / Middle / Right during this game.
 Collect 18 coins before the 40-second deadline; fastest completion wins.
 A missed gold coin or a caught fake adds a mistake and a 400 ms recovery, keeping all collected coins.
-Game Select shortens each fall from 1100 to 740 ms across five rounds, with a 100 ms handoff after a successful catch.
+Game Select shortens each fall from 1100 to 920 ms across three rounds, with a 100 ms handoff after a successful catch.
 `shared/coins.js` owns seeded chute pairs and resolves landings at their scheduled local timestamp, accepting a lane change exactly at landing.
 
 ## Play Dodge or Die!!
 
 Guide the helmeted fox with **red = one lane left, green = jump, blue = one lane right** using the same three gameplay buttons.
 Tall walls block two lanes, leaving one open lane; striped low hurdles span all three lanes and require a jump at the landing line.
-Clear 12 obstacles in Arcade; Game Select increases the goal from 12 to 16 and shortens each approach from 1350 to 950 ms.
+Clear 12 obstacles in Arcade; Game Select increases the goal from 12 to 14 and shortens each approach from 1350 to 1150 ms.
 Every round has a 40-second deadline, and fastest completion wins.
 A bump adds a 550 ms recovery and keeps completed obstacles; clear obstacles have a 180 ms handoff.
 Jumps last 640 ms and clear a hurdle when their normalized height is at least 0.6 at impact, giving roughly a 378 ms valid launch window.
@@ -517,3 +518,21 @@ A sleeping hosted service may take time to wake up, and redeploying it clears ro
 `public/assets/totem-blocks.png` contains original generated character artwork reused from the approved mockup.
 [Artwork notes](.lavish/totem-shrinker/artwork.md) preserve the generation prompt.
 This is an independent game inspired by arcade party games, using original artwork.
+
+## Multiplayer display and tablet layout
+
+Each player publishes a bounded snapshot of their current scene at most four times per second, including object index, lane, and round-relative animation timestamps.
+`shared/visual-state.js` validates the allowed fields and reconstructs each peer's current scene against the viewer's frozen round clock.
+Remote Coins, Burger, and Dodge objects now use the actual falling object and player position, including changes after catches, misses, and jumps.
+The same relay carries slot pauses, memory demonstrations, direction-card phases, picture boards, rockets, and dinosaur bounces.
+These snapshots only draw peers; local inputs and result rankings remain independent of packet arrival.
+Network delay and the quarter-second update cadence can produce brief visual lag after another player moves.
+Refresh every device after deploying the paired frontend and server update; the frontend requires `live-gameplay-v2` support.
+
+Active gameplay uses the visual viewport height and a flex layout, with the shared control bar outside the arena so tablet browser chrome cannot push it below the screen.
+The Ready action remains visible while short screens can scroll the instructions card internally.
+Facing turns now take 1000/925/850/775/700 ms across available difficulty levels, and Game Select plays only levels 1–3.
+Arcade Coins uses 800 ms falls instead of 1100 ms; its instructions and actual countdown preserve that setting.
+
+Menu and instructions music share one gesture-authorized media element with separate remembered positions, following [WebKit's media-element reuse guidance](https://webkit.org/blog/7734/auto-play-policy-changes-for-macos/).
+The first playback request happens before awaiting audio-context resume or file decoding, so it stays attached to the enabling gesture.

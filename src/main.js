@@ -1,3 +1,5 @@
+import { captureVisual } from '../shared/visual-state.js';
+import { installViewportLayout } from './viewport.js';
 import { COIN_GAME } from '../shared/coins.js';
 import { DODGE_GAME } from '../shared/dodge.js';
 import './arcade-reel.css';
@@ -48,6 +50,7 @@ let startupReady = false, preparingAssets = null;
 const audio = new GameAudio({ fetchFile: (url, options) => assets.fetchAudio(url, options), mediaUrl: file => assets.mediaUrl(file), onChange: () => updateSound() });
 const setView = new SetView({ onInstructionStep: step => audio.pressButton(step === 0 ? 'instructions' : 'gameplay') });
 const buttons = [...document.querySelectorAll('.hit-button')];
+installViewportLayout();
 
 $('name').value = session?.name || localStorage.getItem('bb-name') || '';
 $('room-input').value = params.get('room') || '';
@@ -124,7 +127,7 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 6 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge')) {
+      if (message.protocol !== 6 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -207,6 +210,7 @@ function resetSession() {
   intentionalClose = true; joined = false;
   socket?.close(); clearTimeout(reconnectTimer);
   room = null; localRound = null; playerId = null;
+  $('control-deck').hidden = true;
   audio.cancel(); clearPending();
   sessionStorage.removeItem('bb-session'); sessionStorage.removeItem('bb-active-round');
   $('welcome').hidden = false; $('room-view').hidden = true;
@@ -266,7 +270,7 @@ function complete(status, elapsed = null) {
   const delay = status === 'finished' ? Number($('result-delay').value) : 0;
   pending = { roomCode: room.code, playerId, dueAt: Date.now() + delay, message: {
     type: 'result', roundId: localRound.id, status, elapsed, cleared: localRound.run.cleared,
-    mistakes: localRound.run.mistakes, goDelay: localRound.goDelay,
+    mistakes: localRound.run.mistakes, visual: captureVisual(room.round.game, localRound.run, performance.now()), goDelay: localRound.goDelay,
     ...(room.round.game === PERM_GAME ? { score: localRound.run.score } : {}),
     ...(room.round.game === SLOT_GAME ? { reelMask: localRound.run.reelMask } : {}),
   } };
@@ -340,9 +344,10 @@ function sendProgress(time) {
   const { cleared, mistakes } = localRound.run;
   const score = localRound.run.score;
   const reelMask = localRound.run.reelMask;
-  const key = `${cleared}/${mistakes}/${score ?? ''}/${reelMask ?? ''}`;
+  const visual = captureVisual(room.round.game, localRound.run, time);
+  const key = JSON.stringify([cleared, mistakes, score, reelMask, visual]);
   if (key === lastProgressKey) return;
-  if (send({ type: 'progress', roundId: localRound.id, cleared, mistakes, ...(reelMask !== undefined ? { reelMask } : {}), ...(score !== undefined ? { score } : {}) })) {
+  if (send({ type: 'progress', roundId: localRound.id, cleared, mistakes, visual, ...(reelMask !== undefined ? { reelMask } : {}), ...(score !== undefined ? { score } : {}) })) {
     lastProgressSent = time; lastProgressKey = key;
   }
 }
@@ -373,6 +378,7 @@ function updateMetrics() {
   $('start').disabled = !connected || !idle;
   let status = '';
   if (!connected) status = 'Reconnecting… Keep playing; your result stays saved on this device.';
+  else if (room.set?.phase === 'complete') status = playerId === room.hostId ? 'Exit to modes when everyone has seen the results.' : 'Waiting for the host to return to modes.';
   else if (idle) status = playerId === room.hostId ? 'Start the set when your friends have joined.' : 'Waiting for the host to start.';
   else if (gate) status = wait > 0 ? `Waiting ${Math.ceil(wait / 1000)}s for a friend to reconnect…` : !estimate || estimate.count < 3 ? 'Synchronizing clocks…' : mine?.ready ? 'Waiting for everyone to be ready…' : 'Tap Ready when you’re set.';
   else if (['intermission', 'selecting'].includes(room.set?.phase)) status = '';
@@ -396,7 +402,7 @@ function renderRoom() {
   $('back').hidden = playerId !== room.hostId || !room.set && !room.arcadePreview;
   $('ready-actions').hidden = Boolean(active || room.set?.phase === 'selecting' || room.set?.phase === 'intermission' && room.mode === 'arcade');
   $('ready').hidden = !gate;
-  $('start').hidden = playerId !== room.hostId || gate;
+  $('start').hidden = playerId !== room.hostId || Boolean(room.set);
   $('control-deck').hidden = !active || !room.round.playerIds.includes(playerId);
   $('round-label').textContent = active ? room.set ? roundDetail(room.round) : `Round ${room.testNumber}` : 'Lobby';
   view.render(room, playerId, localRound, performance.now());
@@ -545,10 +551,12 @@ function updateGameProfile() {
   document.body.classList.toggle('coin-theme', Boolean(themed && game === COIN_GAME));
   document.body.classList.toggle('dodge-theme', Boolean(themed && game === DODGE_GAME));
   document.body.classList.toggle('in-set', Boolean(inSet));
+  document.body.classList.toggle('is-playing', Boolean(active));
+  document.body.classList.toggle('is-instructions', room?.set?.phase === 'instructions');
   const title = !room ? 'Bishy Bashy!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'selecting' ? 'Pick our next game!' : room.set?.phase === 'intermission' ? 'Standings' : room.set?.phase === 'instructions' || active ? GAMES[game].title : room.arcadePreview ? 'Arcade' : 'Choose your mode';
   if (document.querySelector('.game-title').textContent !== title) document.querySelector('.game-title').textContent = title;
   document.title = `${room ? title : 'Party games'} · Bishy Bashy`;
-  $('lobby-setup').hidden = !room || Boolean(inSet) || Boolean(room.arcadePreview && !room.set);
+  $('lobby-setup').hidden = !room || Boolean(room.set);
   $('game-browser').hidden = mode !== 'game-select';
   $('rhythm-guide').hidden = !perm || !active;
   $('slot-guide').hidden = !slots || !active;

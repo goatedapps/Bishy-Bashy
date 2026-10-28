@@ -1,3 +1,4 @@
+import { RemoteRuns } from '../shared/visual-state.js';
 import { COIN_GAME } from '../shared/coins.js';
 import { DODGE_GAME } from '../shared/dodge.js';
 import { CoinStage, DodgeStage } from './coins-dodge-view.js';
@@ -53,6 +54,7 @@ function dancer(index, growth = 0) {
 export class GameView {
   constructor() {
     this.feedback = new GameFeedback();
+    this.remoteRuns = new RemoteRuns();
     this.lanes = Array.from({ length: 4 }, (_, index) => {
       const lane = node('article', 'lane');
       const name = node('h3', '');
@@ -115,9 +117,10 @@ export class GameView {
       const player = room.players[index];
       const own = player?.id === playerId;
       const ownRun = active && own && local?.id === round?.id ? local : null;
+      const shownRun = active ? this.projectPlayer(round, player, local, own)?.run : null;
       const cleared = ownRun ? ownRun.run.cleared : player?.progress?.cleared || 0;
       const status = player?.result || (ownRun?.done ? { status: ownRun.status, elapsed: ownRun.run.elapsed, cleared, score: ownRun.run.score || 0 } : null);
-      const frozen = ownRun && !ownRun.done && time < ownRun.run.blockedUntil;
+      const frozen = shownRun && !shownRun.done && time < shownRun.blockedUntil;
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';
       elements.tower.hidden = perm || slots || fireworks || monkeys || jump || burger || mistake || dice || facing || game === COIN_GAME || game === DODGE_GAME;
@@ -133,15 +136,15 @@ export class GameView {
       elements.coins.element.hidden = game !== COIN_GAME;
       elements.dodge.element.hidden = game !== DODGE_GAME;
       if (STAGES[game]) {
-        elements[STAGES[game]].render(round || {}, ownRun?.run, time, 0, active, Boolean(player), cleared, Boolean(status));
+        elements[STAGES[game]].render(round || {}, shownRun, time, 0, active, Boolean(player), cleared, Boolean(status));
       } else if (jump) {
-        elements.jump.render(round || {}, ownRun?.run, time, 0, active, Boolean(player), cleared, Boolean(status));
+        elements.jump.render(round || {}, shownRun, time, 0, active, Boolean(player), cleared, Boolean(status));
       } else if (monkeys) {
-        elements.monkeys.render(round || {}, ownRun?.run, time, active, Boolean(player), cleared, Boolean(status));
+        elements.monkeys.render(round || {}, shownRun, time, active, Boolean(player), cleared, Boolean(status));
       } else if (fireworks) {
-        elements.fireworks.render(round || {}, ownRun?.run, time, active, Boolean(player), cleared, Boolean(status));
+        elements.fireworks.render(round || {}, shownRun, time, active, Boolean(player), cleared, Boolean(status));
       } else if (slots) {
-        if (!active || ownRun) elements.slots.render(round || { seed: 0 }, ownRun?.run.reelMask ?? player?.progress?.reelMask ?? 0, ownRun ? time - ownRun.start : 0, ownRun?.run, active, Boolean(player));
+        if (!active || shownRun) elements.slots.render(round || { seed: 0 }, shownRun?.reelMask ?? player?.progress?.reelMask ?? 0, shownRun ? time - shownRun.start : 0, shownRun, active, Boolean(player));
       }
       else if (perm) {
         const growth = active && player ? cleared : 0;
@@ -177,12 +180,19 @@ export class GameView {
     this.feedback.update(room?.round, local, lane, time);
   }
 
+  projectPlayer(round, player, local, own) {
+    if (!local || local.id !== round.id) return null;
+    if (own) return local;
+    const run = this.remoteRuns.get(round, player, local.start);
+    return run ? { run, start: run.start, done: Boolean(player?.result || run.done) } : null;
+  }
+
   animate(room, local, time, elapsed) {
     if (STAGES[room.round?.game] && isRoundActive(room.round)) {
       const stage = STAGES[room.round.game];
       this.lanes.forEach((elements, index) => {
         const player = room.players[index];
-        const own = elements.lane.classList.contains('you') ? local : null;
+        const own = this.projectPlayer(room.round, player, local, elements.lane.classList.contains('you'));
         elements[stage].render(room.round, own?.run, time, elapsed, true, Boolean(player), own?.run.cleared ?? player?.progress?.cleared ?? 0, Boolean(own?.done || player?.result));
       });
       return;
@@ -190,7 +200,7 @@ export class GameView {
     if (room.round?.game === JUMP_GAME && isRoundActive(room.round)) {
       this.lanes.forEach((elements, index) => {
         const player = room.players[index];
-        const own = elements.lane.classList.contains('you') ? local : null;
+        const own = this.projectPlayer(room.round, player, local, elements.lane.classList.contains('you'));
         elements.jump.render(room.round, own?.run, time, elapsed, true, Boolean(player), own?.run.cleared ?? player?.progress?.cleared ?? 0, Boolean(own?.done || player?.result));
       });
       return;
@@ -198,7 +208,7 @@ export class GameView {
     if (room.round?.game === MONKEY_GAME && isRoundActive(room.round)) {
       this.lanes.forEach((elements, index) => {
         const player = room.players[index];
-        const own = elements.lane.classList.contains('you') ? local : null;
+        const own = this.projectPlayer(room.round, player, local, elements.lane.classList.contains('you'));
         elements.monkeys.render(room.round, own?.run, time, true, Boolean(player), own?.run.cleared ?? player?.progress?.cleared ?? 0, Boolean(own?.done || player?.result));
       });
       return;
@@ -206,15 +216,15 @@ export class GameView {
     if (room.round?.game === FIREWORK_GAME && isRoundActive(room.round)) {
       this.lanes.forEach((elements, index) => {
         const player = room.players[index];
-        const own = player?.id && elements.lane.classList.contains('you') ? local : null;
+        const own = this.projectPlayer(room.round, player, local, elements.lane.classList.contains('you'));
         elements.fireworks.render(room.round, own?.run, time, true, Boolean(player), own?.run.cleared ?? player?.progress?.cleared ?? 0, Boolean(own?.done || player?.result));
       });
       return;
     }
     if (room.round?.game === SLOT_GAME && isRoundActive(room.round)) {
       this.lanes.forEach((elements, index) => {
-        const own = elements.lane.classList.contains('you') ? local : null;
         const player = room.players[index];
+        const own = this.projectPlayer(room.round, player, local, elements.lane.classList.contains('you'));
         elements.slots.render(room.round, own?.run.reelMask ?? player?.progress?.reelMask ?? 0, Math.max(0, own ? time - own.start : elapsed), own?.run, true, Boolean(player));
       });
       return;

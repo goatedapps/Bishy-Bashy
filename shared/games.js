@@ -28,12 +28,12 @@ export const GAMES = Object.assign(Object.create(null), {
   [DODGE_GAME]: { id: DODGE_GAME, title: 'Dodge or Die!!', subtitle: 'Switch lanes and leap the hurdles', duration: DODGE_DURATION_MS, goal: DODGE_GOAL },
 });
 
-export function roundSettings(game, seed, difficulty = 1) {
+export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') {
   const level = Math.max(1, Math.min(5, Math.trunc(difficulty) || 1));
-  if (game === COIN_GAME) return { seed, difficulty: level, goal: COIN_GOAL, duration: COIN_DURATION_MS, fallMs: 1100 - (level - 1) * 90 };
+  if (game === COIN_GAME) return { seed, difficulty: level, goal: COIN_GOAL, duration: COIN_DURATION_MS, fallMs: mode === 'arcade' ? 800 : 1100 - (level - 1) * 90 };
   if (game === DODGE_GAME) return { seed, difficulty: level, goal: DODGE_GOAL + level - 1, duration: DODGE_DURATION_MS, approachMs: 1350 - (level - 1) * 100 };
   if (game === DICE_GAME) return { seed, difficulty: level, goal: DICE_GOAL + (level - 1) * 2, duration: DICE_DURATION_MS, rollMs: 180 - (level - 1) * 20 };
-  if (game === FACING_GAME) return { seed, difficulty: level, goal: FACING_GOAL + level - 1, duration: FACING_DURATION_MS, turnCount: level + 1, stepMs: 650 - (level - 1) * 50 };
+  if (game === FACING_GAME) return { seed, difficulty: level, goal: FACING_GOAL + level - 1, duration: FACING_DURATION_MS, turnCount: level + 1, stepMs: 1000 - (level - 1) * 75 };
   if (game === BURGER_GAME) return { seed, difficulty: level, goal: BURGER_GOAL, duration: BURGER_DURATION_MS, fallMs: 1100 - (level - 1) * 110 };
   if (game === MISTAKE_GAME) return { seed, difficulty: level, goal: MISTAKE_GOAL + level - 1, duration: MISTAKE_DURATION_MS };
   if (game === JUMP_GAME) return { seed, difficulty: level, goal: JUMP_GOAL + level - 1, duration: JUMP_DURATION_MS, periodMs: 1200 - (level - 1) * 50, windowMs: 150 - (level - 1) * 15, perfectMs: Math.round((150 - (level - 1) * 15) * .3) };

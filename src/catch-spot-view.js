@@ -74,12 +74,10 @@ export class BurgerStage {
     this.element.classList.toggle('catch-success', Boolean(showing && feedback.kind === 'catch'));
     this.element.style.setProperty('--served-age', String(served ? age / 500 : 0));
     this.element.style.setProperty('--chef-column', String(run?.position ?? cleared % 3));
-    const remote = active && present && !run && !terminal;
-    const period = round.fallMs || 1100;
-    this.falling.dataset.attempt = String(run?.index ?? Math.floor(Math.max(0, elapsed) / period));
-    const progress = run ? (time - run.launchedAt) / run.fallMs : Math.max(0, elapsed) % period / period;
-    this.falling.hidden = !playing && !remote || progress < 0 || progress > 1;
-    this.falling.style.setProperty('--drop-column', String(run?.column ?? Math.floor(Math.max(0, elapsed) / period) % 3));
+    this.falling.dataset.attempt = String(run?.index ?? 0);
+    const progress = run ? (time - run.launchedAt) / run.fallMs : 0;
+    this.falling.hidden = !playing || progress < 0 || progress > 1;
+    this.falling.style.setProperty('--drop-column', String(run?.column ?? 1));
     this.falling.style.setProperty('--drop-progress', String(Math.max(0, Math.min(1, progress))));
     const kind = run?.ingredient ?? cleared % 4;
     if (this.kind !== kind) { this.kind = kind; this.falling.replaceChildren(ingredientPortrait(kind)); }

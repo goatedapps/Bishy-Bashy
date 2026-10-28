@@ -21,6 +21,7 @@
   <link rel="stylesheet" href="/src/coins-dodge.css" />
   <link rel="stylesheet" href="/src/feedback.css" />
   <link rel="stylesheet" href="/src/loading-wheel.css" />
+  <link rel="stylesheet" href="/src/viewport.css" />
 </head>
 <body>
   <section id="asset-loader" class="asset-loader" aria-label="Loading game assets">
@@ -57,7 +58,7 @@
             <span class="mode-card-copy"><strong>Arcade</strong><small>Battle with your friends for 5 randomly selected games</small></span>
           </button>
           <button type="button" data-mode="game-select" class="mode-card select-card" aria-pressed="false">
-            <span class="mode-card-copy"><strong>Game Select</strong><small>Play 5 rounds of your chosen game to determine the winner</small></span>
+            <span class="mode-card-copy"><strong>Game Select</strong><small>Play 3 rounds of your chosen game to determine the winner</small></span>
           </button>
         </nav>
         <section id="game-browser" aria-label="Game library" hidden><div class="game-browser-heading"><h2>Choose a game</h2><label for="game-search">Find a game<input id="game-search" type="search" placeholder="Search games" autocomplete="off" /></label></div><nav id="game-picker" class="game-picker" aria-label="Choose a game" tabindex="0"></nav><p id="game-empty" hidden>No games match your search.</p></section>
@@ -81,11 +82,7 @@
         </div>
         <div id="slot-guide" class="slot-guide" hidden><span id="slot-target-face" class="face-portrait"></span><div class="slot-guide-copy"><strong>Model face</strong><span id="slot-target-name"></span><small>Stop each color at the center marker</small></div></div>
         <div id="arena" class="arena"><div id="player-lanes" class="lanes"></div><div id="round-overlay" class="round-overlay" hidden aria-live="polite"></div></div>
-        <div id="control-deck" class="control-deck" hidden aria-label="Your controls">
-          <button class="hit-button red" data-color="0" aria-label="Red circle" disabled><span class="shape">●</span><span>Red</span><small>1 / J</small></button>
-          <button class="hit-button green" data-color="1" aria-label="Green triangle" disabled><span class="shape">▲</span><span>Green</span><small>2 / K</small></button>
-          <button class="hit-button blue" data-color="2" aria-label="Blue diamond" disabled><span class="shape">◆</span><span>Blue</span><small>3 / L</small></button>
-        </div>
+
       </section>
       <section id="results" class="arcade-frame results-screen" hidden aria-label="Round results">
         <span id="result-round" class="ribbon"></span><h2 id="result-title"></h2><div id="podium" class="podium"></div><div id="result-rows" class="result-rows"></div>
@@ -96,6 +93,11 @@
     </section>
     <p id="notice" class="notice" hidden role="alert"></p>
   </main>
+        <div id="control-deck" class="control-deck" hidden aria-label="Your controls">
+          <button class="hit-button red" data-color="0" aria-label="Red circle" disabled><span class="shape">●</span><span>Red</span><small>1 / J</small></button>
+          <button class="hit-button green" data-color="1" aria-label="Green triangle" disabled><span class="shape">▲</span><span>Green</span><small>2 / K</small></button>
+          <button class="hit-button blue" data-color="2" aria-label="Blue diamond" disabled><span class="shape">◆</span><span>Blue</span><small>3 / L</small></button>
+        </div>
   <dialog id="navigation-confirm" aria-labelledby="navigation-title" aria-describedby="navigation-description"><h2 id="navigation-title"></h2><p id="navigation-description"></p><div class="confirmation-actions"><button id="navigation-stay" class="primary" autofocus>Keep playing</button><button id="navigation-confirm-action">Leave room</button></div></dialog>
   <dialog id="rules"><form method="dialog"><button class="close" aria-label="Close rules">×</button></form><h2 id="rules-title">How to play</h2><div id="rules-visual"></div><ol id="rules-list" class="rules-list"></ol><div class="shape-legend"><span>● Red</span><span>▲ Green</span><span>◆ Blue</span></div><p id="rules-note"></p><form method="dialog"><button class="primary">Got it</button></form></dialog>
   <dialog id="invite"><form method="dialog"><button class="close" aria-label="Close invitation">×</button></form><h2>Bring your friends</h2><canvas id="qr" aria-label="Room invitation QR code"></canvas><label for="invite-link">Invitation link</label><input id="invite-link" readonly /><button id="copy-link">Copy link</button><p id="invite-note"></p></dialog>

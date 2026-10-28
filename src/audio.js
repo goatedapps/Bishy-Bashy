@@ -20,10 +20,16 @@ const PROFILES = {
   'perm-mania': { music: 'permMusic', urgency: 'permUrgency', go: 'permGo' },
   'facial-slot-machine': { music: 'slotMusic', urgency: 'slotUrgency', go: 'slotGo' },
 };
+const createMenuMedia = () => {
+  const media = document.createElement('audio');
+  media.hidden = true;
+  document.body.append(media);
+  return media;
+};
 const clamp = value => Math.max(0, Math.min(1, value));
 
 export class GameAudio {
-  constructor({ storage = globalThis.localStorage, createContext = () => new AudioContext(), createMedia = () => new Audio(), mediaUrl = file => `${BASE_URL}audio/${file}`, now = () => performance.now(), fetchFile = (url, options) => fetch(url, options), onChange = () => {} } = {}) {
+  constructor({ storage = globalThis.localStorage, createContext = () => new AudioContext(), createMedia = createMenuMedia, mediaUrl = file => `${BASE_URL}audio/${file}`, now = () => performance.now(), fetchFile = (url, options) => fetch(url, options), onChange = () => {} } = {}) {
     this.storage = storage;
     this.createContext = createContext;
     this.createMedia = createMedia;
@@ -102,7 +108,10 @@ export class GameAudio {
     if (!this.enabled) return false;
     try {
       if (!this.context) this.initialize();
-      if (this.context.state !== 'running') await this.context.resume();
+      const resume = this.context.state !== 'running' ? this.context.resume() : null;
+      // Issue media.play() in the gesture's call stack, before awaiting resume or decoding.
+      this.synchronizeMenu(true);
+      if (resume) await resume;
       this.synchronizeMenu();
       await this.load();
       this.synchronize();
@@ -420,30 +429,36 @@ export class GameAudio {
     return Boolean(voice);
   }
 
-  synchronizeMenu() {
+  synchronizeMenu(fromGesture = false) {
     const podiumPlaying = this.synchronizePodium();
     const allowed = this.preferences.musicMode === 'on' || this.preferences.musicMode === 'auto' && this.menu.musicOwner;
-    if (podiumPlaying || !this.menu.active || !allowed || !this.enabled || this.preferences.musicVolume === 0 || this.previewing || this.context?.state !== 'running') {
+    if (podiumPlaying || !this.menu.active || !allowed || !this.enabled || this.preferences.musicVolume === 0 || this.previewing || !this.context || !fromGesture && this.context.state !== 'running') {
       this.stopMenu();
       return;
     }
     if (this.menuPlaying) return;
     try {
       const trackId = this.menu.track;
-      if (!this.menuTracks.has(trackId)) {
-        // Stream the full-length MP3 instead of retaining a decoded music buffer on every phone.
-        const media = this.createMedia();
-        media.src = this.mediaUrl(MENU_TRACKS[trackId] || MENU_TRACKS.menu);
-        media.loop = true;
-        media.preload = 'none';
-        media.addEventListener('error', () => { if (this.menuMedia === media) this.menuPlaying = false; });
-        const gain = this.context.createGain();
-        this.context.createMediaElementSource(media).connect(gain).connect(this.musicBus);
-        this.menuTracks.set(trackId, { media, gain });
+      if (!this.menuMedia) {
+        // One gesture-authorized element survives track changes on tablet browsers.
+        this.menuMedia = this.createMedia();
+        this.menuMedia.loop = true;
+        this.menuMedia.preload = 'auto';
+        this.menuMedia.addEventListener('error', () => { this.menuPlaying = false; });
+        this.menuMedia.addEventListener('loadedmetadata', () => {
+          if (this.menuSeek !== null) {
+            try { this.menuMedia.currentTime = this.menuSeek; this.menuSeek = null; } catch {}
+          }
+        });
+        this.menuGain = this.context.createGain();
+        this.context.createMediaElementSource(this.menuMedia).connect(this.menuGain).connect(this.musicBus);
       }
-      const track = this.menuTracks.get(trackId);
-      this.menuMedia = track.media;
-      this.menuGain = track.gain;
+      if (this.menuMediaTrack !== trackId) {
+        this.menuMediaTrack = trackId;
+        this.menuMedia.src = this.mediaUrl(MENU_TRACKS[trackId] || MENU_TRACKS.menu);
+        this.menuSeek = this.menuTracks.get(trackId) || 0;
+        try { this.menuMedia.currentTime = this.menuSeek; } catch {}
+      }
       const request = ++this.menuRequest;
       this.menuPlaying = true;
       const at = this.context.currentTime;
@@ -462,6 +477,7 @@ export class GameAudio {
     if (!this.menuPlaying) return;
     this.menuRequest++;
     this.menuPlaying = false;
+    if (this.menuMedia) this.menuTracks.set(this.menuMediaTrack, this.menuMedia.currentTime);
     this.menuMedia?.pause();
   }
 

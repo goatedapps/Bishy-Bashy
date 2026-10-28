@@ -28,7 +28,7 @@ test('Arcade and its wheel expand only on four-game milestones, with new games a
     const eligible = arcadeGameIds(catalog);
     assert.deepEqual(eligible, catalog.slice(0, Math.floor(count / 4) * 4));
     assert.ok(createSetPlan('arcade', null, () => 0, catalog).every(id => eligible.includes(id)));
-    assert.deepEqual(createSetPlan('game-select', catalog.at(-1)), Array(5).fill(catalog.at(-1)));
+    assert.deepEqual(createSetPlan('game-select', catalog.at(-1)), Array(3).fill(catalog.at(-1)));
   }
   assert.equal(Object.keys(GAMES).length, 12);
   assert.equal(arcadeGameIds().length, 12);
@@ -45,6 +45,9 @@ test('Arcade shares one selection, ignores repeated starts and premature readine
   const room = service.rooms.get(host.room);
   service.handle(guest, { type: 'join', code: room.code, name: 'Friend', assetGates: true });
   service.handle(host, { type: 'configure', mode: 'arcade' });
+  assert.equal(room.round, null);
+  assert.equal(room.set, null);
+  service.handle(host, { type: 'start' });
   const id = room.round.id, game = room.round.game;
   assert.equal(room.set.phase, 'selecting');
   service.handle(host, { type: 'start' });
