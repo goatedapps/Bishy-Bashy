@@ -116,6 +116,28 @@ test('loading button feedback never catches up after interruption or a slow down
   assert.equal([...audio.voices].at(-1).id, 'buttonPress');
 });
 
+test('gameplay presses use a separate cached punch effect and obey effects volume, mute, and voice limits', async () => {
+  const { audio, requests } = setup();
+  await audio.unlock();
+  audio.pressButton();
+  assert.equal([...audio.voices].at(-1).id, 'buttonPress');
+  audio.pressButton('gameplay');
+  assert.equal([...audio.voices].at(-1).id, 'gameplayPress');
+  assert.equal([...audio.voices].at(-1).group, 'effects');
+  audio.selectGame('facial-slot-machine');
+  await audio.load();
+  assert.equal(requests.filter(url => url.includes('Punch-button.mp3')).length, 1);
+  for (let index = 0; index < 30; index++) audio.pressButton('gameplay');
+  assert.equal([...audio.voices].filter(voice => voice.group === 'effects').length, 8);
+  audio.setPreferences({ effectsVolume: 0 });
+  const count = audio.context.sources.length;
+  audio.pressButton('gameplay');
+  assert.equal(audio.context.sources.length, count);
+  audio.setEnabled(false);
+  audio.pressButton('gameplay');
+  assert.equal(audio.voices.size, 0);
+});
+
 test('menu track streams after unlock, survives menu changes, and yields to rounds without restarting its position', async () => {
   const media = new MenuMedia();
   const { audio, requests, context } = setup({ createMedia: () => media });
@@ -248,7 +270,7 @@ test('audio is opt-in, loads once after a gesture, and preferences survive unava
   assert.equal(await state.audio.unlock(), true);
   await state.audio.unlock();
   assert.equal(state.created, 1);
-  assert.equal(state.requests.length, audioAssetIds().length + 2);
+  assert.equal(state.requests.length, audioAssetIds().length + 3);
   state.audio.setPreferences({ musicVolume: 2, effectsVolume: -1, musicMode: 'off' });
   assert.deepEqual(JSON.parse(state.values.get('bb-audio')), { musicMode: 'off', musicVolume: 1, effectsVolume: 0 });
   const blocked = setup({ storage: { getItem() { throw new Error('Blocked'); }, setItem() { throw new Error('Blocked'); } } });
@@ -421,7 +443,7 @@ test('Perm Mania loads its own bank and schedules each demonstration on the audi
   await audio.unlock();
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), true);
-  assert.equal(requests.length, audioAssetIds('perm-mania').length + 2);
+  assert.equal(requests.length, audioAssetIds('perm-mania').length + 3);
   const cues = demoCues(123);
   audio.scheduleRound('perm', 5000, 35_000, true, false, { game: 'perm-mania', cues });
   const guide = [...audio.voices].filter(voice => voice.id === 'permDemo');
@@ -457,7 +479,7 @@ test('Facial Slot Machine uses its own bank, bounded match feedback, and a finis
   const { audio, requests } = setup();
   audio.selectGame('facial-slot-machine');
   await audio.unlock();
-  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 2);
+  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 3);
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), false);
   audio.scheduleRound('slots', 5000, 35_000, true, false, { game: 'facial-slot-machine' });

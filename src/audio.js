@@ -4,7 +4,7 @@ import { COUNTDOWN_MS } from '../shared/games.js';
 const BASE_URL = import.meta.env?.BASE_URL || '/';
 const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
-const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', countdown: 'countdown.mp3' };
+const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', countdown: 'countdown.mp3' };
 const PROFILES = {
   'jump-for-the-meat': { music: 'music', urgency: 'urgency', go: 'go' },
   'mimicking-monkeys': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -215,17 +215,18 @@ export class GameAudio {
     }
   }
 
-  pressButton() {
+  pressButton(kind = 'menu') {
     if (!this.enabled || this.preferences.effectsVolume === 0) return;
+    const id = kind === 'gameplay' ? 'gameplayPress' : 'buttonPress';
     const request = ++this.buttonRequest;
-    if (this.context?.state === 'running' && this.buffers.has('buttonPress')) {
-      this.play('buttonPress');
+    if (this.context?.state === 'running' && this.buffers.has(id)) {
+      this.play(id);
       return;
     }
     const pressedAt = this.now();
     // A loading bank must not release a backlog of clicks or play stale feedback.
     this.unlock().then(ready => {
-      if (ready && request === this.buttonRequest && this.now() - pressedAt < 250) this.play('buttonPress');
+      if (ready && request === this.buttonRequest && this.now() - pressedAt < 250) this.play(id);
     });
   }
 

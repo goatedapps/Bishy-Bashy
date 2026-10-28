@@ -298,6 +298,7 @@ function tap(color) {
   const time = performance.now();
   enforceLifecycle(time);
   if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
+  if (!buttons[color]?.disabled) audio.pressButton('gameplay');
   const action = localRound.run.tap(color, time);
   if (action.type === 'ignored') return;
   if (localRound.goDelay === null) localRound.goDelay = Math.max(0, time - localRound.start);
