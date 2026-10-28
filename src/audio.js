@@ -5,6 +5,7 @@ const BASE_URL = import.meta.env?.BASE_URL || '/';
 const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
 const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', countdown: 'countdown.mp3' };
+const GAME_AUDIO_FILES = { 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3' } };
 const PROFILES = {
   'jump-for-the-meat': { music: 'music', urgency: 'urgency', go: 'go' },
   'mimicking-monkeys': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -48,6 +49,8 @@ export class GameAudio {
     this.demonstrationKey = null;
     this.demonstrationNotes = new Set();
     this.buttonRequest = 0;
+    this.launchKey = null;
+    this.launchVoice = null;
   }
 
   read(key) { try { return this.storage?.getItem(key); } catch { return null; } }
@@ -101,7 +104,8 @@ export class GameAudio {
   async load() {
     if (this.loading) { await this.loading; return this.load(); }
     const bank = this.game;
-    const missing = [...audioAssetIds(bank), ...Object.keys(EXTRA_AUDIO_FILES)].filter(id => !this.buffers.has(id)).map(id => [id, AUDIO_FILES[id] || EXTRA_AUDIO_FILES[id]]);
+    const extraFiles = { ...EXTRA_AUDIO_FILES, ...GAME_AUDIO_FILES[bank] };
+    const missing = [...audioAssetIds(bank), ...Object.keys(extraFiles)].filter(id => !this.buffers.has(id)).map(id => [id, AUDIO_FILES[id] || extraFiles[id]]);
     if (!missing.length) { this.loadFailed = false; return; }
     this.loading = Promise.allSettled(missing.map(async ([id, file]) => {
       const controller = new AbortController();
@@ -247,6 +251,18 @@ export class GameAudio {
     });
   }
 
+  fireworkLaunch(run) {
+    if (!this.enabled || this.preferences.effectsVolume === 0 || this.context?.state !== 'running' || this.target?.game !== 'fireworks-craze' || this.target.id !== run.id || this.target.playerDone || run.done) return;
+    const remaining = run.launchedAt - this.now();
+    // Schedule imminent launches on the audio clock, skipping old rockets after interruptions.
+    if (remaining > 150 || remaining < -100 || run.launchedAt >= this.target.end) return;
+    const key = `${run.id}/${run.index}/${run.launchedAt}`;
+    if (this.launchKey === key) return;
+    if (this.launchVoice) this.stopVoice(this.launchVoice);
+    const voice = this.source('fireworkLaunch', { at: this.context.currentTime + Math.max(0, remaining) / 1000, group: 'round' });
+    if (voice) { this.launchKey = key; this.launchVoice = voice; }
+  }
+
   scheduleRound(id, start, end, musicOwner, playerDone = false, { game = this.game, cues = [], bpm = 128 } = {}) {
     this.setMenuScreen(false, musicOwner);
     this.selectGame(game);
@@ -375,6 +391,7 @@ export class GameAudio {
   }
 
   stopRound() {
+    this.launchKey = null; this.launchVoice = null;
     this.target = null; this.musicKey = null; this.countdownKey = null;
     this.demonstrationKey = null; this.demonstrationNotes.clear();
     this.stopVoices(voice => voice.group === 'round' || voice.group === 'music' || voice.group === 'demonstration');

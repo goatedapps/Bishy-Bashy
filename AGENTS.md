@@ -22,6 +22,7 @@ Track slot locks as a monotonic three-bit `reelMask`, rather than assuming the f
 `shared/fireworks.js` owns Fireworks Craze's seeded rockets, reveal windows, and local elapsed-time race to 12 bursts.
 Early, wrong, and expired rockets advance the attempt and cost 300 ms; keep unrevealed colors hidden and render only the local player's actual reaction targets.
 `src/firework-view.js` and `src/fireworks.css` draw the live cues over the generated festival backdrop; remote bursts follow cosmetic progress.
+Fireworks launch audio follows the local run's `launchedAt` timestamp with bounded lookahead; deduplicate attempts and skip stale launches after interruption.
 `shared/monkeys.js` owns Mimicking Monkeys' seeded expanding prefix, watch/play gates, and elapsed-time race through 5–9 stages.
 Wrong responses replay the current prefix after recovery; completed stages persist, and demonstration inputs are ignored.
 `src/monkey-view.js` and `src/monkeys.css` show the original monkey, color/shape flashes, and answer dots without revealing future answers or animating remote demonstrations.

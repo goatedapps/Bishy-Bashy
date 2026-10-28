@@ -4,6 +4,8 @@ import { readFile } from 'node:fs/promises';
 import { GameAudio } from '../src/audio.js';
 import { AUDIO_FILES, BEAT, LOOP_SECONDS, audioAssetIds } from '../scripts/audio/score.js';
 import { demoCues } from '../shared/perm.js';
+import { FireworkRun } from '../shared/fireworks.js';
+import { roundSettings } from '../shared/games.js';
 
 test('Jump loads an existing flourish for perfect landings without requiring the full Perm bank', async () => {
   const { audio, requests } = setup();
@@ -136,6 +138,61 @@ test('gameplay presses use a separate cached punch effect and obey effects volum
   audio.setEnabled(false);
   audio.pressButton('gameplay');
   assert.equal(audio.voices.size, 0);
+});
+
+test('firework launch sounds load only for Fireworks and follow each local launch and retry once', async () => {
+  const { audio, context, requests, setTime } = setup();
+  await audio.unlock();
+  assert.ok(!requests.some(url => url.includes('Fireworks.mp3')));
+  audio.selectGame('fireworks-craze');
+  await audio.unlock();
+  assert.equal(requests.filter(url => url.includes('Fireworks.mp3')).length, 1);
+  const round = { id: 'rockets', game: 'fireworks-craze', ...roundSettings('fireworks-craze', 123) };
+  const run = new FireworkRun(round, 1000);
+  audio.scheduleRound(round.id, run.start, run.end, true, false, { game: round.game });
+  setTime(849); audio.fireworkLaunch(run);
+  assert.ok(![...audio.voices].some(voice => voice.id === 'fireworkLaunch'));
+  setTime(850); audio.fireworkLaunch(run);
+  const first = [...audio.voices].find(voice => voice.id === 'fireworkLaunch');
+  assert.equal(first.source.started.at, context.currentTime + .15);
+  audio.fireworkLaunch(run);
+  assert.equal([...audio.voices].filter(voice => voice.id === 'fireworkLaunch').length, 1);
+  const hitAt = run.revealAt;
+  setTime(hitAt); run.tap(run.rocket.color, hitAt); audio.fireworkLaunch(run);
+  assert.equal(first.stopped, true);
+  const second = [...audio.voices].find(voice => voice.id === 'fireworkLaunch');
+  assert.notEqual(second, first);
+  assert.equal(second.source.started.at, context.currentTime);
+  const missAt = hitAt + 10;
+  setTime(missAt); run.tap(0, missAt); audio.fireworkLaunch(run);
+  assert.equal([...audio.voices].find(voice => voice.id === 'fireworkLaunch'), second);
+  setTime(run.launchedAt - 100); audio.fireworkLaunch(run);
+  assert.equal(second.stopped, true);
+  assert.equal([...audio.voices].filter(voice => voice.id === 'fireworkLaunch').length, 1);
+  audio.endPlayer();
+  assert.equal([...audio.voices].filter(voice => voice.id === 'fireworkLaunch').length, 0);
+});
+
+test('firework launches stay silent after mute, expired attempts, results, and interruptions', async () => {
+  const { audio, context, setTime } = setup();
+  audio.selectGame('fireworks-craze');
+  await audio.unlock();
+  const round = { id: 'rockets', game: 'fireworks-craze', ...roundSettings('fireworks-craze', 123) };
+  const run = new FireworkRun(round, 1000);
+  audio.scheduleRound(round.id, run.start, run.end, true, false, { game: round.game });
+  audio.setEnabled(false);
+  setTime(1000); audio.fireworkLaunch(run);
+  assert.ok(![...audio.voices].some(voice => voice.id === 'fireworkLaunch'));
+  setTime(1200); audio.setEnabled(true); await audio.unlock(); audio.fireworkLaunch(run);
+  assert.ok(![...audio.voices].some(voice => voice.id === 'fireworkLaunch'));
+  run.advance(run.expiresAt);
+  setTime(run.launchedAt); audio.fireworkLaunch(run);
+  assert.equal([...audio.voices].filter(voice => voice.id === 'fireworkLaunch').length, 1);
+  context.state = 'suspended'; context.stateChange();
+  setTime(run.launchedAt + 200); await context.resume(); audio.fireworkLaunch(run);
+  assert.ok(![...audio.voices].some(voice => voice.id === 'fireworkLaunch'));
+  audio.stopRound(); audio.fireworkLaunch(run);
+  assert.ok(![...audio.voices].some(voice => voice.id === 'fireworkLaunch'));
 });
 
 test('menu track streams after unlock, survives menu changes, and yields to rounds without restarting its position', async () => {

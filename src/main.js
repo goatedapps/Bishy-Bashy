@@ -301,6 +301,7 @@ function tap(color) {
   if (!buttons[color]?.disabled) audio.pressButton('gameplay');
   const action = localRound.run.tap(color, time);
   if (action.type === 'ignored') return;
+  if (room.round.game === FIREWORK_GAME) audio.fireworkLaunch(localRound.run);
   if (localRound.goDelay === null) localRound.goDelay = Math.max(0, time - localRound.start);
   if (action.type === 'finished') complete('finished', action.elapsed);
   else audio.play(action.type, { color, progress: localRound.run.cleared / room.round.goal, game: room.round.game });
@@ -388,6 +389,7 @@ function animate() {
   enforceLifecycle(time);
   const round = room?.round;
   let overlay = '', small = false;
+  if (round?.game === FIREWORK_GAME && localRound) audio.fireworkLaunch(localRound.run);
   audio.setMenuScreen(!document.hidden && !isRoundActive(round), !room || room.players[0]?.id === playerId);
   if (isRoundActive(round)) {
     if (!localRound) { overlay = round.playerIds.includes(playerId) ? 'Syncing…' : 'Next round'; small = true; }
