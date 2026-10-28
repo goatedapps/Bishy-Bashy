@@ -77,6 +77,10 @@ Physical phone audio and touch latency still need playtesting.
 
 ## Music and sound
 
+Menus, game selection, rules, intermissions, and standings loop the user-supplied `public/audio/Background-ActionRock.mp3` through the existing music volume and mute controls.
+The track streams after a user gesture, preserves its position between menus, pauses for the round countdown and gameplay, and resumes when the next transition screen appears.
+The same one-device-per-room policy and personal music overrides apply; hiding the page or previewing gameplay sounds pauses menu music.
+
 The original soundtrack is a 128 BPM funky disco arcade loop, with an octave bass groove, four-on-the-floor drums, electric-piano-style chord stabs, and a bright melody.
 An additional percussion and melody layer enters on a beat near the final ten seconds.
 Correct taps have three wooden pop tones corresponding to the block colors; a wrong tap produces a springy falling sound.
@@ -97,7 +101,7 @@ Transient effects are capped at eight voices; the music uses two looping buffers
 
 Each game's mono WAV bank totals less than 2.5 MB and loads only after sound is enabled for that game.
 The normal and urgency loops each last 15 seconds at 32 kHz, with equal sample counts for phase alignment.
-The editable score and synthesis are in `scripts/audio/`; no third-party recordings or music services are used.
+The gameplay score and synthesis are in `scripts/audio/` and use no third-party recordings or music services.
 Regenerate the runtime files and their numerical analysis with:
 
 ```sh

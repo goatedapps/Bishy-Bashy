@@ -387,6 +387,7 @@ function animate() {
   enforceLifecycle(time);
   const round = room?.round;
   let overlay = '', small = false;
+  audio.setMenuScreen(!document.hidden && !isRoundActive(round), !room || room.players[0]?.id === playerId);
   if (isRoundActive(round)) {
     if (!localRound) { overlay = round.playerIds.includes(playerId) ? 'Syncing…' : 'Next round'; small = true; }
     else if (time < localRound.start) overlay = String(Math.ceil((localRound.start - time) / 1000));
@@ -512,6 +513,11 @@ function showRules() {
 }
 
 $('create').addEventListener('click', () => enter('create'));
+const unlockAudioFromGesture = () => {
+  if (audio.enabled && (!audio.context || audio.context.state !== 'running' || audio.menu.active && !audio.menuPlaying)) audio.unlock();
+};
+document.addEventListener('pointerdown', unlockAudioFromGesture, { capture: true });
+document.addEventListener('keydown', unlockAudioFromGesture, { capture: true });
 $('entry-form').addEventListener('submit', event => { event.preventDefault(); enter('join'); });
 $('ready').addEventListener('click', () => { notice(''); audio.unlock(); send({ type: 'ready', ready: !room.players.find(player => player.id === playerId)?.ready }); });
 $('start').addEventListener('click', () => { audio.unlock(); send({ type: 'start' }); });

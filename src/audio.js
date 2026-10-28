@@ -14,9 +14,13 @@ const PROFILES = {
 const clamp = value => Math.max(0, Math.min(1, value));
 
 export class GameAudio {
-  constructor({ storage = globalThis.localStorage, createContext = () => new AudioContext(), now = () => performance.now(), fetchFile = (url, options) => fetch(url, options), onChange = () => {} } = {}) {
+  constructor({ storage = globalThis.localStorage, createContext = () => new AudioContext(), createMedia = () => new Audio(), now = () => performance.now(), fetchFile = (url, options) => fetch(url, options), onChange = () => {} } = {}) {
     this.storage = storage;
     this.createContext = createContext;
+    this.createMedia = createMedia;
+    this.menu = { active: false, musicOwner: true };
+    this.menuPlaying = false;
+    this.menuRequest = 0;
     this.now = now;
     this.fetchFile = fetchFile;
     this.onChange = onChange;
@@ -65,7 +69,10 @@ export class GameAudio {
     this.master.connect(this.limiter).connect(this.context.destination);
     this.applyVolumes();
     this.context.addEventListener('statechange', () => {
-      if (this.context.state !== 'running') this.stopVoices(() => true, true);
+      if (this.context.state !== 'running') {
+        this.stopVoices(() => true, true);
+        this.stopMenu();
+      }
       this.countdownKey = null; this.musicKey = null; this.demonstrationNotes.clear();
       if (this.context.state === 'running') this.synchronize();
       this.onChange();
@@ -77,6 +84,7 @@ export class GameAudio {
     try {
       if (!this.context) this.initialize();
       if (this.context.state !== 'running') await this.context.resume();
+      this.synchronizeMenu();
       await this.load();
       this.synchronize();
       return this.context.state === 'running' && this.buffers.size > 0;
@@ -125,6 +133,7 @@ export class GameAudio {
     this.enabled = Boolean(enabled);
     this.write('bb-sound', this.enabled ? 'on' : 'off');
     if (!this.enabled) {
+      this.stopMenu();
       this.stopPreview();
       this.stopVoices(() => true);
       this.countdownKey = null; this.musicKey = null; this.demonstrationNotes.clear();
@@ -179,6 +188,7 @@ export class GameAudio {
       source.disconnect(); gain.disconnect();
       if (group.startsWith('preview-') && ![...this.voices].some(other => other.group.startsWith('preview-'))) {
         this.previewing = false;
+        this.synchronizeMenu();
         this.onChange();
       }
     };
@@ -219,6 +229,7 @@ export class GameAudio {
   }
 
   scheduleRound(id, start, end, musicOwner, playerDone = false, { game = this.game, cues = [], bpm = 128 } = {}) {
+    this.setMenuScreen(false, musicOwner);
     this.selectGame(game);
     if (this.target?.id !== id) {
       this.stopRound();
@@ -229,6 +240,7 @@ export class GameAudio {
   }
 
   synchronize() {
+    this.synchronizeMenu();
     if (!this.enabled || this.context?.state !== 'running' || !this.target || !this.buffers.size) return;
     const { id, start, end, musicOwner, playerDone, game, cues, bpm } = this.target;
     const perm = game === 'perm-mania';
@@ -275,6 +287,51 @@ export class GameAudio {
     });
   }
 
+  setMenuScreen(active, musicOwner = true) {
+    if (this.menu.active === active && this.menu.musicOwner === musicOwner) return;
+    this.menu = { active, musicOwner };
+    this.synchronizeMenu();
+  }
+
+  synchronizeMenu() {
+    const allowed = this.preferences.musicMode === 'on' || this.preferences.musicMode === 'auto' && this.menu.musicOwner;
+    if (!this.menu.active || !allowed || !this.enabled || this.preferences.musicVolume === 0 || this.previewing || this.context?.state !== 'running') {
+      this.stopMenu();
+      return;
+    }
+    if (this.menuPlaying) return;
+    try {
+      if (!this.menuMedia) {
+        // Stream the full-length MP3 instead of retaining a decoded music buffer on every phone.
+        this.menuMedia = this.createMedia();
+        this.menuMedia.src = `${BASE_URL}audio/Background-ActionRock.mp3`;
+        this.menuMedia.loop = true;
+        this.menuMedia.preload = 'none';
+        this.menuMedia.addEventListener('error', () => { this.menuPlaying = false; });
+        this.menuGain = this.context.createGain();
+        this.context.createMediaElementSource(this.menuMedia).connect(this.menuGain).connect(this.musicBus);
+      }
+      const request = ++this.menuRequest;
+      this.menuPlaying = true;
+      const at = this.context.currentTime;
+      this.menuGain.gain.cancelScheduledValues(at);
+      this.menuGain.gain.setValueAtTime(0, at);
+      this.menuGain.gain.linearRampToValueAtTime(1, at + .15);
+      Promise.resolve(this.menuMedia.play()).catch(() => {
+        if (request === this.menuRequest) this.menuPlaying = false;
+      });
+    } catch {
+      this.menuPlaying = false;
+    }
+  }
+
+  stopMenu() {
+    if (!this.menuPlaying) return;
+    this.menuRequest++;
+    this.menuPlaying = false;
+    this.menuMedia?.pause();
+  }
+
   stopVoice(voice, immediate = false) {
     if (voice.stopped) return;
     voice.stopped = true;
@@ -304,6 +361,8 @@ export class GameAudio {
   }
 
   cancel() {
+    this.menu.active = false;
+    this.stopMenu();
     this.stopRound();
     this.stopPreview();
     this.stopVoices(() => true);
@@ -313,10 +372,16 @@ export class GameAudio {
     if (this.target) return;
     this.selectGame(game);
     const request = ++this.previewRequest;
+    this.previewing = true;
+    this.stopMenu();
     this.setEnabled(true);
-    if (!await this.unlock() || request !== this.previewRequest || !this.enabled || this.target) return;
+    if (!await this.unlock() || request !== this.previewRequest || !this.enabled || this.target) {
+      if (request === this.previewRequest) this.stopPreview();
+      return;
+    }
     this.stopPreview(false);
     this.previewing = true;
+    this.stopMenu();
     const at = this.context.currentTime + .03;
     if (this.preferences.musicMode !== 'off' && this.preferences.musicVolume > 0) this.source((PROFILES[game] || PROFILES['totem-shrinker']).music, { at, group: 'preview-music', loop: true, end: at + 8 });
     const cues = game === 'facial-slot-machine' ? [['slotGo', .3], ['slotLock', 1.1], ['slotMiss', 1.8], ['slotLock', 3], ['slotWin', 4.5]] : game === 'perm-mania' ? [['permDemo', .5], ['permDemo', .5 + BEAT], ['permDemo', .5 + BEAT * 2], ['permDemo', .5 + BEAT * 3], ['permHit', .5 + BEAT * 4], ['permHit', .5 + BEAT * 5], ['permHit', .5 + BEAT * 6], ['permHit', .5 + BEAT * 7], ['permGrow', .5 + BEAT * 8], ['finish', 6.3]] : [['red', .5], ['green', .8], ['blue', 1.1], ['mistake', 1.6], ['tick', 2.5], ['tick', 3.5], ['tick', 4.5], ['go', 5.5], ['finish', 6.3]];
@@ -328,6 +393,7 @@ export class GameAudio {
     if (invalidate) this.previewRequest++;
     this.stopVoices(voice => voice.group.startsWith('preview-'));
     this.previewing = false;
+    if (invalidate) this.synchronizeMenu();
     this.onChange();
   }
 }

@@ -31,6 +31,7 @@ class AudioNode {
 class Context {
   constructor() { this.currentTime = 100; this.state = 'running'; this.destination = {}; this.sources = []; }
   createGain() { return new AudioNode(); }
+  createMediaElementSource(media) { this.media = media; return new AudioNode(); }
   createDynamicsCompressor() {
     const node = new AudioNode();
     for (const key of ['threshold', 'knee', 'ratio', 'attack', 'release']) node[key] = new Parameter();
@@ -52,7 +53,7 @@ class Context {
   }
 }
 
-function setup({ enabled = true, fetchFile, storage } = {}) {
+function setup({ enabled = true, fetchFile, storage, createMedia } = {}) {
   let time = 0, created = 0;
   const context = new Context();
   const values = new Map([['bb-sound', enabled ? 'on' : 'off']]);
@@ -61,6 +62,7 @@ function setup({ enabled = true, fetchFile, storage } = {}) {
     storage: storage || { getItem: key => values.get(key), setItem: (key, value) => values.set(key, value) },
     now: () => time,
     createContext: () => { created++; return context; },
+    ...(createMedia ? { createMedia } : {}),
     fetchFile: fetchFile || (async url => {
       requests.push(url);
       const bytes = await readFile(new URL(`../public/audio/${url.split('/').at(-1).split('?')[0]}`, import.meta.url));
@@ -69,6 +71,93 @@ function setup({ enabled = true, fetchFile, storage } = {}) {
   });
   return { audio, context, values, requests, setTime: value => { time = value; }, get created() { return created; } };
 }
+
+class MenuMedia {
+  constructor() { this.plays = 0; this.pauses = 0; this.currentTime = 0; }
+  addEventListener() {}
+  async play() { this.plays++; }
+  pause() { this.pauses++; }
+}
+
+test('menu track streams after unlock, survives menu changes, and yields to rounds without restarting its position', async () => {
+  const media = new MenuMedia();
+  const { audio, requests, context } = setup({ createMedia: () => media });
+  audio.setMenuScreen(true);
+  assert.equal(media.plays, 0);
+  await audio.unlock();
+  assert.equal(media.plays, 1);
+  assert.equal(media.src, '/audio/Background-ActionRock.mp3');
+  assert.equal(media.loop, true);
+  assert.equal(context.media, media);
+  assert.ok(!requests.some(url => url.endsWith('.mp3')));
+  media.currentTime = 32;
+  audio.selectGame('facial-slot-machine');
+  audio.setMenuScreen(true);
+  audio.synchronize();
+  assert.equal(media.plays, 1);
+  audio.scheduleRound('slots', 5000, 50000, true, false, { game: 'facial-slot-machine' });
+  assert.equal(audio.menuPlaying, false);
+  assert.equal(media.pauses, 1);
+  audio.stopRound();
+  audio.setMenuScreen(true);
+  assert.equal(media.plays, 2);
+  assert.equal(media.currentTime, 32);
+});
+
+test('menu music honors room ownership, personal overrides, mute, volume, interruption, and previews', async () => {
+  const media = new MenuMedia();
+  const { audio, context } = setup({ createMedia: () => media });
+  audio.setMenuScreen(true, false);
+  await audio.unlock();
+  assert.equal(media.plays, 0);
+  audio.setPreferences({ musicMode: 'on' });
+  assert.equal(media.plays, 1);
+  audio.setPreferences({ musicVolume: 0 });
+  assert.equal(audio.menuPlaying, false);
+  audio.setPreferences({ musicVolume: .5 });
+  assert.equal(audio.menuPlaying, true);
+  assert.equal(audio.musicBus.gain.value, .25);
+  audio.setEnabled(false);
+  assert.equal(audio.menuPlaying, false);
+  audio.setEnabled(true);
+  await audio.unlock();
+  assert.equal(audio.menuPlaying, true);
+  context.state = 'suspended'; context.stateChange();
+  assert.equal(audio.menuPlaying, false);
+  await context.resume();
+  assert.equal(audio.menuPlaying, true);
+  await audio.preview();
+  assert.equal(audio.menuPlaying, false);
+  for (const voice of [...audio.voices]) if (voice.group.startsWith('preview-')) voice.source.onended();
+  assert.equal(audio.menuPlaying, true);
+  audio.cancel();
+  assert.equal(audio.menuPlaying, false);
+  audio.setMenuScreen(true, true);
+  assert.equal(audio.menuPlaying, true);
+  audio.setPreferences({ musicMode: 'off' });
+  assert.equal(audio.menuPlaying, false);
+});
+
+test('denied menu playback can retry on the next gesture and stale rejections cannot stop newer playback', async () => {
+  const media = new MenuMedia();
+  let rejectPlay;
+  media.play = () => new Promise((resolve, reject) => { rejectPlay = reject; });
+  const { audio } = setup({ createMedia: () => media });
+  audio.setMenuScreen(true);
+  await audio.unlock();
+  const rejectOld = rejectPlay;
+  audio.setMenuScreen(false);
+  audio.setMenuScreen(true);
+  rejectOld(new Error('Interrupted'));
+  await Promise.resolve();
+  assert.equal(audio.menuPlaying, true);
+  rejectPlay(new Error('Autoplay denied'));
+  await Promise.resolve();
+  assert.equal(audio.menuPlaying, false);
+  media.play = async () => {};
+  await audio.unlock();
+  assert.equal(audio.menuPlaying, true);
+});
 
 test('memory demos schedule color tones once from local time and skip old notes after mute or interruption', async () => {
   const { audio, context, setTime } = setup();
