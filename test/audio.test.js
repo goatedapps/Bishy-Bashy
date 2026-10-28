@@ -88,9 +88,11 @@ test('instructions use a separate music track, preserve menu position, and yield
   await audio.unlock();
   audio.setMenuScreen(true);
   const actionRock = media[0];
+  assert.equal(audio.menuGain.gain.value, 1);
   actionRock.currentTime = 20;
   audio.setMenuScreen(true, true, null, 'instructions');
   const instructions = media[1];
+  assert.equal(audio.menuGain.gain.value, 2);
   assert.equal(actionRock.pauses, 1);
   assert.equal(instructions.src, '/audio/game-instructions.mp3');
   assert.equal(instructions.loop, true);
@@ -108,6 +110,7 @@ test('instructions use a separate music track, preserve menu position, and yield
   audio.podium.voice.source.onended();
   assert.equal(actionRock.plays, 2);
   assert.equal(actionRock.currentTime, 20);
+  assert.equal(audio.menuGain.gain.value, 1);
   audio.setMenuScreen(true, true, null, 'instructions');
   assert.equal(instructions.plays, 2);
   assert.equal(instructions.currentTime, 2);

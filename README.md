@@ -84,6 +84,7 @@ Physical phone audio and touch latency still need playtesting.
 
 Menus, game selection, intermissions, and standings loop the user-supplied `public/audio/Background-ActionRock.mp3` through the existing music volume and mute controls.
 The illustrated instructions screen uses `public/audio/game-instructions.mp3` instead, with each track retaining its playback position when paused.
+The instructions track has a +6 dB playback boost through the existing music volume control to compensate for its softer recording.
 Both tracks stream after a user gesture and pause for the round countdown and gameplay, with Action Rock returning on transition screens after the podium cue.
 The same one-device-per-room policy and personal music overrides apply; hiding the page or previewing gameplay sounds pauses menu music.
 Each post-game podium plays `public/audio/podium-winner.mp3` once through the effects controls before background music resumes, including the final set podium.

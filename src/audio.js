@@ -5,6 +5,7 @@ const BASE_URL = import.meta.env?.BASE_URL || '/';
 const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
 const MENU_TRACKS = { menu: 'Background-ActionRock.mp3', instructions: 'game-instructions.mp3' };
+const MENU_TRACK_GAINS = { menu: 1, instructions: 2 };
 const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.wav', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3' };
 const GAME_AUDIO_FILES = { 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3' } };
 const PROFILES = {
@@ -400,7 +401,7 @@ export class GameAudio {
       const at = this.context.currentTime;
       this.menuGain.gain.cancelScheduledValues(at);
       this.menuGain.gain.setValueAtTime(0, at);
-      this.menuGain.gain.linearRampToValueAtTime(1, at + .15);
+      this.menuGain.gain.linearRampToValueAtTime(MENU_TRACK_GAINS[trackId] || 1, at + .15);
       Promise.resolve(this.menuMedia.play()).catch(() => {
         if (request === this.menuRequest) this.menuPlaying = false;
       });
