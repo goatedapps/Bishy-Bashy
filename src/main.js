@@ -1,3 +1,4 @@
+import './arcade-reel.css';
 import QRCode from 'qrcode';
 import { SyncedClock } from './clock.js';
 import { TOTEM_GAME } from '../shared/totem.js';
@@ -121,7 +122,7 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 6 || !message.capabilities?.includes('arcade-wheel') || !message.capabilities?.includes('asset-readiness')) {
+      if (message.protocol !== 6 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -363,7 +364,7 @@ function updateMetrics() {
   const mine = room.players.find(player => player.id === playerId);
   $('ready').disabled = !gate || !preparingAssets?.ready || room.set?.phase === 'instructions' && !setView.instructionsComplete(room.round?.id) || !connected || !estimate || estimate.count < 3 || estimate.rtt > 1500 || !mine?.sync || mine.sync.count < 3 || time + estimate.offset - mine.sync.at >= 20_000;
   $('ready').textContent = mine?.ready ? 'Not ready' : 'Ready';
-  $('start').textContent = room.mode === 'arcade' ? 'Spin & start' : room.set?.phase === 'complete' ? 'Start new set' : 'Start set';
+  $('start').textContent = room.set?.phase === 'complete' ? 'Start new set' : 'Start set';
   const serverNow = time + (estimate?.offset || 0);
   const disconnected = room.players.filter(player => !player.connected);
   const wait = Math.max(0, ...disconnected.map(player => 15_000 - (serverNow - player.disconnectedAt)));
@@ -534,7 +535,7 @@ function updateGameProfile() {
   document.body.classList.toggle('dice-theme', Boolean(themed && game === DICE_GAME));
   document.body.classList.toggle('facing-theme', Boolean(themed && game === FACING_GAME));
   document.body.classList.toggle('in-set', Boolean(inSet));
-  const title = !room ? 'Bishy Bashy!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'selecting' ? 'Spin the wheel!' : room.set?.phase === 'intermission' ? 'Standings' : room.set?.phase === 'instructions' || active ? GAMES[game].title : room.arcadePreview ? 'Arcade' : 'Choose your mode';
+  const title = !room ? 'Bishy Bashy!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'selecting' ? 'Pick our next game!' : room.set?.phase === 'intermission' ? 'Standings' : room.set?.phase === 'instructions' || active ? GAMES[game].title : room.arcadePreview ? 'Arcade' : 'Choose your mode';
   if (document.querySelector('.game-title').textContent !== title) document.querySelector('.game-title').textContent = title;
   document.title = `${room ? title : 'Party games'} · Bishy Bashy`;
   $('lobby-setup').hidden = !room || Boolean(inSet) || Boolean(room.arcadePreview && !room.set);

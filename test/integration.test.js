@@ -50,7 +50,7 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
   let state = (await waiting).room;
   if (mode === 'arcade') {
     assert.equal(state.set.phase, 'selecting');
-    time = state.set.spinEndAt;
+    time = state.set.selectionEndAt;
     waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.phase === 'instructions');
     app.rooms.tick(); state = (await waiting).room;
   }
@@ -107,7 +107,7 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
       await synced; app.rooms.tick();
       if (mode === 'arcade') {
         const instructions = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.phase === 'instructions');
-        time = app.rooms.rooms.get(code).set.spinEndAt;
+        time = app.rooms.rooms.get(code).set.selectionEndAt;
         app.rooms.tick();
         await instructions;
       }

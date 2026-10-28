@@ -2,16 +2,23 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RoomService } from '../server/rooms.js';
 import { GAMES } from '../shared/games.js';
-import { wheelRotation } from '../src/arcade-wheel.js';
+import { reelStrip, reelPosition } from '../src/arcade-reel.js';
 import { arcadeGameIds, createSetPlan } from '../shared/sets.js';
 
-test('every wheel segment lands exactly at the pointer and easing slows toward its chosen game', () => {
-  const ids = arcadeGameIds();
-  for (const [index, id] of ids.entries()) {
-    assert.equal(wheelRotation(id, -1), 0);
-    assert.equal(wheelRotation(id, 1), 2160 - index * 360 / ids.length);
-    assert.equal(wheelRotation(id, 2), wheelRotation(id, 1));
-    assert.ok(wheelRotation(id, .1) > wheelRotation(id, 1) - wheelRotation(id, .9));
+test('the reel lands exactly on the shared winner and has bounded travel for growing catalogs', () => {
+  for (const count of [8, 40, 400]) {
+    const ids = Array.from({ length: count }, (_, i) => `game-${i}`);
+    for (const winner of ids) {
+      const result = reelStrip(123, winner, ids);
+      assert.deepEqual(result, reelStrip(123, winner, ids));
+      assert.equal(result.strip[result.distance], winner);
+      assert.ok(result.distance >= 48 && result.distance <= 60);
+      assert.ok(result.strip.length <= 65);
+      assert.equal(reelPosition(0, result.distance), 0);
+      assert.equal(reelPosition(1, result.distance), result.distance);
+      assert.equal(reelPosition(2, result.distance), result.distance);
+      assert.ok(reelPosition(.5, result.distance) < reelPosition(.8, result.distance));
+    }
   }
 });
 
@@ -37,12 +44,6 @@ test('Arcade shares one selection, ignores repeated starts and premature readine
   const room = service.rooms.get(host.room);
   service.handle(guest, { type: 'join', code: room.code, name: 'Friend', assetGates: true });
   service.handle(host, { type: 'configure', mode: 'arcade' });
-  assert.equal(room.arcadePreview, true);
-  service.handle(guest, { type: 'back-to-modes' });
-  assert.equal(room.arcadePreview, true);
-  service.handle(host, { type: 'back-to-modes' });
-  assert.equal(room.arcadePreview, false);
-  service.handle(host, { type: 'start' });
   const id = room.round.id, game = room.round.game;
   assert.equal(room.set.phase, 'selecting');
   service.handle(host, { type: 'start' });
@@ -52,7 +53,12 @@ test('Arcade shares one selection, ignores repeated starts and premature readine
     service.handle(client, { type: 'ready', ready: true });
   }
   assert.ok(room.players.every(player => !player.ready));
-  now = room.set.spinEndAt - 1; service.tick();
+  now = room.set.spinEndAt; service.tick();
+  assert.equal(room.set.phase, 'selecting');
+  assert.equal(room.set.selectionEndAt - room.set.spinEndAt, 2000);
+  service.handle(host, { type: 'ready', ready: true });
+  assert.equal(room.players[0].ready, false);
+  now = room.set.selectionEndAt - 1; service.tick();
   assert.equal(room.set.phase, 'selecting');
   now++; service.tick();
   assert.equal(room.set.phase, 'instructions');

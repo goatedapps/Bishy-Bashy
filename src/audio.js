@@ -6,7 +6,7 @@ const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
 const MENU_TRACKS = { menu: 'Background-ActionRock.mp3', instructions: 'game-instructions.mp3' };
 const MENU_TRACK_GAINS = { menu: 1, instructions: 2 };
-const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.wav', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3', wheelSpin: 'wheelspin.mp3' };
+const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.wav', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3', wheelSpin: 'roulette.mp3', gameSelect: 'Game-select.mp3' };
 const GAME_AUDIO_FILES = { 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3' }, 'facing-which-way': { ding: 'Ding.mp3' } };
 const PROFILES = {
   'dice-dice-more-dice': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -257,13 +257,22 @@ export class GameAudio {
       this.stopVoices(voice => voice.group === 'wheel');
       return;
     }
-    if (this.wheel?.id === id) return;
+    if (this.wheel?.id !== id) {
+      this.stopVoices(voice => voice.group === 'wheel');
+      this.wheel = { id, landed: false };
+    }
+    if (elapsed >= duration) {
+      this.stopVoices(voice => voice.group === 'wheel' && voice.id === 'wheelSpin');
+      if (!this.wheel.landed && this.buffers.has('gameSelect')) {
+        this.wheel.landed = true;
+        if (elapsed - duration < 250) this.source('gameSelect', { group: 'wheel', end: this.context.currentTime + 2 });
+      }
+      return;
+    }
+    if ([...this.voices].some(voice => voice.group === 'wheel' && voice.id === 'wheelSpin')) return;
     const buffer = this.buffers.get('wheelSpin');
     if (!buffer) return;
-    this.stopVoices(voice => voice.group === 'wheel');
-    this.wheel = { id };
-    if (elapsed >= buffer.duration * 1000 || elapsed >= duration) return;
-    this.source('wheelSpin', { group: 'wheel', offset: Math.max(0, elapsed / 1000), end: this.context.currentTime + (duration - Math.max(0, elapsed)) / 1000 });
+    this.source('wheelSpin', { group: 'wheel', loop: true, offset: Math.max(0, elapsed / 1000) % buffer.duration, end: this.context.currentTime + (duration - Math.max(0, elapsed)) / 1000 });
   }
 
   demonstrate(key, cues) {

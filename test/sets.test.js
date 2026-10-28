@@ -20,7 +20,7 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
   const sync = (indices = clients.map((_, index) => index)) => indices.forEach(index => service.handle(clients[index], { type: 'sync', rtt: 20, uncertainty: 10, count: 5 }));
   const ready = () => { sync(); clients.forEach(client => service.handle(client, { type: 'ready', ready: true })); };
   ready(); service.handle(clients[0], { type: 'start' });
-  if (room.set.phase === 'selecting') { time = room.set.spinEndAt; service.tick(); }
+  if (room.set.phase === 'selecting') { time = room.set.selectionEndAt; service.tick(); }
   ready();
   const finish = (order = clients.map((_, index) => index), winner = 0) => {
     const round = room.round;
@@ -106,7 +106,7 @@ test('Arcade automatically plays five distinct base-difficulty games and keeps c
       assert.equal(room.set.phase, 'intermission');
       setTime(room.set.nextStartAt); sync(); service.tick();
       assert.equal(room.set.phase, 'selecting');
-      setTime(room.set.spinEndAt); service.tick();
+      setTime(room.set.selectionEndAt); service.tick();
       assert.equal(room.set.phase, 'instructions'); ready();
     }
   }

@@ -157,11 +157,33 @@ test('wheel audio follows the current spin, never duplicates on redraw, and stop
   assert.equal([...audio.voices].filter(item => item.group === 'wheel').length, 1);
   audio.spinWheel(null, 0, 0);
   assert.equal([...audio.voices].filter(item => item.group === 'wheel').length, 0);
-  audio.spinWheel('spin-1', 1200, 5500);
+  audio.spinWheel('spin-1', 4200, 5500);
+  assert.equal([...audio.voices].filter(item => item.group === 'wheel').length, 1);
+  assert.equal([...audio.voices].find(item => item.group === 'wheel').source.loop, true);
+  assert.ok(Math.abs([...audio.voices].find(item => item.group === 'wheel').source.started.offset - 1.2) < .001);
+  audio.spinWheel('spin-1', 5501, 5500);
+  assert.deepEqual([...audio.voices].filter(item => item.group === 'wheel').map(item => item.id), ['gameSelect']);
+  audio.spinWheel('spin-1', 5510, 5500);
+  assert.equal([...audio.voices].filter(item => item.group === 'wheel').length, 1);
+  audio.spinWheel(null, 0, 0);
+  audio.spinWheel('spin-1', 5550, 5500);
   assert.equal([...audio.voices].filter(item => item.group === 'wheel').length, 0);
   audio.spinWheel('spin-2', 0, 5500);
   audio.setEnabled(false);
   assert.equal(audio.voices.size, 0);
+});
+
+test('returning after a reel landing skips stale selection audio', async () => {
+  const { audio } = setup();
+  await audio.unlock();
+  audio.spinWheel('late-selection', 6000, 4700);
+  assert.equal([...audio.voices].filter(voice => voice.group === 'wheel').length, 0);
+  audio.spinWheel('next-selection', 0, 4700);
+  assert.equal([...audio.voices].filter(voice => voice.id === 'wheelSpin').length, 1);
+  audio.spinWheel('next-selection', 4700, 4700);
+  assert.deepEqual([...audio.voices].filter(voice => voice.group === 'wheel').map(voice => voice.id), ['gameSelect']);
+  audio.setEnabled(false);
+  assert.equal([...audio.voices].filter(voice => voice.group === 'wheel').length, 0);
 });
 
 test('instructions use a separate music track, preserve menu position, and yield to countdown and podium audio', async () => {
@@ -535,7 +557,7 @@ test('audio is opt-in, loads once after a gesture, and preferences survive unava
   assert.equal(await state.audio.unlock(), true);
   await state.audio.unlock();
   assert.equal(state.created, 1);
-  assert.equal(state.requests.length, audioAssetIds().length + 6);
+  assert.equal(state.requests.length, audioAssetIds().length + 7);
   state.audio.setPreferences({ musicVolume: 2, effectsVolume: -1, musicMode: 'off' });
   assert.deepEqual(JSON.parse(state.values.get('bb-audio')), { musicMode: 'off', musicVolume: 1, effectsVolume: 0 });
   const blocked = setup({ storage: { getItem() { throw new Error('Blocked'); }, setItem() { throw new Error('Blocked'); } } });
@@ -708,7 +730,7 @@ test('Perm Mania loads its own bank and schedules each demonstration on the audi
   await audio.unlock();
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), true);
-  assert.equal(requests.length, audioAssetIds('perm-mania').length + 6);
+  assert.equal(requests.length, audioAssetIds('perm-mania').length + 7);
   const cues = demoCues(123);
   audio.scheduleRound('perm', 5000, 35_000, true, false, { game: 'perm-mania', cues });
   const guide = [...audio.voices].filter(voice => voice.id === 'permDemo');
@@ -744,7 +766,7 @@ test('Facial Slot Machine uses its own bank, bounded match feedback, and a finis
   const { audio, requests } = setup();
   audio.selectGame('facial-slot-machine');
   await audio.unlock();
-  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 6);
+  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 7);
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), false);
   audio.scheduleRound('slots', 5000, 35_000, true, false, { game: 'facial-slot-machine' });

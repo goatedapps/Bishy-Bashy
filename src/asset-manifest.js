@@ -250,9 +250,14 @@ export const ASSETS = [
     "hash": "72b53419751bec0f"
   },
   {
-    "path": "audio/wheelspin.mp3",
-    "bytes": 99040,
-    "hash": "38d91655170da509"
+    "path": "audio/roulette.mp3",
+    "bytes": 66297,
+    "hash": "453787c2a2b5bc11"
+  },
+  {
+    "path": "audio/Game-select.mp3",
+    "bytes": 31733,
+    "hash": "bc3ba4bc52c5ee66"
   },
   {
     "path": "audio/Background-ActionRock.mp3",

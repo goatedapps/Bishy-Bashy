@@ -43,9 +43,10 @@ Keep the timing cursor, landing ring, +1/+2 feedback, and optional Perfect flour
 `src/dice-facing-view.js` combines exact code-native die pips with the generated dice jester and aviator duck artwork; never expose local future boards or remote answers, and preserve the revealed direction during success effects.
 `shared/sets.js` defines five-game Arcade, five-round Game Select, shared placement points, and cumulative standings.
 `server/rooms.js` owns the fixed set roster, idempotent point awards, intermissions, and readiness gates.
-Arcade opens a shared wheel after mode selection and spins for 5.5 seconds before each game; the server owns the result and five-game plan without repeats.
-Expand the Arcade wheel and selection pool only at catalog counts divisible by four (8, 12, 16, and so on); games added between those milestones are available immediately in Game Select.
-`shared/sets.js` owns the common `arcadeGameIds()` batch boundary for both server selection and wheel segments.
+Selecting Arcade automatically starts a shared single reel; it spins for 4.7 seconds, holds the chosen game for two seconds, then opens instructions.
+The server owns the result, selection timestamps, and five-game plan without repeats; render only seven recycled reel rows.
+Expand the Arcade reel and selection pool only at catalog counts divisible by four (8, 12, 16, and so on); games added between those milestones are available immediately in Game Select.
+`shared/sets.js` owns the common `arcadeGameIds()` batch boundary for both server selection and reel artwork.
 After each Arcade podium's eight seconds, show the next spin, then three-point rules and an all-player Ready gate.
 Game Select shows rules once and uses the podium's all-player Ready gate between subsequent rounds, with an eight-second minimum intermission.
 Readiness never carries across a round or instructions screen, and countdowns require every connected player to be ready and freshly synchronized.
@@ -61,7 +62,7 @@ Use the shared `src/game-art.js` artwork for the home cast, equal-sized scrollab
 Avoid hidden-tab reveal catch-up and enable Ready only after the last line and selected audio bank are ready.
 The host's Back to modes action resets the shared set while keeping the room; confirm if a round has begun or scores exist.
 Players may explicitly leave active sets after confirmation; preserve accepted finishes, forfeit unfinished rounds, and let remaining players continue without a missing-player wait.
-The join handshake advertises `room-navigation`, `arcade-wheel`, and `asset-readiness`; deploy frontend and backend together and show an actionable update message if required capabilities are absent.
+The join handshake advertises `room-navigation`, `arcade-reel`, and `asset-readiness`; deploy frontend and backend together and show an actionable update message if required capabilities are absent.
 Facial Slot Machine uses `src/slot-view.js` and `src/slots.css`; remote reel animation is cosmetic and must not reset to zero on progress snapshots.
 Use the same three buttons and shared fixed control bar in every current and future game; do not add game-specific button layouts or replace them with a single Stop button.
 Show three horizontal scrolling slot rows per player, stacked red, green, and blue, with upcoming faces visible at narrow widths too.
@@ -73,7 +74,7 @@ Always optimize generated assets before using them in the game, retaining origin
 The portable design mockup remains in `mockups/`, with editable source/provenance in `.lavish/totem-shrinker/`.
 Keep screens visually driven; avoid redundant captions, decorative microcopy, and repeated instructions outside the rules screen.
 Audio playback belongs in `src/audio.js`, starts only after a user gesture, and must have visual equivalents.
-Burger catches and correct picture answers use `Ding.mp3`, including final successes; the Arcade wheel uses one bounded `wheelspin.mp3` cue per spin.
+Burger catches and correct picture answers use `Ding.mp3`, including final successes; the Arcade reel loops `roulette.mp3` while spinning and plays `Game-select.mp3` once on landing.
 Dice and direction successes also reuse `Ding.mp3`; Facing turn cues reuse `slot-lock.wav` with bounded local-clock lookahead and cancellation on replay, mute, interruption, or finish.
 Menu and transition screens stream `public/audio/Background-ActionRock.mp3` through the music bus; pause it for countdown/gameplay and previews, preserving its position and existing mute/ownership settings.
 The illustrated instructions screen streams `game-instructions.mp3` instead; pause the previous track before switching and preserve each track's position.

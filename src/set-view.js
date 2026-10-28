@@ -2,7 +2,7 @@ import { GAMES, gameRules } from '../shared/games.js';
 import { MODES, setStandings } from '../shared/sets.js';
 import { gameArt, ruleVisual } from './game-art.js';
 import { InstructionSequence } from './instruction-sequence.js';
-import { ArcadeWheel } from './arcade-wheel.js';
+import { ArcadeReel } from './arcade-reel.js';
 
 const $ = id => document.getElementById(id);
 const node = (tag, className, text) => {
@@ -15,7 +15,7 @@ const node = (tag, className, text) => {
 export class SetView {
   constructor({ onInstructionStep = () => {} } = {}) {
     this.key = '';
-    this.wheel = new ArcadeWheel();
+    this.wheel = new ArcadeReel();
     this.instructionSequence = new InstructionSequence({ onReveal: onInstructionStep });
     $('home-cast').append(...Object.keys(GAMES).slice(-5).map(gameArt));
     for (const game of Object.values(GAMES)) {

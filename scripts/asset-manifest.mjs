@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { gzipSync } from 'node:zlib';
 import { AUDIO_FILES } from './audio/score.js';
 const images = JSON.parse(await readFile(new URL('./image-assets.json', import.meta.url)));
-const sounds = [...new Set([...Object.values(AUDIO_FILES).filter(file => file !== 'countdown.wav'), 'Button-Press.mp3', 'Punch-button.mp3', 'how-to-play.wav', 'countdown.mp3', 'podium-winner.mp3', 'Fireworks.mp3', 'Ding.mp3', 'wheelspin.mp3', 'Background-ActionRock.mp3', 'game-instructions.mp3'])];
+const sounds = [...new Set([...Object.values(AUDIO_FILES).filter(file => file !== 'countdown.wav'), 'Button-Press.mp3', 'Punch-button.mp3', 'how-to-play.wav', 'countdown.mp3', 'podium-winner.mp3', 'Fireworks.mp3', 'Ding.mp3', 'roulette.mp3', 'Game-select.mp3', 'Background-ActionRock.mp3', 'game-instructions.mp3'])];
 await mkdir(new URL('../public/audio/optimized/', import.meta.url), { recursive: true });
 const assets = await Promise.all([...images, ...sounds.map(file => `audio/${file}`)].map(async path => {
   const bytes = await readFile(new URL(`../public/${path}`, import.meta.url));

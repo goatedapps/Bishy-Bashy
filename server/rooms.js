@@ -3,7 +3,7 @@ import { TOTEM_GAME } from '../shared/totem.js';
 import { COUNTDOWN_MS, GAMES, roundSettings, isRoundActive } from '../shared/games.js';
 import { PERM_GAME } from '../shared/perm.js';
 import { SLOT_GAME, validReelMask } from '../shared/slots.js';
-import { MODES, INTERMISSION_MS, WHEEL_SPIN_MS, createSetPlan, awardRound } from '../shared/sets.js';
+import { MODES, INTERMISSION_MS, WHEEL_SPIN_MS, REEL_HOLD_MS, createSetPlan, awardRound } from '../shared/sets.js';
 
 export const ROUND_MS = 10_000;
 export const GRACE_MS = 10_000;
@@ -65,7 +65,7 @@ export class RoomService {
     if (!returning) room.players.push(player);
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 6, capabilities: ['room-navigation', 'arcade-wheel', 'asset-readiness'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 6, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -109,8 +109,9 @@ export class RoomService {
       if (!MODES[mode] || !GAMES[game] || room.selectedGame === game && room.mode === mode && (mode !== 'arcade' || room.arcadePreview)) return;
       room.selectedGame = game;
       room.mode = mode;
-      room.arcadePreview = mode === 'arcade';
+      room.arcadePreview = false;
       room.players.forEach(p => { p.ready = false; });
+      if (mode === 'arcade') return this.handle(client, { type: 'start' });
       return this.broadcast(room);
     }
     if (message.type === 'start') {
@@ -187,6 +188,7 @@ export class RoomService {
       set.phase = room.round.phase = 'selecting';
       set.spinStartAt = this.now();
       set.spinEndAt = set.spinStartAt + WHEEL_SPIN_MS;
+      set.selectionEndAt = set.spinEndAt + REEL_HOLD_MS;
     }
   }
 
@@ -335,7 +337,7 @@ export class RoomService {
       const round = room.round;
       if (!round) continue;
       if (round.phase === 'selecting') {
-        if (now >= room.set.spinEndAt) {
+        if (now >= room.set.selectionEndAt) {
           round.phase = room.set.phase = 'instructions';
           room.set.waitReason = 'ready';
           this.broadcast(room);

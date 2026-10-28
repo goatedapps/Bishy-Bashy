@@ -16,8 +16,10 @@ The Bishy Bashy! title and a cast of original game characters introduce the game
 After creating or joining a room, choose a mode on the room screen.
 Game Select uses equal-sized illustrated cards in a scrollable library, with a title search for a larger catalog.
 Choose **Arcade** for five different games selected at random, played once each in a random order.
-Selecting Arcade opens a wheel showing every game in the current Arcade batch; the host taps **Spin & start** once friends have joined.
-Before each Arcade game, the wheel spins for 5.5 seconds and lands on the same server-chosen game on every device, with `wheelspin.mp3` when sound is enabled.
+Once friends have joined, the host selects Arcade to start the single reel automatically.
+Before each Arcade game, the reel spins for 4.7 seconds and lands on the same server-chosen game on every device.
+With sound enabled, `roulette.mp3` loops during the spin and `Game-select.mp3` plays once on landing.
+The selected game stays visible for two seconds before How to play; there is no separate Spin button.
 The five-game plan has no repeats, and repeated starts or reconnects do not reroll it.
 Choose **Game Select** for five rounds of one game, with difficulty increasing each round.
 Only the host can change the mode or chosen game after joining.
@@ -32,7 +34,7 @@ Leaving forfeits only an unfinished round; an already accepted finish and previo
 Changing the setup resets everyone's Ready state; setup stays locked throughout the full set.
 The host taps **Start set** to show the game's instructions, with no more than three points.
 After clock synchronization, every connected player taps **Ready** on that screen before the shared three-second countdown can begin.
-In Arcade, each completed game shows a cumulative podium for eight seconds, followed by a fresh wheel spin, the next game's instructions, and an all-player Ready gate.
+In Arcade, each completed game shows a cumulative podium for eight seconds, followed by a fresh reel spin, the next game's instructions, and an all-player Ready gate.
 In Game Select, instructions appear only once; subsequent rounds use a Ready button on the podium screen instead of repeating them.
 Game Select intermissions last at least eight seconds and wait until every connected player is ready.
 Players may toggle readiness off again before the countdown starts.
@@ -49,7 +51,7 @@ New guests can join only after the full set ends; original players can reconnect
 The Arcade length and Game Select round count live in `shared/sets.js`, and new games join the shared catalog in `shared/games.js`.
 The catalog currently contains ten games, all available in Game Select.
 Arcade expands only at four-game milestones: it currently selects five distinct games from the first eight, and will add the next four together when the catalog reaches twelve.
-`arcadeGameIds()` in `shared/sets.js` supplies the same eligible pool to server selection and the wheel, so a spin cannot land on an omitted game.
+`arcadeGameIds()` in `shared/sets.js` supplies the same eligible pool to server selection and the reel, so a spin cannot land on an omitted game.
 
 ## Play Totem Shrinker
 
@@ -313,7 +315,7 @@ Only the local answered card pops on success; reduced-motion preferences remove 
 Every correct local answer plays `Ding.mp3`, including the final answer, through the existing effects volume and mute controls.
 `shared/mistake.js` owns the seeded puzzle rules; `src/catch-spot-view.js` and `src/catch-spot.css` draw the picture cards.
 The new games use the same instructions, Ready gates, Arcade selection, cumulative podium, reconnect handling, and result acknowledgments as the rest of the catalog.
-Deploy the frontend and room service together; protocol 6 now advertises the `arcade-wheel` and `asset-readiness` capabilities required by this frontend.
+Deploy the frontend and room service together; protocol 6 now advertises the `arcade-reel` and `asset-readiness` capabilities required by this frontend.
 Original artwork and full generation prompts for both games are preserved in [artwork notes](public/assets/catch-spot-artwork.md).
 
 ## Play Dice, Dice, More Dice
