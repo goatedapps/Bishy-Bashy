@@ -1,0 +1,69 @@
+.burger-theme { background-color:#ffd1ab; }
+.burger-theme .arena { background:#e0f0dd; background-image:linear-gradient(0deg,#f5b9ad33 0 10%,transparent 10%); }
+.mistake-theme { background-color:#bad9f4; }
+.mistake-theme .arena { background:#e7ddf7; }
+.burger-theme .tower-zone,.mistake-theme .tower-zone { --tower-height:clamp(165px,calc(100dvh - 550px),300px); }
+.burger-theme .lane,.mistake-theme .lane { padding:10px 6px 8px; }
+.burger-theme .lane:before,.mistake-theme .lane:before { display:none; }
+.burger-theme .base,.mistake-theme .base { display:none; }
+.burger-theme .lane.finished .tower-zone:after,.mistake-theme .lane.finished .tower-zone:after { display:none; }
+.burger-theme .lane.you { background:#fff4cf66; }
+.mistake-theme .lane.you { background:#fffaf166; }
+.burger-theme .lane.forfeit .catch-stage,.mistake-theme .lane.forfeit .mistake-stage { opacity:.45; filter:grayscale(1); }
+.catch-stage,.mistake-stage { position:relative; width:100%; height:100%; min-height:0; }
+.catch-stage.unoccupied,.mistake-stage.unoccupied { visibility:hidden; }
+.burger-chef { display:block; width:90px; height:90px; background:url('/assets/burger-chef-chibi.png') center / contain no-repeat; }
+.burger-ingredient { display:block; width:100%; aspect-ratio:1; background-image:url('/assets/burger-ingredients.png'); background-size:200% 200%; background-repeat:no-repeat; }
+.catch-stage { --catch-floor:43px; --chef-size:86px; }
+.catch-chutes { position:absolute; inset:0 12.5%; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:3px; }
+.catch-chute { display:flex; align-items:end; justify-content:center; padding-bottom:3px; border-inline:1px dashed #ac8e7177; border-radius:18px 18px 0 0; font-size:12px; background:linear-gradient(transparent 82%,#ffffff66); }
+.catch-color-0 { color:#ce3756; }
+.catch-color-1 { color:#1b8051; }
+.catch-color-2 { color:#2975c2; }
+.catch-player { position:absolute; left:calc((var(--chef-column,1) + 1) * 25%); bottom:12px; width:min(var(--chef-size),50%); aspect-ratio:1; transform:translateX(-50%); transition:left .09s ease-out; }
+.catch-player>.burger-chef { position:absolute; inset:0; width:100%; height:100%; }
+.catch-falling { position:absolute; left:calc((var(--drop-column,1) + 1) * 25%); width:clamp(30px,4vw,56px); transform:translate(-50%,50%); bottom:calc(var(--catch-floor) + (1 - var(--drop-progress,0)) * (100% - var(--catch-floor) - 30px)); }
+.burger-stack { position:absolute; width:65%; left:17.5%; bottom:27%; display:flex; flex-direction:column-reverse; }
+.burger-stack:before { content:''; display:block; width:90%; height:4px; flex-shrink:0; align-self:center; background:#e9b05d; border:1px solid #9a633e; border-radius:2px 2px 7px 7px; }
+.burger-layer { display:block; position:relative; height:clamp(2px,.3vw,4px); width:100%; }
+.burger-layer>.burger-ingredient { position:absolute; top:50%; transform:translateY(-50%) scaleY(.28); }
+.burger-served .burger-stack { transform:translateY(calc(var(--served-age) * -35px)); opacity:calc(1 - var(--served-age)); }
+.catch-toast { position:absolute; top:35%; left:50%; transform:translateX(-50%); white-space:nowrap; color:#8a3c35; background:#fff9df; border-radius:12px; padding:3px 7px; font:17px/1.2 'Lilita One',system-ui,sans-serif; }
+.catch-success .catch-toast { color:#237447; }
+.mistake-stage { display:grid; grid-template-rows:repeat(3,minmax(0,1fr)); gap:7px; padding:2px; }
+.mistake-card { position:relative; display:grid; place-items:center; min-height:0; border:2px solid currentColor; border-radius:15px; background:#fff9ed; box-shadow:0 3px 0 #3b214d20; }
+.odd-picture { display:block; width:72px; aspect-ratio:1; background-image:url('/assets/odd-pictures.png'); background-size:400% 400%; background-repeat:no-repeat; }
+.mistake-card>.odd-picture { width:min(calc(100% - 14px),calc((var(--tower-height) - 24px) / 3)); height:auto; }
+.picture-button { position:absolute; top:4px; left:5px; font:900 12px/1 Nunito,system-ui,sans-serif; }
+.picture-stamp { position:absolute; right:3px; bottom:2px; font:25px/1 'Lilita One',system-ui,sans-serif; color:#267747; text-shadow:0 2px #fff; }
+.picture-correct { background:#e3f5ce; box-shadow:inset 0 0 0 2px #74b877; }
+.picture-wrong { background:#f9d9d9; }
+.picture-wrong .picture-stamp { color:#ad3353; }
+.art-burger-girl { background:#ffe2bd; }
+.game-art>.burger-chef { position:absolute; inset:0; width:100%; height:100%; }
+.art-me-find-mistake { background:#e1d4fc; }
+.game-art>.odd-picture { position:absolute; inset:0; width:100%; height:100%; }
+.tutorial-ingredient { width:65px; height:42px; overflow:hidden; }
+.tutorial-ingredient>.burger-ingredient { margin-top:-12px; }
+.tutorial-odd-pictures { display:flex; gap:3px; }
+.tutorial-odd-pictures>.odd-picture { width:48px; }
+.podium-seat>.burger-chef,.podium-seat>.odd-picture { width:100px; height:100px; margin:auto; }
+.game-feedback[data-game=burger-girl] { --feedback-origin:82%; }
+@media(max-width:620px) {
+  .burger-theme .lane,.mistake-theme .lane { padding:8px 3px; }
+  .burger-theme .tower-zone,.mistake-theme .tower-zone { --tower-height:clamp(205px,calc(100dvh - 480px),290px); }
+  .catch-stage { --catch-floor:33px; --chef-size:62px; }
+  .catch-falling { width:28px; }
+  .burger-layer { height:2px; }
+  .catch-toast { font-size:12px; padding:3px 4px; }
+  .mistake-stage { gap:6px; padding:2px 0; }
+  .mistake-card { border-radius:9px; }
+  .picture-button { top:3px; left:3px; font-size:9px; }
+  .picture-stamp { font-size:20px; }
+  .tutorial-odd-pictures>.odd-picture { width:31px; }
+  .tutorial-ingredient { width:48px; height:33px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .catch-player { transition:none; }
+  .burger-served .burger-stack { transform:none; opacity:1; }
+}

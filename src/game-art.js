@@ -2,6 +2,7 @@ import { facePortrait } from './slot-view.js';
 import { monkeyPortrait } from './monkey-view.js';
 import { fireworkBadge } from './firework-view.js';
 import { dinoPortrait } from './jump-view.js';
+import { chefPortrait, ingredientPortrait, picturePortrait } from './catch-spot-view.js';
 
 const node = (tag, className, text) => {
   const element = document.createElement(tag);
@@ -13,7 +14,9 @@ const node = (tag, className, text) => {
 export function gameArt(game) {
   const art = node('span', `game-art art-${game}`);
   art.setAttribute('aria-hidden', 'true');
-  if (game === 'jump-for-the-meat') art.append(dinoPortrait());
+  if (game === 'burger-girl') art.append(chefPortrait());
+  else if (game === 'me-find-mistake') art.append(picturePortrait(0));
+  else if (game === 'jump-for-the-meat') art.append(dinoPortrait());
   else if (game === 'mimicking-monkeys') art.append(monkeyPortrait());
   else if (game === 'fireworks-craze') art.append(fireworkBadge());
   else if (game === 'facial-slot-machine') art.append(facePortrait(0));
@@ -36,7 +39,19 @@ export function ruleVisual(game) {
   const first = node('div', 'rule-example');
   const second = node('div', 'rule-example');
   let label;
-  if (game === 'jump-for-the-meat') {
+  if (game === 'burger-girl') {
+    const ingredient = node('div', 'tutorial-ingredient');
+    ingredient.append(ingredientPortrait(0));
+    first.append(ingredient, gameArt(game), node('strong', '', 'Watch the falling food'));
+    second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Move the plate under it'));
+    label = 'Red moves the plate left, green to the middle, blue to the right. Catch each falling ingredient to build a burger.';
+  } else if (game === 'me-find-mistake') {
+    const pictures = node('div', 'tutorial-odd-pictures');
+    pictures.append(picturePortrait(0), picturePortrait(0), picturePortrait(1));
+    first.append(pictures, node('strong', '', 'Two match, one is different'));
+    second.append(shapes([2], 'tutorial-buttons'), node('strong', '', 'Choose the odd picture'));
+    label = 'Two owls have star badges; the third has a heart badge. Choose that different picture using its matching color button.';
+  } else if (game === 'jump-for-the-meat') {
     first.append(gameArt(game), node('span', 'jump-meat'), node('strong', '', 'Time the landing'));
     const landing = node('div', 'tutorial-landing');
     landing.append(node('span', 'tutorial-good', 'Good +1'), node('span', 'tutorial-perfect', 'Perfect +2'));

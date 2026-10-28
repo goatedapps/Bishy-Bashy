@@ -1,6 +1,6 @@
 # Bishy Bashy
 
-This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, and Jump for the Meat.
+This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, and Me Find Mistake.
 The Vite frontend deploys independently to GitHub Pages; `server/` is a separate Node WebSocket room service on Render.
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
@@ -32,6 +32,9 @@ Any of the three buttons boosts a valid landing; preserve successful boosts afte
 The wide gold landing window earns one boost; its green Perfect center (30% of the half-window) earns two, capped at the remaining goal.
 Keep the timing cursor, landing ring, +1/+2 feedback, and optional Perfect flourish consistent with the same local input timestamp.
 `src/jump-view.js` and `src/jump.css` draw the original dinosaur and landing guide; remote bounces remain cosmetic, and the home cast stays bounded to five characters as the catalog grows.
+`shared/burger.js` owns seeded falling ingredients and automatic local catches; red/green/blue move the plate left/middle/right, misses keep completed layers, and delayed frames preserve scheduled landing times.
+`shared/mistake.js` owns seeded odd-picture boards; red/green/blue choose top/middle/bottom, wrong answers keep the board, and correct answers retain their feedback before revealing the next board.
+`src/catch-spot-view.js` and `src/catch-spot.css` render both games with original generated sprites; keep remote pictures hidden and never show a future local board during success feedback.
 `shared/sets.js` defines five-game Arcade, five-round Game Select, shared placement points, and cumulative standings.
 `server/rooms.js` owns the fixed set roster, idempotent point awards, intermissions, and readiness gates.
 Arcade shows a cumulative podium for eight seconds, then the next game's three-point rules and an all-player Ready gate.
@@ -90,8 +93,8 @@ Mark each entry complete as its game is implemented.
 1. [x] Fireworks Craze — color reactions.
 2. [x] Mimicking Monkeys — expanding memory sequences.
 3. [x] Jump for the Meat — precisely timed bounces.
-4. [ ] Burger Girl — catching falling ingredients.
-5. [ ] Me Find Mistake — spotting the odd picture out.
+4. [x] Burger Girl — catching falling ingredients.
+5. [x] Me Find Mistake — spotting the odd picture out.
 6. [ ] Dice, Dice, More Dice — quickly choosing the highest die.
 7. [ ] Facing Which Way — tracking a picture through flips.
 8. [ ] It's Raining Coins — moving to catch falling coins.

@@ -10,6 +10,9 @@ import { JumpStage, dinoPortrait } from './jump-view.js';
 import { SlotStage, facePortrait, renderTarget } from './slot-view.js';
 import { GAMES, comparePlayers, isRoundActive } from '../shared/games.js';
 import { GameFeedback } from './feedback.js';
+import { BURGER_GAME } from '../shared/burger.js';
+import { MISTAKE_GAME } from '../shared/mistake.js';
+import { BurgerStage, MistakeStage, chefPortrait, picturePortrait } from './catch-spot-view.js';
 
 const SHAPES = ['●', '▲', '◆'];
 const $ = id => document.getElementById(id);
@@ -53,7 +56,9 @@ export class GameView {
       const fireworks = new FireworkStage();
       const monkeys = new MonkeyStage();
       const jump = new JumpStage();
-      zone.append(tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element);
+      const burger = new BurgerStage();
+      const mistake = new MistakeStage();
+      zone.append(tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element, burger.element, mistake.element);
       const effects = node('div', 'game-feedback');
       effects.setAttribute('aria-hidden', 'true');
       const ring = node('span', 'feedback-ring');
@@ -67,7 +72,7 @@ export class GameView {
       const status = node('p', 'seat-status');
       lane.append(name, zone, node('div', 'base'), remaining, progress, status);
       $('player-lanes').append(lane);
-      return { lane, name, tower, avatar, slots, fireworks, monkeys, jump, remaining, fill, status, effects, ring, particles, towerKey: '' };
+      return { lane, name, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, remaining, fill, status, effects, ring, particles, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -87,6 +92,8 @@ export class GameView {
     const fireworks = game === FIREWORK_GAME;
     const monkeys = game === MONKEY_GAME;
     const jump = game === JUMP_GAME;
+    const burger = game === BURGER_GAME;
+    const mistake = game === MISTAKE_GAME;
     const sequence = game === 'totem-shrinker' && round ? createSequence(round.seed, round.blockCount) : [];
     if (slots && active) renderTarget(round);
     $('arena').classList.toggle('lobby', !active);
@@ -99,13 +106,17 @@ export class GameView {
       const frozen = ownRun && !ownRun.done && time < ownRun.run.blockedUntil;
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';
-      elements.tower.hidden = perm || slots || fireworks || monkeys || jump;
+      elements.tower.hidden = perm || slots || fireworks || monkeys || jump || burger || mistake;
       elements.avatar.hidden = !perm;
       elements.slots.cabinet.hidden = !slots;
       elements.fireworks.element.hidden = !fireworks;
       elements.monkeys.element.hidden = !monkeys;
       elements.jump.element.hidden = !jump;
-      if (jump) {
+      elements.burger.element.hidden = !burger;
+      elements.mistake.element.hidden = !mistake;
+      if (burger || mistake) {
+        elements[burger ? 'burger' : 'mistake'].render(round || {}, ownRun?.run, time, 0, active, Boolean(player), cleared, Boolean(status));
+      } else if (jump) {
         elements.jump.render(round || {}, ownRun?.run, time, 0, active, Boolean(player), cleared, Boolean(status));
       } else if (monkeys) {
         elements.monkeys.render(round || {}, ownRun?.run, time, active, Boolean(player), cleared, Boolean(status));
@@ -126,10 +137,10 @@ export class GameView {
           elements.towerKey = key;
         }
       }
-      const value = perm || slots || fireworks || monkeys || jump ? cleared : active && player ? Math.max(0, round.blockCount - cleared) : 0;
+      const value = game === 'totem-shrinker' ? active && player ? Math.max(0, round.blockCount - cleared) : 0 : cleared;
       const counterKey = `${game}/${value}/${round?.goal}`;
       if (elements.remaining.dataset.value !== counterKey) {
-        elements.remaining.replaceChildren(node('strong', '', String(value)), document.createTextNode(jump ? ` / ${round?.goal || 6}` : monkeys ? ` / ${round?.goal || 5}` : fireworks ? ` / ${round?.goal || 12}` : slots ? ' / 3' : perm ? ' / 8' : 'left'));
+        elements.remaining.replaceChildren(node('strong', '', String(value)), document.createTextNode(game === 'totem-shrinker' ? 'left' : ` / ${round?.goal || GAMES[game]?.goal || 0}`));
         elements.remaining.dataset.value = counterKey;
       }
       elements.fill.style.width = `${active && player ? cleared / round.goal * 100 : 0}%`;
@@ -149,6 +160,15 @@ export class GameView {
   }
 
   animate(room, local, time, elapsed) {
+    if ([BURGER_GAME, MISTAKE_GAME].includes(room.round?.game) && isRoundActive(room.round)) {
+      const stage = room.round.game === BURGER_GAME ? 'burger' : 'mistake';
+      this.lanes.forEach((elements, index) => {
+        const player = room.players[index];
+        const own = elements.lane.classList.contains('you') ? local : null;
+        elements[stage].render(room.round, own?.run, time, elapsed, true, Boolean(player), own?.run.cleared ?? player?.progress?.cleared ?? 0, Boolean(own?.done || player?.result));
+      });
+      return;
+    }
     if (room.round?.game === JUMP_GAME && isRoundActive(room.round)) {
       this.lanes.forEach((elements, index) => {
         const player = room.players[index];
@@ -217,7 +237,7 @@ export class GameView {
       const seat = node('div', 'podium-seat');
       const step = node('div', 'podium-step');
       step.append(node('strong', '', String(rank(player))), document.createTextNode(perm ? `${player.result.cleared} / 8` : resultLabel(player.result)));
-      seat.append(game === JUMP_GAME ? dinoPortrait() : game === MONKEY_GAME ? monkeyPortrait() : game === FIREWORK_GAME ? fireworkBadge() : game === SLOT_GAME ? facePortrait(slotLayout(room.round.seed).target) : perm ? dancer(room.players.indexOf(player), player.result.cleared) : block(index % 3), node('div', 'podium-name', player.name), step);
+      seat.append(game === BURGER_GAME ? chefPortrait() : game === MISTAKE_GAME ? picturePortrait(0) : game === JUMP_GAME ? dinoPortrait() : game === MONKEY_GAME ? monkeyPortrait() : game === FIREWORK_GAME ? fireworkBadge() : game === SLOT_GAME ? facePortrait(slotLayout(room.round.seed).target) : perm ? dancer(room.players.indexOf(player), player.result.cleared) : block(index % 3), node('div', 'podium-name', player.name), step);
       return seat;
     }));
     $('result-rows').replaceChildren(...sorted.map(player => {

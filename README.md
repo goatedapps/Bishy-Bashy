@@ -1,6 +1,6 @@
 # Bishy Bashy
 
-A four-player browser party game with Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, and Jump for the Meat.
+A four-player browser party game with Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, and Me Find Mistake.
 Everyone sees all four players and controls only their own player.
 The static website runs on GitHub Pages; a separate Node WebSocket server coordinates rooms and results.
 
@@ -44,7 +44,7 @@ The accompanying Last game column shows each player's most recent performance an
 The server awards points once per round and retains earned points if a player leaves between rounds.
 New guests can join only after the full set ends; original players can reconnect during it.
 The Arcade length and Game Select round count live in `shared/sets.js`, and new games join the shared catalog in `shared/games.js`.
-Arcade selects five distinct games from the catalog, which currently contains six games.
+Arcade selects five distinct games from the catalog, which currently contains eight games.
 
 ## Play Totem Shrinker
 
@@ -267,6 +267,49 @@ Only that additional flourish is loaded for Jump; the full Perm music bank is un
 Automated timing comparisons confirm that all-Perfect play beats safe early landings at every difficulty; physical phone testing still needs to establish whether the choice feels satisfying.
 Deploy frontend and room service together to register the new game in both catalogs.
 
+## Play Burger Girl
+
+Choose **Game Select → Burger Girl**, or encounter it in Arcade.
+Red circle moves the chef's plate left, green triangle moves it to the middle, and blue diamond moves it right.
+The selected position persists until another button is pressed.
+Get under each falling ingredient before it reaches the plate; catches happen automatically on the local clock.
+A move exactly on the landing timestamp counts, and a delayed frame cannot change an already scheduled landing time.
+
+Catch lettuce, patty, tomato, and a top bun to serve one burger.
+Serve **three burgers / twelve ingredients** to finish, ranked by local elapsed time; perfect runs can tie.
+A miss costs **300 ms** of recovery and repeats that ingredient in a new seeded chute, keeping completed layers and served burgers.
+Successful catches leave **160 ms** before the next ingredient starts.
+Game Select shortens each fall from **1,100 to 660 ms** in 110 ms steps across its five rounds.
+The deadline is **35 seconds**, and unfinished rounds earn zero points.
+These initial speeds are provisional until phone playtesting.
+
+The chef, ingredient sprites, building stack, and delivered-burger flourish stay inside each player's lane.
+Only local scheduled catches produce gameplay sounds; remote movement is cosmetic.
+The common music bank, punch-button controls, catch tones, and miss cues use the existing opt-in audio system.
+`shared/burger.js` owns the seed and catch rules; `src/catch-spot-view.js` and `src/catch-spot.css` draw the diner stage.
+
+## Play Me Find Mistake
+
+Choose **Game Select → Me Find Mistake**, or encounter it in Arcade.
+Each local board shows three vertically stacked pictures: two identical copies and one changed picture.
+Red circle chooses the top picture, green triangle the middle picture, and blue diamond the bottom picture.
+Differences include silhouette, direction, hats, eyes, badges, and accessories rather than color alone.
+
+Find **8, 9, 10, 11, or 12** odd pictures across the five Game Select rounds.
+The picture pool grows from four to eight pairs, and all devices derive the same boards from the shared seed.
+Each newly shown board has a **250 ms** observation gate before answers are accepted.
+A correct answer shows a check and keeps the solved board for **260 ms** before revealing the next one.
+A wrong answer marks only the selected picture, keeps the same puzzle, and locks answers for **600 ms** without losing completed puzzles.
+Finish within **35 seconds**, ranked by local elapsed time.
+These initial timings and picture pools are provisional until phone playtesting.
+
+Remote lanes show progress and colored card backs, never live answer boards.
+Only the local answered card pops on success; reduced-motion preferences remove decorative motion.
+`shared/mistake.js` owns the seeded puzzle rules; `src/catch-spot-view.js` and `src/catch-spot.css` draw the picture cards.
+The new games use the same instructions, Ready gates, Arcade selection, cumulative podium, reconnect handling, and result acknowledgments as the rest of the catalog.
+Deploy the frontend and room service together so both know the new game IDs; the protocol 6 message schema is unchanged.
+Original artwork and full generation prompts for both games are preserved in [artwork notes](public/assets/catch-spot-artwork.md).
+
 ## Run locally
 
 Install Node.js 22.12 or newer, then run:
@@ -299,7 +342,7 @@ It does not validate each tap or send permission to clear a block.
 Cosmetic progress broadcasts run at most four times per second per player and do not affect input response or rankings.
 A finish is saved to a session-storage outbox, retried until acknowledged, and accepted idempotently.
 Result arrival order does not affect the final ranking.
-Every client ranks Totem Shrinker, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, and Jump for the Meat by elapsed time, and Perm Mania by growth and timing score.
+Every game ranks local elapsed time except Perm Mania, which ranks growth and timing score.
 
 This friends-only game trusts client-reported results, with basic bounds and ownership checks.
 It is not a competitive anti-cheat system.
@@ -331,7 +374,7 @@ npm run build
 ```
 
 Automated checks cover deterministic gameplay, all five difficulty levels, shared schedules, room ownership and capacity, progress throttling, delayed and duplicate results, reconnection, and missing players.
-Four-client WebSocket tests complete entire Arcade and Game Select sets for all six games, checking automatic progression and cumulative scoring.
+Four-client WebSocket tests complete entire Arcade and Game Select sets for every current game, checking automatic progression and cumulative scoring.
 Additional checks cover tied points, host migration, locked setup, skipped players, and tempo-scaled audio playback.
 Physical phone/tablet playtesting remains necessary.
 

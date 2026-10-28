@@ -38,6 +38,8 @@ export function setStandings(players) {
 }
 
 export function roundDetail(round) {
+  if (round.game === 'burger-girl') return `${round.goal / 4} burgers · Speed ${round.difficulty}`;
+  if (round.game === 'me-find-mistake') return `${round.goal} puzzles · Level ${round.difficulty}`;
   if (round.game === JUMP_GAME) return `${round.goal} boosts · Speed ${round.difficulty}`;
   if (round.game === MONKEY_GAME) return `${round.goal} stages · ${round.goal + 1} moves`;
   if (round.game === FIREWORK_GAME) return `${round.goal} bursts · Speed ${round.difficulty}`;

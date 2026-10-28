@@ -9,6 +9,8 @@ const MENU_TRACK_GAINS = { menu: 1, instructions: 2 };
 const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.wav', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3' };
 const GAME_AUDIO_FILES = { 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3' } };
 const PROFILES = {
+  'burger-girl': { music: 'music', urgency: 'urgency', go: 'go' },
+  'me-find-mistake': { music: 'music', urgency: 'urgency', go: 'go' },
   'jump-for-the-meat': { music: 'music', urgency: 'urgency', go: 'go' },
   'mimicking-monkeys': { music: 'music', urgency: 'urgency', go: 'go' },
   'fireworks-craze': { music: 'music', urgency: 'urgency', go: 'go' },
