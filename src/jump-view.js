@@ -32,14 +32,7 @@ export class JumpStage {
     }
     this.scene.append(this.feedback, this.sparks);
     this.phase = node('strong', 'jump-phase');
-    this.timing = node('div', 'jump-timing');
-    this.fill = node('span', 'jump-timing-fill');
-    this.goldZone = node('span', 'jump-gold-zone');
-    this.perfectZone = node('span', 'jump-perfect-zone');
-    this.cursor = node('span', 'jump-timing-cursor');
-    this.timing.append(this.fill, this.goldZone, this.perfectZone, this.cursor);
-    this.timing.setAttribute('aria-hidden', 'true');
-    this.element.append(this.scene, this.phase, this.timing);
+    this.element.append(this.scene, this.phase);
     this.element.setAttribute('role', 'group');
   }
 
@@ -69,14 +62,6 @@ export class JumpStage {
     this.meat.hidden = !present || phase === 'finished';
     const text = !present ? '' : ({ perfect: 'Perfect!', land: 'Good!', air: '', stumble: 'Oops!', reaching: 'Chomp!', finished: 'Yum!', expired: 'Round over' }[phase] || '');
     if (this.phase.textContent !== text) this.phase.textContent = text;
-    this.timing.hidden = !run || !active || terminal || phase === 'reaching';
-    const position = run ? Math.max(0, Math.min(1, (time - run.launchedAt) / (run.arcMs + run.windowMs))) : 0;
-    const center = run ? run.arcMs / (run.arcMs + run.windowMs) : .85;
-    this.fill.style.width = `${position * 100}%`;
-    this.cursor.style.left = `${position * 100}%`;
-    this.timing.style.setProperty('--landing-center', `${center * 100}%`);
-    this.timing.style.setProperty('--landing-width', `${run ? 2 * run.windowMs / (run.arcMs + run.windowMs) * 100 : 24}%`);
-    this.timing.style.setProperty('--perfect-width', `${run ? 2 * run.perfectMs / (run.arcMs + run.windowMs) * 100 : 7}%`);
     const label = !present ? 'Open spot' : phase === 'perfect' ? 'Perfect landing, press any button for two boosts' : phase === 'land' ? 'Good landing, press any button for one boost' : phase === 'finished' ? 'Meat reached' : `${text || 'Dinosaur'}: ${cleared} boosts`;
     if (this.element.getAttribute('aria-label') !== label) this.element.setAttribute('aria-label', label);
   }

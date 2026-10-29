@@ -265,7 +265,7 @@ Deploy frontend and room service together to make the new catalog entry availabl
 Choose **Game Select → Jump for the Meat**, or encounter it in Arcade.
 The dinosaur bounces automatically; press **any of the three buttons** as it lands, when the landing ring turns gold or green.
 Keyboard controls remain **1 / 2 / 3** or **J / K / L**.
-The moving timing cursor and descending character help you anticipate the landing.
+Watch the dinosaur descend onto the trampoline to judge when to press; the timing bar has been removed so the scene has more vertical space.
 The wide gold zone gives **Good +1**, while its smaller green center gives **Perfect +2**, making a larger height gain and shortening the race.
 You can take a safe early landing or wait for the center to gain two boosts; remaining progress is capped at the goal.
 Accepted boosts stretch the dinosaur briefly and create an impact burst; a Perfect landing also plays a distinct optional flourish.
@@ -282,7 +282,7 @@ Input judgments use the frozen local round clock, and a delayed animation frame 
 Remote bounces follow published launch timing and height; only local inputs determine a player's result.
 These initial settings are provisional until playtested on phones.
 
-The game uses an original generated dinosaur and roasted drumstick on a peach-and-sand stage, with landing rings, impact particles, and timing guides drawn in code.
+The game uses an original generated dinosaur and roasted drumstick on a peach-and-sand stage, with the trampoline, landing rings, and impact particles drawn in code.
 The delivered character is `public/assets/jump-dino.png`, with its full prompt preserved in [artwork notes](public/assets/jump-artwork.md).
 Illustrated rules explain the landing and the three interchangeable buttons, and all essential cues remain visible while muted.
 The game reuses the original opt-in disco audio bank for backing music, accepted boosts, misses, GO, and finish cues, plus the existing Perm growth flourish for Perfect landings.
@@ -372,7 +372,7 @@ A wrong answer waits **450 ms**, then replays the same initial picture and moves
 The deadline is **60 seconds**, ranked by local elapsed time; these initial timings are provisional until phone playtests.
 
 `shared/facing.js` owns the seeded transformations, replay gates, and local timing.
-The renderer uses a generated aviator duck with an unmistakable right-facing beak and an opaque flap that does not disclose its final orientation.
+The renderer maximizes the duck card within the lane, fitting diagonal turns inside its boundaries, and uses an opaque flap over the generated aviator duck.
 Remote lanes follow the peer's published current card phase, turns, and answer feedback.
 Reduced-motion settings replace decorative card motion with the same readable move symbols and phase timing.
 Correct answers reuse Ding, and the move demonstration reuses `slot-lock.wav` on the local audio timeline with bounded lookahead, stale-cue skipping, and replay/finish cancellation.
@@ -420,12 +420,12 @@ Perm Mania, Mimicking Monkeys, Facing Which Way, and Fireworks publish set-resul
 Dice and Me Find Mistake show the same symbols for their individual puzzles.
 Successful sets reuse `Ding.mp3`; failed sets reuse the supplied `wrong.mp3` through the effects bus.
 Perm settles the whole phrase before showing or sounding its result; individual rhythm notes keep their existing feedback.
-Symbols last 650 ms, stay out of the reaction area, and remain visible with reduced motion and muted sound.
+Symbols last 650 ms, sit at the center of each player panel, span 90% of its width, and remain visible with reduced motion and muted sound.
 
 On Game Select's first Start set, the selected game's supplied voice and `applause.mp3` play together once.
-A dedicated announcement screen remains visible until every connected device acknowledges that both sounds have ended or sound is muted, unavailable, or interrupted.
-The server then opens instructions and resets readiness; later rounds retain their podium Ready gates.
-Muted devices do not block the transition, disconnected devices have the usual 15-second grace period, and repeated acknowledgements cannot replay or skip a new announcement.
+The dedicated announcement screen lasts **two seconds**, then opens instructions while the matching voice and applause finish naturally.
+Readiness resets when preparing the round; later rounds retain their podium Ready gates.
+The server owns the two-second transition, so muted or disconnected devices cannot lengthen it; normal Ready gates still apply on instructions.
 Me Find Mistake uses its existing `me-find-mistake.mp3` voice filename.
 
 ## Loading and delivery assets

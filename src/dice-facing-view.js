@@ -133,19 +133,25 @@ export class FacingStage {
     let pose = solved || ['handoff', 'play'].includes(phase.mode) ? puzzle.poses.at(-1) : puzzle?.initial || { angle: 0, mirror: 1 };
     let transform = `rotate(${pose.angle}deg) scaleY(${pose.mirror})`;
     const turning = !solved && !terminal && phase.mode === 'turn';
+    let fit = 1;
     if (turning) {
       const move = puzzle.moves[phase.index];
       const previous = puzzle.poses[phase.index];
       const reduced = this.motionPreference?.matches;
       const progress = reduced ? 1 : Math.min(1, phase.progress / .7);
       const eased = 1 - (1 - progress) ** 3;
+      if (move.kind !== 'mirror') {
+        const angle = move.degrees * eased * Math.PI / 180;
+        // Fit diagonal turns inside the lane even when the card fills its width.
+        fit = 1 / (Math.abs(Math.cos(angle)) + Math.abs(Math.sin(angle)));
+      }
       pose = puzzle.poses[phase.index + 1];
       transform = move.kind === 'mirror' ? `scaleX(${1 - 2 * eased}) rotate(${previous.angle}deg) scaleY(${previous.mirror})` : `rotate(${previous.angle + move.degrees * eased}deg) scaleY(${previous.mirror})`;
     }
     const initialAngle = puzzle?.initial.angle || 0;
     // The duck carries its initial direction so the flap always closes from the top.
     this.duck.style.transform = `rotate(${initialAngle}deg)`;
-    this.card.style.transform = `${transform} rotate(${-initialAngle}deg)`;
+    this.card.style.transform = `${transform} rotate(${-initialAngle}deg) scale(${fit})`;
     this.duck.setAttribute('aria-label', visible ? `Duck pointing ${DIRECTION_NAMES[[180, 270, 0].indexOf(pose.angle)]?.toLowerCase() || 'right'}` : 'Covered picture');
     this.phase.textContent = solved ? 'Got it!' : terminal ? 'Done!' : showing ? 'Again!' : ({ look: 'Look!', cover: 'Covering', covered: 'Covered', turn: 'Track!', handoff: 'Get ready', play: 'Answer', remote: 'Watching…', done: 'Time’s up!' }[phase.mode] || '');
     this.cue.textContent = solved ? '✓' : showing ? '×' : turning ? facingMoveLabel(puzzle.moves[phase.index]) : phase.mode === 'play' ? '?' : '';

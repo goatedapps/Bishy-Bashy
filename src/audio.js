@@ -293,9 +293,10 @@ export class GameAudio {
     this.source('wheelSpin', { group: 'wheel', loop: true, offset: Math.max(0, elapsed / 1000) % buffer.duration, end: this.context.currentTime + (duration - Math.max(0, elapsed)) / 1000 });
   }
 
-  announceGame(id, game, visible = true) {
+  announceGame(id, game, visible = true, tailId = null) {
     if (!id) {
-      this.stopVoices(voice => voice.group === 'announcement');
+      const keepTail = visible && tailId && this.announcement?.id === tailId;
+      if (!keepTail) this.stopVoices(voice => voice.group === 'announcement');
       if (this.announcement) this.announcement.done = true;
       return false;
     }

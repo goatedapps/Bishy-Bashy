@@ -4,7 +4,7 @@ import { TOTEM_GAME } from '../shared/totem.js';
 import { COUNTDOWN_MS, GAMES, roundSettings, isRoundActive } from '../shared/games.js';
 import { PERM_GAME } from '../shared/perm.js';
 import { SLOT_GAME, validReelMask } from '../shared/slots.js';
-import { MODES, INTERMISSION_MS, WHEEL_SPIN_MS, REEL_HOLD_MS, createSetPlan, awardRound } from '../shared/sets.js';
+import { MODES, INTERMISSION_MS, WHEEL_SPIN_MS, REEL_HOLD_MS, GAME_ANNOUNCEMENT_MS, createSetPlan, awardRound } from '../shared/sets.js';
 
 export const ROUND_MS = 10_000;
 export const GRACE_MS = 10_000;
@@ -85,12 +85,6 @@ export class RoomService {
       const { rtt, uncertainty, count } = message;
       if (![rtt, uncertainty, count].every(Number.isFinite) || rtt < 0 || uncertainty < 0 || count < 0) return;
       player.sync = { rtt, uncertainty, count, at: received };
-      return this.broadcast(room);
-    }
-    if (message.type === 'announcement-done') {
-      if (room.set?.phase !== 'announcing' || message.roundId !== room.round?.id) return;
-      player.announcementRound = room.round.id;
-      this.finishAnnouncement(room);
       return this.broadcast(room);
     }
     if (message.type === 'assets-ready') {
@@ -200,14 +194,13 @@ export class RoomService {
     } else if (set.roundIndex === 0 && room.players.some(player => player.requiresAnnouncement)) {
       set.phase = room.round.phase = 'announcing';
       set.announcementAt = this.now();
-      room.players.forEach(player => { player.announcementRound = null; });
+      set.announcementEndAt = set.announcementAt + GAME_ANNOUNCEMENT_MS;
     }
   }
 
   finishAnnouncement(room) {
     if (room.set?.phase !== 'announcing') return false;
-    if (room.players.some(player => !player.connected && this.now() - player.disconnectedAt < RECONNECT_WAIT_MS)) return false;
-    if (room.players.some(player => player.connected && player.requiresAnnouncement && player.announcementRound !== room.round.id)) return false;
+    if (this.now() < room.set.announcementEndAt) return false;
     room.set.phase = room.round.phase = 'instructions';
     room.set.waitReason = 'ready';
     return true;

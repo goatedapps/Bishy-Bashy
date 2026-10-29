@@ -131,7 +131,6 @@ export class GameView {
       const stageAge = stageFeedback ? time - stageFeedback.at : Infinity;
       elements.stageResult.hidden = !active || !player || document.hidden || stageAge < 0 || stageAge >= 650;
       elements.stageResult.className = `stage-result ${stageFeedback?.correct ? 'stage-correct' : 'stage-wrong'}`;
-      elements.stageResult.textContent = stageFeedback?.correct ? '○' : '×';
       elements.stageResult.setAttribute('aria-label', stageFeedback?.correct ? 'Correct set' : 'Wrong set');
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.finishBadge.hidden = !active || status?.status !== 'finished';

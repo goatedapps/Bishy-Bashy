@@ -188,6 +188,20 @@ test('Game Select announces once and waits for both voice and applause to actual
   assert.equal(audio.voices.size, 0);
 });
 
+test('the two-second announcement screen lets its matching audio tail finish across instructions', async () => {
+  const { audio } = setup();
+  await audio.unlock();
+  audio.announceGame('intro', 'totem-shrinker');
+  const voices = [...audio.voices].filter(voice => voice.group === 'announcement');
+  audio.announceGame(null, 'totem-shrinker', true, 'intro');
+  assert.ok(voices.every(voice => !voice.stopped && audio.voices.has(voice)));
+  audio.announceGame(null, 'totem-shrinker', true, 'intro');
+  assert.equal([...audio.voices].filter(voice => voice.group === 'announcement').length, 2);
+  audio.announceGame(null, 'totem-shrinker', true, 'another-round');
+  assert.ok(voices.every(voice => voice.stopped));
+  assert.equal([...audio.voices].filter(voice => voice.group === 'announcement').length, 0);
+});
+
 test('facing turns reuse slot-lock audio at local cue times and cancel old cues on replay, mute, and finish', async () => {
   const { audio, context, requests, setTime } = setup();
   const round = { id: 'facing', game: 'facing-which-way', ...roundSettings('facing-which-way', 123) };

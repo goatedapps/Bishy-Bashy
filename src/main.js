@@ -39,7 +39,6 @@ let localRound = null;
 let navigationAction = null;
 let supportsRoomNavigation = false;
 let pending = readStored('bb-pending');
-let announcementAck = null;
 let reconnectAt = 0, reconnectTimer, entryRequest = null, joining = false, intentionalClose = false, joined = false;
 let lastPong = 0, lastSyncSent = 0, lastPendingSent = -Infinity, lastProgressSent = 0, lastProgressKey = '';
 let inviteUrl = '', lanUrls = [], events = [];
@@ -137,7 +136,6 @@ function connect() {
         return;
       }
       playerId = message.playerId;
-      announcementAck = null;
       preparingAssets = null;
       supportsRoomNavigation = message.capabilities?.includes('room-navigation') === true;
       joined = true;
@@ -394,7 +392,6 @@ function updateMetrics() {
   else if (gate) status = wait > 0 ? `Waiting ${Math.ceil(wait / 1000)}s for a friend to reconnect…` : !estimate || estimate.count < 3 ? 'Synchronizing clocks…' : mine?.ready ? 'Waiting for everyone to be ready…' : 'Tap Ready when you’re set.';
   else if (['intermission', 'selecting'].includes(room.set?.phase)) status = '';
   else if (localRound?.done) status = 'Waiting for the other players…';
-  else if (!room.round.playerIds.includes(playerId)) status = 'You can play in the next round.';
   $('lobby-status').textContent = status;
   $('lobby-status').hidden = !status;
 }
@@ -433,7 +430,7 @@ function synchronizeScreenAudio() {
   const announcing = room?.set?.phase === 'announcing';
   audio.setMenuScreen(startupReady && !document.hidden && !spinning && !announcing && !isRoundActive(round), !room || room.players[0]?.id === playerId, podiumId, track);
   const announcementId = announcing ? round.id : null;
-  if (audio.announceGame(announcementId, round?.game, !document.hidden) && announcementAck !== round.id && send({ type: 'announcement-done', roundId: round.id })) announcementAck = round.id;
+  audio.announceGame(announcementId, round?.game, !document.hidden, room?.set?.phase === 'instructions' ? round.id : null);
   const serverNow = performance.now() + (clock.estimate(performance.now())?.offset ?? Date.now() - performance.now());
   const landingId = !document.hidden && room?.set?.phase === 'instructions' ? round.id : null;
   audio.spinWheel(!document.hidden && spinning ? round.id : null, serverNow - (room?.set?.spinStartAt || 0), (room?.set?.spinEndAt || 0) - (room?.set?.spinStartAt || 0), round?.game, landingId);

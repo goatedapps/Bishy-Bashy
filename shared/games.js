@@ -72,7 +72,7 @@ export function gameRules(game) {
   if (game === FACING_GAME) return ['Remember where the duck points', 'Follow the turns and flips', 'When Answer appears: red = left, green = up, blue = right'];
   if (game === BURGER_GAME) return ['Move the plate to catch the falling food', 'Red = left, green = middle, blue = right'];
   if (game === MISTAKE_GAME) return ['Pick the picture that is different', 'Red = top, green = middle, blue = bottom'];
-  if (game === JUMP_GAME) return ['Press any button as the dinosaur lands to reach the meat', 'Aim for gold for +1 boost or the green center for +2'];
+  if (game === JUMP_GAME) return ['Press any button as the dinosaur lands on the trampoline', 'A Perfect landing gives +2 boosts'];
   if (game === MONKEY_GAME) return ['Watch the monkey\'s color sequence', 'Copy the order with the matching buttons'];
   if (game === FIREWORK_GAME) return ['Press matching colors before the fireworks land', 'Clear every firework in any order', 'Each set gets harder'];
   if (game === SLOT_GAME) return ['Match all three rows to the model face', 'Red stops the red row, green the green row, and blue the blue row'];

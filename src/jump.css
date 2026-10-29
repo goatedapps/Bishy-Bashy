@@ -21,13 +21,6 @@
 .jump-stage[data-phase=land] .jump-phase { color:#90610a; }
 .jump-stage[data-phase=perfect] .jump-phase { color:#237047; }
 .jump-stage[data-phase=stumble] .jump-dino { filter:grayscale(.7); transform:translateX(-50%) rotate(-16deg); }
-.jump-timing { position:relative; height:12px; margin:0 7%; border:1px solid #a6805c; border-radius:6px; overflow:hidden; background:#f5d8b5; }
-.jump-timing-fill { display:block; height:100%; background:#c99b6e77; }
-.jump-gold-zone,.jump-perfect-zone { position:absolute; top:0; bottom:0; left:var(--landing-center); transform:translateX(-50%); }
-.jump-gold-zone { width:var(--landing-width); background:#ffce45; }
-.jump-perfect-zone { width:var(--perfect-width); background:#65cd8c; border-inline:1px solid #277448; }
-.jump-timing-cursor { position:absolute; top:0; bottom:0; width:3px; transform:translateX(-50%); background:#523529; box-shadow:0 0 0 1px #fff6d6; }
-.jump-stage[data-phase=land] .jump-timing-fill { background:#eab12f; }
 .jump-meat { display:block; position:relative; width:64px; height:56px; background:var(--image-jump-meat,url('/assets/optimized/jump-meat-f7acac1891f4.webp')) center / contain no-repeat; filter:drop-shadow(0 3px 1px #754a3433); }
 .jump-scene>.jump-meat { position:absolute; bottom:min(calc(100% - 50px),calc(48px + .76 * (100% - 65px))); left:calc(50% - 32px); }
 .jump-stage[data-phase=reaching] .jump-meat { animation:meat-wiggle .2s ease-in-out infinite alternate; }

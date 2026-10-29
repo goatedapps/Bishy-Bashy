@@ -31,9 +31,10 @@
   height:5px;
 }
 .remaining { transform-origin:50% 70%; }
-.stage-result { position:absolute; z-index:4; left:50%; bottom:18px; transform:translateX(-50%); font:900 clamp(56px,9vw,92px)/1 Nunito,system-ui,sans-serif; pointer-events:none; text-shadow:0 2px 0 #3b214d,2px 0 0 #3b214d,-2px 0 0 #3b214d,0 -2px 0 #3b214d,0 0 10px #ffffffaa; }
-.stage-correct { color:#ffda32; }
-.stage-wrong { color:#ef334e; }
+.stage-result { position:absolute; z-index:4; left:50%; top:50%; width:90%; aspect-ratio:1; transform:translate(-50%,-50%); pointer-events:none; filter:drop-shadow(0 2px 1px #3b214d) drop-shadow(0 0 3px #fffdf5); }
+.stage-correct { border:clamp(6px,1.2vw,15px) solid #ffda32; border-radius:50%; background:#ffda3214; }
+.stage-wrong:before,.stage-wrong:after { content:''; position:absolute; left:44%; top:-12.5%; width:12%; height:125%; border-radius:999px; background:#ef334e; transform:rotate(45deg); }
+.stage-wrong:after { transform:rotate(-45deg); }
 .perm-dancer { transform-origin:50% 80%; }
 .reel-badge { transform-origin:center; }
 .monkey-dot { transition:background-color .1s ease-out; }

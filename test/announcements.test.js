@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { RoomService, RECONNECT_WAIT_MS } from '../server/rooms.js';
+import { RoomService } from '../server/rooms.js';
+import { GAME_ANNOUNCEMENT_MS } from '../shared/sets.js';
 
 function setup(mode = 'game-select') {
   let time = 100000;
@@ -12,8 +13,8 @@ function setup(mode = 'game-select') {
   return { service, host, guest, room, advance(ms) { time += ms; service.tick(); } };
 }
 
-test('Game Select waits for every announcement, rejects stale acknowledgements, and resets readiness', () => {
-  const { service, host, guest, room } = setup();
+test('Game Select opens instructions after two seconds regardless of audio acknowledgements', () => {
+  const { service, host, guest, room, advance } = setup();
   const id = room.round.id;
   assert.equal(room.set.phase, 'announcing');
   service.handle(host, { type: 'announcement-done', roundId: 'stale' });
@@ -25,17 +26,20 @@ test('Game Select waits for every announcement, rejects stale acknowledgements, 
   assert.equal(room.set.phase, 'announcing');
   assert.ok(room.players.every(player => !player.ready && player.assetRound === null));
   service.handle(guest, { type: 'announcement-done', roundId: id });
+  advance(GAME_ANNOUNCEMENT_MS - 1);
+  assert.equal(room.set.phase, 'announcing');
+  advance(1);
   assert.equal(room.set.phase, 'instructions');
   assert.equal(room.round.phase, 'instructions');
   service.handle(guest, { type: 'announcement-done', roundId: id });
   assert.equal(room.set.phase, 'instructions');
 });
 
-test('announcements wait briefly for disconnected players and cannot reopen a cancelled set', () => {
+test('disconnected players do not lengthen the announcement and stale messages cannot reopen a cancelled set', () => {
   const { service, host, guest, room, advance } = setup();
   service.disconnect(guest);
   service.handle(host, { type: 'announcement-done', roundId: room.round.id });
-  advance(RECONNECT_WAIT_MS - 1);
+  advance(GAME_ANNOUNCEMENT_MS - 1);
   assert.equal(room.set.phase, 'announcing');
   advance(1);
   assert.equal(room.set.phase, 'instructions');

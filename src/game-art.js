@@ -85,8 +85,8 @@ export function ruleVisual(game) {
     first.append(gameArt(game), node('span', 'jump-meat'), node('strong', '', 'Time the landing'));
     const landing = node('div', 'tutorial-landing');
     landing.append(node('span', 'tutorial-good', 'Good +1'), node('span', 'tutorial-perfect', 'Perfect +2'));
-    second.append(landing, shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Aim for the green center'));
-    label = 'Press any button when the dinosaur lands. The wide gold zone gives one boost; the small green center gives a Perfect two boosts.';
+    second.append(landing, shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Press as it lands'));
+    label = 'Watch the dinosaur land on the trampoline and press any button. A good landing gives one boost; a Perfect landing gives two boosts.';
   } else if (game === 'mimicking-monkeys') {
     first.append(gameArt(game), shapes([0, 1, 2]), node('strong', '', 'Watch the order'));
     second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Copy the order'));
