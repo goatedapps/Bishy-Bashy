@@ -1,5 +1,6 @@
 import { AUDIO_FILES, BEAT, audioAssetIds } from '../scripts/audio/score.js';
 import { COUNTDOWN_MS } from '../shared/games.js';
+import { ARCADE_AUDIO_FILES } from '../scripts/audio/arcade.js';
 
 const BASE_URL = import.meta.env?.BASE_URL || '/';
 const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
@@ -126,7 +127,7 @@ export class GameAudio {
   async load() {
     if (this.loading) { await this.loading; return this.load(); }
     const bank = this.game;
-    const extraFiles = { ...EXTRA_AUDIO_FILES, ...GAME_AUDIO_FILES[bank] };
+    const extraFiles = { ...EXTRA_AUDIO_FILES, ...ARCADE_AUDIO_FILES, ...GAME_AUDIO_FILES[bank] };
     const missing = [...audioAssetIds(bank), ...Object.keys(extraFiles)].filter(id => !this.buffers.has(id)).map(id => [id, AUDIO_FILES[id] || extraFiles[id]]);
     if (!missing.length) { this.loadFailed = false; return; }
     this.loading = Promise.allSettled(missing.map(async ([id, file]) => {
@@ -261,9 +262,10 @@ export class GameAudio {
     });
   }
 
-  spinWheel(id, elapsed, duration) {
+  spinWheel(id, elapsed, duration, game = this.game, landingId = null) {
     if (!id || !this.enabled || this.context?.state !== 'running' || this.preferences.effectsVolume === 0) {
-      this.stopVoices(voice => voice.group === 'wheel');
+      const keepLanding = !id && landingId && this.wheel?.id === landingId && this.enabled && this.context?.state === 'running' && this.preferences.effectsVolume > 0;
+      this.stopVoices(voice => voice.group === 'wheel' && (!keepLanding || voice.id === 'wheelSpin'));
       return;
     }
     if (this.wheel?.id !== id) {
@@ -272,9 +274,14 @@ export class GameAudio {
     }
     if (elapsed >= duration) {
       this.stopVoices(voice => voice.group === 'wheel' && voice.id === 'wheelSpin');
-      if (!this.wheel.landed && this.buffers.has('gameSelect')) {
+      if (!this.wheel.landed) {
         this.wheel.landed = true;
-        if (elapsed - duration < 250) this.source('gameSelect', { group: 'wheel', end: this.context.currentTime + 2 });
+        if (elapsed - duration < 250) {
+          const at = this.context.currentTime;
+          this.source('gameSelect', { at, group: 'wheel', end: at + 2 });
+          this.source(`gameVoice:${game}`, { at, group: 'wheel' });
+          this.source('applause', { at, group: 'wheel' });
+        }
       }
       return;
     }

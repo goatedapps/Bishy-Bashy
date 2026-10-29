@@ -228,6 +228,71 @@ export const ASSETS = [
     "downloadBytes": 20237
   },
   {
+    "path": "audio/applause.mp3",
+    "bytes": 161280,
+    "hash": "bb08279f242e5be1"
+  },
+  {
+    "path": "audio/totem-shrinker-voice.mp3",
+    "bytes": 46694,
+    "hash": "96c4e2de66f72098"
+  },
+  {
+    "path": "audio/perm-mania-voice.mp3",
+    "bytes": 44522,
+    "hash": "a75bf24289f3bd57"
+  },
+  {
+    "path": "audio/facial-slot-machine-voice.mp3",
+    "bytes": 50791,
+    "hash": "e1a1388ff361c44d"
+  },
+  {
+    "path": "audio/fireworks-craze-voice.mp3",
+    "bytes": 49537,
+    "hash": "d70177f4346f8cca"
+  },
+  {
+    "path": "audio/mimicking-monkeys-voice.mp3",
+    "bytes": 47030,
+    "hash": "d28d27d4d372f539"
+  },
+  {
+    "path": "audio/jump-for-the-meat-voice.mp3",
+    "bytes": 42014,
+    "hash": "2d5639b561104402"
+  },
+  {
+    "path": "audio/burger-girl-voice.mp3",
+    "bytes": 39506,
+    "hash": "3dc3cf7fc49109cc"
+  },
+  {
+    "path": "audio/me-find-mistake.mp3",
+    "bytes": 47030,
+    "hash": "928c8613ce2df51d"
+  },
+  {
+    "path": "audio/dice-dice-more-dice-voice.mp3",
+    "bytes": 54553,
+    "hash": "5e7a48c2ea9c3c92"
+  },
+  {
+    "path": "audio/facing-which-way-voice.mp3",
+    "bytes": 45776,
+    "hash": "b0f913fc9a36a9b2"
+  },
+  {
+    "path": "audio/its-raining-coins-voice.mp3",
+    "bytes": 48283,
+    "hash": "23fa54bfe31179e9"
+  },
+  {
+    "path": "audio/dodge-or-die-voice.mp3",
+    "bytes": 48283,
+    "hash": "75db5020c1ad5be3"
+  },
+  {
     "path": "audio/Button-Press.mp3",
     "bytes": 25374,
     "hash": "09d150e9dc444b98"

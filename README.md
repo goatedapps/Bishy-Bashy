@@ -18,7 +18,8 @@ Game Select uses equal-sized illustrated cards in a scrollable library, with a t
 Choose **Arcade** for five different games selected at random, played once each in a random order.
 Selecting Arcade keeps everyone in the room lobby; once friends have joined, the host taps **Start set** to start the single reel.
 Before each Arcade game, the reel spins for 4.7 seconds and lands on the same server-chosen game on every device.
-With sound enabled, `roulette.mp3` loops during the spin and `Game-select.mp3` plays once on landing.
+With sound enabled, `roulette.mp3` loops during the spin; `Game-select.mp3`, the selected game's voice clip, and `applause.mp3` play together once on landing.
+`scripts/audio/arcade.js` maps the supplied voice filenames, including `me-find-mistake.mp3`, and the startup loader caches them before play.
 The selected game stays visible for two seconds before How to play; there is no separate Spin button.
 The five-game plan has no repeats, and repeated starts or reconnects do not reroll it.
 Choose **Game Select** for three rounds of one game, with difficulty increasing each round.

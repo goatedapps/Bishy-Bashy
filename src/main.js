@@ -420,7 +420,8 @@ function synchronizeScreenAudio() {
   const spinning = room?.set?.phase === 'selecting';
   audio.setMenuScreen(startupReady && !document.hidden && !spinning && !isRoundActive(round), !room || room.players[0]?.id === playerId, podiumId, track);
   const serverNow = performance.now() + (clock.estimate(performance.now())?.offset ?? Date.now() - performance.now());
-  audio.spinWheel(!document.hidden && spinning ? round.id : null, serverNow - (room?.set?.spinStartAt || 0), (room?.set?.spinEndAt || 0) - (room?.set?.spinStartAt || 0));
+  const landingId = !document.hidden && room?.set?.phase === 'instructions' ? round.id : null;
+  audio.spinWheel(!document.hidden && spinning ? round.id : null, serverNow - (room?.set?.spinStartAt || 0), (room?.set?.spinEndAt || 0) - (room?.set?.spinStartAt || 0), round?.game, landingId);
 }
 
 function prepareRoundAssets() {
