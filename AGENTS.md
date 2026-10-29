@@ -69,7 +69,8 @@ The landing page and set standings use `src/sets.css` and `src/set-view.js`.
 The illustrated landing screen only creates or joins rooms; `src/home.css` scopes its landscape, central title, and form to outside rooms, and its help button introduces multiplayer room-code setup.
 Choose modes and games inside the room, with a short explanation visible on each mode card.
 Use the shared `src/game-art.js` artwork for the home cast, equal-sized scrollable game cards, and illustrated rules; the library filters titles and accommodates future games without a wider page.
-`src/instruction-sequence.js` pauses 1400 ms after the heading, then keeps 700/850/850 ms gaps for the artwork and three lines, with `how-to-play.wav` for the heading and `Punch-button.mp3` for later steps.
+Keep game instructions short and focused on the action and buttons; use only as many points as needed.
+`src/instruction-sequence.js` pauses 1400 ms after the heading, then 700 ms after the artwork and 850 ms between instruction lines, with `how-to-play.wav` for the heading and `Punch-button.mp3` for later steps.
 Avoid hidden-tab reveal catch-up and enable Ready only after the last line and selected audio bank are ready.
 The host's Back to modes action resets the shared set while keeping the room; confirm if a round has begun or scores exist.
 Players may explicitly leave active sets after confirmation; preserve accepted finishes, forfeit unfinished rounds, and let remaining players continue without a missing-player wait.

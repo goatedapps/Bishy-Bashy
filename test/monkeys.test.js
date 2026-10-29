@@ -78,7 +78,7 @@ test('every difficulty finishes locally within the deadline and completion canno
     assert.ok(run.elapsed > 0 && run.elapsed < round.duration);
     assert.equal(run.tap(0, run.start + run.elapsed).type, 'ignored');
     assert.equal(run.phase(run.start + run.elapsed).mode, 'done');
-    assert.equal(gameRules(MONKEY_GAME, round).length, 3);
+    assert.ok(gameRules(MONKEY_GAME, round).every(line => line.trim().length > 0));
   }
 });
 

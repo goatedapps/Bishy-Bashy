@@ -65,19 +65,19 @@ export function createRun(round, localStart, timingOffset = 0) {
 
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
-export function gameRules(game, round) {
-  if (game === COIN_GAME) return ['Red = left, green = middle, blue = right. Move the raccoon under the gold coin.', 'Catch the gold star coins. Cracked purple coins are fakes; misses cost time but keep your gold.', `Collect ${round.goal} coins fastest. Later rounds make the rain fall faster.`];
-  if (game === DODGE_GAME) return ['Red moves one lane left, blue one lane right. Green jumps.', 'Find the open lane beside tall walls. Jump the striped low hurdles just before they reach the landing line.', `Clear ${round.goal} obstacles fastest. Bumps cost time but keep your progress; later rounds approach faster.`];
-  if (game === DICE_GAME) return ['Pick the die with the most dots in your lane. There is always one highest die.', 'Red = top, green = middle, blue = bottom. A wrong choice briefly locks your buttons; keep your completed rolls.', `Win ${round.goal} rolls fastest. Later rounds add more rolls and tilt the dice.`];
-  if (game === FACING_GAME) return ['Remember which way the duck points. Its card turns face down; follow the turn and left-right flip symbols.', 'When Answer appears: red = left, green = up, blue = right. A wrong answer replays the same trick.', `Solve ${round.goal} tricks fastest. Later rounds add more turns; completed tricks stay yours.`];
-  if (game === BURGER_GAME) return ['Red = left, green = middle, blue = right. Move the plate under the falling food.', 'Catch lettuce, patty, tomato, then a bun to serve a burger. Misses cost time; keep your layers.', `Serve ${round.goal / 4} burgers fastest. Later rounds drop ingredients faster.`];
-  if (game === MISTAKE_GAME) return ['Two pictures match and one is different. Spot the odd picture in your lane.', 'Red = top, green = middle, blue = bottom. Wrong answers briefly lock your buttons.', `Find ${round.goal} odd pictures fastest. Later rounds add more puzzles and picture types.`];
-  if (game === JUMP_GAME) return ['Press any button as the dinosaur lands. Gold gives +1 boost; aim for the small green center for a Perfect +2.', 'Bigger boosts reach the meat faster. Early taps and missed landings cost time, but keep your height progress.', `Earn ${round.goal} boosts, then grab the meat at the top of your final jump. Fastest time wins.`];
-  if (game === MONKEY_GAME) return ['Watch the monkey show a sequence of colored shapes, then copy it with the matching buttons.', 'Each success adds one move. A mistake replays that sequence; completed stages stay yours.', `Complete ${round.goal} stages fastest. Remember the order—you do not need to copy the rhythm.`];
-  if (game === FIREWORK_GAME) return ['Wait for the rocket to reveal its color and shape.', 'Press the matching red circle, green triangle, or blue diamond before it fades.', `Burst ${round.goal} fireworks fastest. Early, wrong, or missed taps cost time.`];
-  if (game === SLOT_GAME) return ['Match all three rows to the model face at the center marker.', 'Red stops the red row, green the green row, and blue the blue row—in any order.', 'Correct faces stay locked. A miss restarts only that row. Fastest complete face wins.'];
-  if (game === PERM_GAME) return ['Watch the rhythm, then copy it with any of the three buttons.', 'One mistake or fewer in a phrase grows your hair.', 'Biggest hair wins; rhythm score breaks ties.'];
-  return ['Match the bottom block with the same color button.', `Clear all ${round.blockCount} blocks as fast as you can.`, 'A wrong tap freezes your controls for 0.3 seconds.'];
+export function gameRules(game) {
+  if (game === COIN_GAME) return ['Catch gold coins and avoid cracked purple coins', 'Red = left, green = middle, blue = right'];
+  if (game === DODGE_GAME) return ['Move around tall walls and jump over low hurdles', 'Red moves left, blue moves right, green jumps'];
+  if (game === DICE_GAME) return ['Pick the die with the most dots', 'Red = top, green = middle, blue = bottom'];
+  if (game === FACING_GAME) return ['Remember where the duck points', 'Follow the turns and flips', 'When Answer appears: red = left, green = up, blue = right'];
+  if (game === BURGER_GAME) return ['Move the plate to catch the falling food', 'Red = left, green = middle, blue = right'];
+  if (game === MISTAKE_GAME) return ['Pick the picture that is different', 'Red = top, green = middle, blue = bottom'];
+  if (game === JUMP_GAME) return ['Press any button as the dinosaur lands to reach the meat', 'Aim for gold for +1 boost or the green center for +2'];
+  if (game === MONKEY_GAME) return ['Watch the monkey\'s color sequence', 'Copy the order with the matching buttons'];
+  if (game === FIREWORK_GAME) return ['Wait for the rocket to show its color', 'Press the matching button before it fades'];
+  if (game === SLOT_GAME) return ['Match all three rows to the model face', 'Red stops the red row, green the green row, and blue the blue row'];
+  if (game === PERM_GAME) return ['Watch the rhythm', 'Copy it with any of the three buttons'];
+  return ['Press the button that matches the bottom block\'s color', 'Clear the whole tower'];
 }
 
 export function comparePlayers(a, b, game) {

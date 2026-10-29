@@ -49,7 +49,11 @@ test('all five difficulties and deadline boundaries remain local and determinist
     assert.equal(new SlotRun(round,0).tap(0,round.duration).type,'ignored');
   }
   assert.equal(validReelMask(4,1),true); assert.equal(validReelMask(4,2),false); assert.equal(validReelMask(8,1),false);
-  for (const game of Object.keys(GAMES)) assert.equal(gameRules(game,roundSettings(game,1)).length,3);
+  for (const game of Object.keys(GAMES)) {
+    const rules = gameRules(game, roundSettings(game, 1));
+    assert.ok(rules.length > 0);
+    assert.ok(rules.every(line => typeof line === 'string' && line.trim().length > 0));
+  }
 });
 test('rules wait for every connected player; readiness and color masks cannot be bypassed', () => {
   let now=1000000; const messages=[];
