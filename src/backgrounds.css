@@ -1,0 +1,18 @@
+body.in-room .arena { background-position:center; background-size:cover; background-repeat:no-repeat; }
+body.totem-theme .arena { background-image:var(--image-bg-totem-temple,url('/assets/optimized/bg-totem-temple-51f21480bbb4.webp')); }
+body.perm-theme .arena { background-image:var(--image-bg-perm-stage,url('/assets/optimized/bg-perm-stage-3f6ecd9fbdda.webp')); }
+body.slot-theme .arena { background-image:var(--image-bg-slots-studio,url('/assets/optimized/bg-slots-studio-acf7c2b4dde4.webp')); }
+body.monkey-theme .arena { background-image:var(--image-bg-monkey-jungle,url('/assets/optimized/bg-monkey-jungle-9acb59defa5b.webp')); }
+body.jump-theme .arena { background-image:var(--image-bg-jump-valley,url('/assets/optimized/bg-jump-valley-72b21872fd52.webp')); }
+body.burger-theme .arena { background-image:var(--image-bg-burger-kitchen,url('/assets/optimized/bg-burger-kitchen-db8f7ae7c8b9.webp')); }
+body.mistake-theme .arena { background-image:var(--image-bg-mistake-gallery,url('/assets/optimized/bg-mistake-gallery-385278818805.webp')); }
+body.dice-theme .arena { background-image:var(--image-bg-dice-carnival,url('/assets/optimized/bg-dice-carnival-fb4753414621.webp')); }
+body.facing-theme .arena { background-image:var(--image-bg-facing-airfield,url('/assets/optimized/bg-facing-airfield-ec123db36068.webp')); }
+body.coin-theme .arena { background-image:var(--image-bg-coins-garden,url('/assets/optimized/bg-coins-garden-cfa07b53f3c8.webp')); }
+body.dodge-theme .arena { background-image:var(--image-bg-dodge-track,url('/assets/optimized/bg-dodge-track-82e7b7b554a6.webp')); }
+body.in-room:not(.firework-theme):not(.dice-theme) .arena .lane { background-color:#fffdf52b; }
+body.perm-theme .arena .lane { background-color:#fffdf544; }
+body.dice-theme .arena .lane { background-color:#143f4644; }
+body.in-room .arena .lane.you { box-shadow:inset 0 0 0 2px #ffda7490; }
+body.in-room .arena .lane:before { display:none; }
+body.perm-theme .arena:before,body.perm-theme .arena:after { opacity:.15; }

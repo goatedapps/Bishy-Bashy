@@ -7,8 +7,8 @@ const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
 const MENU_TRACKS = { menu: 'Background-ActionRock.mp3', instructions: 'game-instructions.mp3' };
 const MENU_TRACK_GAINS = { menu: 1, instructions: 2 };
-const EXTRA_AUDIO_FILES = { buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.wav', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3', wheelSpin: 'roulette.mp3', gameSelect: 'Game-select.mp3' };
-const GAME_AUDIO_FILES = { 'perm-mania': { ding: 'Ding.mp3' }, 'mimicking-monkeys': { ding: 'Ding.mp3' }, 'its-raining-coins': { ding: 'Ding.mp3' }, 'dodge-or-die': { ding: 'Ding.mp3' }, 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3' }, 'facing-which-way': { ding: 'Ding.mp3' } };
+const EXTRA_AUDIO_FILES = { wrong: 'wrong.mp3', buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.wav', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3', wheelSpin: 'roulette.mp3', gameSelect: 'Game-select.mp3' };
+const GAME_AUDIO_FILES = { 'perm-mania': { ding: 'Ding.mp3' }, 'mimicking-monkeys': { ding: 'Ding.mp3' }, 'its-raining-coins': { ding: 'Ding.mp3' }, 'dodge-or-die': { ding: 'Ding.mp3' }, 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3', ding: 'Ding.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3' }, 'facing-which-way': { ding: 'Ding.mp3' } };
 const PROFILES = {
   'dice-dice-more-dice': { music: 'music', urgency: 'urgency', go: 'go' },
   'facing-which-way': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -235,6 +235,7 @@ export class GameAudio {
 
   play(id, { color = 0, progress = 0, at = this.context?.currentTime, group = 'effects', game = this.game } = {}) {
     if (id === 'stageComplete') id = 'ding';
+    if (id === 'stageWrong' || id === 'mistake' && ['mimicking-monkeys', 'facing-which-way', 'dice-dice-more-dice', 'me-find-mistake'].includes(game)) id = 'wrong';
     if (id === 'jumpPerfect') id = 'permGrow';
     if (id === 'hit') id = ['burger-girl', 'me-find-mistake', 'dice-dice-more-dice', 'facing-which-way', 'its-raining-coins', 'dodge-or-die'].includes(game) ? 'ding' : game === 'perm-mania' ? 'permHit' : ['red', 'green', 'blue'][color] || 'red';
     if (id === 'mistake' && game === 'perm-mania') id = 'permMiss';
@@ -243,7 +244,7 @@ export class GameAudio {
       const time = Math.max(this.context.currentTime, at);
       this.duck.gain.cancelScheduledValues(time);
       this.duck.gain.setValueAtTime(this.duck.gain.value, time);
-      this.duck.gain.linearRampToValueAtTime(id === 'mistake' ? .4 : .66, time + .012);
+      this.duck.gain.linearRampToValueAtTime(['mistake', 'wrong'].includes(id) ? .4 : .66, time + .012);
       this.duck.gain.setTargetAtTime(1, time + .09, .06);
     }
   }
@@ -292,6 +293,32 @@ export class GameAudio {
     this.source('wheelSpin', { group: 'wheel', loop: true, offset: Math.max(0, elapsed / 1000) % buffer.duration, end: this.context.currentTime + (duration - Math.max(0, elapsed)) / 1000 });
   }
 
+  announceGame(id, game, visible = true) {
+    if (!id) {
+      this.stopVoices(voice => voice.group === 'announcement');
+      if (this.announcement) this.announcement.done = true;
+      return false;
+    }
+    if (this.announcement?.id !== id) {
+      this.stopVoices(voice => voice.group === 'announcement');
+      this.announcement = { id, started: false, done: false };
+    }
+    const state = this.announcement;
+    if (state.done) return true;
+    if (!visible || !this.enabled || this.preferences.effectsVolume === 0 || this.context?.state !== 'running') {
+      this.stopVoices(voice => voice.group === 'announcement');
+      return state.done = true;
+    }
+    if (state.started) return state.done = ![...this.voices].some(voice => voice.group === 'announcement');
+    if (!this.buffers.has(`gameVoice:${game}`) || !this.buffers.has('applause')) return this.loadFailed ? state.done = true : false;
+    state.started = true;
+    this.stopMenu();
+    const at = this.context.currentTime;
+    this.source(`gameVoice:${game}`, { at, group: 'announcement' });
+    this.source('applause', { at, group: 'announcement' });
+    return false;
+  }
+
   demonstrate(key, cues) {
     if (this.demonstrationKey !== key) {
       this.stopVoices(voice => voice.group === 'demonstration');
@@ -328,14 +355,18 @@ export class GameAudio {
 
   fireworkLaunch(run) {
     if (!this.enabled || this.preferences.effectsVolume === 0 || this.context?.state !== 'running' || this.target?.game !== 'fireworks-craze' || this.target.id !== run.id || this.target.playerDone || run.done) return;
-    const remaining = run.launchedAt - this.now();
-    // Schedule imminent launches on the audio clock, skipping old rockets after interruptions.
-    if (remaining > 150 || remaining < -100 || run.launchedAt >= this.target.end) return;
     const key = `${run.id}/${run.index}/${run.launchedAt}`;
-    if (this.launchKey === key) return;
-    if (this.launchVoice) this.stopVoice(this.launchVoice);
-    const voice = this.source('fireworkLaunch', { at: this.context.currentTime + Math.max(0, remaining) / 1000, group: 'round' });
-    if (voice) { this.launchKey = key; this.launchVoice = voice; }
+    if (this.launchKey !== key) {
+      this.stopVoices(voice => voice.id === 'fireworkLaunch');
+      this.launchKey = key;
+      this.launchNotes = new Set();
+    }
+    for (const rocket of run.rockets) {
+      const remaining = rocket.launchAt - this.now();
+      if (rocket.hit || remaining > 150 || remaining < -100 || rocket.launchAt >= this.target.end || this.launchNotes.has(rocket.slot)) continue;
+      const voice = this.source('fireworkLaunch', { at: this.context.currentTime + Math.max(0, remaining) / 1000, group: 'round' });
+      if (voice) this.launchNotes.add(rocket.slot);
+    }
   }
 
   scheduleRound(id, start, end, musicOwner, playerDone = false, { game = this.game, cues = [], bpm = 128 } = {}) {
@@ -520,6 +551,7 @@ export class GameAudio {
   }
 
   cancel() {
+    this.announceGame(null);
     this.buttonRequest++;
     this.menu.active = false;
     this.stopPodium();
@@ -545,7 +577,7 @@ export class GameAudio {
     this.stopMenu();
     const at = this.context.currentTime + .03;
     if (this.preferences.musicMode !== 'off' && this.preferences.musicVolume > 0) this.source((PROFILES[game] || PROFILES['totem-shrinker']).music, { at, group: 'preview-music', loop: true, end: at + 8 });
-    const cues = game === 'facial-slot-machine' ? [['slotGo', .3], ['slotLock', 1.1], ['slotMiss', 1.8], ['slotLock', 3], ['slotWin', 4.5]] : game === 'perm-mania' ? [['permDemo', .5], ['permDemo', .5 + BEAT], ['permDemo', .5 + BEAT * 2], ['permDemo', .5 + BEAT * 3], ['permHit', .5 + BEAT * 4], ['permHit', .5 + BEAT * 5], ['permHit', .5 + BEAT * 6], ['permHit', .5 + BEAT * 7], ['permGrow', .5 + BEAT * 8], ['finish', 6.3]] : [['red', .5], ['green', .8], ['blue', 1.1], ['mistake', 1.6], ['finish', 7.2]];
+    const cues = game === 'facial-slot-machine' ? [['slotGo', .3], ['slotLock', 1.1], ['slotMiss', 1.8], ['slotLock', 3], ['slotWin', 4.5]] : game === 'perm-mania' ? [['permDemo', .5], ['permDemo', .5 + BEAT], ['permDemo', .5 + BEAT * 2], ['permDemo', .5 + BEAT * 3], ['permHit', .5 + BEAT * 4], ['permHit', .5 + BEAT * 5], ['permHit', .5 + BEAT * 6], ['permHit', .5 + BEAT * 7], ['stageComplete', .5 + BEAT * 8], ['finish', 6.3]] : [['red', .5], ['green', .8], ['blue', 1.1], ['mistake', 1.6], ['finish', 7.2]];
     if (!['facial-slot-machine', 'perm-mania'].includes(game)) this.source('countdown', { at: at + 2.5, group: 'preview-effects' });
     for (const [id, delay] of cues) this.play(id, { at: at + delay, group: 'preview-effects' });
     this.onChange();

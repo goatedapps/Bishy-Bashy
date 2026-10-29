@@ -89,7 +89,7 @@ test('played states reconstruct feedback and active phases for every minigame', 
     if(game==='totem-shrinker')run.tap(run.sequence[0],time);
     else if(game==='perm-mania'){time=run.start+run.notes[0].at;run.tap(0,time);}
     else if(game==='facial-slot-machine')run.tap(0,time);
-    else if(game==='fireworks-craze'){time=run.revealAt+10;run.tap(run.rocket.color,time);}
+    else if(game==='fireworks-craze'){time=run.rockets[0].launchAt+10;run.tap(run.rockets[0].color,time);}
     else if(game==='mimicking-monkeys'){time=run.playAt;run.tap(run.sequence[0],time);}
     else if(game==='jump-for-the-meat'){time=run.landAt;run.tap(0,time);}
     else if(game==='burger-girl'||game==='its-raining-coins'){run.tap(game==='burger-girl'?run.column:run.wave.column,time);time=run.landAt;run.advance(time);}

@@ -31,10 +31,10 @@
 .facing-stage { display:flex; flex-direction:column; align-items:center; justify-content:space-around; padding:10px 2px 0; }
 .facing-phase { font:20px/1.2 'Lilita One',system-ui,sans-serif; text-align:center; min-height:1.2em; }
 .facing-card-holder { width:min(130px,100%,calc(var(--tower-height) - 110px)); aspect-ratio:1; flex-shrink:0; display:grid; place-items:center; }
-.facing-card { width:66%; aspect-ratio:1; position:relative; border:3px solid #3b214d; border-radius:18%; background:#fff5d7; box-shadow:0 0 0 2px #fffdf599; }
+.facing-card { width:66%; aspect-ratio:1; position:relative; overflow:hidden; border:3px solid #3b214d; border-radius:18%; background:#fff5d7; box-shadow:0 0 0 2px #fffdf599; }
 .facing-card .direction-duck { position:absolute; inset:2%; width:96%; height:96%; }
-.facing-back { position:absolute; inset:5px; border-radius:12%; background:radial-gradient(circle at 25% 25%,#ffe38e 0 7%,transparent 8%),radial-gradient(circle at 75% 25%,#ffe38e 0 7%,transparent 8%),radial-gradient(circle at 25% 75%,#ffe38e 0 7%,transparent 8%),radial-gradient(circle at 75% 75%,#ffe38e 0 7%,transparent 8%),#9976bf; }
-.facing-back:after { content:''; position:absolute; inset:34%; border:3px solid #ffe38e; border-radius:50%; }
+.facing-flap { position:absolute; inset:0; z-index:1; border-bottom:5px solid #64457e; border-radius:8%; background:repeating-linear-gradient(0deg,#a98aca 0 12px,#9676b9 12px 14px); box-shadow:0 4px 5px #3b214d55; }
+.facing-flap:after { content:''; position:absolute; width:30%; height:5px; left:35%; bottom:8%; border-radius:4px; background:#ffe38e; }
 .facing-cue { font:20px/1.1 'Lilita One',system-ui,sans-serif; text-align:center; min-height:1.1em; white-space:nowrap; }
 .facing-count { font-size:11px; font-weight:900; min-height:15px; }
 .facing-options { display:flex; justify-content:center; gap:6px; font:900 16px/1 Nunito,system-ui,sans-serif; }
@@ -73,7 +73,6 @@
   .facing-options { font-size:11px; gap:3px; }
   .facing-card { border-width:2px; }
   .dice-theme .match-hud>strong:before,.facing-theme .match-hud>strong:before { width:30px; height:30px; }
-  .facing-back { inset:3px; }
   .tutorial-dice { gap:4px; }
   .tutorial-dice .die-portrait { width:29px; padding:4px; }
 }

@@ -106,9 +106,9 @@ export function ruleVisual(game) {
     second.append(rows, node('strong', '', 'Match each center face'));
     label = 'Match the model robot in all three rows. Each color button stops its own row at the center marker.';
   } else if (game === 'fireworks-craze') {
-    first.append(node('span', 'tutorial-rocket', '✦'), node('strong', '', 'Wait for its color'));
-    second.append(shapes([0]), shapes([0], 'tutorial-buttons'), node('strong', '', 'Press the matching button'));
-    label = 'Wait for the rocket to reveal a red circle, then press the red circle button.';
+    first.append(node('span', 'tutorial-rocket', '✦'), node('strong', '', 'Watch the colors rise'));
+    second.append(shapes([0], 'tutorial-buttons'), node('strong', '', 'Burst them before they land'));
+    label = 'Fireworks show their colors from launch. Press matching buttons before they land, in any color order.';
   } else if (game === 'totem-shrinker') {
     first.append(gameArt(game), node('strong', '', 'Look at the bottom block'));
     second.append(shapes([0], 'tutorial-buttons'), node('strong', '', 'Match its color'));

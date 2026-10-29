@@ -23,6 +23,7 @@ export class MonkeyRun {
     this.blockedUntil = 0;
     this.demoVersion = 0;
     this.feedback = null;
+    this.stageFeedback = null;
     this.elapsed = null;
     this.done = false;
     this.demonstrate(localStart + DEMO_LEAD_MS);
@@ -55,6 +56,7 @@ export class MonkeyRun {
     if (color !== this.sequence[this.entered]) {
       this.mistakes++;
       this.feedback = { kind: 'miss', at: time };
+      this.stageFeedback = { correct: false, at: time };
       this.blockedUntil = time + MONKEY_RETRY_MS;
       this.demonstrate(this.blockedUntil + DEMO_LEAD_MS);
       return { type: 'mistake' };
@@ -63,6 +65,7 @@ export class MonkeyRun {
     this.feedback = { kind: 'hit', color, at: time };
     if (this.entered === this.length) {
       this.cleared++;
+      this.stageFeedback = { correct: true, at: time };
       if (this.cleared === this.goal) {
         this.done = true;
         this.elapsed = time - this.start;

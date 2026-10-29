@@ -101,7 +101,7 @@ export class FacingStage {
     this.card = node('div', 'facing-card');
     this.holder = node('div', 'facing-card-holder');
     this.duck = duckPortrait();
-    this.back = node('span', 'facing-back');
+    this.back = node('span', 'facing-flap');
     this.card.append(this.duck, this.back);
     this.holder.append(this.card);
     this.cue = node('strong', 'facing-cue');
@@ -122,15 +122,16 @@ export class FacingStage {
     const solved = feedback?.kind === 'hit' && (showing || terminal);
     const puzzle = solved ? feedback.puzzle : run?.puzzle;
     const phase = run?.phase(time) || { mode: active ? 'remote' : 'look' };
-    const visible = !active || Boolean(run && time >= run.start && (!terminal && (phase.mode === 'look' || phase.mode === 'cover' && phase.progress < .5) || solved));
+    const visible = !active || Boolean(run && time >= run.start && (!terminal && (phase.mode === 'look' || phase.mode === 'cover' && !this.motionPreference?.matches) || solved));
     this.element.classList.toggle('unoccupied', !present);
     this.element.classList.toggle('choice-correct', Boolean(solved));
     this.element.classList.toggle('choice-wrong', Boolean(showing && !solved));
     this.duck.hidden = !visible;
-    this.back.hidden = visible;
+    const covering = !solved && !terminal && phase.mode === 'cover';
+    this.back.hidden = !active || solved || phase.mode === 'look';
+    this.back.style.transform = `translateY(${covering && !this.motionPreference?.matches ? -105 * (1 - phase.progress) : 0}%)`;
     let pose = solved || ['handoff', 'play'].includes(phase.mode) ? puzzle.poses.at(-1) : puzzle?.initial || { angle: 0, mirror: 1 };
     let transform = `rotate(${pose.angle}deg) scaleY(${pose.mirror})`;
-    if (!solved && !terminal && phase.mode === 'cover' && !this.motionPreference?.matches) transform = `scaleX(${Math.abs(1 - 2 * phase.progress)}) ${transform}`;
     const turning = !solved && !terminal && phase.mode === 'turn';
     if (turning) {
       const move = puzzle.moves[phase.index];
@@ -141,9 +142,12 @@ export class FacingStage {
       pose = puzzle.poses[phase.index + 1];
       transform = move.kind === 'mirror' ? `scaleX(${1 - 2 * eased}) rotate(${previous.angle}deg) scaleY(${previous.mirror})` : `rotate(${previous.angle + move.degrees * eased}deg) scaleY(${previous.mirror})`;
     }
-    this.card.style.transform = transform;
+    const initialAngle = puzzle?.initial.angle || 0;
+    // The duck carries its initial direction so the flap always closes from the top.
+    this.duck.style.transform = `rotate(${initialAngle}deg)`;
+    this.card.style.transform = `${transform} rotate(${-initialAngle}deg)`;
     this.duck.setAttribute('aria-label', visible ? `Duck pointing ${DIRECTION_NAMES[[180, 270, 0].indexOf(pose.angle)]?.toLowerCase() || 'right'}` : 'Covered picture');
-    this.phase.textContent = solved ? 'Got it!' : terminal ? 'Done!' : showing ? 'Again!' : ({ look: 'Look!', cover: 'Flip!', covered: 'Covered', turn: 'Track!', handoff: 'Get ready', play: 'Answer', remote: 'Watching…', done: 'Time’s up!' }[phase.mode] || '');
+    this.phase.textContent = solved ? 'Got it!' : terminal ? 'Done!' : showing ? 'Again!' : ({ look: 'Look!', cover: 'Covering', covered: 'Covered', turn: 'Track!', handoff: 'Get ready', play: 'Answer', remote: 'Watching…', done: 'Time’s up!' }[phase.mode] || '');
     this.cue.textContent = solved ? '✓' : showing ? '×' : turning ? facingMoveLabel(puzzle.moves[phase.index]) : phase.mode === 'play' ? '?' : '';
     this.count.textContent = turning ? `${phase.index + 1} / ${puzzle.moves.length}` : '';
     this.element.setAttribute('aria-label', !present ? 'Open spot' : !run && active ? `Remote player, ${cleared} tricks solved` : solved ? 'Correct direction found' : visible ? this.duck.getAttribute('aria-label') : turning ? `Covered card: ${facingMoveLabel(puzzle.moves[phase.index])}, move ${phase.index + 1} of ${puzzle.moves.length}` : phase.mode === 'play' ? 'Answer: red left, green up, blue right' : 'Card covered');

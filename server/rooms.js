@@ -62,11 +62,12 @@ export class RoomService {
     player.ready = false;
     player.sync = null;
     player.requiresAssets = message.assetGates === true;
+    player.requiresAnnouncement = message.announceGates === true;
     player.assetRound = null;
     if (!returning) room.players.push(player);
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 6, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 7, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -84,6 +85,12 @@ export class RoomService {
       const { rtt, uncertainty, count } = message;
       if (![rtt, uncertainty, count].every(Number.isFinite) || rtt < 0 || uncertainty < 0 || count < 0) return;
       player.sync = { rtt, uncertainty, count, at: received };
+      return this.broadcast(room);
+    }
+    if (message.type === 'announcement-done') {
+      if (room.set?.phase !== 'announcing' || message.roundId !== room.round?.id) return;
+      player.announcementRound = room.round.id;
+      this.finishAnnouncement(room);
       return this.broadcast(room);
     }
     if (message.type === 'assets-ready') {
@@ -190,7 +197,20 @@ export class RoomService {
       set.spinStartAt = this.now();
       set.spinEndAt = set.spinStartAt + WHEEL_SPIN_MS;
       set.selectionEndAt = set.spinEndAt + REEL_HOLD_MS;
+    } else if (set.roundIndex === 0 && room.players.some(player => player.requiresAnnouncement)) {
+      set.phase = room.round.phase = 'announcing';
+      set.announcementAt = this.now();
+      room.players.forEach(player => { player.announcementRound = null; });
     }
+  }
+
+  finishAnnouncement(room) {
+    if (room.set?.phase !== 'announcing') return false;
+    if (room.players.some(player => !player.connected && this.now() - player.disconnectedAt < RECONNECT_WAIT_MS)) return false;
+    if (room.players.some(player => player.connected && player.requiresAnnouncement && player.announcementRound !== room.round.id)) return false;
+    room.set.phase = room.round.phase = 'instructions';
+    room.set.waitReason = 'ready';
+    return true;
   }
 
   tryBeginPrepared(room) {
@@ -341,6 +361,7 @@ export class RoomService {
       if (!room.players.some(p => p.connected) && now - room.updatedAt > 30 * 60_000) { this.rooms.delete(code); continue; }
       const round = room.round;
       if (!round) continue;
+      if (round.phase === 'announcing') { if (this.finishAnnouncement(room)) this.broadcast(room); continue; }
       if (round.phase === 'selecting') {
         if (now >= room.set.selectionEndAt) {
           round.phase = room.set.phase = 'instructions';

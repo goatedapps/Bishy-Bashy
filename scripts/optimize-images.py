@@ -12,7 +12,11 @@ sizes = {'totem-blocks': 768, 'perm-disco-sprites': 1152, 'facial-slot-faces': 1
          'fireworks-festival': 1280, 'mimicking-monkey': 512, 'jump-dino': 512,
          'jump-meat': 256, 'burger-chef-chibi': 512, 'burger-ingredients': 768, 'odd-pictures': 1024,
          'dice-jester': 512, 'facing-duck': 512, 'coin-raccoon': 512, 'dodge-fox': 512,
-         'home-landscape': 1672}
+         'home-landscape': 1672,
+         **{f'bg-{name}': 1280 for name in [
+             'totem-temple', 'perm-stage', 'slots-studio', 'monkey-jungle', 'jump-valley',
+             'burger-kitchen', 'mistake-gallery', 'dice-carnival', 'facing-airfield',
+             'coins-garden', 'dodge-track']}}
 mapping = {}
 before = after = 0
 for name, size in sizes.items():

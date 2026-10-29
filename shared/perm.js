@@ -49,6 +49,7 @@ export class PermRun {
     this.done = false;
     this.elapsed = null;
     this.feedback = null;
+    this.stageFeedback = null;
     this.events = [];
   }
 
@@ -73,9 +74,14 @@ export class PermRun {
     }
     while (this.settled < PHRASE_COUNT && elapsed >= (this.settled + 1) * this.phraseMs - .001) {
       const phrase = this.settled++;
+      const at = this.start + (phrase + 1) * this.phraseMs;
       if (this.phraseMistakes[phrase] <= 1) {
         this.cleared++;
-        this.events.push({ type: 'growth', phrase, at: time });
+        this.stageFeedback = { correct: true, at };
+        this.events.push({ type: 'growth', phrase, at });
+      } else {
+        this.stageFeedback = { correct: false, at };
+        this.events.push({ type: 'stageWrong', phrase, at });
       }
     }
     if (time >= this.end) { this.done = true; this.elapsed = this.duration; }

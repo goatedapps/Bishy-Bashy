@@ -35,11 +35,13 @@ test('watching inputs are ignored and arbitrary response timing is allowed after
   assert.equal(run.tap(run.sequence[0], run.playAt - 1).type, 'ignored');
   assert.equal(run.tap(run.sequence[0], run.playAt).type, 'hit');
   assert.equal(run.entered, 1);
+  assert.equal(run.stageFeedback, null);
   assert.equal(run.tap(run.sequence[1], run.lastTap + MONKEY_INPUT_GUARD_MS - 1).type, 'ignored');
   assert.equal(run.tap(run.sequence[1], run.playAt + 1234).type, 'hit');
   assert.equal(run.cleared, 1);
   assert.equal(run.entered, 0);
   assert.equal(run.mistakes, 0);
+  assert.equal(run.stageFeedback.correct, true);
 });
 
 test('a wrong response replays only the current prefix and keeps completed stages', () => {
@@ -50,6 +52,7 @@ test('a wrong response replays only the current prefix and keeps completed stage
   const prefix = run.cues.map(cue => cue.color);
   const version = run.demoVersion;
   assert.equal(run.tap((run.sequence[1] + 1) % 3, at + 200).type, 'mistake');
+  assert.deepEqual(run.stageFeedback, { correct: false, at: at + 200 });
   assert.equal(run.cleared, 1);
   assert.equal(run.entered, 0);
   assert.equal(run.mistakes, 1);

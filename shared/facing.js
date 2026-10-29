@@ -47,6 +47,7 @@ export class FacingRun {
     this.trialAt = localStart;
     this.blockedUntil = 0;
     this.feedback = null;
+    this.stageFeedback = null;
     this.demoVersion = 0;
     this.done = false;
     this.elapsed = null;
@@ -74,6 +75,7 @@ export class FacingRun {
     const puzzle = this.puzzle;
     const hit = color === puzzle.answer;
     this.feedback = { kind: hit ? 'hit' : 'miss', at: time, color, puzzle };
+    this.stageFeedback = { correct: hit, at: time };
     this.demoVersion++;
     if (!hit) {
       this.mistakes++;

@@ -27,7 +27,8 @@ Only the host can change the mode or chosen game after joining.
 The host can use **Back to modes** to keep everyone in the same room and choose again.
 Before the first countdown this returns immediately; during an active round or an unfinished set with scores, confirmation explains that the current set and scores will be cleared for everyone.
 Rules screens include visual examples using the same artwork and color/shape controls as the game.
-The instructions card pauses for 1.4 seconds after its playful “How to play” heading, then reveals the illustration and three rules with 700/850/850 ms gaps, finishing at about 3.8 seconds.
+The instructions card pauses for 1.4 seconds after its playful “How to play” heading, then reveals the illustration after 700 ms and short instruction lines at 850 ms intervals.
+Rules use only as many points as the game needs.
 It uses `public/audio/how-to-play.wav` for the heading and `public/audio/Punch-button.mp3` for the illustration and each rule when effects are enabled.
 Ready becomes available once the final line is visible; redraws do not restart the sequence, and reduced-motion settings remove the entrance animation.
 **Leave** stays available during play and asks for confirmation before leaving an active set.
@@ -198,24 +199,31 @@ Automated signal and playback-lifecycle checks pass; balance and physical audio 
 ## Play Fireworks Craze
 
 Choose **Game Select → Fireworks Craze**, or encounter it in Arcade.
-Wait for the rising golden rocket to reveal a red circle, green triangle, or blue diamond, then press the matching shared button.
+Press matching color buttons before the rockets fall back to the ground.
+Colors are visible from launch; rockets have no shape symbols.
 Keyboard controls remain **1 / 2 / 3** or **J / K / L**.
-Burst 12 fireworks before the 30-second deadline; fastest locally measured elapsed time wins.
-Early presses, wrong colors, and expired reaction windows discard that rocket and add a 300 ms recovery before the next launch.
-Completed bursts remain credited after mistakes; unfinished players receive zero set points.
 
-All players receive the same seeded colors and reveal delays, with each player's attempts advancing locally.
-The flight time is **550, 500, and 450 ms** across Game Select, plus a seeded delay of 0, 90, or 180 ms per rocket.
-Reaction windows shrink from **900 to 700 ms**, in 100 ms steps, while Arcade uses the first difficulty.
-These are provisional casual-play settings pending phone playtests.
-Color stays hidden during flight, and matching shapes provide a color-independent visual cue once revealed.
-The fuse bar shows time remaining; bursts and a cross provide visual success and miss feedback during muted play.
-Other lanes reproduce the current published rocket, reveal timing, and accepted burst, with normal network delay.
+Clear five sets: **1 rocket, 3 rockets, 3 faster rockets, 4 rockets, then 5 rockets**.
+Rockets launch one after another, and you may burst airborne colors in any order.
+Repeated colors consume the oldest airborne matching rocket first.
+A wrong color or an unburst rocket landing fails only the current set, followed by a **650 ms** recovery.
+Completed sets remain credited.
+Clear all five sets before the **45-second** deadline; fastest local elapsed time wins.
 
-The original generated festival background lives in `public/assets/fireworks-festival.png`, with the prompt preserved in [artwork notes](public/assets/fireworks-artwork.md).
-Live rockets, reaction symbols, and burst particles are drawn by `src/firework-view.js` and `src/fireworks.css` for precise local feedback.
-Fireworks reuses the existing original disco audio bank, including three color tones, miss, GO, and finish cues, under the shared opt-in sound controls.
-Deploy both frontend and room service to make the new catalog entry available; the existing protocol 6 message schema is unchanged.
+At base difficulty, airtimes are **2600, 2600, 2200, 2100, and 2000 ms** across the sets.
+Launch gaps are **420, 420, 340, 300, and 260 ms**.
+Game Select scales those times to **100%, 94%, and 88%** across its three rounds.
+These are provisional timings pending phone playtests.
+Every accepted rocket creates a small firework display.
+Completed sets play `Ding.mp3` and show a large yellow circle; failed sets play `wrong.mp3` and show a large red cross.
+All feedback works visually while muted.
+Remote lanes use bounded snapshots of the actual current set, launch schedule, and burst mask.
+
+The original generated festival background remains in `public/assets/fireworks-festival.png`.
+Its prompt is preserved in [Fireworks artwork notes](public/assets/fireworks-artwork.md).
+`src/firework-view.js` and `src/fireworks.css` draw the colored rocket arcs and burst particles.
+Each rocket reuses `Fireworks.mp3` at its scheduled local launch, skipping stale launches after interruptions.
+Frontend and room service must deploy together with protocol 7.
 
 ## Play Mimicking Monkeys
 
@@ -247,7 +255,7 @@ Audio scheduling checks do not establish physical speaker latency or subjective 
 
 The original generated character lives in `public/assets/mimicking-monkey.png`, with its prompt preserved in [artwork notes](public/assets/monkeys-artwork.md).
 The leafy stage, shape cues, and response indicators live in `src/monkey-view.js` and `src/monkeys.css`.
-Deploy frontend and room service together to make the new catalog entry available; the protocol 6 message schema is unchanged.
+Deploy frontend and room service together to make the new catalog entry available; protocol 7 carries current scene snapshots and the announcement gate.
 
 ## Play Jump for the Meat
 
@@ -320,7 +328,7 @@ Only the local answered card pops on success; reduced-motion preferences remove 
 Every correct local answer plays `Ding.mp3`, including the final answer, through the existing effects volume and mute controls.
 `shared/mistake.js` owns the seeded puzzle rules; `src/catch-spot-view.js` and `src/catch-spot.css` draw the picture cards.
 The new games use the same instructions, Ready gates, Arcade selection, cumulative podium, reconnect handling, and result acknowledgments as the rest of the catalog.
-Deploy the frontend and room service together; protocol 6 now advertises the `arcade-reel`, `asset-readiness`, `coins-dodge`, and `live-gameplay-v2` capabilities required by this frontend.
+Deploy the frontend and room service together; protocol 7 advertises `firework-sets` and `game-announcements` alongside the existing required capabilities.
 Original artwork and full generation prompts for both games are preserved in [artwork notes](public/assets/catch-spot-artwork.md).
 
 ## Play Dice, Dice, More Dice
@@ -354,14 +362,14 @@ When **Answer** appears, red answers left, green up, and blue right.
 Generated tricks never end a move pointing down, so every possible answer has one of the three shared buttons.
 
 Solve **5, 6, and 7 tricks**, with **2, 3, and 4 moves per trick**, across three rounds.
-Each trick shows the initial duck for **700 ms**, flips it face down over **400 ms**, holds it covered for **350 ms**, and then demonstrates moves at **1000, 925, and 850 ms per move** across the three rounds.
+Each trick shows the initial duck for **700 ms**, slides a separate flap down over the upright card for **400 ms**, holds it covered for **350 ms**, and then demonstrates moves at **1000, 925, and 850 ms per move** across the three rounds.
 A **200 ms** handoff separates the final move from the answer phase; all demonstration inputs are ignored.
 A correct answer reveals the final direction for **260 ms** and advances the trick count.
 A wrong answer waits **450 ms**, then replays the same initial picture and moves while keeping completed tricks.
 The deadline is **60 seconds**, ranked by local elapsed time; these initial timings are provisional until phone playtests.
 
 `shared/facing.js` owns the seeded transformations, replay gates, and local timing.
-The renderer uses a generated aviator duck with an unmistakable right-facing beak and a symmetric card back that does not disclose its final orientation.
+The renderer uses a generated aviator duck with an unmistakable right-facing beak and an opaque flap that does not disclose its final orientation.
 Remote lanes follow the peer's published current card phase, turns, and answer feedback.
 Reduced-motion settings replace decorative card motion with the same readable move symbols and phase timing.
 Correct answers reuse Ding, and the move demonstration reuses `slot-lock.wav` on the local audio timeline with bounded lookahead, stale-cue skipping, and replay/finish cancellation.
@@ -395,6 +403,27 @@ The new generated raccoon and fox are retained as PNG masters with hashed 512-pi
 [Artwork prompts and provenance](public/assets/coins-dodge-artwork.md) record the built-in image-generation prompts and selected outputs.
 Both games enter Game Select and the twelve-game Arcade batch immediately, together with Dice and Facing Which Way.
 
+
+## Backgrounds, set feedback, and Game Select announcements
+
+Every minigame now has its own original illustrated environment.
+Fireworks retains its existing festival backdrop; eleven new backgrounds cover the other games.
+`src/backgrounds.css` maps arena themes to optimized WebP deliveries, with all PNG masters retained in `public/assets/`.
+[Background artwork notes](public/assets/background-artwork.md) preserve the built-in image-generation prompts.
+The eleven new backgrounds total about **1.24 MB**; the full image delivery set stays below **3 MB**.
+New games should follow the same background and optimization workflow.
+
+Perm Mania, Mimicking Monkeys, Facing Which Way, and Fireworks publish set-result timestamps so each lane can display a large yellow circle for success or a red cross for failure.
+Dice and Me Find Mistake show the same symbols for their individual puzzles.
+Successful sets reuse `Ding.mp3`; failed sets reuse the supplied `wrong.mp3` through the effects bus.
+Perm settles the whole phrase before showing or sounding its result; individual rhythm notes keep their existing feedback.
+Symbols last 650 ms, stay out of the reaction area, and remain visible with reduced motion and muted sound.
+
+On Game Select's first Start set, the selected game's supplied voice and `applause.mp3` play together once.
+A dedicated announcement screen remains visible until every connected device acknowledges that both sounds have ended or sound is muted, unavailable, or interrupted.
+The server then opens instructions and resets readiness; later rounds retain their podium Ready gates.
+Muted devices do not block the transition, disconnected devices have the usual 15-second grace period, and repeated acknowledgements cannot replay or skip a new announcement.
+Me Find Mistake uses its existing `me-find-mistake.mp3` voice filename.
 
 ## Loading and delivery assets
 
@@ -487,7 +516,7 @@ Physical phone/tablet playtesting remains necessary.
 
 `npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
 `npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
-The health endpoint reports protocol version 6 for Ready-gated sets and independent Facial Slot Machine rows.
+The health endpoint reports protocol version 7 for Ready-gated sets, multi-rocket Fireworks snapshots, and Game Select announcements.
 Deploy the frontend and backend together when changing the multiplayer protocol.
 
 The Pages workflow tests, builds, and deploys `main`.
@@ -509,7 +538,7 @@ A sleeping hosted service may take time to wake up, and redeploying it clears ro
 `shared/totem.js` defines the game rules and deterministic local run.
 `shared/perm.js` defines the rhythm rules; `shared/games.js` supplies the catalog and difficulty settings.
 `shared/slots.js` defines deterministic reel layouts, local stop judgments, and retry timing.
-`shared/fireworks.js` defines seeded rocket reveals, reaction windows, recovery, and local burst completion.
+`shared/fireworks.js` defines seeded multi-rocket sets, airborne matching, landing deadlines, retries, and local set completion.
 `shared/monkeys.js` defines seeded memory prefixes, demonstration/response phases, replay recovery, and stage completion.
 `shared/jump.js` defines seeded jump arcs, landing judgments, retry timing, and final-apex completion.
 `shared/sets.js` supplies mode lengths, random selection, placement awards, and cumulative ranking.

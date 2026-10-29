@@ -31,6 +31,9 @@
   height:5px;
 }
 .remaining { transform-origin:50% 70%; }
+.stage-result { position:absolute; z-index:4; left:50%; bottom:18px; transform:translateX(-50%); font:900 clamp(56px,9vw,92px)/1 Nunito,system-ui,sans-serif; pointer-events:none; text-shadow:0 2px 0 #3b214d,2px 0 0 #3b214d,-2px 0 0 #3b214d,0 -2px 0 #3b214d,0 0 10px #ffffffaa; }
+.stage-correct { color:#ffda32; }
+.stage-wrong { color:#ef334e; }
 .perm-dancer { transform-origin:50% 80%; }
 .reel-badge { transform-origin:center; }
 .monkey-dot { transition:background-color .1s ease-out; }

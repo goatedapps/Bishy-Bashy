@@ -88,7 +88,7 @@ test('a wrong direction never reveals the answer and a replay returns to the ori
   assert.equal(stage.phase.textContent, 'Look!');
 }));
 
-test('reduced motion removes the decorative cover flip and follows preference changes without changing cue timing', () => withDocument(() => {
+test('reduced motion closes the flap immediately without changing cue timing or flipping the card', () => withDocument(() => {
   const previous = globalThis.matchMedia;
   const preference = { matches: true };
   globalThis.matchMedia = () => preference;
@@ -100,28 +100,35 @@ test('reduced motion removes the decorative cover flip and follows preference ch
     stage.render(round, run, time, 0, true, true, 0);
     assert.ok(!stage.card.style.transform.includes('scaleX'));
     assert.equal(stage.duck.hidden, true);
+    assert.equal(stage.back.style.transform, 'translateY(0%)');
     preference.matches = false;
     stage.render(round, run, time, 0, true, true, 0);
-    assert.ok(stage.card.style.transform.includes('scaleX'));
+    assert.ok(!stage.card.style.transform.includes('scaleX'));
+    assert.equal(stage.duck.hidden, false);
+    assert.notEqual(stage.back.style.transform, 'translateY(0%)');
     assert.equal(run.phase(time).mode, 'cover');
   } finally { globalThis.matchMedia = previous; }
 }));
 
-test('facing completes its flip and holds the covered card before showing the first turn', () => withDocument(() => {
+test('facing slides a separate flap over the upright card before showing the first turn', () => withDocument(() => {
   const round={id:'facing',game:'facing-which-way',...roundSettings('facing-which-way',123)};
   const run=createRun(round,1000),stage=new FacingStage();
   const flipStart=run.trialAt+700;
   stage.render(round,run,flipStart+100,0,true,true,0);
   assert.equal(stage.duck.hidden,false);
-  assert.equal(stage.back.hidden,true);
+  assert.equal(stage.back.hidden,false);
+  const earlyFlap = stage.back.style.transform;
   assert.equal(stage.cue.textContent,'');
   stage.render(round,run,flipStart+300,0,true,true,0);
-  assert.equal(stage.duck.hidden,true);
+  assert.equal(stage.duck.hidden,false);
   assert.equal(stage.back.hidden,false);
+  assert.notEqual(stage.back.style.transform, earlyFlap);
+  assert.ok(!stage.card.style.transform.includes('scaleX'));
   for(const time of [run.coveredAt,run.turnsAt-1]) {
     stage.render(round,run,time,0,true,true,0);
     assert.equal(stage.phase.textContent,'Covered');
     assert.equal(stage.duck.hidden,true);
+    assert.equal(stage.back.style.transform,'translateY(0%)');
     assert.equal(stage.cue.textContent,'');
     assert.equal(stage.count.textContent,'');
     assert.ok(!stage.card.style.transform.includes('scaleX'));

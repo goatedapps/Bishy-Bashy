@@ -38,6 +38,8 @@ test('each phrase tolerates one miss, two fail growth, and accuracy still affect
   for (const note of run.notes) if (note.step !== 0 && !(note.phrase === 0 && note.step === 2)) run.tap(2, note.at + 50);
   run.advance(run.end);
   assert.equal(run.cleared, 7);
+  assert.equal(run.events.filter(event => event.type === 'stageWrong').length, 1);
+  assert.equal(run.events.find(event => event.type === 'stageWrong').at, PHRASE_MS);
   assert.equal(run.mistakes, 9);
   assert.ok(run.score < round.maxScore);
   const a = { result: { status: 'finished', cleared: 7, score: 100 } };

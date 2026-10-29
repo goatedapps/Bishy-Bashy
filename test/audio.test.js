@@ -142,6 +142,52 @@ test('Perm and Monkey stage successes preload Ding, preserve input cues, and hon
   assert.equal(requests.filter(url => url.includes('Ding.mp3')).length, 1);
 });
 
+test('incorrect sets use the supplied Wrong cue while correct sets use Ding', async () => {
+  const { audio, requests } = setup();
+  for (const game of ['perm-mania', 'mimicking-monkeys', 'facing-which-way', 'fireworks-craze', 'dice-dice-more-dice', 'me-find-mistake']) {
+    audio.selectGame(game);
+    await audio.unlock();
+    audio.play('stageWrong', { game });
+    assert.equal([...audio.voices].at(-1).id, 'wrong');
+    if (!['perm-mania', 'fireworks-craze'].includes(game)) {
+      audio.play('mistake', { game });
+      assert.equal([...audio.voices].at(-1).id, 'wrong');
+    }
+    audio.play('stageComplete', { game });
+    assert.equal([...audio.voices].at(-1).id, 'ding');
+  }
+  assert.equal(requests.filter(url => url.includes('wrong.mp3')).length, 1);
+});
+
+test('Game Select announces once and waits for both voice and applause to actually end', async () => {
+  const { audio } = setup();
+  await audio.unlock();
+  const game = 'totem-shrinker';
+  assert.equal(audio.announceGame('set-one', game), false);
+  const voices = [...audio.voices].filter(voice => voice.group === 'announcement');
+  assert.deepEqual(voices.map(voice => voice.id), [`gameVoice:${game}`, 'applause']);
+  audio.announceGame('set-one', game);
+  assert.equal([...audio.voices].filter(voice => voice.group === 'announcement').length, 2);
+  voices[0].source.onended();
+  assert.equal(audio.announceGame('set-one', game), false);
+  voices[1].source.onended();
+  assert.equal(audio.announceGame('set-one', game), true);
+  assert.equal(audio.announceGame('set-one', game), true);
+  assert.equal([...audio.voices].filter(voice => voice.group === 'announcement').length, 0);
+  audio.announceGame('set-two', game);
+  audio.cancel();
+  assert.equal(audio.voices.size, 0);
+  assert.equal(audio.announceGame('set-two', game), true);
+  audio.setEnabled(false);
+  assert.equal(audio.announceGame('muted', game), true);
+  audio.setEnabled(true);
+  assert.equal(audio.announceGame('muted', game), true);
+  assert.equal(audio.voices.size, 0);
+  assert.equal(audio.announceGame('hidden', game, false), true);
+  assert.equal(audio.announceGame('hidden', game, true), true);
+  assert.equal(audio.voices.size, 0);
+});
+
 test('facing turns reuse slot-lock audio at local cue times and cancel old cues on replay, mute, and finish', async () => {
   const { audio, context, requests, setTime } = setup();
   const round = { id: 'facing', game: 'facing-which-way', ...roundSettings('facing-which-way', 123) };
@@ -470,15 +516,19 @@ test('firework launch sounds load only for Fireworks and follow each local launc
   assert.equal(first.source.started.at, context.currentTime + .15);
   audio.fireworkLaunch(run);
   assert.equal([...audio.voices].filter(voice => voice.id === 'fireworkLaunch').length, 1);
-  const hitAt = run.revealAt;
-  setTime(hitAt); run.tap(run.rocket.color, hitAt); audio.fireworkLaunch(run);
+  const hitAt = run.rockets[0].launchAt;
+  setTime(hitAt); run.tap(run.rockets[0].color, hitAt); audio.fireworkLaunch(run);
   assert.equal(first.stopped, true);
+  setTime(run.launchedAt - 100); audio.fireworkLaunch(run);
   const second = [...audio.voices].find(voice => voice.id === 'fireworkLaunch');
   assert.notEqual(second, first);
-  assert.equal(second.source.started.at, context.currentTime);
-  const missAt = hitAt + 10;
-  setTime(missAt); run.tap(0, missAt); audio.fireworkLaunch(run);
+  assert.equal(second.source.started.at, context.currentTime + .1);
+  audio.fireworkLaunch(run);
   assert.equal([...audio.voices].find(voice => voice.id === 'fireworkLaunch'), second);
+  setTime(run.rockets[1].launchAt - 100); audio.fireworkLaunch(run);
+  assert.equal([...audio.voices].filter(voice => voice.id === 'fireworkLaunch').length, 2);
+  const missAt = run.rockets[0].launchAt + run.rockets[0].airMs;
+  run.advance(missAt);
   setTime(run.launchedAt - 100); audio.fireworkLaunch(run);
   assert.equal(second.stopped, true);
   assert.equal([...audio.voices].filter(voice => voice.id === 'fireworkLaunch').length, 1);
@@ -498,7 +548,7 @@ test('firework launches stay silent after mute, expired attempts, results, and i
   assert.ok(![...audio.voices].some(voice => voice.id === 'fireworkLaunch'));
   setTime(1200); audio.setEnabled(true); await audio.unlock(); audio.fireworkLaunch(run);
   assert.ok(![...audio.voices].some(voice => voice.id === 'fireworkLaunch'));
-  run.advance(run.expiresAt);
+  run.advance(run.rockets[0].launchAt + run.rockets[0].airMs);
   setTime(run.launchedAt); audio.fireworkLaunch(run);
   assert.equal([...audio.voices].filter(voice => voice.id === 'fireworkLaunch').length, 1);
   context.state = 'suspended'; context.stateChange();
@@ -640,7 +690,7 @@ test('audio is opt-in, loads once after a gesture, and preferences survive unava
   assert.equal(await state.audio.unlock(), true);
   await state.audio.unlock();
   assert.equal(state.created, 1);
-  assert.equal(state.requests.length, audioAssetIds().length + 7 + Object.keys(ARCADE_AUDIO_FILES).length);
+  assert.equal(state.requests.length, audioAssetIds().length + 8 + Object.keys(ARCADE_AUDIO_FILES).length);
   state.audio.setPreferences({ musicVolume: 2, effectsVolume: -1, musicMode: 'off' });
   assert.deepEqual(JSON.parse(state.values.get('bb-audio')), { musicMode: 'off', musicVolume: 1, effectsVolume: 0 });
   const blocked = setup({ storage: { getItem() { throw new Error('Blocked'); }, setItem() { throw new Error('Blocked'); } } });
@@ -813,7 +863,7 @@ test('Perm Mania loads its own bank and schedules each demonstration on the audi
   await audio.unlock();
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), true);
-  assert.equal(requests.length, audioAssetIds('perm-mania').length + 8 + Object.keys(ARCADE_AUDIO_FILES).length);
+  assert.equal(requests.length, audioAssetIds('perm-mania').length + 9 + Object.keys(ARCADE_AUDIO_FILES).length);
   const cues = demoCues(123);
   audio.scheduleRound('perm', 5000, 35_000, true, false, { game: 'perm-mania', cues });
   const guide = [...audio.voices].filter(voice => voice.id === 'permDemo');
@@ -849,7 +899,7 @@ test('Facial Slot Machine uses its own bank, bounded match feedback, and a finis
   const { audio, requests } = setup();
   audio.selectGame('facial-slot-machine');
   await audio.unlock();
-  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 7 + Object.keys(ARCADE_AUDIO_FILES).length);
+  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 8 + Object.keys(ARCADE_AUDIO_FILES).length);
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), false);
   audio.scheduleRound('slots', 5000, 35_000, true, false, { game: 'facial-slot-machine' });

@@ -6,7 +6,7 @@ const SCHEMAS = {
   'burger-girl': { index: 'index', position: 'column', launchedAt: 'time', blockedUntil: 'time' },
   'its-raining-coins': { index: 'index', position: 'column', launchedAt: 'time', blockedUntil: 'time' },
   'dodge-or-die': { index: 'index', position: 'column', launchedAt: 'time', blockedUntil: 'time', jumpAt: 'time' },
-  'fireworks-craze': { index: 'index', launchedAt: 'time', blockedUntil: 'time' },
+  'fireworks-craze': { index: 'index', launchedAt: 'time', blockedUntil: 'time', burstMask: 'rocketMask', burstTimes: 'rocketTimes' },
   'jump-for-the-meat': { launchedAt: 'time', blockedUntil: 'time', launchHeight: 'height', finishAt: 'nullableTime' },
   'mimicking-monkeys': { demoAt: 'time', playAt: 'time', entered: 'index', blockedUntil: 'time' },
   'me-find-mistake': { shownAt: 'time', blockedUntil: 'time' },
@@ -23,11 +23,12 @@ export function captureVisual(game, run, time) {
   const fields = {};
   for (const [key, type] of Object.entries(schema)) {
     const value = run[key];
-    fields[key] = type === 'time' ? relative(value, run.start) : type === 'nullableTime' ? value === null ? null : relative(value, run.start) : type === 'times' ? value.map(item => relative(item, run.start)) : Array.isArray(value) ? [...value] : value;
+    fields[key] = type === 'time' ? relative(value, run.start) : type === 'nullableTime' ? value === null ? null : relative(value, run.start) : ['times', 'rocketTimes'].includes(type) ? value.map(item => relative(item, run.start)) : Array.isArray(value) ? [...value] : value;
   }
   const feedback = run.feedback ? { kind: run.feedback.kind, at: relative(run.feedback.at, run.start) } : null;
   if (feedback) for (const key of ['color', 'ingredient', 'gain', 'perfect', 'served']) if (run.feedback[key] !== undefined) feedback[key] = run.feedback[key];
-  return { sample: Math.max(0, time - run.start), fields, feedback, done: run.done, elapsed: run.elapsed };
+  const stageFeedback = run.stageFeedback ? { ...run.stageFeedback, at: relative(run.stageFeedback.at, run.start) } : null;
+  return { sample: Math.max(0, time - run.start), fields, feedback, stageFeedback, done: run.done, elapsed: run.elapsed };
 }
 
 export function sanitizeVisual(round, visual, receivedElapsed) {
@@ -39,6 +40,16 @@ export function sanitizeVisual(round, visual, receivedElapsed) {
   const number = (value, low, high, integer = false) => Number.isFinite(value) && value >= low && value <= high && (!integer || Number.isInteger(value));
   for (const [key, type] of Object.entries(schema)) {
     const value = visual.fields[key];
+    if (type === 'rocketTimes') {
+      if (!Array.isArray(value) || value.length !== 5 || !value.every(item => number(item, -10000, round.duration + 10000))) return null;
+      fields[key] = [...value];
+      continue;
+    }
+    if (type === 'rocketMask') {
+      if (!number(value, 0, 31, true)) return null;
+      fields[key] = value;
+      continue;
+    }
     const valid = type === 'time' || type === 'nullableTime' ? type === 'nullableTime' && value === null || number(value, -10000, round.duration + 10000) : type === 'height' ? number(value, 0, 1) : ['times', 'durations', 'faces'].includes(type) ? Array.isArray(value) && value.length === 3 && value.every(item => type === 'faces' ? item === null || number(item, 0, 5, true) : number(item, type === 'times' ? -10000 : 0, round.duration + 10000)) : number(value, 0, type === 'column' ? 2 : type === 'mask' ? 7 : 2048, true);
     if (!valid) return null;
     fields[key] = Array.isArray(value) ? [...value] : value;
@@ -57,7 +68,13 @@ export function sanitizeVisual(round, visual, receivedElapsed) {
       feedback[key] = value[key];
     }
   }
-  return { sample: visual.sample, fields, feedback, done: visual.done, elapsed: visual.elapsed };
+  let stageFeedback = null;
+  if (visual.stageFeedback != null) {
+    const value = visual.stageFeedback;
+    if (typeof value.correct !== 'boolean' || !number(value.at, -10000, visual.sample + 500)) return null;
+    stageFeedback = { correct: value.correct, at: value.at };
+  }
+  return { sample: visual.sample, fields, feedback, stageFeedback, done: visual.done, elapsed: visual.elapsed };
 }
 
 export class RemoteRuns {
@@ -79,9 +96,10 @@ export class RemoteRuns {
       Object.assign(run, { cleared: progress.cleared, mistakes: progress.mistakes, done: visual.done, elapsed: visual.elapsed });
       for (const [name, type] of Object.entries(SCHEMAS[round.game])) {
         const value = visual.fields[name];
-        run[name] = type === 'time' ? start + value : type === 'nullableTime' ? value === null ? null : start + value : type === 'times' ? value.map(item => start + item) : Array.isArray(value) ? [...value] : value;
+        run[name] = type === 'time' ? start + value : type === 'nullableTime' ? value === null ? null : start + value : ['times', 'rocketTimes'].includes(type) ? value.map(item => start + item) : Array.isArray(value) ? [...value] : value;
       }
       run.feedback = visual.feedback ? { ...visual.feedback, at: start + visual.feedback.at } : null;
+      run.stageFeedback = visual.stageFeedback ? { ...visual.stageFeedback, at: start + visual.stageFeedback.at } : null;
       if (run.feedback && ['me-find-mistake', 'dice-dice-more-dice', 'facing-which-way'].includes(round.game)) run.feedback.puzzle = run.sequence[Math.max(0, Math.min(run.goal - 1, run.cleared - (run.feedback.kind === 'hit' ? 1 : 0)))];
       entry.visual = visual;
     }

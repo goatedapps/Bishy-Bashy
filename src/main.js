@@ -3,6 +3,7 @@ import { installViewportLayout } from './viewport.js';
 import { COIN_GAME } from '../shared/coins.js';
 import { DODGE_GAME } from '../shared/dodge.js';
 import './arcade-reel.css';
+import './backgrounds.css';
 import QRCode from 'qrcode';
 import { SyncedClock } from './clock.js';
 import { TOTEM_GAME } from '../shared/totem.js';
@@ -37,6 +38,7 @@ let localRound = null;
 let navigationAction = null;
 let supportsRoomNavigation = false;
 let pending = readStored('bb-pending');
+let announcementAck = null;
 let reconnectAt = 0, reconnectTimer, entryRequest = null, joining = false, intentionalClose = false, joined = false;
 let lastPong = 0, lastSyncSent = 0, lastPendingSent = -Infinity, lastProgressSent = 0, lastProgressKey = '';
 let inviteUrl = '', lanUrls = [], events = [];
@@ -108,7 +110,7 @@ function connect() {
     notice('');
     const saved = readStored('bb-session');
     if (entryRequest) send(entryRequest);
-    else if (saved) send({ type: 'join', code: saved.code, name: saved.name, token: saved.token, assetGates: true });
+    else if (saved) send({ type: 'join', code: saved.code, name: saved.name, token: saved.token, assetGates: true, announceGates: true });
     for (let i = 0; i < 8; i++) setTimeout(() => { if (socket === connection && connection.readyState === WebSocket.OPEN) ping(); }, i * 200);
   });
   connection.addEventListener('message', event => {
@@ -127,12 +129,13 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 6 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit')) {
+      if (message.protocol !== 7 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
       }
       playerId = message.playerId;
+      announcementAck = null;
       preparingAssets = null;
       supportsRoomNavigation = message.capabilities?.includes('room-navigation') === true;
       joined = true;
@@ -197,7 +200,7 @@ function enter(type) {
   serverUrl = $('server-url').value.trim() || defaultServer;
   if (!serverUrl) return notice('Enter the hosted multiplayer server address in Connection settings.');
   localStorage.setItem('bb-server', serverUrl);
-  entryRequest = { type, name: $('name').value.trim(), code, game: selectedGame, mode: selectedMode, assetGates: true };
+  entryRequest = { type, name: $('name').value.trim(), code, game: selectedGame, mode: selectedMode, assetGates: true, announceGates: true };
   joining = true; intentionalClose = false;
   audio.unlock();
   notice('Connecting to the room…');
@@ -306,10 +309,13 @@ function enforceLifecycle(time, beforeInput = false) {
   if (localRound.mustForfeit || document.hidden || localRound.hiddenDuringPlay) complete('forfeit');
   else if (room.round.game === PERM_GAME) {
     localRound.run.advance(time);
-    for (const event of localRound.run.events.splice(0)) if (event.type === 'growth') audio.play('stageComplete');
+    const events = localRound.run.events.splice(0);
+    for (const event of events) if (time - event.at <= 150) audio.play(event.type === 'growth' ? 'stageComplete' : event.type);
+    if (events.length) view.render(room, playerId, localRound, time);
     if (localRound.run.done) complete('finished', localRound.run.elapsed);
   } else {
     if (room.round.game === FIREWORK_GAME || room.round.game === JUMP_GAME) localRound.run.advance(time);
+    if (room.round.game === FIREWORK_GAME) flushLaneEvents(time);
     if ([BURGER_GAME, COIN_GAME, DODGE_GAME].includes(room.round.game)) {
       localRound.run.advance(time, !beforeInput);
       flushLaneEvents(time);
@@ -327,7 +333,7 @@ function tap(color) {
   if (!buttons[color]?.disabled) audio.pressButton('gameplay');
   const clearedBefore = localRound.run.cleared;
   const action = localRound.run.tap(color, time);
-  if ([BURGER_GAME, COIN_GAME, DODGE_GAME].includes(room.round.game)) flushLaneEvents(time);
+  if ([BURGER_GAME, COIN_GAME, DODGE_GAME, FIREWORK_GAME].includes(room.round.game)) flushLaneEvents(time);
   if (action.type === 'ignored') return;
   if (room.round.game === FIREWORK_GAME) audio.fireworkLaunch(localRound.run);
   if (localRound.goDelay === null) localRound.goDelay = Math.max(0, time - localRound.start);
@@ -337,7 +343,7 @@ function tap(color) {
     if ([MISTAKE_GAME, DICE_GAME, FACING_GAME].includes(room.round.game)) audio.play('hit', { color, game: room.round.game });
     complete('finished', action.elapsed);
   }
-  else if (action.type !== 'move' && !completedSequence) audio.play(action.type, { color, progress: localRound.run.cleared / room.round.goal, game: room.round.game });
+  else if (action.type !== 'move' && !completedSequence && !(room.round.game === FIREWORK_GAME && action.type === 'mistake')) audio.play(action.type, { color, progress: localRound.run.cleared / room.round.goal, game: room.round.game });
   view.render(room, playerId, localRound, time);
   updateControls(time);
 }
@@ -421,7 +427,10 @@ function synchronizeScreenAudio() {
   const podiumId = round?.phase === 'results' && (!room.set || ['intermission', 'complete'].includes(room.set.phase)) ? round.id : null;
   const track = room?.set?.phase === 'instructions' ? 'instructions' : 'menu';
   const spinning = room?.set?.phase === 'selecting';
-  audio.setMenuScreen(startupReady && !document.hidden && !spinning && !isRoundActive(round), !room || room.players[0]?.id === playerId, podiumId, track);
+  const announcing = room?.set?.phase === 'announcing';
+  audio.setMenuScreen(startupReady && !document.hidden && !spinning && !announcing && !isRoundActive(round), !room || room.players[0]?.id === playerId, podiumId, track);
+  const announcementId = announcing ? round.id : null;
+  if (audio.announceGame(announcementId, round?.game, !document.hidden) && announcementAck !== round.id && send({ type: 'announcement-done', roundId: round.id })) announcementAck = round.id;
   const serverNow = performance.now() + (clock.estimate(performance.now())?.offset ?? Date.now() - performance.now());
   const landingId = !document.hidden && room?.set?.phase === 'instructions' ? round.id : null;
   audio.spinWheel(!document.hidden && spinning ? round.id : null, serverNow - (room?.set?.spinStartAt || 0), (room?.set?.spinEndAt || 0) - (room?.set?.spinStartAt || 0), round?.game, landingId);
@@ -539,6 +548,7 @@ function updateGameProfile() {
   const slots = game === SLOT_GAME;
   audio.selectGame(game);
   const themed = room && room.set?.phase !== 'selecting';
+  document.body.classList.toggle('totem-theme', Boolean(themed && game === TOTEM_GAME));
   document.body.classList.toggle('perm-theme', Boolean(themed && perm));
   document.body.classList.toggle('slot-theme', Boolean(themed && slots));
   document.body.classList.toggle('firework-theme', Boolean(themed && game === FIREWORK_GAME));
@@ -559,7 +569,7 @@ function updateGameProfile() {
   document.body.classList.toggle('in-set', Boolean(inSet));
   document.body.classList.toggle('is-playing', Boolean(active));
   document.body.classList.toggle('is-instructions', room?.set?.phase === 'instructions');
-  const title = !room ? 'Bishy Bashy!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'selecting' ? 'Pick our next game!' : room.set?.phase === 'intermission' ? 'Standings' : room.set?.phase === 'instructions' || active ? GAMES[game].title : room.arcadePreview ? 'Arcade' : 'Choose your mode';
+  const title = !room ? 'Bishy Bashy!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'selecting' ? 'Pick our next game!' : room.set?.phase === 'intermission' ? 'Standings' : ['instructions', 'announcing'].includes(room.set?.phase) || active ? GAMES[game].title : room.arcadePreview ? 'Arcade' : 'Choose your mode';
   if (document.querySelector('.game-title').textContent !== title) document.querySelector('.game-title').textContent = title;
   document.title = `${room ? title : 'Party games'} · Bishy Bashy`;
   $('rules-open').setAttribute('aria-label', room ? 'How to play' : 'About Bishy Bashy');

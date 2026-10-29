@@ -44,13 +44,20 @@ export class SetView {
     const set = room.set;
     $('set-progress').hidden = !set;
     const instructions = set?.phase === 'instructions';
+    const announcing = set?.phase === 'announcing';
+    $('game-announcement').hidden = !announcing;
+    if (announcing && this.announcementId !== room.round.id) {
+      this.announcementId = room.round.id;
+      $('announcement-art').replaceChildren(gameArt(room.round.game));
+      $('announcement-title').textContent = GAMES[room.round.game].title;
+    }
     const standingsVisible = set && ['intermission', 'complete'].includes(set.phase);
     $('game-instructions').hidden = !instructions;
     if (!instructions) this.instructionSequence.cancel();
     $('standings-panel').hidden = !standingsVisible;
     if (!set) return;
     $('results').hidden = true;
-    if (instructions || standingsVisible || set.phase === 'selecting') $('play-view').hidden = true;
+    if (instructions || announcing || standingsVisible || set.phase === 'selecting') $('play-view').hidden = true;
     $('set-progress').textContent = `${MODES[set.mode].title} · ${set.mode === 'arcade' ? 'Game' : 'Round'} ${set.roundIndex + 1} of ${set.plan.length}`;
     if (instructions) {
       if (this.instructionSequence.key !== room.round.id) {

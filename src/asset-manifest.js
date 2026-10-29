@@ -76,6 +76,61 @@ export const ASSETS = [
     "hash": "0ceff3d4b786bba4"
   },
   {
+    "path": "assets/optimized/bg-totem-temple-51f21480bbb4.webp",
+    "bytes": 162214,
+    "hash": "51f21480bbb4c450"
+  },
+  {
+    "path": "assets/optimized/bg-perm-stage-3f6ecd9fbdda.webp",
+    "bytes": 95648,
+    "hash": "3f6ecd9fbdda7875"
+  },
+  {
+    "path": "assets/optimized/bg-slots-studio-acf7c2b4dde4.webp",
+    "bytes": 98278,
+    "hash": "acf7c2b4dde46345"
+  },
+  {
+    "path": "assets/optimized/bg-monkey-jungle-9acb59defa5b.webp",
+    "bytes": 162544,
+    "hash": "9acb59defa5bec4b"
+  },
+  {
+    "path": "assets/optimized/bg-jump-valley-72b21872fd52.webp",
+    "bytes": 150708,
+    "hash": "72b21872fd52e6e0"
+  },
+  {
+    "path": "assets/optimized/bg-burger-kitchen-db8f7ae7c8b9.webp",
+    "bytes": 82562,
+    "hash": "db8f7ae7c8b90c34"
+  },
+  {
+    "path": "assets/optimized/bg-mistake-gallery-385278818805.webp",
+    "bytes": 77382,
+    "hash": "385278818805378d"
+  },
+  {
+    "path": "assets/optimized/bg-dice-carnival-fb4753414621.webp",
+    "bytes": 96210,
+    "hash": "fb47534146216faa"
+  },
+  {
+    "path": "assets/optimized/bg-facing-airfield-ec123db36068.webp",
+    "bytes": 95438,
+    "hash": "ec123db360685dbb"
+  },
+  {
+    "path": "assets/optimized/bg-coins-garden-cfa07b53f3c8.webp",
+    "bytes": 146388,
+    "hash": "cfa07b53f3c89d34"
+  },
+  {
+    "path": "assets/optimized/bg-dodge-track-82e7b7b554a6.webp",
+    "bytes": 71010,
+    "hash": "82e7b7b554a67538"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",
@@ -291,6 +346,11 @@ export const ASSETS = [
     "path": "audio/dodge-or-die-voice.mp3",
     "bytes": 48283,
     "hash": "75db5020c1ad5be3"
+  },
+  {
+    "path": "audio/wrong.mp3",
+    "bytes": 30006,
+    "hash": "d9c7bde4da713fb7"
   },
   {
     "path": "audio/Button-Press.mp3",

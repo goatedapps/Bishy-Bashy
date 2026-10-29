@@ -61,8 +61,9 @@ test('delivery manifest verifies every asset and compressed WAVs retain exact sa
       assert.deepEqual(gunzipSync(compressed), bytes);
     }
   }
-  assert.equal(ASSETS.filter(asset => asset.path.endsWith('.webp')).length, 15);
-  assert.ok(ASSETS.filter(asset => asset.path.endsWith('.webp')).reduce((sum, asset) => sum + asset.bytes, 0) < 1_500_000);
+  assert.equal(ASSETS.filter(asset => asset.path.endsWith('.webp')).length, 26);
+  assert.equal(ASSETS.filter(asset => asset.path.includes('/bg-')).length, 11);
+  assert.ok(ASSETS.filter(asset => asset.path.endsWith('.webp')).reduce((sum, asset) => sum + asset.bytes, 0) < 3_000_000);
 });
 
 test('hosts that already decompress HTTP gzip are not decompressed a second time', async () => {

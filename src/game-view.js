@@ -87,9 +87,12 @@ export class GameView {
       const fill = node('span', '');
       progress.append(fill);
       const status = node('p', 'seat-status');
-      lane.append(name, finishBadge, zone, node('div', 'base'), remaining, progress, status);
+      const stageResult = node('span', 'stage-result');
+      stageResult.hidden = true;
+      stageResult.setAttribute('role', 'img');
+      lane.append(name, finishBadge, zone, node('div', 'base'), remaining, progress, status, stageResult);
       $('player-lanes').append(lane);
-      return { lane, name, finishBadge, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, dice, facing, coins, dodge, remaining, fill, status, effects, ring, particles, towerKey: '' };
+      return { lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, dice, facing, coins, dodge, remaining, fill, status, effects, ring, particles, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -124,6 +127,12 @@ export class GameView {
       const cleared = ownRun ? ownRun.run.cleared : player?.progress?.cleared || 0;
       const status = player?.result || (ownRun?.done ? { status: ownRun.status, elapsed: ownRun.run.elapsed, cleared, score: ownRun.run.score || 0 } : null);
       const frozen = shownRun && !shownRun.done && time < shownRun.blockedUntil;
+      const stageFeedback = shownRun?.stageFeedback || ([DICE_GAME, MISTAKE_GAME].includes(game) && shownRun?.feedback ? { correct: shownRun.feedback.kind === 'hit', at: shownRun.feedback.at } : null);
+      const stageAge = stageFeedback ? time - stageFeedback.at : Infinity;
+      elements.stageResult.hidden = !active || !player || document.hidden || stageAge < 0 || stageAge >= 650;
+      elements.stageResult.className = `stage-result ${stageFeedback?.correct ? 'stage-correct' : 'stage-wrong'}`;
+      elements.stageResult.textContent = stageFeedback?.correct ? '○' : '×';
+      elements.stageResult.setAttribute('aria-label', stageFeedback?.correct ? 'Correct set' : 'Wrong set');
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.finishBadge.hidden = !active || status?.status !== 'finished';
       const finishLabel = perm ? '✓ Finished' : '✓ Cleared!';

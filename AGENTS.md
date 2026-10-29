@@ -5,13 +5,15 @@ The Vite frontend deploys independently to GitHub Pages; `server/` is a separate
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 6 includes readiness gates and independent slot-row lock masks; coordinate frontend/backend releases when changing it.
+Protocol version 7 includes the Game Select announcement gate and multi-rocket Fireworks snapshots; coordinate frontend/backend releases when changing it.
 
 ## Game and visuals
 
 For every new minigame, use the game-designer (game-design) and game-feel skills.
 Reuse suitable existing audio; do not download or create new audio, and let the user supply any missing sounds.
-Use the imagegen skill when a new minigame would benefit from original characters or artwork, and optimize all generated images before using them in the game.
+For new games, use `public/audio/Ding.mp3` once for each correctly completed set, phrase, sequence, or other meaningful success, including the final success where applicable.
+Give every new minigame a suitable original illustrated background using the imagegen skill, keeping gameplay targets readable.
+Optimize all generated artwork before use, retain the masters, and record prompts in `public/assets/`.
 `shared/totem.js` owns the deterministic shared-seed sequence and local gameplay rules.
 Initial tuning is 30 blocks, a 300 ms wrong-tap freeze, and a 45-second deadline.
 Show the next five blocks with the next input at the bottom, and size the complete stack to fit inside its lane.
@@ -22,10 +24,10 @@ Red, green, and blue stop their own continuously scrolling slot rows in any orde
 Reels show approaching faces and judge the portrait nearest the center marker; Game Select reduces travel time per portrait from 320 to 260 ms across three Game Select rounds.
 Track slot locks as a monotonic three-bit `reelMask`, rather than assuming the first N rows were stopped.
 `shared/games.js` is the common game registry, difficulty settings, and result ordering.
-`shared/fireworks.js` owns Fireworks Craze's seeded rockets, reveal windows, and local elapsed-time race to 12 bursts.
-Early, wrong, and expired rockets advance the attempt and cost 300 ms; keep unrevealed colors hidden and render only the local player's actual reaction targets.
+`shared/fireworks.js` owns five seeded sets of 1, 3, 3 faster, 4, and 5 rockets, with colors visible from launch and inputs accepted until each scheduled landing.
+Match airborne colors in any order; repeated colors consume the oldest matching rocket, and wrong or landed rockets retry only the current set after 650 ms.
 `src/firework-view.js` and `src/fireworks.css` draw the live cues over the generated festival backdrop; remote cues follow published player state.
-Fireworks launch audio follows the local run's `launchedAt` timestamp with bounded lookahead; deduplicate attempts and skip stale launches after interruption.
+Fireworks launch audio follows each rocket's scheduled launch with bounded lookahead; deduplicate per rocket and attempt, and skip stale launches after interruption.
 `shared/monkeys.js` owns Mimicking Monkeys' seeded expanding prefix, watch/play gates, and elapsed-time race through 5–9 stages.
 Wrong responses replay the current prefix after recovery; completed stages persist, and demonstration inputs are ignored.
 `src/monkey-view.js` and `src/monkeys.css` show the original monkey, color/shape flashes, and answer dots without revealing future answers; remote demonstrations use published player timing.
@@ -40,7 +42,7 @@ Keep the timing cursor, landing ring, +1/+2 feedback, and optional Perfect flour
 `src/catch-spot-view.js` and `src/catch-spot.css` render both games with original generated sprites; show the published current peer board and never show a future board during success feedback.
 `shared/dice.js` owns seeded rolls with one unique maximum; red/green/blue choose top/middle/bottom, and misses preserve the current roll and completed progress.
 `shared/facing.js` owns covered-card turns and left-right mirrors; red/green/blue answer left/up/right only after the demonstration, and misses replay the current trick.
-Facing shows the duck through the first half of a 400 ms cover flip, then holds the fully covered card for 350 ms before any numbered turn or turn sound.
+Facing keeps its card upright while a separate flap slides down over 400 ms, then holds it fully covered for 350 ms before any numbered turn or turn sound.
 `src/dice-facing-view.js` combines exact code-native die pips with the generated dice jester and aviator duck artwork; never expose future boards, and preserve the revealed direction during success effects.
 `shared/coins.js` owns seeded gold/fake drops; red/green/blue select left/middle/right, and catches settle at the scheduled local landing time.
 `shared/dodge.js` owns alternating tall walls and low hurdles; red/blue step left/right, green jumps, and collisions use the jump height at the scheduled impact.
@@ -51,8 +53,9 @@ Selecting Arcade stays in the lobby; Start set begins the shared single reel, wh
 The server owns the result, selection timestamps, and five-game plan without repeats; render only seven recycled reel rows.
 Expand the Arcade reel and selection pool only at catalog counts divisible by four (8, 12, 16, and so on); games added between those milestones are available immediately in Game Select.
 `shared/sets.js` owns the common `arcadeGameIds()` batch boundary for both server selection and reel artwork.
-After each Arcade podium's five seconds, show the next spin, then three-point rules and an all-player Ready gate.
-Game Select shows rules once and uses the podium's all-player Ready gate between subsequent rounds, with an five-second minimum intermission.
+After each Arcade podium's five seconds, show the next spin, then illustrated rules and an all-player Ready gate.
+Game Select announces the chosen game with its supplied voice and applause once after Start set, then waits for every connected device to finish or skip muted audio before opening instructions.
+Game Select shows rules once and uses the podium's all-player Ready gate between subsequent rounds, with a five-second minimum intermission.
 Readiness never carries across a round or instructions screen, and countdowns require every connected player to be ready and freshly synchronized.
 `shared/games.js` defines the three-second countdown for both room scheduling and the single `countdown.mp3` cue; resume at the current offset, preserve its tail past GO, and avoid layering the old GO cue.
 The host may configure modes and games only outside an active set, resetting readiness; new guests must wait until the set finishes.
@@ -74,7 +77,7 @@ Keep game instructions short and focused on the action and buttons; use only as 
 Avoid hidden-tab reveal catch-up and enable Ready only after the last line and selected audio bank are ready.
 The host's Back to modes action resets the shared set while keeping the room; confirm if a round has begun or scores exist.
 Players may explicitly leave active sets after confirmation; preserve accepted finishes, forfeit unfinished rounds, and let remaining players continue without a missing-player wait.
-The join handshake advertises `room-navigation`, `arcade-reel`, `asset-readiness`, `coins-dodge`, `live-gameplay-v2`, and `set-exit`; deploy frontend and backend together and show an actionable update message if required capabilities are absent.
+The join handshake advertises `room-navigation`, `arcade-reel`, `asset-readiness`, `coins-dodge`, `live-gameplay-v2`, `set-exit`, `firework-sets`, and `game-announcements`; deploy frontend and backend together and show an actionable update message if required capabilities are absent.
 Facial Slot Machine uses `src/slot-view.js` and `src/slots.css`; remote reels use the published lock masks, per-row pauses, and stopped positions without resetting on snapshots.
 Use the same three buttons and shared fixed control bar in every current and future game; do not add game-specific button layouts or replace them with a single Stop button.
 Show three horizontal scrolling slot rows per player, stacked red, green, and blue, with upcoming faces visible at narrow widths too.
@@ -82,6 +85,7 @@ Set podium positions and points use cumulative totals; the separate Last game co
 Original generated sprites and their provenance live in `public/assets/`.
 Always optimize generated assets before using them in the game, retaining original masters and checking delivery file sizes before release.
 `scripts/optimize-images.py` derives hashed WebP delivery images; `scripts/asset-manifest.mjs` versions runtime files and losslessly compresses WAV downloads before dev/build.
+Keep supplied audio filenames exactly cased as their runtime references; the delivery manifest checks this for case-sensitive hosting.
 `src/asset-loader.js` verifies and caches assets behind the animated startup loader; `assetGates` clients acknowledge the current instructions/intermission round before the server accepts Ready.
 The portable design mockup remains in `mockups/`, with editable source/provenance in `.lavish/totem-shrinker/`.
 Keep screens visually driven; avoid redundant captions, decorative microcopy, and repeated instructions outside the rules screen.
@@ -95,6 +99,8 @@ Menu tracks reuse one gesture-authorized media element and retain separate playb
 The illustrated instructions screen streams `game-instructions.mp3` instead; pause the previous track before switching and preserve each track's position.
 Post-game podiums play `podium-winner.mp3` once per round before menu music resumes; preserve deduplication across redraws and cancel the cue on navigation, mute, or interruption.
 Enabled menu buttons use the cached `Button-Press.mp3` effect; the three gameplay buttons and their keyboard shortcuts use `Punch-button.mp3` once through the shared tap handler, preserving game-specific sound cues.
+`src/backgrounds.css` maps all non-Fireworks arenas to their optimized illustrated environments.
+Set-based games show a large yellow circle for a successful set and a red cross with `wrong.mp3` for a failed set; Perm judges at phrase settlement, not individual notes.
 `src/feedback.js` owns bounded local success and finish effects; keep them off reaction targets and timing guides, cancel them across round/lifecycle changes, and honor reduced motion.
 The original disco score and synthesis live in `scripts/audio/`; regenerate `public/audio/` with `npm run audio:render` after changing them.
 Facial Slot Machine's original carousel-funk score and match cues live in `scripts/audio/slots.js`, using the existing mix and lifecycle controls.
