@@ -156,7 +156,8 @@ The **Rhythm timing** setting ranges from −150 to +150 ms and freezes when the
 Increase it if taps consistently register late on a particular device or speaker setup.
 The visual guide works while muted; enabling personal music can help players joining from different locations.
 
-Perm Mania has its own disco backing, demonstration claps, local hit/miss feedback, and hair-growth flourish.
+Perm Mania has its own disco backing, demonstration claps, and local hit/miss feedback.
+Each successful phrase plays the supplied `public/audio/Ding.mp3` when hair growth is awarded, including the final phrase.
 The demonstration sounds and visual notes share the agreed local timeline, but physical audio, display, and touch latency still require phone testing.
 This is an independent adaptation of the rhythm-and-hair-growth concept described in [this player guide](https://gamefaqs.gamespot.com/ps/575837-bishi-bashi-special-2/faqs/13258), with original artwork and music.
 [Perm Mania artwork notes](public/assets/perm-artwork.md) preserve the image-generation prompt and sprite layout.
@@ -241,6 +242,7 @@ Other lanes display the peer's actual demonstration phase and accepted response 
 Optional demonstration tones reuse the existing three color sounds and are scheduled from the same local timestamps as the shape flashes, with a 150 ms audio lookahead.
 Mute, replay, finish, and interruption cancel queued demonstration sounds; resuming skips past notes, and muted play remains fully supported.
 Backing music, local hit/miss feedback, and finish cues reuse the original disco bank and shared audio controls.
+Each fully correct local sequence plays the supplied `public/audio/Ding.mp3`, including the final sequence; individual matching inputs keep their color tones.
 Audio scheduling checks do not establish physical speaker latency or subjective mix quality.
 
 The original generated character lives in `public/assets/mimicking-monkey.png`, with its prompt preserved in [artwork notes](public/assets/monkeys-artwork.md).

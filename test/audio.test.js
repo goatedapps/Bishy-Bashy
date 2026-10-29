@@ -109,6 +109,39 @@ test('Burger, picture, dice, and direction successes reuse one Ding MP3, while T
   assert.equal(audio.voices.size, 0);
 });
 
+test('Perm and Monkey stage successes preload Ding, preserve input cues, and honor finish and mute lifecycle', async () => {
+  const { audio, context, requests } = setup();
+  for (const [game, inputCue] of [['perm-mania', 'permHit'], ['mimicking-monkeys', 'green']]) {
+    audio.selectGame(game);
+    await audio.unlock();
+    assert.ok(audio.buffers.has('ding'));
+    audio.play('hit', { game, color: 1 });
+    assert.equal([...audio.voices].at(-1).id, inputCue);
+    audio.play('stageComplete', { game });
+    const success = [...audio.voices].at(-1);
+    assert.equal(success.id, 'ding');
+    assert.equal(success.group, 'effects');
+    audio.endPlayer();
+    audio.play('finish');
+    assert.ok(audio.voices.has(success), 'the final stage Ding must finish alongside the finish cue');
+    audio.setPreferences({ effectsVolume: 0 });
+    assert.equal(audio.effectsBus.gain.events.at(-1).value, 0);
+    audio.setPreferences({ effectsVolume: .8 });
+    audio.cancel();
+    assert.equal(audio.voices.size, 0);
+    audio.setEnabled(false);
+    audio.play('stageComplete', { game });
+    assert.equal(audio.voices.size, 0);
+    audio.setEnabled(true);
+    context.state = 'suspended';
+    audio.play('stageComplete', { game });
+    assert.equal(audio.voices.size, 0);
+    context.state = 'running';
+    assert.equal(audio.voices.size, 0, 'resuming must not replay a skipped success');
+  }
+  assert.equal(requests.filter(url => url.includes('Ding.mp3')).length, 1);
+});
+
 test('facing turns reuse slot-lock audio at local cue times and cancel old cues on replay, mute, and finish', async () => {
   const { audio, context, requests, setTime } = setup();
   const round = { id: 'facing', game: 'facing-which-way', ...roundSettings('facing-which-way', 123) };
@@ -780,7 +813,7 @@ test('Perm Mania loads its own bank and schedules each demonstration on the audi
   await audio.unlock();
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), true);
-  assert.equal(requests.length, audioAssetIds('perm-mania').length + 7 + Object.keys(ARCADE_AUDIO_FILES).length);
+  assert.equal(requests.length, audioAssetIds('perm-mania').length + 8 + Object.keys(ARCADE_AUDIO_FILES).length);
   const cues = demoCues(123);
   audio.scheduleRound('perm', 5000, 35_000, true, false, { game: 'perm-mania', cues });
   const guide = [...audio.voices].filter(voice => voice.id === 'permDemo');

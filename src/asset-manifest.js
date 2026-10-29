@@ -326,8 +326,8 @@ export const ASSETS = [
   },
   {
     "path": "audio/Ding.mp3",
-    "bytes": 19606,
-    "hash": "72b53419751bec0f"
+    "bytes": 51827,
+    "hash": "6db963414fbeefa4"
   },
   {
     "path": "audio/roulette.mp3",

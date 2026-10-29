@@ -306,7 +306,7 @@ function enforceLifecycle(time, beforeInput = false) {
   if (localRound.mustForfeit || document.hidden || localRound.hiddenDuringPlay) complete('forfeit');
   else if (room.round.game === PERM_GAME) {
     localRound.run.advance(time);
-    for (const event of localRound.run.events.splice(0)) if (event.type === 'growth') audio.play('permGrow');
+    for (const event of localRound.run.events.splice(0)) if (event.type === 'growth') audio.play('stageComplete');
     if (localRound.run.done) complete('finished', localRound.run.elapsed);
   } else {
     if (room.round.game === FIREWORK_GAME || room.round.game === JUMP_GAME) localRound.run.advance(time);
@@ -325,16 +325,19 @@ function tap(color) {
   enforceLifecycle(time, true);
   if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
   if (!buttons[color]?.disabled) audio.pressButton('gameplay');
+  const clearedBefore = localRound.run.cleared;
   const action = localRound.run.tap(color, time);
   if ([BURGER_GAME, COIN_GAME, DODGE_GAME].includes(room.round.game)) flushLaneEvents(time);
   if (action.type === 'ignored') return;
   if (room.round.game === FIREWORK_GAME) audio.fireworkLaunch(localRound.run);
   if (localRound.goDelay === null) localRound.goDelay = Math.max(0, time - localRound.start);
+  const completedSequence = room.round.game === MONKEY_GAME && localRound.run.cleared > clearedBefore;
+  if (completedSequence) audio.play('stageComplete');
   if (action.type === 'finished') {
     if ([MISTAKE_GAME, DICE_GAME, FACING_GAME].includes(room.round.game)) audio.play('hit', { color, game: room.round.game });
     complete('finished', action.elapsed);
   }
-  else if (action.type !== 'move') audio.play(action.type, { color, progress: localRound.run.cleared / room.round.goal, game: room.round.game });
+  else if (action.type !== 'move' && !completedSequence) audio.play(action.type, { color, progress: localRound.run.cleared / room.round.goal, game: room.round.game });
   view.render(room, playerId, localRound, time);
   updateControls(time);
 }
