@@ -66,7 +66,8 @@ Final standings hide setup and restart controls and show Exit to every connected
 Facing turns take 1000–700 ms across five available difficulties; Arcade coin falls take 800 ms, while Game Select starts at 1100 ms.
 Shared styles live in `src/style.css`; the pink disco stage lives in `src/games.css`.
 The landing page and set standings use `src/sets.css` and `src/set-view.js`.
-The landing screen only creates or joins rooms; choose modes and games inside the room, with a short explanation visible on each mode card.
+The illustrated landing screen only creates or joins rooms; `src/home.css` scopes its landscape, central title, and form to outside rooms, and its help button introduces multiplayer room-code setup.
+Choose modes and games inside the room, with a short explanation visible on each mode card.
 Use the shared `src/game-art.js` artwork for the home cast, equal-sized scrollable game cards, and illustrated rules; the library filters titles and accommodates future games without a wider page.
 `src/instruction-sequence.js` pauses 1400 ms after the heading, then keeps 700/850/850 ms gaps for the artwork and three lines, with `how-to-play.wav` for the heading and `Punch-button.mp3` for later steps.
 Avoid hidden-tab reveal catch-up and enable Ready only after the last line and selected audio bank are ready.

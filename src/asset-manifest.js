@@ -71,6 +71,11 @@ export const ASSETS = [
     "hash": "8c2d782072ee86aa"
   },
   {
+    "path": "assets/optimized/home-landscape-0ceff3d4b786.webp",
+    "bytes": 113316,
+    "hash": "0ceff3d4b786bba4"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",

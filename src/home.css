@@ -1,0 +1,94 @@
+body:not(.in-room) {
+  background-color:#ffdf55;
+  background-image:var(--image-home-landscape,url('/assets/optimized/home-landscape-0ceff3d4b786.webp'));
+  background-size:cover;
+  background-position:center;
+  background-attachment:fixed;
+}
+body:not(.in-room) .game-top {
+  max-width:none;
+  padding:clamp(18px,3vh,30px) clamp(18px,4.7vw,80px) 0;
+  justify-content:flex-end;
+}
+body:not(.in-room) .brand,
+body:not(.in-room) .game-title,
+.in-room .home-logo { display:none; }
+body:not(.in-room) .game-top nav { gap:16px; }
+body:not(.in-room) .icon-button {
+  width:56px;
+  height:56px;
+  font-size:32px;
+  border-width:3px;
+  background:#fffdf9;
+  box-shadow:0 3px 0 #67478233;
+}
+body:not(.in-room) .sound-off:after { left:10px; top:25px; width:32px; height:3px; }
+body:not(.in-room) main { max-width:none; padding:0 20px 60px; }
+.home-logo {
+  width:fit-content;
+  margin:clamp(18px,4vh,42px) auto clamp(30px,5vh,52px);
+  font:400 clamp(76px,8.4vw,142px)/.8 'Lilita One',system-ui,sans-serif;
+  letter-spacing:-.045em;
+  text-align:center;
+  transform:rotate(-4deg);
+  color:#38204f;
+  -webkit-text-stroke:7px #fffdf5;
+  paint-order:stroke fill;
+  text-shadow:0 6px 0 #fffdf5,0 10px 0 #ad76352b;
+}
+.home-logo>span { display:block; }
+.home-logo>span+span { margin-top:8px; }
+.home-logo b { color:#f7477d; font-weight:400; }
+body:not(.in-room) #welcome { width:min(100%,660px); max-width:none; margin:0 auto; }
+body:not(.in-room) #welcome .entry-panel {
+  padding:clamp(24px,3vw,42px);
+  border:4px solid #3b214d;
+  border-radius:36px;
+  background:#fffdf5f7;
+  box-shadow:0 7px 0 #6d43384d,0 16px 32px #7d4e2526;
+}
+body:not(.in-room) .host-entry label,
+body:not(.in-room) .join-entry>label { font-size:18px; }
+body:not(.in-room) #welcome input {
+  height:56px;
+  padding:12px 17px;
+  border:3px solid #bca0cd;
+  border-radius:15px;
+  font-size:20px;
+}
+body:not(.in-room) #welcome .host-entry .primary {
+  margin:14px 0 5px;
+  min-height:66px;
+  border-radius:20px;
+  font-size:25px;
+  box-shadow:0 5px 0 #a676ba;
+}
+body:not(.in-room) .join-entry { margin-top:26px; padding-top:18px; border-color:#d5bce1; }
+body:not(.in-room) .join-entry .join-row { gap:12px; margin-top:6px; }
+body:not(.in-room) .join-entry button { padding:10px 24px; border-width:3px; border-radius:18px; font-size:20px; }
+body:not(.in-room) #notice { max-width:660px; margin:20px auto 0; background:#fffdf5; border-radius:16px; padding:12px 18px; }
+@media(min-width:900px) and (min-height:850px) {
+  .home-logo { margin-top:54px; margin-bottom:64px; }
+}
+@media(max-width:620px) {
+  body:not(.in-room) { background-position:49% center; }
+  body:not(.in-room) .game-top { padding:16px 18px 0; }
+  body:not(.in-room) .game-top nav { gap:10px; }
+  body:not(.in-room) .icon-button { width:44px; height:44px; font-size:25px; border-width:2px; }
+  body:not(.in-room) .sound-off:after { left:7px; top:20px; width:27px; height:2px; }
+  body:not(.in-room) main { padding:0 16px 36px; }
+  .home-logo { font-size:clamp(76px,19vw,112px); margin:42px auto 36px; -webkit-text-stroke-width:5px; }
+  body:not(.in-room) #welcome .entry-panel { padding:24px 20px; border-width:3px; border-radius:26px; }
+  body:not(.in-room) .host-entry label,
+  body:not(.in-room) .join-entry>label { font-size:15px; }
+  body:not(.in-room) #welcome input { height:52px; font-size:17px; padding-inline:12px; border-width:2px; }
+  body:not(.in-room) #welcome .host-entry .primary { min-height:56px; font-size:21px; }
+  body:not(.in-room) .join-entry button { min-width:0; padding:10px 14px; font-size:16px; border-width:2px; }
+  body:not(.in-room) .join-entry .join-row { gap:8px; }
+}
+@media(max-height:700px) and (min-width:621px) {
+  .home-logo { font-size:90px; margin:12px auto 24px; }
+  body:not(.in-room) #welcome { width:520px; }
+  body:not(.in-room) #welcome .entry-panel { padding:22px 30px; }
+  body:not(.in-room) .join-entry { margin-top:18px; padding-top:14px; }
+}

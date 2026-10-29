@@ -17,7 +17,6 @@ export class SetView {
     this.key = '';
     this.wheel = new ArcadeReel();
     this.instructionSequence = new InstructionSequence({ onReveal: onInstructionStep });
-    $('home-cast').append(...Object.keys(GAMES).slice(-5).map(gameArt));
     for (const game of Object.values(GAMES)) {
       const button = node('button', `game-choice choice-${game.id}`);
       button.type = 'button';

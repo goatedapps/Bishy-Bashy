@@ -12,7 +12,7 @@ The static website runs on GitHub Pages; a separate Node WebSocket server coordi
 
 Create a room, share its QR code or invitation link, and join from up to four phones or tablets.
 The landing screen only asks for your name and offers **Create room** or **Join room** with a room code.
-The Bishy Bashy! title and a cast of original game characters introduce the games without adding extra setup actions.
+The illustrated yellow homepage pairs a large Bishy Bashy! title with the create/join panel, and its question-mark button introduces the multiplayer mini-games and room-code setup across devices.
 After creating or joining a room, choose a mode on the room screen.
 Game Select uses equal-sized illustrated cards in a scrollable library, with a title search for a larger catalog.
 Choose **Arcade** for five different games selected at random, played once each in a random order.

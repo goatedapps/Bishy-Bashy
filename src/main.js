@@ -558,6 +558,7 @@ function updateGameProfile() {
   const title = !room ? 'Bishy Bashy!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'selecting' ? 'Pick our next game!' : room.set?.phase === 'intermission' ? 'Standings' : room.set?.phase === 'instructions' || active ? GAMES[game].title : room.arcadePreview ? 'Arcade' : 'Choose your mode';
   if (document.querySelector('.game-title').textContent !== title) document.querySelector('.game-title').textContent = title;
   document.title = `${room ? title : 'Party games'} · Bishy Bashy`;
+  $('rules-open').setAttribute('aria-label', room ? 'How to play' : 'About Bishy Bashy');
   $('lobby-setup').hidden = !room || Boolean(room.set);
   $('game-browser').hidden = mode !== 'game-select';
   $('rhythm-guide').hidden = !perm || !active;
@@ -595,15 +596,18 @@ function requestNavigation(type) {
 }
 
 function showRules() {
+  const introduction = !room;
   const profile = displayRound();
   const game = profile.game;
   const activeSet = room?.set && room.set.phase !== 'complete';
   const gameHelp = activeSet || room?.mode === 'game-select';
-  $('rules-title').textContent = gameHelp ? GAMES[game].title : 'How to play a set';
-  $('rules-visual').replaceChildren(ruleVisual(gameHelp ? game : null));
-  const rules = !gameHelp ? ['Arcade plays five different random games. Game Select plays five rounds of one game.', 'Read the rules and tap Ready. Every connected player must be ready before the countdown.', 'Each round awards 10 / 7 / 4 / 1 points by place. Most total points wins.'] : gameRules(game, profile);
+  $('rules-title').textContent = introduction ? 'Welcome to Bishy Bashy!' : gameHelp ? GAMES[game].title : 'How to play a set';
+  $('rules-visual').replaceChildren(...(introduction ? [] : [ruleVisual(gameHelp ? game : null)]));
+  $('rules-visual').hidden = introduction;
+  $('rules').querySelector('.shape-legend').hidden = introduction;
+  const rules = introduction ? ['Bishy Bashy is a multiplayer party game packed with quick, playful mini-games for up to four players.', 'One player creates a room and shares the room code with friends.', 'Everyone else opens Bishy Bashy on their own device and enters that code to join the same game.'] : !gameHelp ? ['Arcade plays five different random games. Game Select plays three rounds of one game.', 'Read the rules and tap Ready. Every connected player must be ready before the countdown.', 'Each round awards 10 / 7 / 4 / 1 points by place. Most total points wins.'] : gameRules(game, profile);
   $('rules-list').replaceChildren(...rules.map(text => { const item = document.createElement('li'); item.textContent = text; return item; }));
-  $('rules-note').textContent = 'Stay on this screen during the round; switching apps or reloading forfeits it.';
+  $('rules-note').textContent = introduction ? 'Pick your mini-games in the room, then get ready to play together!' : 'Stay on this screen during the round; switching apps or reloading forfeits it.';
   $('rules').showModal();
 }
 
