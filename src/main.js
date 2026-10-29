@@ -23,6 +23,7 @@ import { SetView } from './set-view.js';
 import { GameAudio } from './audio.js';
 import { ruleVisual } from './game-art.js';
 import { AssetLoader } from './asset-loader.js';
+import { HomeMotion } from './home-motion.js';
 
 const $ = id => document.getElementById(id);
 const readStored = key => { try { return JSON.parse(sessionStorage.getItem(key)); } catch { return null; } };
@@ -48,6 +49,7 @@ let selectedMode = MODES[localStorage.getItem('bb-mode')] ? localStorage.getItem
 let timingOffset = Math.max(-150, Math.min(150, Number(localStorage.getItem('bb-timing-offset')) || 0));
 const view = new GameView();
 const assets = new AssetLoader();
+const homeMotion = new HomeMotion();
 let startupReady = false, preparingAssets = null;
 const audio = new GameAudio({ fetchFile: (url, options) => assets.fetchAudio(url, options), mediaUrl: file => assets.mediaUrl(file), onChange: () => updateSound() });
 const setView = new SetView({ onInstructionStep: step => audio.pressButton(step === 0 ? 'instructions' : 'gameplay') });
@@ -399,6 +401,7 @@ function updateMetrics() {
 
 
 function renderRoom() {
+  homeMotion.setVisible(startupReady && !room);
   if (!room) return;
   updateGameProfile();
   prepareRoundAssets();
@@ -764,6 +767,7 @@ async function loadStartup() {
     $('asset-loader').hidden = true;
     document.querySelector('header').inert = false;
     document.querySelector('main').inert = false;
+    homeMotion.setVisible(!room);
     synchronizeScreenAudio();
     if (session && !joined) connect();
   } catch (error) {

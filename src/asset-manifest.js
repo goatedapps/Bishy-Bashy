@@ -71,9 +71,9 @@ export const ASSETS = [
     "hash": "8c2d782072ee86aa"
   },
   {
-    "path": "assets/optimized/home-landscape-0ceff3d4b786.webp",
-    "bytes": 113316,
-    "hash": "0ceff3d4b786bba4"
+    "path": "assets/optimized/home-landscape-motion-a9194a9fad4c.webp",
+    "bytes": 112156,
+    "hash": "a9194a9fad4c4a6b"
   },
   {
     "path": "assets/optimized/bg-totem-temple-51f21480bbb4.webp",

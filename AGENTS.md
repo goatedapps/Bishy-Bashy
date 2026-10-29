@@ -70,6 +70,8 @@ Facing turns take 1000–700 ms across five available difficulties; Arcade coin 
 Shared styles live in `src/style.css`; the pink disco stage lives in `src/games.css`.
 The landing page and set standings use `src/sets.css` and `src/set-view.js`.
 The illustrated landing screen only creates or joins rooms; `src/home.css` scopes its landscape, central title, and form to outside rooms, and its help button introduces multiplayer room-code setup.
+`src/home-motion.js` owns the homepage GSAP entrance and dinosaur companion; revert on room entry, honor reduced motion, and pause idle motion while typing, in dialogs, or hidden.
+The two sky stars wiggle continuously above `home-landscape-motion.png`; match their positions to the fixed backdrop's cover scale and pause them when hidden or in dialogs.
 Choose modes and games inside the room, with a short explanation visible on each mode card.
 Use the shared `src/game-art.js` artwork for the home cast, equal-sized scrollable game cards, and illustrated rules; the library filters titles and accommodates future games without a wider page.
 Keep game instructions short and focused on the action and buttons; use only as many points as needed.

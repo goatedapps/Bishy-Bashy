@@ -3,6 +3,14 @@
 `home-landscape.png` was edited from the user-supplied `redesigned-homepage.png` on 2026-10-29 using the built-in image-generation tool.
 The PNG master is retained here; `scripts/optimize-images.py` creates the hashed WebP delivery asset and includes it in the startup asset manifest.
 The title, settings buttons, room form, and introduction are live HTML rather than part of the artwork.
+`home-landscape-motion.png` retains the scene with the two upper sky stars removed, allowing independent SVG stars in `src/home-motion.js` to wiggle continuously at their original positions.
+Both PNG masters are retained; only the motion backdrop is delivered to players.
+
+## Star-layer edit prompt
+
+Remove the golden five-point star near x39%, y7% above-right of the owl, and the purple five-point star near x66%, y13%.
+Fill their silhouettes and shadows with matching uninterrupted yellow dotted sky.
+Preserve all other characters, stars, scenery, colors, dotted texture, sign text, and framing in the same 1672 by 941 composition.
 
 ## Final prompt
 
