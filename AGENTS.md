@@ -74,7 +74,9 @@ The illustrated landing screen only creates or joins rooms; `src/home.css` scope
 `src/home-motion.js` owns the homepage GSAP entrance and dinosaur companion; revert on room entry, honor reduced motion, and pause idle motion while typing, in dialogs, or hidden.
 The two sky stars wiggle continuously above `home-landscape-motion.png`; match their positions to the fixed backdrop's cover scale and pause them when hidden or in dialogs.
 Choose modes and games inside the room, with a short explanation visible on each mode card.
-Use the shared `src/game-art.js` artwork for the home cast, equal-sized scrollable game cards, and illustrated rules; the library filters titles and accommodates future games without a wider page.
+`src/lobby-motion.js` and `src/lobby.css` own decorative cabinet/fan attract loops and four dancing mascot seats; use existing room players for occupancy, keep controls stationary, and revert all motion outside the lobby or under reduced motion.
+Use the shared `src/game-art.js` artwork for the home cast, game posters, and illustrated rules.
+`src/game-carousel.js` and `src/game-carousel.css` own Game Select's searchable horizontal poster carousel; settle host input before configuring, follow authoritative selections on guests, and cancel carousel motion outside the lobby.
 Keep game instructions short and focused on the action and buttons; use only as many points as needed.
 `src/instruction-sequence.js` pauses 1400 ms after the heading, then 700 ms after the artwork and 850 ms between instruction lines, with `how-to-play.wav` for the heading and `Punch-button.mp3` for later steps.
 Avoid hidden-tab reveal catch-up and enable Ready only after the last line and selected audio bank are ready.

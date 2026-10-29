@@ -1,0 +1,83 @@
+body.is-lobby { background:#f5e7ff; background-image:radial-gradient(ellipse at 12% 8%,#ffe691 0,transparent 42%),radial-gradient(ellipse at 92% 65%,#ffc8da 0,transparent 45%); }
+.lobby-confetti { display:none; position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
+.is-lobby .lobby-confetti { display:block; }
+.lobby-confetti span { position:absolute; top:calc(12% + var(--piece) * 8%); font:42px/1 'Lilita One',system-ui; color:#b69bd4; opacity:.38; }
+.lobby-confetti span:nth-child(3n) { color:#ec819f; }
+.lobby-confetti span:nth-child(3n + 1) { color:#e6ac26; }
+.is-lobby main,.is-lobby .game-top { position:relative; z-index:1; }
+.is-lobby .game-title { color:#38204f; text-shadow:0 3px #fffdf5,0 6px #ffce4e; }
+.is-lobby .mode-picker { gap:22px; }
+.is-lobby .mode-card { overflow:visible; padding:12px 22px 20px; border:3px solid #38204f; box-shadow:0 7px #a77cb7; text-align:center; filter:none; }
+.is-lobby .mode-card[aria-pressed=true] { box-shadow:0 7px #38204f,0 0 0 4px #ffda47; }
+.is-lobby .mode-card:disabled { cursor:default; }
+.is-lobby .mode-card-copy { justify-content:center; position:relative; z-index:1; }
+.is-lobby .mode-card-copy>strong { font:34px/1.1 'Lilita One',system-ui; }
+.is-lobby .mode-card-copy>small { font-size:13px; min-height:0; max-width:300px; }
+.lobby-mode-visual { display:flex; align-items:center; justify-content:center; position:relative; height:150px; margin:0 auto 12px; pointer-events:none; transform-origin:50% 80%; }
+.lobby-cabinet { display:flex; flex-direction:column; position:relative; width:140px; height:144px; padding:8px 10px; background:#8650b0; border:3px solid #38204f; border-radius:15px 15px 10px 10px; box-shadow:0 6px #38204f; transform:rotate(-5deg); }
+.lobby-cabinet:after { content:''; position:absolute; bottom:-4px; left:34px; right:34px; height:9px; border:2px solid #38204f; background:#ffda47; border-radius:3px; }
+.lobby-cabinet-lamps { display:flex; justify-content:space-between; padding-bottom:7px; }
+.lobby-cabinet-lamps i { width:7px; height:7px; border-radius:50%; background:#fff5a4; box-shadow:0 0 4px #ffde67; }
+.lobby-cabinet-screen { position:relative; height:82px; width:100%; overflow:hidden; background:#362249; border:3px solid #38204f; border-radius:9px; box-shadow:inset 0 0 0 2px #ba8ed8; }
+.lobby-cabinet-screen>.game-art { position:absolute; width:70px; height:74px; left:calc(50% - 35px); top:1px; border-radius:0; background:transparent; opacity:0; }
+.lobby-cabinet-screen>.game-art:first-child { opacity:1; }
+.lobby-cabinet-deck { display:flex; gap:7px; align-items:center; justify-content:flex-end; height:30px; margin:0 -4px; padding:0 9px; background:#bc8bdd; border:2px solid #38204f; border-radius:5px; }
+.lobby-joystick { position:relative; display:block; width:5px; height:18px; background:#38204f; margin-right:auto; transform-origin:center bottom; }
+.lobby-joystick:before { content:''; position:absolute; top:-4px; left:-5px; width:15px; height:15px; background:#ff698b; border:2px solid #38204f; border-radius:50%; }
+.lobby-mini-button { width:12px; height:9px; background:#ffda47; border:2px solid #38204f; border-radius:50%; }
+.lobby-mini-button:nth-last-child(2) { background:#8beaaf; }
+.lobby-mini-button:last-child { background:#8acbff; }
+.lobby-fan-card { position:absolute; left:calc(50% - 50px); top:24px; display:grid; place-items:center; width:100px; height:118px; background:#fffdf5; border:3px solid #38204f; border-radius:15px; box-shadow:0 5px #4d746d; transform-origin:center 90%; }
+.lobby-fan-card:first-child { background:#ffd5ac; rotate:-20deg; translate:-43px; }
+.lobby-fan-card:nth-child(2) { background:#ead5ff; translate:0 -12px; }
+.lobby-fan-card:last-child { background:#fff0a4; rotate:20deg; translate:43px; }
+.lobby-fan-card>.game-art { width:88px; height:92px; background:transparent; transform-origin:center bottom; }
+.lobby-seat-stage { display:none; }
+.is-lobby .lobby-seat-stage { display:grid; position:relative; justify-items:center; align-items:end; height:172px; padding-bottom:12px; margin-top:4px; overflow:hidden; }
+.is-lobby #play-view { max-width:900px; margin:22px auto 0; border-radius:24px; border-color:#b597cb; box-shadow:0 5px #c8a3d6; overflow:visible; }
+.is-lobby #arena { background:#fff9eb; border-radius:21px; }
+.is-lobby #player-lanes { padding:0 8px; }
+.is-lobby #player-lanes .lane { padding:12px 6px; border-color:#ddc5e8; }
+.is-lobby #player-lanes h3 { font-size:14px; height:22px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; margin-bottom:0; }
+.is-lobby #player-lanes .seat-status { color:#765a86; font-size:11px; height:18px; }
+.lobby-avatar { display:none; position:relative; z-index:1; transform-origin:center bottom; }
+.lobby-avatar>.game-art { width:116px; height:124px; background:transparent; border-radius:0; transform-origin:center 85%; }
+.lobby-avatar-shadow { display:none; position:absolute; width:80px; height:12px; bottom:6px; background:#644078; opacity:.22; border-radius:50%; }
+.is-occupied .lobby-avatar,.is-occupied .lobby-avatar-shadow { display:block; }
+.is-reconnecting .lobby-avatar { filter:grayscale(1); opacity:.5; }
+.lobby-open-ring { align-self:center; width:76px; height:76px; border:3px dashed #c9afd9; border-radius:50%; }
+.is-occupied .lobby-open-ring { display:none; }
+.lobby-join-burst { position:absolute; top:60%; left:50%; pointer-events:none; z-index:2; }
+.lobby-join-burst i { position:absolute; color:#e9a724; font-style:normal; font-size:24px; opacity:0; }
+.lobby-join-burst i:nth-child(even) { color:#ef739d; }
+.is-lobby #start { background:#ffda47; color:#38204f; border:3px solid #38204f; border-radius:18px; font:24px 'Lilita One',system-ui; padding:13px 38px; box-shadow:0 5px #b99132; }
+.is-lobby #start:disabled { opacity:.55; }
+@media(max-width:620px) {
+  .is-lobby .mode-picker { gap:12px; }
+  .is-lobby .mode-card { padding:10px 9px 14px; border-radius:20px; }
+  .is-lobby .mode-card-copy>strong { font-size:25px; }
+  .is-lobby .mode-card[aria-pressed=true] .mode-card-copy>strong:after { display:none; }
+  .is-lobby .mode-card-copy>small { font-size:11px; line-height:1.4; }
+  .lobby-mode-visual { height:124px; margin-bottom:12px; }
+  .lobby-cabinet { width:114px; height:122px; padding:6px 8px; }
+  .lobby-cabinet-screen { height:65px; }
+  .lobby-cabinet-screen>.game-art { width:58px; height:62px; left:calc(50% - 29px); }
+  .lobby-cabinet-lamps { padding-bottom:5px; }
+  .lobby-cabinet-lamps i { width:5px; height:5px; }
+  .lobby-cabinet-deck { gap:5px; }
+  .lobby-mini-button { width:10px; }
+  .lobby-fan-card { left:calc(50% - 36px); width:72px; height:92px; top:22px; border-radius:12px; }
+  .lobby-fan-card>.game-art { width:66px; height:74px; }
+  .lobby-fan-card:first-child { translate:-28px; }
+  .lobby-fan-card:last-child { translate:28px; }
+  .is-lobby #play-view { margin-top:18px; }
+  .is-lobby #player-lanes { padding:0 3px; }
+  .is-lobby #player-lanes .lane { padding:10px 3px; }
+  .is-lobby #player-lanes h3 { font-size:10px; height:18px; }
+  .is-lobby #player-lanes .seat-status { font-size:9px; white-space:normal; height:24px; line-height:1.3; }
+  .is-lobby .lobby-seat-stage { height:116px; padding-bottom:8px; }
+  .lobby-avatar>.game-art { width:65px; height:76px; }
+  .lobby-avatar-shadow { width:46px; height:8px; bottom:11px; }
+  .lobby-open-ring { width:44px; height:44px; border-width:2px; }
+  .lobby-confetti span { font-size:28px; }
+}

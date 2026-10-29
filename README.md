@@ -17,7 +17,11 @@ The homepage uses GSAP for a short title/panel entrance and a dinosaur companion
 The two upper sky stars wiggle continuously in opposite directions, including while typing, and pause in dialogs or when hidden.
 Reduced-motion preferences show the settled homepage immediately, and leaving the homepage clears its animations.
 After creating or joining a room, choose a mode on the room screen.
-Game Select uses equal-sized illustrated cards in a scrollable library, with a title search for a larger catalog.
+The lobby uses animated arcade-cabinet and fanned-card mode illustrations, chasing lights, drifting shapes, and four mascot seats with staggered squash-and-stretch dances and join bursts.
+`src/lobby-motion.js` and `src/lobby.css` keep text and controls stationary, pause decorations while hidden or in dialogs, honor reduced motion, and clear lobby animations before a set starts.
+Game Select uses a horizontal illustrated poster carousel with touch scrolling, mouse dragging, snapping, arrow and keyboard controls, and title search.
+The host's centered poster selects the game after scrolling settles; guests follow the shared selection and cannot move the carousel.
+The selected character dances inside its yellow frame, while neighboring posters stay smaller and tilted; reduced motion keeps the artwork still and makes centering immediate.
 Choose **Arcade** for five different games selected at random, played once each in a random order.
 Selecting Arcade keeps everyone in the room lobby; once friends have joined, the host taps **Start set** to start the single reel.
 Before each Arcade game, the reel spins for 4.7 seconds and lands on the same server-chosen game on every device.

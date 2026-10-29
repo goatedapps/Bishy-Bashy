@@ -3,6 +3,7 @@ import { MODES, setStandings } from '../shared/sets.js';
 import { gameArt, ruleVisual } from './game-art.js';
 import { InstructionSequence } from './instruction-sequence.js';
 import { ArcadeReel } from './arcade-reel.js';
+import { GameCarousel } from './game-carousel.js';
 
 const $ = id => document.getElementById(id);
 const node = (tag, className, text) => {
@@ -13,7 +14,7 @@ const node = (tag, className, text) => {
 };
 
 export class SetView {
-  constructor({ onInstructionStep = () => {} } = {}) {
+  constructor({ onInstructionStep = () => {}, onGameChoose = () => {} } = {}) {
     this.key = '';
     this.wheel = new ArcadeReel();
     this.instructionSequence = new InstructionSequence({ onReveal: onInstructionStep });
@@ -28,6 +29,7 @@ export class SetView {
       button.append(art, copy);
       $('game-picker').append(button);
     }
+    this.carousel = new GameCarousel(onGameChoose);
   }
 
   filterGames(query) {
@@ -38,9 +40,11 @@ export class SetView {
       if (!button.hidden) shown++;
     }
     $('game-empty').hidden = shown > 0;
+    this.carousel.filterChanged();
   }
 
   render(room, playerId) {
+    this.carousel.render(room, playerId);
     const set = room.set;
     $('set-progress').hidden = !set;
     const instructions = set?.phase === 'instructions';

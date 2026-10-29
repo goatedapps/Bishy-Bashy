@@ -24,6 +24,7 @@ import { GameAudio } from './audio.js';
 import { ruleVisual } from './game-art.js';
 import { AssetLoader } from './asset-loader.js';
 import { HomeMotion } from './home-motion.js';
+import { LobbyMotion } from './lobby-motion.js';
 
 const $ = id => document.getElementById(id);
 const readStored = key => { try { return JSON.parse(sessionStorage.getItem(key)); } catch { return null; } };
@@ -49,9 +50,13 @@ let timingOffset = Math.max(-150, Math.min(150, Number(localStorage.getItem('bb-
 const view = new GameView();
 const assets = new AssetLoader();
 const homeMotion = new HomeMotion();
+const lobbyMotion = new LobbyMotion();
 let startupReady = false, preparingAssets = null;
 const audio = new GameAudio({ fetchFile: (url, options) => assets.fetchAudio(url, options), mediaUrl: file => assets.mediaUrl(file), onChange: () => updateSound() });
-const setView = new SetView({ onInstructionStep: step => audio.pressButton(step === 0 ? 'instructions' : 'gameplay') });
+const setView = new SetView({
+  onInstructionStep: step => audio.pressButton(step === 0 ? 'instructions' : 'gameplay'),
+  onGameChoose: game => { if (room) send({ type: 'configure', mode: room.mode, game }); },
+});
 const buttons = [...document.querySelectorAll('.hit-button')];
 installViewportLayout();
 
@@ -209,6 +214,8 @@ function enter(type) {
 }
 
 function resetSession() {
+  lobbyMotion.render(null);
+  setView.carousel.render(null);
   setView.instructionSequence.cancel();
   intentionalClose = true; joined = false;
   socket?.close(); clearTimeout(reconnectTimer);
@@ -399,7 +406,7 @@ function updateMetrics() {
 
 function renderRoom() {
   homeMotion.setVisible(startupReady && !room);
-  if (!room) return;
+  if (!room) { lobbyMotion.render(null); return; }
   updateGameProfile();
   prepareRoundAssets();
   updateMetrics();
@@ -418,6 +425,7 @@ function renderRoom() {
   $('round-label').textContent = active ? room.set ? roundDetail(room.round) : `Round ${room.testNumber}` : 'Lobby';
   view.render(room, playerId, localRound, performance.now());
   setView.render(room, playerId);
+  lobbyMotion.render(room);
   if (room.set?.phase === 'selecting' || room.mode === 'arcade' && room.arcadePreview && !room.set) $('play-view').hidden = true;
   synchronizeScreenAudio();
 }
@@ -674,10 +682,6 @@ $('timing-offset').addEventListener('input', () => {
   timingOffset = Number($('timing-offset').value);
   localStorage.setItem('bb-timing-offset', String(timingOffset));
   updateSound();
-});
-for (const button of document.querySelectorAll('[data-game]')) button.addEventListener('click', () => {
-  if (room) send({ type: 'configure', mode: room.mode, game: button.dataset.game });
-  else { selectedGame = button.dataset.game; localStorage.setItem('bb-game', selectedGame); updateGameProfile(); }
 });
 for (const button of document.querySelectorAll('[data-mode]')) button.addEventListener('click', () => {
   if (room) send({ type: 'configure', mode: button.dataset.mode, game: room.selectedGame });
