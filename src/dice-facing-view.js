@@ -122,7 +122,7 @@ export class FacingStage {
     const solved = feedback?.kind === 'hit' && (showing || terminal);
     const puzzle = solved ? feedback.puzzle : run?.puzzle;
     const phase = run?.phase(time) || { mode: active ? 'remote' : 'look' };
-    const visible = !active || Boolean(run && time >= run.start && (!terminal && phase.mode === 'look' || solved));
+    const visible = !active || Boolean(run && time >= run.start && (!terminal && (phase.mode === 'look' || phase.mode === 'cover' && phase.progress < .5) || solved));
     this.element.classList.toggle('unoccupied', !present);
     this.element.classList.toggle('choice-correct', Boolean(solved));
     this.element.classList.toggle('choice-wrong', Boolean(showing && !solved));
@@ -143,7 +143,7 @@ export class FacingStage {
     }
     this.card.style.transform = transform;
     this.duck.setAttribute('aria-label', visible ? `Duck pointing ${DIRECTION_NAMES[[180, 270, 0].indexOf(pose.angle)]?.toLowerCase() || 'right'}` : 'Covered picture');
-    this.phase.textContent = solved ? 'Got it!' : terminal ? 'Done!' : showing ? 'Again!' : ({ look: 'Look!', cover: 'Cover!', turn: 'Track!', handoff: 'Get ready', play: 'Answer', remote: 'Watching…', done: 'Time’s up!' }[phase.mode] || '');
+    this.phase.textContent = solved ? 'Got it!' : terminal ? 'Done!' : showing ? 'Again!' : ({ look: 'Look!', cover: 'Flip!', covered: 'Covered', turn: 'Track!', handoff: 'Get ready', play: 'Answer', remote: 'Watching…', done: 'Time’s up!' }[phase.mode] || '');
     this.cue.textContent = solved ? '✓' : showing ? '×' : turning ? facingMoveLabel(puzzle.moves[phase.index]) : phase.mode === 'play' ? '?' : '';
     this.count.textContent = turning ? `${phase.index + 1} / ${puzzle.moves.length}` : '';
     this.element.setAttribute('aria-label', !present ? 'Open spot' : !run && active ? `Remote player, ${cleared} tricks solved` : solved ? 'Correct direction found' : visible ? this.duck.getAttribute('aria-label') : turning ? `Covered card: ${facingMoveLabel(puzzle.moves[phase.index])}, move ${phase.index + 1} of ${puzzle.moves.length}` : phase.mode === 'play' ? 'Answer: red left, green up, blue right' : 'Card covered');

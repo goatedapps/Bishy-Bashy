@@ -287,6 +287,7 @@ main {
 }
 .arena {
   position:relative;
+  isolation:isolate;
   background:#efe6ff;
   background-image:radial-gradient(#e2d2fa 1.5px,transparent 1.5px);
   background-size:27px 27px
@@ -471,6 +472,7 @@ main {
 }
 .round-overlay {
   position:absolute;
+  z-index:100;
   inset:0;
   display:grid;
   place-content:center;
@@ -484,7 +486,7 @@ main {
   font-size:28px;
   inset:auto 10% 35% 10%;
   border:2px solid var(--ink);
-  background:#fffdf5ed;
+  background:var(--paper);
   border-radius:18px;
   padding:14px;
   text-shadow:none
@@ -958,4 +960,21 @@ summary {
     animation:none!important;
     transition:none!important
   }
+}
+
+.lane-finish-badge {
+  position:absolute;
+  z-index:10;
+  top:36px;
+  left:50%;
+  transform:translateX(-50%);
+  max-width:calc(100% - 8px);
+  white-space:nowrap;
+  border:2px solid #26784c;
+  border-radius:14px;
+  padding:4px 7px;
+  color:#176244;
+  background:#e0f8dc;
+  box-shadow:0 2px 0 #26784c44;
+  font:clamp(9px,1.3vw,15px) 'Lilita One',system-ui,sans-serif;
 }

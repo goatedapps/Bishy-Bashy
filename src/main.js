@@ -127,7 +127,7 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 6 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2')) {
+      if (message.protocol !== 6 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -378,7 +378,7 @@ function updateMetrics() {
   $('start').disabled = !connected || !idle;
   let status = '';
   if (!connected) status = 'Reconnecting… Keep playing; your result stays saved on this device.';
-  else if (room.set?.phase === 'complete') status = playerId === room.hostId ? 'Exit to modes when everyone has seen the results.' : 'Waiting for the host to return to modes.';
+  else if (room.set?.phase === 'complete') status = '';
   else if (idle) status = playerId === room.hostId ? 'Start the set when your friends have joined.' : 'Waiting for the host to start.';
   else if (gate) status = wait > 0 ? `Waiting ${Math.ceil(wait / 1000)}s for a friend to reconnect…` : !estimate || estimate.count < 3 ? 'Synchronizing clocks…' : mine?.ready ? 'Waiting for everyone to be ready…' : 'Tap Ready when you’re set.';
   else if (['intermission', 'selecting'].includes(room.set?.phase)) status = '';
@@ -399,7 +399,9 @@ function renderRoom() {
   $('room-code').textContent = room.code;
   $('occupancy').textContent = `· ${room.players.length}/4`;
   $('leave').disabled = false;
-  $('back').hidden = playerId !== room.hostId || !room.set && !room.arcadePreview;
+  $('back').hidden = room.set?.phase === 'complete' || playerId !== room.hostId || !room.set && !room.arcadePreview;
+  $('exit').hidden = room.set?.phase !== 'complete';
+  $('exit').disabled = !joined || socket?.readyState !== WebSocket.OPEN;
   $('ready-actions').hidden = Boolean(active || room.set?.phase === 'selecting' || room.set?.phase === 'intermission' && room.mode === 'arcade');
   $('ready').hidden = !gate;
   $('start').hidden = playerId !== room.hostId || Boolean(room.set);
@@ -623,6 +625,9 @@ $('ready').addEventListener('click', () => { notice(''); audio.unlock(); send({ 
 $('start').addEventListener('click', () => { audio.unlock(); send({ type: 'start' }); });
 $('leave').addEventListener('click', () => requestNavigation('leave'));
 $('back').addEventListener('click', () => requestNavigation('back-to-modes'));
+$('exit').addEventListener('click', () => {
+  if (room?.set?.phase === 'complete') send({ type: 'exit-set', setId: room.set.id });
+});
 $('navigation-stay').addEventListener('click', () => $('navigation-confirm').close());
 $('navigation-confirm-action').addEventListener('click', () => {
   const action = navigationAction;

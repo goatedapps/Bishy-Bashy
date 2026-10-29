@@ -58,6 +58,9 @@ export class GameView {
     this.lanes = Array.from({ length: 4 }, (_, index) => {
       const lane = node('article', 'lane');
       const name = node('h3', '');
+      const finishBadge = node('span', 'lane-finish-badge');
+      finishBadge.hidden = true;
+      finishBadge.setAttribute('role', 'status');
       const zone = node('div', 'tower-zone');
       const tower = node('div', 'tower');
       const avatar = dancer(index);
@@ -84,9 +87,9 @@ export class GameView {
       const fill = node('span', '');
       progress.append(fill);
       const status = node('p', 'seat-status');
-      lane.append(name, zone, node('div', 'base'), remaining, progress, status);
+      lane.append(name, finishBadge, zone, node('div', 'base'), remaining, progress, status);
       $('player-lanes').append(lane);
-      return { lane, name, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, dice, facing, coins, dodge, remaining, fill, status, effects, ring, particles, towerKey: '' };
+      return { lane, name, finishBadge, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, dice, facing, coins, dodge, remaining, fill, status, effects, ring, particles, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -122,6 +125,10 @@ export class GameView {
       const status = player?.result || (ownRun?.done ? { status: ownRun.status, elapsed: ownRun.run.elapsed, cleared, score: ownRun.run.score || 0 } : null);
       const frozen = shownRun && !shownRun.done && time < shownRun.blockedUntil;
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
+      elements.finishBadge.hidden = !active || status?.status !== 'finished';
+      const finishLabel = perm ? '✓ Finished' : '✓ Cleared!';
+      if (elements.finishBadge.textContent !== finishLabel) elements.finishBadge.textContent = finishLabel;
+      elements.finishBadge.setAttribute('aria-live', own ? 'off' : 'polite');
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';
       elements.tower.hidden = perm || slots || fireworks || monkeys || jump || burger || mistake || dice || facing || game === COIN_GAME || game === DODGE_GAME;
       elements.avatar.hidden = !perm;

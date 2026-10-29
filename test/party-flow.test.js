@@ -53,3 +53,31 @@ test('Facing turns are slower at every difficulty and Arcade coin rain keeps its
   assert.equal(room.round.phase,'countdown');assert.equal(room.round.fallMs,800);
   assert.equal(roundSettings('its-raining-coins',123).fallMs,1100);
 });
+
+test('Exit is final-results-only, accepts a guest, and returns every player to modes once', () => {
+  let time=100000;
+  const service=new RoomService({now:()=>time,send(){}}),host={},guest={};
+  service.handle(host,{type:'create',name:'Host',mode:'game-select'});
+  const room=service.rooms.get(host.room);
+  service.handle(guest,{type:'join',name:'Guest',code:room.code});
+  service.handle(host,{type:'start'});
+  const id=room.set.id;
+  for(const client of [host,guest]) service.handle(client,{type:'exit-set',setId:id});
+  assert.equal(room.set.id,id);
+  for(let round=0;round<3;round++) {
+    for(const client of [host,guest]) {service.handle(client,{type:'sync',rtt:10,uncertainty:5,count:5});service.handle(client,{type:'ready',ready:true});}
+    time=room.round.startAt+2000;
+    for(const client of [host,guest]) service.handle(client,{type:'result',roundId:room.round.id,status:'finished',elapsed:1000,cleared:room.round.goal,mistakes:0});
+    if(round<2){time=room.set.nextStartAt;service.tick();}
+  }
+  assert.equal(room.set.phase,'complete');
+  service.handle(guest,{type:'exit-set',setId:'old-set'});
+  assert.equal(room.set.id,id);
+  service.handle(guest,{type:'exit-set',setId:id});
+  assert.equal(room.set,null);assert.equal(room.round,null);
+  assert.equal(room.players.length,2);
+  assert.ok(room.players.every(player=>!player.ready&&!player.result));
+  service.handle(host,{type:'configure',mode:'arcade'});
+  service.handle(guest,{type:'exit-set',setId:id});
+  assert.equal(room.mode,'arcade');assert.equal(room.set,null);
+});

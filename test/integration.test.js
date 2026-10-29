@@ -143,6 +143,9 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
   }
   assert.equal(state.set.phase, 'complete');
   assert.equal(state.set.history.length, length);
+  const exited = clients.map(socket => receiveProtocol(socket, message => message.type === 'state' && !message.room.set && !message.room.round));
+  send(clients[1], { type: 'exit-set', setId: state.set.id });
+  for (const message of await Promise.all(exited)) assert.equal(message.room.players.length, 4);
 });
 
 for (const game of ['totem-shrinker', PERM_GAME]) test(`${game}: four real connections share progress and accept a delayed finish once`, async t => {

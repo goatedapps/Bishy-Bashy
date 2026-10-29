@@ -40,6 +40,7 @@ Keep the timing cursor, landing ring, +1/+2 feedback, and optional Perfect flour
 `src/catch-spot-view.js` and `src/catch-spot.css` render both games with original generated sprites; show the published current peer board and never show a future board during success feedback.
 `shared/dice.js` owns seeded rolls with one unique maximum; red/green/blue choose top/middle/bottom, and misses preserve the current roll and completed progress.
 `shared/facing.js` owns covered-card turns and left-right mirrors; red/green/blue answer left/up/right only after the demonstration, and misses replay the current trick.
+Facing shows the duck through the first half of a 400 ms cover flip, then holds the fully covered card for 350 ms before any numbered turn or turn sound.
 `src/dice-facing-view.js` combines exact code-native die pips with the generated dice jester and aviator duck artwork; never expose future boards, and preserve the revealed direction during success effects.
 `shared/coins.js` owns seeded gold/fake drops; red/green/blue select left/middle/right, and catches settle at the scheduled local landing time.
 `shared/dodge.js` owns alternating tall walls and low hurdles; red/blue step left/right, green jumps, and collisions use the jump height at the scheduled impact.
@@ -57,9 +58,11 @@ Readiness never carries across a round or instructions screen, and countdowns re
 The host may configure modes and games only outside an active set, resetting readiness; new guests must wait until the set finishes.
 Game Select increases Totem blocks from 30 to 50 and Perm tempo from 128 to 144 BPM across three rounds.
 Every device displays all four lanes, with controls for its own player only.
+Keep the arena overlay above all character and effect layers, and show an explicit completion badge on every finished player lane.
 `shared/visual-state.js` publishes bounded scene snapshots at 4 Hz and maps round-relative timestamps to each viewer's clock; projections never advance gameplay or award results.
 `src/viewport.js` and `src/viewport.css` fit the active arena and shared controls inside the visual viewport, with controls outside the arena and instructions keeping Ready visible.
-Final standings hide setup and restart controls until the host explicitly returns everyone to modes.
+Final standings hide setup and restart controls and show Exit to every connected player.
+`exit-set` accepts only the current completed set ID and returns the whole room to mode selection; active-set Back to modes remains host-only.
 Facing turns take 1000–700 ms across five available difficulties; Arcade coin falls take 800 ms, while Game Select starts at 1100 ms.
 Shared styles live in `src/style.css`; the pink disco stage lives in `src/games.css`.
 The landing page and set standings use `src/sets.css` and `src/set-view.js`.
@@ -69,7 +72,7 @@ Use the shared `src/game-art.js` artwork for the home cast, equal-sized scrollab
 Avoid hidden-tab reveal catch-up and enable Ready only after the last line and selected audio bank are ready.
 The host's Back to modes action resets the shared set while keeping the room; confirm if a round has begun or scores exist.
 Players may explicitly leave active sets after confirmation; preserve accepted finishes, forfeit unfinished rounds, and let remaining players continue without a missing-player wait.
-The join handshake advertises `room-navigation`, `arcade-reel`, `asset-readiness`, `coins-dodge`, and `live-gameplay-v2`; deploy frontend and backend together and show an actionable update message if required capabilities are absent.
+The join handshake advertises `room-navigation`, `arcade-reel`, `asset-readiness`, `coins-dodge`, `live-gameplay-v2`, and `set-exit`; deploy frontend and backend together and show an actionable update message if required capabilities are absent.
 Facial Slot Machine uses `src/slot-view.js` and `src/slots.css`; remote reels use the published lock masks, per-row pauses, and stopped positions without resetting on snapshots.
 Use the same three buttons and shared fixed control bar in every current and future game; do not add game-specific button layouts or replace them with a single Stop button.
 Show three horizontal scrolling slot rows per player, stacked red, green, and blue, with upcoming faces visible at narrow widths too.

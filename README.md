@@ -42,7 +42,8 @@ Players may toggle readiness off again before the countdown starts.
 Each round awards **10 / 7 / 4 / 1 set points** by placement.
 Ties share placement points and skip the following occupied places: two tied first-place players earn 10 each, and the next player earns 4 for third.
 Unfinished rounds, forfeits, missing results, and Perm rounds with zero rhythm score earn zero set points.
-Final standings keep mode and game selection hidden until the host uses **Back to modes**; starting or configuring another set requires that exit first.
+Final standings keep mode and game selection hidden and show an **Exit** button to every connected player.
+Exit returns everyone to mode selection together; stale exits and attempts to exit an unfinished set are ignored.
 The highest accumulated total wins the set; equal highest totals share victory, and a set with no points has no winner.
 Final standings include a round-by-round points table.
 Every transition and final screen restores a first/second/third podium using cumulative placement and total points.
@@ -350,7 +351,7 @@ When **Answer** appears, red answers left, green up, and blue right.
 Generated tricks never end a move pointing down, so every possible answer has one of the three shared buttons.
 
 Solve **5, 6, and 7 tricks**, with **2, 3, and 4 moves per trick**, across three rounds.
-Each trick shows the initial duck for **700 ms**, covers it for **180 ms**, and demonstrates moves at **1000, 925, and 850 ms per move** across the three rounds.
+Each trick shows the initial duck for **700 ms**, flips it face down over **400 ms**, holds it covered for **350 ms**, and then demonstrates moves at **1000, 925, and 850 ms per move** across the three rounds.
 A **200 ms** handoff separates the final move from the answer phase; all demonstration inputs are ignored.
 A correct answer reveals the final direction for **260 ms** and advances the trick count.
 A wrong answer waits **450 ms**, then replays the same initial picture and moves while keeping completed tricks.
@@ -536,3 +537,7 @@ Arcade Coins uses 800 ms falls instead of 1100 ms; its instructions and actual c
 
 Menu and instructions music share one gesture-authorized media element with separate remembered positions, following [WebKit's media-element reuse guidance](https://webkit.org/blog/7734/auto-play-policy-changes-for-macos/).
 The first playback request happens before awaiting audio-context resume or file decoding, so it stays attached to the enabling gesture.
+
+The local Cleared banner sits above every character and effect inside the arena.
+Each finished lane also shows a compact Cleared badge (Finished for Perm Mania), including peers who finish before the local player.
+The final Exit action uses the current completed set ID and is available to hosts and guests without changing active-set navigation permissions.

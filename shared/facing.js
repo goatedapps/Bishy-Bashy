@@ -4,7 +4,8 @@ export const FACING_GAME = 'facing-which-way';
 export const FACING_GOAL = 5;
 export const FACING_DURATION_MS = 60_000;
 export const FACING_LOOK_MS = 700;
-export const FACING_COVER_MS = 180;
+export const FACING_COVER_MS = 400;
+export const FACING_COVER_HOLD_MS = 350;
 export const FACING_HANDOFF_MS = 200;
 export const FACING_REVEAL_MS = 260;
 export const FACING_RETRY_MS = 450;
@@ -52,7 +53,8 @@ export class FacingRun {
   }
 
   get puzzle() { return this.sequence[Math.min(this.cleared, this.goal - 1)]; }
-  get turnsAt() { return this.trialAt + FACING_LOOK_MS + FACING_COVER_MS; }
+  get coveredAt() { return this.trialAt + FACING_LOOK_MS + FACING_COVER_MS; }
+  get turnsAt() { return this.coveredAt + FACING_COVER_HOLD_MS; }
   get playAt() { return this.turnsAt + this.puzzle.moves.length * this.stepMs + FACING_HANDOFF_MS; }
   get cues() { return this.puzzle.moves.map((_, index) => ({ at: this.turnsAt + index * this.stepMs })); }
 
@@ -60,7 +62,8 @@ export class FacingRun {
     if (!Number.isFinite(time) || time < this.start || time < this.trialAt) return { mode: 'wait' };
     if (time >= this.end || this.done) return { mode: 'done' };
     if (time < this.trialAt + FACING_LOOK_MS) return { mode: 'look' };
-    if (time < this.turnsAt) return { mode: 'cover', progress: (time - this.trialAt - FACING_LOOK_MS) / FACING_COVER_MS };
+    if (time < this.coveredAt) return { mode: 'cover', progress: (time - this.trialAt - FACING_LOOK_MS) / FACING_COVER_MS };
+    if (time < this.turnsAt) return { mode: 'covered' };
     const index = Math.floor((time - this.turnsAt) / this.stepMs);
     if (index < this.puzzle.moves.length) return { mode: 'turn', index, progress: (time - this.turnsAt - index * this.stepMs) / this.stepMs };
     return { mode: time < this.playAt ? 'handoff' : 'play' };

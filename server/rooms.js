@@ -66,7 +66,7 @@ export class RoomService {
     if (!returning) room.players.push(player);
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 6, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 6, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -134,8 +134,9 @@ export class RoomService {
     }
     if (message.type === 'progress') return this.progress(room, player, message, received);
     if (message.type === 'result') return this.result(client, room, player, message, received);
-    if (message.type === 'back-to-modes') {
-      if (player.id !== room.hostId) return this.error(client, 'Only the host can return everyone to mode selection.');
+    if (message.type === 'back-to-modes' || message.type === 'exit-set') {
+      if (message.type === 'exit-set' && room.set?.phase !== 'complete') return;
+      if (message.type === 'back-to-modes' && player.id !== room.hostId) return this.error(client, 'Only the host can return everyone to mode selection.');
       if (!room.set && room.arcadePreview) { room.arcadePreview = false; return this.broadcast(room); }
       if (!room.set || message.setId !== room.set.id) return;
       room.set = null;

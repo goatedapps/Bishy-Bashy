@@ -162,3 +162,18 @@ for (const game of [DICE_GAME, FACING_GAME]) {
     assert.equal(room.set.history.length, 1);
   });
 }
+
+test('the facing flip, covered hold, turns, and their cues use distinct shared-clock boundaries', () => {
+  const run=new FacingRun(settings(FACING_GAME),1000);
+  assert.equal(run.coveredAt,run.trialAt+700+400);
+  assert.equal(run.turnsAt-run.coveredAt,350);
+  assert.equal(run.phase(run.coveredAt-1).mode,'cover');
+  assert.equal(run.phase(run.coveredAt).mode,'covered');
+  assert.equal(run.phase(run.turnsAt-1).mode,'covered');
+  assert.equal(run.phase(run.turnsAt).mode,'turn');
+  assert.equal(run.phase(run.turnsAt).index,0);
+  assert.equal(run.phase(run.turnsAt+run.stepMs).index,1);
+  assert.equal(run.cues[0].at,run.turnsAt);
+  assert.equal(run.cues[1].at,run.turnsAt+run.stepMs);
+  assert.equal(run.tap(run.puzzle.answer,run.coveredAt).type,'ignored');
+});

@@ -95,7 +95,7 @@ test('reduced motion removes the decorative cover flip and follows preference ch
   try {
     const round = { id: 'facing', game: 'facing-which-way', ...roundSettings('facing-which-way', 123) };
     const run = createRun(round, 1000), stage = new FacingStage();
-    const time = run.turnsAt - 90;
+    const time = run.coveredAt - 90;
     assert.equal(run.phase(time).mode, 'cover');
     stage.render(round, run, time, 0, true, true, 0);
     assert.ok(!stage.card.style.transform.includes('scaleX'));
@@ -105,4 +105,31 @@ test('reduced motion removes the decorative cover flip and follows preference ch
     assert.ok(stage.card.style.transform.includes('scaleX'));
     assert.equal(run.phase(time).mode, 'cover');
   } finally { globalThis.matchMedia = previous; }
+}));
+
+test('facing completes its flip and holds the covered card before showing the first turn', () => withDocument(() => {
+  const round={id:'facing',game:'facing-which-way',...roundSettings('facing-which-way',123)};
+  const run=createRun(round,1000),stage=new FacingStage();
+  const flipStart=run.trialAt+700;
+  stage.render(round,run,flipStart+100,0,true,true,0);
+  assert.equal(stage.duck.hidden,false);
+  assert.equal(stage.back.hidden,true);
+  assert.equal(stage.cue.textContent,'');
+  stage.render(round,run,flipStart+300,0,true,true,0);
+  assert.equal(stage.duck.hidden,true);
+  assert.equal(stage.back.hidden,false);
+  for(const time of [run.coveredAt,run.turnsAt-1]) {
+    stage.render(round,run,time,0,true,true,0);
+    assert.equal(stage.phase.textContent,'Covered');
+    assert.equal(stage.duck.hidden,true);
+    assert.equal(stage.cue.textContent,'');
+    assert.equal(stage.count.textContent,'');
+    assert.ok(!stage.card.style.transform.includes('scaleX'));
+  }
+  stage.render(round,run,run.turnsAt,0,true,true,0);
+  assert.equal(stage.phase.textContent,'Track!');
+  assert.equal(stage.count.textContent,'1 / 2');
+  assert.notEqual(stage.cue.textContent,'');
+  stage.render(round,run,run.turnsAt+run.stepMs,0,true,true,0);
+  assert.equal(stage.count.textContent,'2 / 2');
 }));
