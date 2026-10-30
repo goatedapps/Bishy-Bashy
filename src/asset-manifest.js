@@ -353,6 +353,11 @@ export const ASSETS = [
     "hash": "75db5020c1ad5be3"
   },
   {
+    "path": "audio/type-in-letters-voice.mp3",
+    "bytes": 44522,
+    "hash": "1c62e4a15bd52171"
+  },
+  {
     "path": "audio/wrong.mp3",
     "bytes": 30006,
     "hash": "d9c7bde4da713fb7"

@@ -449,7 +449,7 @@ Disconnection preserves accepted points; hiding or reloading still forfeits unde
 
 `src/letters-view.js` and `src/letters.css` render the shared arena, numbered player pointers, entered letters, scores, and result symbols.
 [Type in Letters artwork notes](public/assets/letters-artwork.md) retain the built-in image-generation prompt and optimized background provenance.
-No new audio is generated or downloaded; until a Type in Letters announcement voice is supplied, its announcement uses the existing applause without a voice.
+The selection announcement plays the supplied `type-in-letters-voice.mp3` with the existing applause, using the shared preload and announcement lifecycle.
 Deploy frontend and room service together with **protocol 9** and the `shared-letters` capability.
 The initial repeat interval, collection window, and feedback duration are provisional tuning values checked by deterministic tests and browser play, pending device playtests.
 

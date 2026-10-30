@@ -52,7 +52,7 @@ Maximize the duck card inside its lane and fit diagonal turns to prevent overlap
 Both games keep completed progress after mistakes; `src/coins-dodge-view.js` renders local and published remote challenges using the same seeded models.
 `shared/letters.js` owns Type in Letters' 30-second shared-target race, wraparound alphabet/backspace input, bounded replay proofs, and 800 ms completion-time arbitration; the server owns scores and final results.
 `src/letters-view.js` and `src/letters.css` show all pointers and typed entries on one arena; retain local input prediction, 4 Hz cosmetic snapshots, shared target resets, and Ding/wrong feedback once per settled set.
-Type in Letters uses red/green/blue for left/enter/right; until its voice is supplied, announce with existing applause only, and keep it outside Arcade until the next four-game catalog milestone.
+Type in Letters uses red/green/blue for left/enter/right and announces with supplied `type-in-letters-voice.mp3` plus applause; keep it outside Arcade until the next four-game catalog milestone.
 `shared/sets.js` defines five-game Arcade, three-round Game Select, shared placement points, and cumulative standings.
 `server/rooms.js` owns the fixed set roster, idempotent point awards, intermissions, and readiness gates.
 Selecting Arcade stays in the lobby; Start set begins the shared single reel, which spins for 4.7 seconds, holds the chosen game for two seconds, then opens instructions.

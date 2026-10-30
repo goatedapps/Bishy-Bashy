@@ -967,15 +967,16 @@ test('first menu playback is issued before awaiting a suspended audio context re
 });
 
 
-test('Type in Letters reuses Ding for each won set and announces with applause while no voice is supplied', async () => {
+test('Type in Letters reuses Ding for each won set and announces with its supplied voice and applause', async () => {
   const { audio, context, requests } = setup();
   audio.selectGame('type-in-letters');
   await audio.unlock();
   assert.ok(requests.some(url => url.includes('/Ding.mp3?')));
+  assert.ok(requests.some(url => url.includes('/type-in-letters-voice.mp3?')));
   audio.play('stageComplete');
   assert.equal([...audio.voices].at(-1).id, 'ding');
   audio.announceGame('letters-announcement', 'type-in-letters');
-  assert.deepEqual([...audio.voices].filter(voice => voice.group === 'announcement').map(voice => voice.id), ['applause']);
+  assert.deepEqual([...audio.voices].filter(voice => voice.group === 'announcement').map(voice => voice.id), ['gameVoice:type-in-letters', 'applause']);
   const count = context.sources.length;
   audio.announceGame('letters-announcement', 'type-in-letters');
   assert.equal(context.sources.length, count);

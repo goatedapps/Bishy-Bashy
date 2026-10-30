@@ -11,6 +11,7 @@ export const ARCADE_VOICE_FILES = {
   'facing-which-way': 'facing-which-way-voice.mp3',
   'its-raining-coins': 'its-raining-coins-voice.mp3',
   'dodge-or-die': 'dodge-or-die-voice.mp3',
+  'type-in-letters': 'type-in-letters-voice.mp3',
 };
 
 export const ARCADE_AUDIO_FILES = {
