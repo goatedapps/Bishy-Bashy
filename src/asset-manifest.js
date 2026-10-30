@@ -131,6 +131,11 @@ export const ASSETS = [
     "hash": "82e7b7b554a67538"
   },
   {
+    "path": "assets/optimized/bg-letters-workshop-21fcae531114.webp",
+    "bytes": 108816,
+    "hash": "21fcae531114e52d"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",

@@ -30,9 +30,10 @@ test('Arcade and its wheel expand only on four-game milestones, with new games a
     assert.ok(createSetPlan('arcade', null, () => 0, catalog).every(id => eligible.includes(id)));
     assert.deepEqual(createSetPlan('game-select', catalog.at(-1)), Array(3).fill(catalog.at(-1)));
   }
-  assert.equal(Object.keys(GAMES).length, 12);
+  assert.equal(Object.keys(GAMES).length, 13);
   assert.equal(arcadeGameIds().length, 12);
-  assert.deepEqual(arcadeGameIds(), Object.keys(GAMES));
+  assert.deepEqual(arcadeGameIds(), Object.keys(GAMES).slice(0, 12));
+  assert.ok(!arcadeGameIds().includes('type-in-letters'));
   assert.ok(arcadeGameIds().includes('its-raining-coins'));
   assert.ok(arcadeGameIds().includes('dodge-or-die'));
 });

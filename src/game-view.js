@@ -20,6 +20,8 @@ import { BurgerStage, MistakeStage, chefPortrait, picturePortrait } from './catc
 import { DICE_GAME } from '../shared/dice.js';
 import { FACING_GAME } from '../shared/facing.js';
 import { DiceStage, FacingStage, diceMascot, duckPortrait } from './dice-facing-view.js';
+import { LETTERS_GAME } from '../shared/letters.js';
+import { LettersStage } from './letters-view.js';
 
 const STAGES = { [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake', [DICE_GAME]: 'dice', [FACING_GAME]: 'facing' };
 
@@ -31,7 +33,7 @@ const node = (tag, className, text) => {
   if (text !== undefined) element.textContent = text;
   return element;
 };
-const resultLabel = (result, perm = false) => result?.status === 'finished' ? perm ? `${result.cleared} growth · ${result.score.toLocaleString()} pts` : `${(result.elapsed / 1000).toFixed(3)} s` : ({ forfeit: 'Forfeited', timeout: 'Time expired', missing: 'No result' }[result?.status] || 'Waiting…');
+const resultLabel = (result, perm = false, letters = false) => result?.status === 'finished' ? letters ? `${result.cleared} typing points` : perm ? `${result.cleared} growth · ${result.score.toLocaleString()} pts` : `${(result.elapsed / 1000).toFixed(3)} s` : ({ forfeit: 'Forfeited', timeout: 'Time expired', missing: 'No result' }[result?.status] || 'Waiting…');
 
 function block(color, surprised = false) {
   const element = node('div', `block ${COLORS[color]}${surprised ? ' surprised' : ''}`);
@@ -53,6 +55,8 @@ function dancer(index, growth = 0) {
 
 export class GameView {
   constructor() {
+    this.letters = new LettersStage();
+    $('arena').append(this.letters.element);
     this.feedback = new GameFeedback();
     this.remoteRuns = new RemoteRuns();
     this.lanes = Array.from({ length: 4 }, (_, index) => {
@@ -104,9 +108,18 @@ export class GameView {
   }
 
   render(room, playerId, local, time) {
+    this.playerId = playerId;
     const round = room.round;
     const active = isRoundActive(round);
     const game = active ? round.game : room.selectedGame;
+    $('arena').classList.toggle('lobby', !active);
+    this.letters.element.hidden = !active || game !== LETTERS_GAME;
+    if (active && game === LETTERS_GAME) {
+      this.letters.render(room, playerId, local, time);
+      $('play-view').hidden = false;
+      $('results').hidden = true;
+      return;
+    }
     const perm = game === PERM_GAME;
     const slots = game === SLOT_GAME;
     const fireworks = game === FIREWORK_GAME;
@@ -191,6 +204,7 @@ export class GameView {
   }
 
   updateFeedback(room, local, time) {
+    if (room?.round?.game === LETTERS_GAME) { this.feedback.clear(); return; }
     const lane = room && this.lanes.find(elements => elements.lane.classList.contains('you'));
     this.feedback.update(room?.round, local, lane, time);
   }
@@ -203,6 +217,10 @@ export class GameView {
   }
 
   animate(room, local, time, elapsed) {
+    if (room.round?.game === LETTERS_GAME && isRoundActive(room.round)) {
+      this.letters.render(room, this.playerId, local, time);
+      return;
+    }
     if (STAGES[room.round?.game] && isRoundActive(room.round)) {
       const stage = STAGES[room.round.game];
       this.lanes.forEach((elements, index) => {
@@ -271,7 +289,7 @@ export class GameView {
     const perm = game === PERM_GAME;
     $('results').classList.toggle('perm-results', perm);
     const sorted = room.players.filter(player => room.round.playerIds.includes(player.id)).sort((a, b) => comparePlayers(a, b, game));
-    const finishers = sorted.filter(player => player.result?.status === 'finished' && (!perm || player.result.score > 0));
+    const finishers = sorted.filter(player => player.result?.status === 'finished' && (!perm || player.result.score > 0) && (game !== LETTERS_GAME || player.result.cleared > 0));
     const rank = player => finishers.findIndex(other => comparePlayers(other, player, game) === 0) + 1;
     const winners = finishers.filter(player => comparePlayers(player, finishers[0], game) === 0);
     $('result-round').textContent = `${GAMES[game]?.title || 'Round'} · Round ${room.round.setRound || room.testNumber}`;
@@ -279,14 +297,14 @@ export class GameView {
     $('podium').replaceChildren(...finishers.slice(0, 3).map((player, index) => {
       const seat = node('div', 'podium-seat');
       const step = node('div', 'podium-step');
-      step.append(node('strong', '', String(rank(player))), document.createTextNode(perm ? `${player.result.cleared} / 8` : resultLabel(player.result)));
+      step.append(node('strong', '', String(rank(player))), document.createTextNode(perm ? `${player.result.cleared} / 8` : resultLabel(player.result, false, game === LETTERS_GAME)));
       seat.append(game === DICE_GAME ? diceMascot() : game === FACING_GAME ? duckPortrait() : game === BURGER_GAME ? chefPortrait() : game === MISTAKE_GAME ? picturePortrait(0) : game === JUMP_GAME ? dinoPortrait() : game === MONKEY_GAME ? monkeyPortrait() : game === FIREWORK_GAME ? fireworkBadge() : game === SLOT_GAME ? facePortrait(slotLayout(room.round.seed).target) : perm ? dancer(room.players.indexOf(player), player.result.cleared) : block(index % 3), node('div', 'podium-name', player.name), step);
       return seat;
     }));
     $('result-rows').replaceChildren(...sorted.map(player => {
       const result = player.result;
       const row = node('div', `result-row${player.id === playerId ? ' you' : ''}`);
-      const timing = node('div', 'result-time', resultLabel(result, perm));
+      const timing = node('div', 'result-time', resultLabel(result, perm, game === LETTERS_GAME));
       if (result?.status === 'finished') timing.append(node('small', '', `${result.mistakes || 0} mistakes`));
       row.append(node('span', 'rank', result?.status === 'finished' ? String(rank(player)) : '—'), node('span', 'result-name', player.name + (player.id === playerId ? ' · You' : '')), timing);
       return row;

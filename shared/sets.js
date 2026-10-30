@@ -4,6 +4,7 @@ import { SLOT_GAME } from './slots.js';
 import { FIREWORK_GAME } from './fireworks.js';
 import { MONKEY_GAME } from './monkeys.js';
 import { JUMP_GAME } from './jump.js';
+import { LETTERS_GAME } from './letters.js';
 
 export const ARCADE_LENGTH = 5;
 export const GAME_SELECT_LENGTH = 3;
@@ -33,7 +34,7 @@ export function createSetPlan(mode, game, chooseIndex = max => Math.floor(Math.r
 }
 
 export function awardRound(players, game) {
-  const ranked = players.filter(player => player.result?.status === 'finished' && (game !== PERM_GAME || player.result.score > 0)).sort((a, b) => comparePlayers(a, b, game));
+  const ranked = players.filter(player => player.result?.status === 'finished' && (game !== PERM_GAME || player.result.score > 0) && (game !== LETTERS_GAME || player.result.cleared > 0)).sort((a, b) => comparePlayers(a, b, game));
   return players.map(player => {
     const placement = ranked.includes(player) ? ranked.findIndex(other => comparePlayers(other, player, game) === 0) + 1 : null;
     return { playerId: player.id, name: player.name, result: player.result || { status: 'missing' }, placement, points: placement ? PLACE_POINTS[placement - 1] || 0 : 0 };
@@ -46,6 +47,7 @@ export function setStandings(players) {
 }
 
 export function roundDetail(round) {
+  if (round.game === 'type-in-letters') return '30 seconds · Most points wins';
   if (round.game === 'its-raining-coins') return `${round.goal} coins · Speed ${round.difficulty}`;
   if (round.game === 'dodge-or-die') return `${round.goal} obstacles · Speed ${round.difficulty}`;
   if (round.game === 'dice-dice-more-dice') return `${round.goal} rolls · Level ${round.difficulty}`;

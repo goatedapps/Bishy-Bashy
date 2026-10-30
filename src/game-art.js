@@ -5,6 +5,7 @@ import { fireworkBadge } from './firework-view.js';
 import { dinoPortrait } from './jump-view.js';
 import { chefPortrait, ingredientPortrait, picturePortrait } from './catch-spot-view.js';
 import { diePortrait, diceMascot, duckPortrait } from './dice-facing-view.js';
+import { lettersPortrait } from './letters-view.js';
 
 const node = (tag, className, text) => {
   const element = document.createElement(tag);
@@ -16,7 +17,8 @@ const node = (tag, className, text) => {
 export function gameArt(game) {
   const art = node('span', `game-art art-${game}`);
   art.setAttribute('aria-hidden', 'true');
-  if (game === 'its-raining-coins') art.append(raccoonPortrait());
+  if (game === 'type-in-letters') art.append(lettersPortrait());
+  else if (game === 'its-raining-coins') art.append(raccoonPortrait());
   else if (game === 'dodge-or-die') art.append(runnerPortrait());
   else if (game === 'dice-dice-more-dice') art.append(diceMascot());
   else if (game === 'facing-which-way') art.append(duckPortrait());
@@ -45,7 +47,11 @@ export function ruleVisual(game) {
   const first = node('div', 'rule-example');
   const second = node('div', 'rule-example');
   let label;
-  if (game === 'its-raining-coins') {
+  if (game === 'type-in-letters') {
+    first.append(gameArt(game), node('strong', '', 'Match three letters first'));
+    second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Left · Enter · Right'));
+    label = 'Move through A to Z with red and blue; green enters the selected letter. Choose backspace to erase. First to type the target earns a point.';
+  } else if (game === 'its-raining-coins') {
     first.append(coinPortrait(), gameArt(game), node('strong', '', 'Catch the gold'));
     second.append(coinPortrait(true), shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Avoid the fakes'));
     label = 'Move the raccoon under gold star coins. Avoid cracked purple fakes. Red selects left, green middle, blue right.';

@@ -8,7 +8,7 @@ import { FireworkRun } from '../shared/fireworks.js';
 import { roundSettings } from '../shared/games.js';
 import { FacingRun } from '../shared/facing.js';
 import { ARCADE_AUDIO_FILES, ARCADE_VOICE_FILES } from '../scripts/audio/arcade.js';
-import { GAMES } from '../shared/games.js';
+import { arcadeGameIds } from '../shared/sets.js';
 
 test('Jump loads an existing flourish for perfect landings without requiring the full Perm bank', async () => {
   const { audio, requests } = setup();
@@ -284,7 +284,7 @@ test('returning after a reel landing skips stale selection audio', async () => {
 test('every Arcade game announces the selected game with simultaneous applause, once per landing', async () => {
   const { audio, context, requests } = setup();
   await audio.unlock();
-  assert.deepEqual(Object.keys(ARCADE_VOICE_FILES).sort(), Object.keys(GAMES).sort());
+  assert.ok(arcadeGameIds().every(id => Object.hasOwn(ARCADE_VOICE_FILES, id)));
   for (const [game, file] of Object.entries(ARCADE_VOICE_FILES)) {
     assert.ok(requests.some(url => url.includes(`/${file}?`)), file);
     audio.spinWheel(game, 4700, 4700, game);
@@ -942,4 +942,19 @@ test('first menu playback is issued before awaiting a suspended audio context re
   finishResume();await unlocking;
   assert.equal(audio.menuPlaying,true);
   assert.equal(media.src,'/audio/game-instructions.mp3');
+});
+
+
+test('Type in Letters reuses Ding for each won set and announces with applause while no voice is supplied', async () => {
+  const { audio, context, requests } = setup();
+  audio.selectGame('type-in-letters');
+  await audio.unlock();
+  assert.ok(requests.some(url => url.includes('/Ding.mp3?')));
+  audio.play('stageComplete');
+  assert.equal([...audio.voices].at(-1).id, 'ding');
+  audio.announceGame('letters-announcement', 'type-in-letters');
+  assert.deepEqual([...audio.voices].filter(voice => voice.group === 'announcement').map(voice => voice.id), ['applause']);
+  const count = context.sources.length;
+  audio.announceGame('letters-announcement', 'type-in-letters');
+  assert.equal(context.sources.length, count);
 });

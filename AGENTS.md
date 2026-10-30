@@ -1,11 +1,11 @@
 # Bishy Bashy
 
-This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, and Dodge or Die!!
+This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, and Type in Letters.
 The Vite frontend deploys independently to GitHub Pages; `server/` is a separate Node WebSocket room service on Render.
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 8 adds the shared Game Select picker screen and seven Fireworks sets; coordinate frontend/backend releases when changing it.
+Protocol version 9 adds the shared Type in Letters race and server-owned typing scores; coordinate frontend/backend releases when changing it.
 
 ## Game and visuals
 
@@ -49,6 +49,9 @@ Maximize the duck card inside its lane and fit diagonal turns to prevent overlap
 `shared/coins.js` owns seeded gold/fake drops; red/green/blue select left/middle/right, and catches settle at the scheduled local landing time.
 `shared/dodge.js` owns alternating tall walls and low hurdles; red/blue step left/right, green jumps, and collisions use the jump height at the scheduled impact.
 Both games keep completed progress after mistakes; `src/coins-dodge-view.js` renders local and published remote challenges using the same seeded models.
+`shared/letters.js` owns Type in Letters' 30-second shared-target race, wraparound alphabet/backspace input, bounded replay proofs, and 800 ms completion-time arbitration; the server owns scores and final results.
+`src/letters-view.js` and `src/letters.css` show all pointers and typed entries on one arena; retain local input prediction, 4 Hz cosmetic snapshots, shared target resets, and Ding/wrong feedback once per settled set.
+Type in Letters uses red/green/blue for left/enter/right; until its voice is supplied, announce with existing applause only, and keep it outside Arcade until the next four-game catalog milestone.
 `shared/sets.js` defines five-game Arcade, three-round Game Select, shared placement points, and cumulative standings.
 `server/rooms.js` owns the fixed set roster, idempotent point awards, intermissions, and readiness gates.
 Selecting Arcade stays in the lobby; Start set begins the shared single reel, which spins for 4.7 seconds, holds the chosen game for two seconds, then opens instructions.
@@ -62,7 +65,7 @@ Readiness never carries across a round or instructions screen, and countdowns re
 `shared/games.js` defines the three-second countdown for both room scheduling and the single `countdown.mp3` cue; resume at the current offset, preserve its tail past GO, and avoid layering the old GO cue.
 The host may configure modes and games only outside an active set, resetting readiness; new guests must wait until the set finishes.
 Game Select increases Totem blocks from 30 to 50 and Perm tempo from 128 to 144 BPM across three rounds.
-Every device displays all four lanes, with controls for its own player only.
+Every device displays all four lanes, except Type in Letters, which uses one shared alphabet arena; each device controls its own player only.
 Keep the arena overlay above all character and effect layers, and show an explicit completion badge on every finished player lane.
 `shared/visual-state.js` publishes bounded scene snapshots at 4 Hz and maps round-relative timestamps to each viewer's clock; projections never advance gameplay or award results.
 `src/viewport.js` and `src/viewport.css` fit the active arena and shared controls inside the visual viewport, with controls outside the arena and instructions keeping Ready visible.
@@ -83,7 +86,7 @@ Keep game instructions short and focused on the action and buttons; use only as 
 Avoid hidden-tab reveal catch-up and enable Ready only after the last line and selected audio bank are ready.
 The host's Back to modes action resets the shared set while keeping the room; confirm if a round has begun or scores exist.
 Players may explicitly leave active sets after confirmation; preserve accepted finishes, forfeit unfinished rounds, and let remaining players continue without a missing-player wait.
-The join handshake advertises `room-navigation`, `arcade-reel`, `asset-readiness`, `coins-dodge`, `live-gameplay-v2`, `set-exit`, `firework-sets`, and `game-announcements`, and `game-picker-screen`; deploy frontend and backend together and show an actionable update message if required capabilities are absent.
+The join handshake advertises `room-navigation`, `arcade-reel`, `asset-readiness`, `coins-dodge`, `live-gameplay-v2`, `set-exit`, `firework-sets`, and `game-announcements`, `game-picker-screen`, and `shared-letters`; deploy frontend and backend together and show an actionable update message if required capabilities are absent.
 Facial Slot Machine uses `src/slot-view.js` and `src/slots.css`; remote reels use the published lock masks, per-row pauses, and stopped positions without resetting on snapshots.
 Use the same three buttons and shared fixed control bar in every current and future game; do not add game-specific button layouts or replace them with a single Stop button.
 Show three horizontal scrolling slot rows per player, stacked red, green, and blue, with upcoming faces visible at narrow widths too.

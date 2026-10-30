@@ -1,6 +1,6 @@
 # Bishy Bashy
 
-A four-player browser party game with Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, and Dodge or Die!!
+A four-player browser party game with Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, and Type in Letters.
 Everyone sees all four players and controls only their own player.
 The static website runs on GitHub Pages; a separate Node WebSocket server coordinates rooms and results.
 
@@ -61,7 +61,7 @@ The accompanying Last game column shows each player's most recent performance an
 The server awards points once per round and retains earned points if a player leaves between rounds.
 New guests can join only after the full set ends; original players can reconnect during it.
 The Arcade length and Game Select round count live in `shared/sets.js`, and new games join the shared catalog in `shared/games.js`.
-The catalog currently contains twelve games, all available in Game Select.
+The catalog currently contains thirteen games, all available in Game Select.
 Arcade expands only at four-game milestones: it now selects five distinct games from twelve, adding the next batch when the catalog reaches sixteen.
 `arcadeGameIds()` in `shared/sets.js` supplies the same eligible pool to server selection and the reel, so a spin cannot land on an omitted game.
 
@@ -231,7 +231,7 @@ The original generated festival background remains in `public/assets/fireworks-f
 Its prompt is preserved in [Fireworks artwork notes](public/assets/fireworks-artwork.md).
 `src/firework-view.js` and `src/fireworks.css` draw the colored rocket arcs and burst particles.
 Each rocket reuses `Fireworks.mp3` at its scheduled local launch, skipping stale launches after interruptions.
-Frontend and room service must deploy together with protocol 8.
+Frontend and room service must deploy together with protocol 9.
 
 ## Play Mimicking Monkeys
 
@@ -263,7 +263,7 @@ Audio scheduling checks do not establish physical speaker latency or subjective 
 
 The original generated character lives in `public/assets/mimicking-monkey.png`, with its prompt preserved in [artwork notes](public/assets/monkeys-artwork.md).
 The leafy stage, shape cues, and response indicators live in `src/monkey-view.js` and `src/monkeys.css`.
-Deploy frontend and room service together to make the new catalog entry available; protocol 8 carries current scene snapshots and the announcement gate.
+Deploy frontend and room service together to make the new catalog entry available; protocol 9 carries current scene snapshots and the announcement gate.
 
 ## Play Jump for the Meat
 
@@ -337,7 +337,7 @@ Only the local answered card pops on success; reduced-motion preferences remove 
 Every correct local answer plays `Ding.mp3`, including the final answer, through the existing effects volume and mute controls.
 `shared/mistake.js` owns the seeded puzzle rules; `src/catch-spot-view.js` and `src/catch-spot.css` draw the picture cards.
 The new games use the same instructions, Ready gates, Arcade selection, cumulative podium, reconnect handling, and result acknowledgments as the rest of the catalog.
-Deploy the frontend and room service together; protocol 8 advertises `firework-sets`, `game-announcements`, and `game-picker-screen` alongside the existing required capabilities.
+Deploy the frontend and room service together; protocol 9 advertises `firework-sets`, `game-announcements`, and `game-picker-screen` alongside the existing required capabilities.
 Original artwork and full generation prompts for both games are preserved in [artwork notes](public/assets/catch-spot-artwork.md).
 
 ## Play Dice, Dice, More Dice
@@ -413,6 +413,41 @@ The new generated raccoon and fox are retained as PNG masters with hashed 512-pi
 Both games enter Game Select and the twelve-game Arcade batch immediately, together with Dice and Facing Which Way.
 
 
+## Play Type in Letters
+
+Choose **Game Select → Start set → Type in Letters → Play selected game**.
+Everyone shares one alphabet and the same random three-letter target, with a **30-second countdown** above the arena.
+The game supports the room's existing one-to-four-player roster, including three-player matches.
+**Red moves left, blue moves right, and green enters the selected letter**.
+Hold either movement button to keep moving, or use **1 / 2 / 3**, **J / K / L**, or **Left / Enter / Right** on a keyboard.
+Movement wraps through **A–Z and ⌫**; select **⌫** with green to erase the last entered letter.
+Incorrect entries stay visible so you can correct them.
+Every target resets all pointers to **N** and clears the entered letters, giving everyone the same starting position.
+The alphabet uses a single row on wide screens and three readable rows on phones.
+
+The first player to type all three target letters wins **one typing point**.
+The winner gets a yellow circle and `Ding.mp3`; everyone else gets a red cross and the existing `wrong.mp3` cue.
+After **650 ms** of result feedback, a new shared target appears and the race continues until the timer reaches zero.
+Most typing points wins the round; exact ties share placement, and players with zero typing points receive no placement points.
+Game Select plays three 30-second rounds with the usual cumulative placement points and between-round Ready gates.
+Type in Letters is the thirteenth game, so it enters Game Select immediately and waits for the next four-game catalog milestone before joining Arcade.
+
+`shared/letters.js` owns seeded targets, local input, bounded replay proofs, and shared race settlement.
+Each completed target sends a bounded input proof measured from the frozen local round clock; the server replays it before accepting a claim.
+An **800 ms** collection window compares completion timestamps rather than awarding the first received packet.
+This is bounded client-reported timing fairness, not proof of physical device synchronization or protection against a modified client.
+Exact millisecond ties share one typing point.
+Inputs at or after 30 seconds are rejected, but a valid pre-deadline claim can arrive within the final collection window.
+The server owns typing points and final results; cosmetic pointer snapshots at **4 Hz** cannot award points or block local input.
+Claims are retried until acknowledged; stale target/round claims, malformed proofs, and duplicate awards are rejected.
+Disconnection preserves accepted points; hiding or reloading still forfeits under the existing lifecycle rules.
+
+`src/letters-view.js` and `src/letters.css` render the shared arena, numbered player pointers, entered letters, scores, and result symbols.
+[Type in Letters artwork notes](public/assets/letters-artwork.md) retain the built-in image-generation prompt and optimized background provenance.
+No new audio is generated or downloaded; until a Type in Letters announcement voice is supplied, its announcement uses the existing applause without a voice.
+Deploy frontend and room service together with **protocol 9** and the `shared-letters` capability.
+The initial repeat interval, collection window, and feedback duration are provisional tuning values checked by deterministic tests and browser play, pending device playtests.
+
 ## Backgrounds, set feedback, and Game Select announcements
 
 Every minigame now has its own original illustrated environment.
@@ -428,7 +463,7 @@ Successful sets reuse `Ding.mp3`; failed sets reuse the supplied `wrong.mp3` thr
 Perm settles the whole phrase before showing or sounding its result; individual rhythm notes keep their existing feedback.
 Symbols last 650 ms, sit at the center of each player panel, span 90% of its width, and remain visible with reduced motion and muted sound.
 
-On Game Select's first Start set, the selected game's supplied voice and `applause.mp3` play together once.
+After Play selected game, the selected game's supplied voice and `applause.mp3` play together once.
 The dedicated announcement screen lasts **two seconds**, then opens instructions while the matching voice and applause finish naturally.
 Readiness resets when preparing the round; later rounds retain their podium Ready gates.
 The server owns the two-second transition, so muted or disconnected devices cannot lengthen it; normal Ready gates still apply on instructions.
@@ -525,7 +560,7 @@ Physical phone/tablet playtesting remains necessary.
 
 `npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
 `npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
-The health endpoint reports protocol version 8 for the shared Game Select picker, seven Fireworks sets, and existing Ready and announcement gates.
+The health endpoint reports protocol version 9 for the shared Type in Letters race, Game Select picker, and existing gameplay and readiness gates.
 Deploy the frontend and backend together when changing the multiplayer protocol.
 
 The Pages workflow tests, builds, and deploys `main`.

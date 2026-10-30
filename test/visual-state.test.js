@@ -4,7 +4,7 @@ import { GAMES, createRun, roundSettings } from '../shared/games.js';
 import { captureVisual, sanitizeVisual, RemoteRuns } from '../shared/visual-state.js';
 import { RoomService } from '../server/rooms.js';
 
-for (const game of Object.keys(GAMES)) test(`${game}: visual snapshots translate between device clocks without changing local simulation`, () => {
+for (const game of Object.keys(GAMES).filter(id => !GAMES[id].sharedArena)) test(`${game}: visual snapshots translate between device clocks without changing local simulation`, () => {
   const round = { id: game, game, ...roundSettings(game, 123) };
   const run = createRun(round, 500000);
   const state = captureVisual(game, run, run.start + 350);
@@ -82,8 +82,8 @@ test('room broadcasts the actual peer scene without progress changes, rejects st
   assert.equal(JSON.stringify(service.snapshot(room)).includes(room.players[1].token), false);
 });
 
-test('played states reconstruct feedback and active phases for every minigame', () => {
-  for (const game of Object.keys(GAMES)) {
+test('played states reconstruct feedback and active phases for every lane-based minigame', () => {
+  for (const game of Object.keys(GAMES).filter(id => !GAMES[id].sharedArena)) {
     const round={id:game,game,...roundSettings(game,123)},run=createRun(round,500000);
     let time=run.start+100;
     if(game==='totem-shrinker')run.tap(run.sequence[0],time);

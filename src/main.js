@@ -16,6 +16,8 @@ import { BURGER_GAME } from '../shared/burger.js';
 import { MISTAKE_GAME } from '../shared/mistake.js';
 import { DICE_GAME } from '../shared/dice.js';
 import { FACING_GAME } from '../shared/facing.js';
+import { LETTERS_GAME } from '../shared/letters.js';
+import './letters.css';
 import { GAMES, createRun, roundSettings, isRoundActive, gameRules } from '../shared/games.js';
 import { MODES, roundDetail } from '../shared/sets.js';
 import { GameView } from './game-view.js';
@@ -135,7 +137,7 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 8 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen')) {
+      if (message.protocol !== 9 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -167,6 +169,7 @@ function connect() {
         if (pending && pending.message.roundId !== room.round?.id) clearPending();
       }
       setupLocalRound();
+      synchronizeLetters();
       if (room.round?.phase === 'results') {
         if (previousPhase !== 'results') audio.stopRound();
         if (pending && room.players.find(player => player.id === playerId)?.result) confirmResult();
@@ -174,6 +177,7 @@ function connect() {
       }
       renderRoom();
     }
+    if (message.type === 'letters-claim-ack' && localRound?.id === message.roundId && localRound.run.index === message.index) localRound.run.claimAck = true;
     if (message.type === 'result-ack' && pending?.message.roundId === message.roundId) confirmResult();
     if (message.type === 'error') {
       joining = false;
@@ -311,9 +315,36 @@ function flushLaneEvents(time) {
   if (events.length) view.render(room, playerId, localRound, time);
 }
 
+function synchronizeLetters() {
+  if (room?.round?.game !== LETTERS_GAME || !localRound) return;
+  const state = room.round.letters;
+  localRound.run.sync(state, playerId);
+  const feedback = state?.feedback;
+  if (feedback && localRound.heardLetterSet !== feedback.index) {
+    localRound.heardLetterSet = feedback.index;
+    const age = performance.now() - localRound.start - feedback.at;
+    if (state.phase === 'feedback' && !document.hidden && !localRound.mustForfeit && !localRound.done && age >= -250 && age < 1000) audio.play(feedback.winners.includes(playerId) ? 'stageComplete' : 'stageWrong');
+  }
+  const result = room.players.find(player => player.id === playerId)?.result;
+  if (result) {
+    localRound.done = localRound.run.done = true;
+    localRound.status = result.status;
+    localRound.run.elapsed = result.elapsed;
+  }
+}
+
+function flushLettersClaim(time) {
+  if (room?.round?.game !== LETTERS_GAME || !joined || !localRound || localRound.done || !localRound.run.claim || localRound.run.claimAck || time - (localRound.lastClaimSent ?? -Infinity) < 250) return;
+  if (send({ type: 'letters-claim', roundId: localRound.id, ...localRound.run.claim })) localRound.lastClaimSent = time;
+}
+
 function enforceLifecycle(time, beforeInput = false) {
+  flushLettersClaim(time);
   if (!localRound || localRound.done || room?.round?.phase === 'results' || time < localRound.start) return;
   if (localRound.mustForfeit || document.hidden || localRound.hiddenDuringPlay) complete('forfeit');
+  else if (room.round.game === LETTERS_GAME) {
+    if (time >= localRound.end && !localRound.clockEnded) { localRound.clockEnded = true; audio.endPlayer(); }
+  }
   else if (room.round.game === PERM_GAME) {
     localRound.run.advance(time);
     const events = localRound.run.events.splice(0);
@@ -342,6 +373,13 @@ function tap(color) {
   const action = localRound.run.tap(color, time);
   if ([BURGER_GAME, COIN_GAME, DODGE_GAME, FIREWORK_GAME].includes(room.round.game)) flushLaneEvents(time);
   if (action.type === 'ignored') return;
+  if (room.round.game === LETTERS_GAME) {
+    if (action.type === 'claim') flushLettersClaim(time);
+    if (action.type === 'mistake') audio.play('stageWrong');
+    view.render(room, playerId, localRound, time);
+    updateControls(time);
+    return;
+  }
   if (room.round.game === FIREWORK_GAME) audio.fireworkLaunch(localRound.run);
   if (localRound.goDelay === null) localRound.goDelay = Math.max(0, time - localRound.start);
   const completedSequence = room.round.game === MONKEY_GAME && localRound.run.cleared > clearedBefore;
@@ -357,6 +395,11 @@ function tap(color) {
 
 function sendProgress(time) {
   if (!joined || !localRound || localRound.done || time < localRound.start || time >= localRound.end || time - lastProgressSent < 250) return;
+  if (room.round.game === LETTERS_GAME) {
+    const run = localRound.run;
+    if (send({ type: 'letters-progress', roundId: localRound.id, index: run.index, cursor: run.cursor, typed: run.typed, sample: time - localRound.start })) lastProgressSent = time;
+    return;
+  }
   const { cleared, mistakes } = localRound.run;
   const score = localRound.run.score;
   const reelMask = localRound.run.reelMask;
@@ -476,7 +519,7 @@ function prepareRoundAssets() {
 }
 
 function updateControls(time) {
-  const disabled = !localRound || localRound.done || document.hidden || time < localRound.start || time >= localRound.end || time < localRound.run.blockedUntil || room?.round?.phase === 'results' || room?.round?.game === PERM_GAME && localRound.run.phase(time).mode === 'watch' || [MONKEY_GAME, FACING_GAME].includes(room?.round?.game) && localRound.run.phase(time).mode !== 'play' || [MISTAKE_GAME, DICE_GAME].includes(room?.round?.game) && time < localRound.run.readyAt;
+  const disabled = !localRound || localRound.done || document.hidden || time < localRound.start || time >= localRound.end || time < localRound.run.blockedUntil || room?.round?.game === LETTERS_GAME && Boolean(localRound.run.claim) || room?.round?.phase === 'results' || room?.round?.game === PERM_GAME && localRound.run.phase(time).mode === 'watch' || [MONKEY_GAME, FACING_GAME].includes(room?.round?.game) && localRound.run.phase(time).mode !== 'play' || [MISTAKE_GAME, DICE_GAME].includes(room?.round?.game) && time < localRound.run.readyAt;
   for (const button of buttons) {
     const color = Number(button.dataset.color);
     button.disabled = disabled || Boolean(room?.round?.game === SLOT_GAME && localRound && ((localRound.run.reelMask & (1 << color)) || time < localRound.run.blockedReels[color]));
@@ -500,7 +543,7 @@ function animate() {
       else if (time - localRound.start < 450) overlay = 'GO!';
     }
     const elapsed = localRound ? localRound.run.elapsed ?? Math.max(0, Math.min(time, localRound.end) - localRound.start) : 0;
-    $('timer').textContent = (elapsed / 1000).toFixed(2);
+    $('timer').textContent = ((round.game === LETTERS_GAME ? Math.max(0, round.duration - elapsed) : elapsed) / 1000).toFixed(2);
   } else $('timer').textContent = '00.00';
   if ($('round-overlay').textContent !== overlay) $('round-overlay').textContent = overlay;
   $('round-overlay').hidden = !overlay;
@@ -568,11 +611,12 @@ function updateGameProfile() {
   document.body.classList.toggle('mistake-theme', Boolean(themed && game === MISTAKE_GAME));
   document.body.classList.toggle('dice-theme', Boolean(themed && game === DICE_GAME));
   document.body.classList.toggle('facing-theme', Boolean(themed && game === FACING_GAME));
+  document.body.classList.toggle('letters-theme', Boolean(themed && game === LETTERS_GAME));
   buttons.forEach((button, index) => {
-    const action = game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
+    const action = game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
     button.children[1].textContent = action;
     const label = ['Red circle', 'Green triangle', 'Blue diamond'][index];
-    button.setAttribute('aria-label', [COIN_GAME, DODGE_GAME].includes(game) ? `${label}: ${action}` : label);
+    button.setAttribute('aria-label', [COIN_GAME, DODGE_GAME, LETTERS_GAME].includes(game) ? `${label}: ${action}` : label);
   });
   document.body.classList.toggle('coin-theme', Boolean(themed && game === COIN_GAME));
   document.body.classList.toggle('dodge-theme', Boolean(themed && game === DODGE_GAME));
@@ -695,14 +739,34 @@ $('copy-link').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(inviteUrl); $('copy-link').textContent = 'Copied!'; }
   catch { $('invite-link').select(); $('invite-note').textContent = 'Select and copy the invitation link.'; }
 });
+let letterHoldTimer;
+const stopLetterHold = () => { clearTimeout(letterHoldTimer); };
 for (const button of buttons) {
-  button.addEventListener('pointerdown', event => { if (event.button !== 0) return; event.preventDefault(); tap(Number(button.dataset.color)); });
+  button.addEventListener('pointerdown', event => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    stopLetterHold();
+    const color = Number(button.dataset.color);
+    tap(color);
+    if (room?.round?.game !== LETTERS_GAME || color === 1) return;
+    const repeat = () => {
+      if (room?.round?.game !== LETTERS_GAME || !localRound || localRound.done || document.hidden || button.disabled || document.querySelector('dialog[open]')) return;
+      tap(color);
+      letterHoldTimer = setTimeout(repeat, 80);
+    };
+    letterHoldTimer = setTimeout(repeat, 260);
+  });
   button.addEventListener('click', event => { if (event.detail === 0) tap(Number(button.dataset.color)); });
 }
+document.addEventListener('pointerup', stopLetterHold);
+document.addEventListener('pointercancel', stopLetterHold);
+window.addEventListener('blur', stopLetterHold);
+document.addEventListener('visibilitychange', stopLetterHold);
 const keys = { '1': 0, j: 0, '2': 1, k: 1, '3': 2, l: 2 };
 document.addEventListener('keydown', event => {
-  if (event.repeat || event.ctrlKey || event.metaKey || event.altKey || document.querySelector('dialog[open]') || ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return;
-  const color = keys[event.key.toLowerCase()];
+  if (event.repeat && !(room?.round?.game === LETTERS_GAME && ['1', '3', 'j', 'l', 'ArrowLeft', 'ArrowRight'].includes(event.key)) || event.ctrlKey || event.metaKey || event.altKey || document.querySelector('dialog[open]') || ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return;
+  const letterKey = room?.round?.game === LETTERS_GAME ? { ArrowLeft: 0, Enter: 1, ArrowRight: 2 }[event.key] : undefined;
+  const color = letterKey ?? keys[event.key.toLowerCase()];
   if (color === undefined) return;
   event.preventDefault(); tap(color);
 });

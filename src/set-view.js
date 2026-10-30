@@ -104,7 +104,7 @@ export class SetView {
       const earned = last.rows.find(item => item.playerId === player.id)?.points || 0;
       const name = node('strong', 'standing-name', player.name + (player.id === playerId ? ' · You' : ''));
       const result = last.rows.find(item => item.playerId === player.id)?.result;
-      const detail = result?.status === 'finished' ? last.game === 'perm-mania' ? `${result.cleared} growth · ${result.score.toLocaleString()}` : `${(result.elapsed / 1000).toFixed(3)} s` : ({ forfeit: 'Forfeited', timeout: 'Time expired', missing: 'Missed round' }[result?.status] || '');
+      const detail = result?.status === 'finished' ? last.game === 'type-in-letters' ? `${result.cleared} typing points` : last.game === 'perm-mania' ? `${result.cleared} growth · ${result.score.toLocaleString()}` : `${(result.elapsed / 1000).toFixed(3)} s` : ({ forfeit: 'Forfeited', timeout: 'Time expired', missing: 'Missed round' }[result?.status] || '');
       row.append(node('span', 'standing-rank', String(player.placement)), name);
       const recent = node('span', 'points-earned');
       recent.append(node('strong', '', `+${earned}`), node('small', '', detail));

@@ -4,6 +4,7 @@ import { TOTEM_GAME } from '../shared/totem.js';
 import { COUNTDOWN_MS, GAMES, roundSettings, isRoundActive } from '../shared/games.js';
 import { PERM_GAME } from '../shared/perm.js';
 import { SLOT_GAME, validReelMask } from '../shared/slots.js';
+import { LETTERS_GAME, LettersMatch, LETTERS_SETTLE_MS } from '../shared/letters.js';
 import { MODES, INTERMISSION_MS, WHEEL_SPIN_MS, REEL_HOLD_MS, GAME_ANNOUNCEMENT_MS, createSetPlan, awardRound } from '../shared/sets.js';
 
 export const ROUND_MS = 10_000;
@@ -67,7 +68,7 @@ export class RoomService {
     if (!returning) room.players.push(player);
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 8, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 9, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -142,6 +143,8 @@ export class RoomService {
       return this.broadcast(room);
     }
     if (message.type === 'progress') return this.progress(room, player, message, received);
+    if (message.type === 'letters-claim') return this.letterClaim(client, room, player, message, received);
+    if (message.type === 'letters-progress') return this.letterProgress(room, player, message, received);
     if (message.type === 'result') return this.result(client, room, player, message, received);
     if (message.type === 'back-to-modes' || message.type === 'exit-set') {
       if (message.type === 'exit-set' && room.set?.phase !== 'complete') return;
@@ -246,6 +249,38 @@ export class RoomService {
       ...(set ? { setId: set.id, setRound: set.roundIndex + 1, totalRounds: set.plan.length } : {}),
     };
     if (set) { set.phase = 'playing'; set.nextStartAt = null; set.waitReason = null; }
+    room.lettersMatch = game === LETTERS_GAME ? new LettersMatch(room.round) : null;
+    if (room.lettersMatch) room.round.letters = room.lettersMatch.state;
+  }
+
+  letterClaim(client, room, player, message, received) {
+    const round = room.round;
+    if (round?.game !== LETTERS_GAME || !isRoundActive(round) || message.roundId !== round.id || player.result || !round.playerIds.includes(player.id)) return;
+    if (room.lettersMatch.claim(player.id, message, received - round.startAt)) this.send(client, { type: 'letters-claim-ack', roundId: round.id, index: message.index });
+  }
+
+  letterProgress(room, player, message, received) {
+    const round = room.round;
+    if (round?.game !== LETTERS_GAME || !isRoundActive(round) || message.roundId !== round.id || !round.playerIds.includes(player.id) || player.result || received < round.startAt || received >= round.endAt || received - player.lastProgressAt < 250) return;
+    const { index, cursor, typed, sample } = message;
+    if (index !== round.letters.index || !Number.isInteger(cursor) || cursor < 0 || cursor > 26 || typeof typed !== 'string' || !/^[A-Z]{0,3}$/.test(typed) || !Number.isFinite(sample) || sample < round.letters.opensAt || sample > received - round.startAt + 250 || sample < (player.progress.letters?.sample ?? -1)) return;
+    player.progress = { cleared: round.letters.scores[player.id], mistakes: 0, letters: { index, cursor, typed, sample } };
+    player.lastProgressAt = received;
+    this.broadcast(room);
+  }
+
+  advanceLetters(room, now) {
+    const round = room.round;
+    const changed = room.lettersMatch.advance(now - round.startAt);
+    if (changed) room.players.forEach(player => { player.progress.cleared = round.letters.scores[player.id] || 0; });
+    if (now < round.endAt + LETTERS_SETTLE_MS) return changed;
+    for (const player of room.players) {
+      if (!round.playerIds.includes(player.id) || player.result) continue;
+      player.result = { status: 'finished', elapsed: round.duration, cleared: round.letters.scores[player.id] || 0, mistakes: 0, receivedAt: now };
+      player.progress.cleared = player.result.cleared;
+    }
+    this.finishIfComplete(room);
+    return true;
   }
 
   settleRound(room) {
@@ -283,6 +318,7 @@ export class RoomService {
 
   progress(room, player, message, received) {
     const round = room.round;
+    if (round?.game === LETTERS_GAME) return;
     if (!isRoundActive(round) || !GAMES[round.game] || round.id !== message.roundId || !round.playerIds.includes(player.id) || player.result || received < round.startAt || received > round.endAt) return;
     const { cleared, mistakes } = message;
     if (!Number.isInteger(cleared) || cleared < player.progress.cleared || cleared > round.goal || !Number.isInteger(mistakes) || mistakes < player.progress.mistakes || mistakes > 1000 || received - player.lastProgressAt < 150) return;
@@ -303,9 +339,10 @@ export class RoomService {
     if (round.phase === 'results' || received > round.expiresAt) return this.error(client, 'The result submission window has closed.');
     if (received < round.startAt) return this.error(client, 'The test has not started yet.');
     if (!['finished', 'forfeit', 'timeout'].includes(message.status)) return;
+    if (round.game === LETTERS_GAME && message.status !== 'forfeit') return;
     if (round.game === SLOT_GAME && (!validReelMask(message.reelMask, message.cleared) || (message.reelMask & player.progress.reelMask) !== player.progress.reelMask || message.status === 'finished' && message.reelMask !== 7)) return this.error(client, 'Report the matched color rows before submitting a result.');
     if (message.status === 'finished' && (!Number.isFinite(message.elapsed) || message.elapsed < 0 || message.elapsed > round.duration || message.elapsed > received - round.startAt + 250)) return this.error(client, 'The reported finish time is outside this test.');
-    const elapsedRace = GAMES[round.game] && round.game !== PERM_GAME;
+    const elapsedRace = GAMES[round.game] && ![PERM_GAME, LETTERS_GAME].includes(round.game);
     if (elapsedRace && message.status === 'finished' && (message.cleared !== round.goal || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || message.mistakes > 1000)) return this.error(client, 'Complete every match before submitting a result.');
     if (round.game === PERM_GAME && message.status === 'finished' && (received < round.endAt - 250 || message.elapsed !== round.duration || !Number.isInteger(message.cleared) || message.cleared < player.progress.cleared || message.cleared > round.goal || !Number.isInteger(message.score) || message.score < 0 || message.score > round.maxScore || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || message.mistakes > 1000)) return this.error(client, 'Wait for the rhythm round to finish before submitting a valid score.');
     if (message.status === 'timeout' && received < round.endAt) return this.error(client, 'The test has not timed out yet.');
@@ -326,6 +363,7 @@ export class RoomService {
       ...(round.game === SLOT_GAME ? { reelMask: message.reelMask } : {}),
       ...(round.game === PERM_GAME ? { score: message.status === 'finished' ? message.score : 0 } : {}),
     };
+    if (round.game === LETTERS_GAME) player.result.cleared = round.letters.scores[player.id] || 0;
     if (elapsedRace && message.status === 'finished') player.progress = { cleared: round.goal, mistakes: message.mistakes, ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}) };
     if (round.game === PERM_GAME && message.status === 'finished') player.progress = { cleared, mistakes: message.mistakes, score: message.score };
     const visual = sanitizeVisual(round, message.visual, received - round.startAt);
@@ -375,6 +413,8 @@ export class RoomService {
       if (round.phase === 'instructions') { if (this.tryBeginPrepared(room)) this.broadcast(room); continue; }
       if (round.phase === 'results') { if (this.advanceSet(room)) this.broadcast(room); continue; }
       let changed = false;
+      if (round.game === LETTERS_GAME) changed = this.advanceLetters(room, now);
+      if (round.phase === 'results') { this.broadcast(room); continue; }
       if (now >= round.startAt && round.phase === 'countdown') { round.phase = 'running'; changed = true; }
       if (now >= round.endAt && round.phase === 'running') { round.phase = 'collecting'; changed = true; }
       if (now >= round.expiresAt) {

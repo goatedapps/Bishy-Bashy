@@ -10,6 +10,7 @@ import { BURGER_GAME, BurgerRun, BURGER_GOAL, BURGER_DURATION_MS } from './burge
 import { MISTAKE_GAME, MistakeRun, MISTAKE_GOAL, MISTAKE_DURATION_MS } from './mistake.js';
 import { DICE_GAME, DiceRun, DICE_GOAL, DICE_DURATION_MS } from './dice.js';
 import { FACING_GAME, FacingRun, FACING_GOAL, FACING_DURATION_MS } from './facing.js';
+import { LETTERS_GAME, LettersRun, LETTERS_DURATION_MS } from './letters.js';
 
 export const COUNTDOWN_MS = 3_000;
 
@@ -26,10 +27,12 @@ export const GAMES = Object.assign(Object.create(null), {
   [FACING_GAME]: { id: FACING_GAME, title: 'Facing Which Way', subtitle: 'Follow the turns and flips', duration: FACING_DURATION_MS, goal: FACING_GOAL },
   [COIN_GAME]: { id: COIN_GAME, title: "It's Raining Coins", subtitle: 'Catch the gold, dodge the fakes', duration: COIN_DURATION_MS, goal: COIN_GOAL },
   [DODGE_GAME]: { id: DODGE_GAME, title: 'Dodge or Die!!', subtitle: 'Switch lanes and leap the hurdles', duration: DODGE_DURATION_MS, goal: DODGE_GOAL },
+  [LETTERS_GAME]: { id: LETTERS_GAME, title: 'Type in Letters', subtitle: 'Race to type three letters first', sharedArena: true, duration: LETTERS_DURATION_MS, goal: 0 },
 });
 
 export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') {
   const level = Math.max(1, Math.min(5, Math.trunc(difficulty) || 1));
+  if (game === LETTERS_GAME) return { seed, difficulty: level, goal: 0, duration: LETTERS_DURATION_MS };
   if (game === COIN_GAME) return { seed, difficulty: level, goal: COIN_GOAL, duration: COIN_DURATION_MS, fallMs: mode === 'arcade' ? 800 : 1100 - (level - 1) * 90 };
   if (game === DODGE_GAME) return { seed, difficulty: level, goal: DODGE_GOAL + level - 1, duration: DODGE_DURATION_MS, approachMs: 1350 - (level - 1) * 100 };
   if (game === DICE_GAME) return { seed, difficulty: level, goal: DICE_GOAL + (level - 1) * 2, duration: DICE_DURATION_MS, rollMs: 180 - (level - 1) * 20 };
@@ -50,6 +53,7 @@ export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') 
 }
 
 export function createRun(round, localStart, timingOffset = 0) {
+  if (round.game === LETTERS_GAME) return new LettersRun(round, localStart);
   if (round.game === COIN_GAME) return new CoinRun(round, localStart);
   if (round.game === DODGE_GAME) return new DodgeRun(round, localStart);
   if (round.game === DICE_GAME) return new DiceRun(round, localStart);
@@ -66,6 +70,7 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game) {
+  if (game === LETTERS_GAME) return ['Red moves left, blue moves right, green enters a letter', 'Type the three letters first to win a point; choose ⌫ to erase', 'Most points in 30 seconds wins'];
   if (game === COIN_GAME) return ['Catch gold coins and avoid cracked purple coins', 'Red = left, green = middle, blue = right'];
   if (game === DODGE_GAME) return ['Move around tall walls and jump over low hurdles', 'Red moves left, blue moves right, green jumps'];
   if (game === DICE_GAME) return ['Pick the die with the most dots', 'Red = top, green = middle, blue = bottom'];
@@ -85,6 +90,7 @@ export function comparePlayers(a, b, game) {
   const finishedB = b.result?.status === 'finished';
   if (finishedA !== finishedB) return finishedA ? -1 : 1;
   if (!finishedA) return 0;
+  if (game === LETTERS_GAME) return b.result.cleared - a.result.cleared;
   if (game === PERM_GAME) return b.result.cleared - a.result.cleared || b.result.score - a.result.score;
   return a.result.elapsed - b.result.elapsed;
 }

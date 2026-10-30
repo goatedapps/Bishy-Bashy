@@ -8,7 +8,7 @@ const MUSIC_MODES = ['auto', 'on', 'off'];
 const MENU_TRACKS = { menu: 'Background-ActionRock.mp3', instructions: 'game-instructions.mp3' };
 const MENU_TRACK_GAINS = { menu: 1, instructions: 2 };
 const EXTRA_AUDIO_FILES = { wrong: 'wrong.mp3', buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.wav', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3', wheelSpin: 'roulette.mp3', gameSelect: 'Game-select.mp3' };
-const GAME_AUDIO_FILES = { 'perm-mania': { ding: 'Ding.mp3' }, 'mimicking-monkeys': { ding: 'Ding.mp3' }, 'its-raining-coins': { ding: 'Ding.mp3' }, 'dodge-or-die': { ding: 'Ding.mp3' }, 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3', ding: 'Ding.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3' }, 'facing-which-way': { ding: 'Ding.mp3' } };
+const GAME_AUDIO_FILES = { 'type-in-letters': { ding: 'Ding.mp3' }, 'perm-mania': { ding: 'Ding.mp3' }, 'mimicking-monkeys': { ding: 'Ding.mp3' }, 'its-raining-coins': { ding: 'Ding.mp3' }, 'dodge-or-die': { ding: 'Ding.mp3' }, 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3', ding: 'Ding.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3' }, 'facing-which-way': { ding: 'Ding.mp3' } };
 const PROFILES = {
   'dice-dice-more-dice': { music: 'music', urgency: 'urgency', go: 'go' },
   'facing-which-way': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -311,11 +311,11 @@ export class GameAudio {
       return state.done = true;
     }
     if (state.started) return state.done = ![...this.voices].some(voice => voice.group === 'announcement');
-    if (!this.buffers.has(`gameVoice:${game}`) || !this.buffers.has('applause')) return this.loadFailed ? state.done = true : false;
+    if ((ARCADE_AUDIO_FILES[`gameVoice:${game}`] && !this.buffers.has(`gameVoice:${game}`)) || !this.buffers.has('applause')) return this.loadFailed ? state.done = true : false;
     state.started = true;
     this.stopMenu();
     const at = this.context.currentTime;
-    this.source(`gameVoice:${game}`, { at, group: 'announcement' });
+    if (ARCADE_AUDIO_FILES[`gameVoice:${game}`]) this.source(`gameVoice:${game}`, { at, group: 'announcement' });
     this.source('applause', { at, group: 'announcement' });
     return false;
   }
