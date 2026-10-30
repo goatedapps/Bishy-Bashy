@@ -96,7 +96,7 @@ export class GameView {
       stageResult.setAttribute('role', 'img');
       lane.append(name, finishBadge, zone, node('div', 'base'), remaining, progress, status, stageResult);
       $('player-lanes').append(lane);
-      return { lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, dice, facing, coins, dodge, remaining, fill, status, effects, ring, particles, towerKey: '' };
+      return { lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, dice, facing, coins, dodge, remaining, progress, fill, status, effects, ring, particles, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -186,10 +186,12 @@ export class GameView {
           elements.towerKey = key;
         }
       }
-      const value = jump ? Math.min(100, Math.round(cleared / (round?.goal || GAMES[game].goal) * 100)) : game === 'totem-shrinker' ? active && player ? Math.max(0, round.blockCount - cleared) : 0 : cleared;
+      elements.remaining.hidden = jump;
+      elements.progress.hidden = jump;
+      const value = game === 'totem-shrinker' ? active && player ? Math.max(0, round.blockCount - cleared) : 0 : cleared;
       const counterKey = `${game}/${value}/${round?.goal}`;
-      if (elements.remaining.dataset.value !== counterKey) {
-        elements.remaining.replaceChildren(node('strong', '', jump ? `${value}%` : String(value)), document.createTextNode(jump ? 'height' : game === 'totem-shrinker' ? 'left' : ` / ${round?.goal || GAMES[game]?.goal || 0}`));
+      if (!jump && elements.remaining.dataset.value !== counterKey) {
+        elements.remaining.replaceChildren(node('strong', '', String(value)), document.createTextNode(game === 'totem-shrinker' ? 'left' : ` / ${round?.goal || GAMES[game]?.goal || 0}`));
         elements.remaining.dataset.value = counterKey;
       }
       elements.fill.style.width = `${active && player ? cleared / round.goal * 100 : 0}%`;

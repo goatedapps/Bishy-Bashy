@@ -35,7 +35,7 @@ Memory demonstration tones use the local run's cue timestamps and a bounded audi
 `shared/jump.js` owns seeded bounce arcs, inclusive landing windows, recovery, and the elapsed-time race to the final meat-reaching apex.
 Any of the three buttons boosts a valid landing; preserve successful boosts after a miss and resolve final completion at its scheduled local apex, even on a delayed frame.
 The fixed meat height is 16 height units in every round: Good landings add one unit and Perfect landings add two, so eight Perfect or sixteen Good landings reach it.
-The green Perfect center is 30% of the landing half-window; show height progress instead of a jump counter, and retain the accepted elapsed time above CLEAR on each finished lane.
+The green Perfect center is 30% of the landing half-window; keep the jump scene flush with the panel bottom without counters or progress bars, and retain the accepted elapsed time above CLEAR on each finished lane.
 Jump has no timing bar; judge landings from the dinosaur and trampoline, keeping the landing ring, Good/Perfect feedback, and Perfect flourish aligned to the local input timestamp.
 `src/jump-view.js` and `src/jump.css` draw the original dinosaur and landing guide; remote bounces follow published jump timing, and the home cast stays bounded to five characters as the catalog grows.
 `shared/burger.js` owns seeded falling ingredients and automatic local catches; red/green/blue move the plate left/middle/right, misses keep completed layers, and delayed frames preserve scheduled landing times.

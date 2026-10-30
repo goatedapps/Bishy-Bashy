@@ -46,7 +46,7 @@ test('every finished peer has a completion badge, local completion appears befor
   }finally{globalThis.document=previous;}
 });
 
-test('Jump shows height progress and each accepted local or remote finish time above CLEAR without waiting for other players', () => {
+test('Jump hides progress counters and shows each accepted local or remote finish time above CLEAR without waiting for other players', () => {
   const previous = globalThis.document, nodes = new Map();
   globalThis.document = { hidden: false, createElement: () => new Element(), createTextNode: text => text, getElementById: id => {
     if (!nodes.has(id)) nodes.set(id, new Element()); return nodes.get(id);
@@ -61,8 +61,8 @@ test('Jump shows height progress and each accepted local or remote finish time a
     ] };
     const view = new GameView();
     view.render(room, 'local', local, 9500);
-    assert.equal(view.lanes[0].remaining.children[0].textContent, '50%');
-    assert.equal(view.lanes[0].remaining.children[1], 'height');
+    assert.equal(view.lanes[0].remaining.hidden, true);
+    assert.equal(view.lanes[0].progress.hidden, true);
     assert.equal(view.lanes[0].finishBadge.hidden, true);
     assert.equal(view.lanes[1].finishBadge.hidden, false);
     assert.equal(view.lanes[1].finishBadge.textContent, '9.38 s\nCLEAR!');
@@ -73,7 +73,7 @@ test('Jump shows height progress and each accepted local or remote finish time a
     view.render(room, 'local', local, 10400);
     assert.equal(view.lanes[0].finishBadge.hidden, false);
     assert.equal(view.lanes[0].finishBadge.textContent, '10.30 s\nCLEAR!');
-    assert.equal(view.lanes[0].remaining.children[0].textContent, '100%');
+    assert.equal(view.lanes[0].remaining.hidden, true);
     assert.equal(room.players[0].result, undefined);
     view.render(room, 'local', local, 25000);
     assert.equal(view.lanes[0].finishBadge.textContent, '10.30 s\nCLEAR!');

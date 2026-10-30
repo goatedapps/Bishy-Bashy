@@ -274,7 +274,7 @@ Watch the dinosaur descend onto the trampoline to judge when to press; the timin
 The wide gold zone gives a **Good** landing, while its smaller green center gives **Perfect**, which adds twice as much height and shortens the race.
 The meat stays at the same target height: **8 Perfect landings**, **16 Good landings**, or an equivalent mixture reaches it.
 Each Good adds one of 16 height units; each Perfect adds two, capped at the target.
-The arena shows height percentage rather than a fixed jump count.
+The jump scene fills the player panel to its bottom edge, without a jump counter or height bar, leaving more vertical travel space on phones.
 Accepted boosts stretch the dinosaur briefly and create an impact burst; a Perfect landing also plays a distinct optional flourish.
 After reaching the target height, reach the meat at the final jump's apex to finish; final flight time is included in your locally measured result.
 Each finished lane immediately shows the accepted elapsed seconds above **CLEAR!**, including remote players while others continue.
