@@ -155,21 +155,3 @@ test('Perm hits pop the dancer, while Monkey response dots never animate a new w
     assert.equal(monkey.lane.ring.calls.length, 1);
   } finally { globalThis.document = previous; }
 });
-
-test('direction feedback pops its check mark without overriding the revealed picture orientation', () => {
-  const previous = globalThis.document;
-  globalThis.document = { hidden: false };
-  try {
-    const { lane, round, run, update } = fixture();
-    const card = fixture().lane.remaining, cue = fixture().lane.remaining;
-    lane.facing = { card, cue };
-    round.game = 'facing-which-way';
-    update(0);
-    run.cleared = 1;
-    run.feedback = { kind: 'hit', color: 1, at: 10 };
-    update(10);
-    assert.equal(cue.calls.length, 1);
-    assert.equal(card.calls.length, 0);
-    assert.equal(lane.ring.calls.length, 0);
-  } finally { globalThis.document = previous; }
-});

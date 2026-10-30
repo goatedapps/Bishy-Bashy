@@ -5,7 +5,7 @@ import { GameAudio } from '../src/audio.js';
 import { AUDIO_FILES, BEAT, LOOP_SECONDS, audioAssetIds } from '../scripts/audio/score.js';
 import { demoCues } from '../shared/perm.js';
 import { FireworkRun } from '../shared/fireworks.js';
-import { roundSettings } from '../shared/games.js';
+import { createRun, roundSettings } from '../shared/games.js';
 import { FacingRun } from '../shared/facing.js';
 import { ARCADE_AUDIO_FILES, ARCADE_VOICE_FILES } from '../scripts/audio/arcade.js';
 import { arcadeGameIds } from '../shared/sets.js';
@@ -224,43 +224,37 @@ test('the two-second announcement screen lets its matching audio tail finish acr
   assert.equal([...audio.voices].filter(voice => voice.group === 'announcement').length, 0);
 });
 
-test('facing turns reuse slot-lock audio at local cue times and cancel old cues on replay, mute, and finish', async () => {
-  const { audio, context, requests, setTime } = setup();
-  const round = { id: 'facing', game: 'facing-which-way', ...roundSettings('facing-which-way', 123) };
-  const run = new FacingRun(round, 1000);
-  audio.selectGame(round.game);
-  await audio.unlock();
-  assert.ok(requests.some(url => url.includes('slot-lock.wav')));
-  assert.ok(!requests.some(url => url.includes('slot-carousel.wav')));
-  audio.scheduleRound(run.id, run.start, run.end, true, false, { game: round.game });
-  setTime(run.turnsAt - 100);
-  audio.facingTurns(run);
-  const voices = () => [...audio.voices].filter(voice => voice.group === 'facing-demo');
-  assert.equal(voices().length, 1);
-  assert.equal(voices()[0].id, 'slotLock');
-  assert.equal(voices()[0].source.started.at, context.currentTime + .1);
-  audio.facingTurns(run);
-  assert.equal(voices().length, 1);
-  const at = run.playAt;
-  run.tap((run.puzzle.answer + 1) % 3, at);
-  setTime(at);
-  audio.facingTurns(run);
-  assert.equal(voices().length, 0);
-  setTime(run.turnsAt - 100);
-  audio.facingTurns(run);
-  assert.equal(voices().length, 1);
-  audio.setEnabled(false);
-  assert.equal(voices().length, 0);
-  audio.setEnabled(true);
-  await audio.unlock();
-  setTime(run.turnsAt + 300);
-  audio.facingTurns(run);
-  assert.equal(voices().length, 0);
-  setTime(run.cues[1].at - 100);
-  audio.facingTurns(run);
-  assert.equal(voices().length, 1);
-  audio.endPlayer();
-  assert.equal(voices().length, 0);
+test('shared Facing flips and Dice throws use supplied sounds once, skip stale cues, and cancel on mute or finish', async () => {
+  for (const [game, sound, file, method, cueKey] of [['facing-which-way', 'facingFlip', 'flip.mp3', 'facingTurns', 'cues'], ['dice-dice-more-dice', 'diceRoll', 'dice-roll.mp3', 'diceRolls', 'rollCues']]) {
+    const { audio, context, requests, setTime } = setup();
+    const round = { id: game, game, ...roundSettings(game, 123) };
+    const run = createRun(round, 1000);
+    audio.selectGame(game); await audio.unlock();
+    assert.equal(requests.filter(url => url.includes(file)).length, 1);
+    audio.scheduleRound(run.id, run.start, run.end, true, false, { game });
+    const voices = () => [...audio.voices].filter(voice => voice.group === 'choice-demo');
+    setTime(run[cueKey][0].at - 100); audio[method](run);
+    assert.equal(voices().length, 1); assert.equal(voices()[0].id, sound);
+    assert.equal(voices()[0].source.started.at, context.currentTime + .1);
+    audio[method](run); assert.equal(voices().length, 1);
+    audio.setEnabled(false); assert.equal(voices().length, 0);
+    audio.setEnabled(true); await audio.unlock();
+    setTime(run[cueKey][0].at + 300); audio[method](run); assert.equal(voices().length, 0);
+    setTime(run[cueKey][1].at - 100); audio[method](run); assert.equal(voices().length, 1);
+    audio.endPlayer(); assert.equal(voices().length, 0);
+    setTime(run[cueKey][2].at - 100); audio[method](run); assert.equal(voices().length, 0);
+  }
+});
+
+test('Type in Letters button presses use cached Diuup and honor effects volume and mute', async () => {
+  const { audio, requests } = setup();
+  audio.selectGame('type-in-letters'); await audio.unlock();
+  audio.pressButton('letters'); assert.equal([...audio.voices].at(-1).id, 'lettersPress');
+  await audio.load(); assert.equal(requests.filter(url => url.includes('Diuup.mp3')).length, 1);
+  const count = audio.context.sources.length;
+  audio.setPreferences({ effectsVolume: 0 }); audio.pressButton('letters');
+  assert.equal(audio.context.sources.length, count);
+  audio.setEnabled(false); audio.pressButton('letters'); assert.equal(audio.voices.size, 0);
 });
 
 test('wheel audio follows the current spin, never duplicates on redraw, and stops on navigation or mute', async () => {
@@ -519,7 +513,7 @@ test('gameplay presses use a separate cached punch effect and obey effects volum
   assert.equal(audio.voices.size, 0);
 });
 
-test('instruction reveals use their own WAV without changing menu or gameplay button sounds', async () => {
+test('instruction reveals use their supplied MP3 without changing menu or gameplay button sounds', async () => {
   const { audio, requests } = setup();
   await audio.unlock();
   audio.pressButton('instructions');
@@ -529,7 +523,7 @@ test('instruction reveals use their own WAV without changing menu or gameplay bu
   audio.pressButton('gameplay');
   assert.equal([...audio.voices].at(-1).id, 'gameplayPress');
   audio.selectGame('perm-mania'); await audio.load();
-  assert.equal(requests.filter(url => url.includes('how-to-play.wav')).length, 1);
+  assert.equal(requests.filter(url => url.includes('how-to-play.mp3')).length, 1);
   audio.setEnabled(false);
   audio.pressButton('instructions');
   assert.equal(audio.voices.size, 0);

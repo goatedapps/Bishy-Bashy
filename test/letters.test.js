@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LETTERS_GAME, LETTERS_DURATION_MS, LETTERS_INPUT_MS, LETTERS_SETTLE_MS, LETTERS_FEEDBACK_MS, LETTERS_MAX_ACTIONS, LettersRun, LettersMatch, letterTarget, validateLetterClaim } from '../shared/letters.js';
+import { LETTERS_GAME, LETTERS_DURATION_MS, LETTERS_INPUT_MS, LETTERS_SETTLE_MS, LETTERS_PACKET_MS, LETTERS_FEEDBACK_MS, LETTERS_MAX_ACTIONS, LettersRun, LettersMatch, letterTarget, validateLetterClaim } from '../shared/letters.js';
 import { GAMES, createRun, roundSettings, comparePlayers } from '../shared/games.js';
 import { awardRound, arcadeGameIds } from '../shared/sets.js';
 import { RoomService } from '../server/rooms.js';
@@ -78,7 +78,7 @@ test('claims replay bounded input proofs; fabricated strings, extra actions, imp
   assert.equal(validateLetterClaim(r, run.state, { ...claim, actions: [...claim.actions, [0, completedAt + 100]] }, completedAt + 200), null);
   const bad = structuredClone(claim); bad.actions[1][1] = bad.actions[0][1];
   assert.equal(validateLetterClaim(r, run.state, bad, completedAt), null);
-  assert.equal(validateLetterClaim(r, run.state, claim, completedAt + LETTERS_SETTLE_MS + 1), null);
+  assert.equal(validateLetterClaim(r, run.state, claim, completedAt + LETTERS_PACKET_MS + 1), null);
   assert.equal(validateLetterClaim(r, run.state, claim, completedAt - 251), null);
   assert.equal(validateLetterClaim(r, run.state, { ...claim, actions: Array(LETTERS_MAX_ACTIONS + 1).fill([0, 0]) }, completedAt), null);
   const largest = { type: 'letters-claim', roundId: r.id, index: 0, actions: Array(LETTERS_MAX_ACTIONS).fill([2, 29999]) };
@@ -91,8 +91,8 @@ test('earlier completion beats the first packet, claims are idempotent, equal ti
   const fast = typeTarget(new LettersRun({ ...r, letters: match.state }, 0), 100);
   const received = slow.actions.at(-1)[1] + 50;
   assert.ok(match.claim('a', slow, received));
-  assert.ok(match.claim('b', fast, received + 200));
-  assert.ok(match.claim('c', fast, received + 250));
+  assert.ok(match.claim('b', fast, received + 50));
+  assert.ok(match.claim('c', fast, received + 70));
   assert.ok(match.claim('b', fast, received + 300));
   const old = match.state.target;
   assert.equal(match.advance(received + LETTERS_SETTLE_MS - 1), false);
@@ -115,7 +115,7 @@ test('a pre-deadline finish arriving just after zero still scores; inputs at zer
   const claim = typeTarget(new LettersRun(r, 0), r.duration - length - 1);
   assert.equal(claim.actions.at(-1)[1], r.duration - 1);
   assert.ok(match.claim('a', claim, r.duration + 200));
-  match.advance(r.duration + LETTERS_SETTLE_MS);
+  match.advance(r.duration + LETTERS_PACKET_MS);
   assert.equal(match.state.scores.a, 1);
   assert.equal(match.state.index, 0);
   const late = structuredClone(claim); late.actions.at(-1)[1] = r.duration;
@@ -157,7 +157,7 @@ test('server owns typing points and final results, keeps private proofs out of b
   assert.equal(JSON.stringify(service.snapshot(room)).includes(winner.token), false);
   time(r.endAt); service.tick();
   assert.equal(r.phase, 'collecting');
-  time(r.endAt + LETTERS_SETTLE_MS); service.tick();
+  time(r.endAt + LETTERS_PACKET_MS); service.tick();
   assert.equal(r.phase, 'results');
   assert.equal(room.set.history.length, 1);
   assert.ok(room.players.every(player => player.result.status === 'finished' && player.result.elapsed === LETTERS_DURATION_MS));
@@ -184,7 +184,7 @@ test('cosmetic alphabet snapshots are bounded to 4 Hz and cannot award points; d
   assert.equal(room.players[0].progress.cleared, 0);
   service.disconnect(clients[0]);
   assert.equal(room.players[0].result, null);
-  time(r.endAt + LETTERS_SETTLE_MS); service.tick();
+  time(r.endAt + LETTERS_PACKET_MS); service.tick();
   assert.equal(room.players[0].result.status, 'finished');
 });
 
@@ -193,7 +193,7 @@ test('three Game Select rounds keep 30-second races and readiness gates, reset t
   for (let index = 0; index < 3; index++) {
     assert.equal(room.round.duration, 30_000);
     assert.ok(Object.values(room.round.letters.scores).every(score => score === 0));
-    time(room.round.endAt + LETTERS_SETTLE_MS); service.tick();
+    time(room.round.endAt + LETTERS_PACKET_MS); service.tick();
     if (index < 2) {
       assert.equal(room.set.phase, 'intermission');
       time(room.set.nextStartAt); service.tick();
@@ -225,7 +225,7 @@ test('forfeiting or leaving does not stop the shared race, and forfeited players
   time(r.startAt + at + LETTERS_SETTLE_MS); service.tick();
   assert.equal(r.letters.scores[room.players[0].id], 0);
   assert.equal(r.letters.scores[room.players[1].id], 1);
-  time(r.endAt + LETTERS_SETTLE_MS); service.tick();
+  time(r.endAt + LETTERS_PACKET_MS); service.tick();
   assert.equal(r.phase, 'results');
   assert.equal(room.set.history.length, 1);
   assert.deepEqual(room.set.history[0].rows.map(row => row.points), [0, 10, 0]);

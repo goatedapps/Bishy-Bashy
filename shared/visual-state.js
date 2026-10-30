@@ -9,9 +9,7 @@ const SCHEMAS = {
   'fireworks-craze': { index: 'index', launchedAt: 'time', blockedUntil: 'time', burstMask: 'rocketMask', burstTimes: 'rocketTimes' },
   'jump-for-the-meat': { launchedAt: 'time', blockedUntil: 'time', launchHeight: 'height', finishAt: 'nullableTime' },
   'mimicking-monkeys': { demoAt: 'time', playAt: 'time', entered: 'index', blockedUntil: 'time' },
-  'me-find-mistake': { shownAt: 'time', blockedUntil: 'time' },
-  'dice-dice-more-dice': { shownAt: 'time', blockedUntil: 'time' },
-  'facing-which-way': { trialAt: 'time', blockedUntil: 'time' },
+  'me-find-mistake': { index: 'index', shownAt: 'time', blockedUntil: 'time' },
   'facial-slot-machine': { reelMask: 'mask', blockedReels: 'times', stoppedAt: 'durations', pausedMs: 'durations', missedFaces: 'faces' },
 };
 const relative = (time, start) => Number.isFinite(time) ? Math.max(-10000, time - start) : -10000;
@@ -100,7 +98,7 @@ export class RemoteRuns {
       }
       run.feedback = visual.feedback ? { ...visual.feedback, at: start + visual.feedback.at } : null;
       run.stageFeedback = visual.stageFeedback ? { ...visual.stageFeedback, at: start + visual.stageFeedback.at } : null;
-      if (run.feedback && ['me-find-mistake', 'dice-dice-more-dice', 'facing-which-way'].includes(round.game)) run.feedback.puzzle = run.sequence[Math.max(0, Math.min(run.goal - 1, run.cleared - (run.feedback.kind === 'hit' ? 1 : 0)))];
+      if (run.feedback && round.game === 'me-find-mistake') run.feedback.puzzle = run.sequence[Math.max(0, Math.min(run.goal - 1, run.index - 1))];
       entry.visual = visual;
     }
     return entry.run;

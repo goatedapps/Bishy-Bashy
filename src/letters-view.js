@@ -54,6 +54,7 @@ export class LettersStage {
       this.pointers.forEach(pointer => pointer.remove());
       this.rows = roster.map((player, index) => {
         const card = node('article', `letter-player letter-player-${index}${player.id === playerId ? ' you' : ''}`);
+        card.style.setProperty('grid-column', String(index + 1));
         const name = node('strong', 'letter-player-name', `${index + 1} · ${player.name}${player.id === playerId ? ' · You' : ''}`);
         const score = node('span', 'letter-score', '0');
         const typed = node('div', 'letter-typed');
@@ -74,7 +75,7 @@ export class LettersStage {
     this.targetLetters.forEach((letter, index) => { letter.textContent = started ? state.target[index] : '?'; });
     this.element.classList.toggle('letters-settled', Boolean(feedback));
     const winners = feedback?.winners.map(id => roster.find(player => player.id === id)?.name).filter(Boolean) || [];
-    const notice = !started ? 'Get ready!' : ended ? 'Time’s up!' : feedback ? `${winners.join(' & ')} +1` : run?.claim ? 'Checking the finish…' : '';
+    const notice = !started ? 'Get ready!' : ended ? 'Time’s up!' : feedback ? `${winners.join(' & ')} +1` : run?.claim ? 'Matched!' : '';
     if (this.notice.textContent !== notice) this.notice.textContent = notice;
     this.keys.forEach(({ key: cell }, index) => cell.classList.toggle('is-your-key', started && run?.cursor === index && !run.done));
     roster.forEach((player, index) => {
@@ -98,6 +99,7 @@ export class LettersStage {
       });
       const won = feedback?.winners.includes(player.id);
       row.card.classList.toggle('letter-winner', Boolean(won));
+      row.card.classList.toggle('letter-matched', own && Boolean(run?.claim));
       row.outcome.hidden = !feedback;
       row.outcome.className = `letter-outcome ${won ? 'letter-win' : 'letter-loss'}`;
       row.outcome.setAttribute('aria-label', won ? 'Won this set' : 'Lost this set');

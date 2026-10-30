@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RoomService, RECONNECT_WAIT_MS } from '../server/rooms.js';
-import { GAMES, roundSettings } from '../shared/games.js';
+import { GAMES, createRun, roundSettings } from '../shared/games.js';
 import { PERM_GAME, PermRun, demoCues } from '../shared/perm.js';
 import { TotemRun } from '../shared/totem.js';
 import { createSetPlan, awardRound, setStandings, INTERMISSION_MS } from '../shared/sets.js';
@@ -24,10 +24,22 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
   ready();
   const finish = (order = clients.map((_, index) => index), winner = 0) => {
     const round = room.round;
+    if (round.game === 'dice-dice-more-dice' || round.game === 'facing-which-way') {
+      const run = createRun(round, 0);
+      for (const stage of run.stages) {
+        time = round.startAt + stage.answerAt + 10;
+        for (const index of order) {
+          const place = index === winner ? 0 : index === 0 ? 1 : index;
+          service.handle(clients[index], { type: 'shared-choice', roundId: round.id, index: stage.index, color: stage.index < place ? (stage.puzzle.answer + 1) % 3 : stage.puzzle.answer, elapsed: stage.answerAt + 10 });
+        }
+        time = round.startAt + stage.answerEnd + 80; service.tick();
+      }
+      time = round.endAt; service.tick(); return;
+    }
     time = round.game === PERM_GAME ? round.endAt + 100 : round.startAt + 3500;
     for (const index of order) {
       const place = index === winner ? 0 : index === 0 ? 1 : index;
-      service.handle(clients[index], { type: 'result', roundId: round.id, status: 'finished', elapsed: round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: round.goal, mistakes: 0, ...(round.game === 'facial-slot-machine' ? { reelMask: 7 } : {}), ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) });
+      service.handle(clients[index], { type: 'result', roundId: round.id, status: 'finished', elapsed: round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: round.game === 'me-find-mistake' ? round.goal - place : round.goal, attempted: round.goal, mistakes: round.game === 'me-find-mistake' ? place : 0, ...(round.game === 'facial-slot-machine' ? { reelMask: 7 } : {}), ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) });
     }
   };
   return { service, clients, room, messages, sync, ready, finish, setTime: value => { time = value; }, get now() { return time; } };

@@ -7,8 +7,8 @@ const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
 const MENU_TRACKS = { menu: 'Background-ActionRock.mp3', instructions: 'game-instructions.mp3' };
 const MENU_TRACK_GAINS = { menu: 1, instructions: 2 };
-const EXTRA_AUDIO_FILES = { wrong: 'wrong.mp3', buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.wav', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3', wheelSpin: 'roulette.mp3', gameSelect: 'Game-select.mp3' };
-const GAME_AUDIO_FILES = { 'jump-for-the-meat': { jumpBounce: 'bounce.mp3' }, 'type-in-letters': { ding: 'Ding.mp3' }, 'perm-mania': { ding: 'Ding.mp3' }, 'mimicking-monkeys': { ding: 'Ding.mp3' }, 'its-raining-coins': { ding: 'Ding.mp3' }, 'dodge-or-die': { ding: 'Ding.mp3' }, 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3', ding: 'Ding.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3' }, 'facing-which-way': { ding: 'Ding.mp3' } };
+const EXTRA_AUDIO_FILES = { wrong: 'wrong.mp3', buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.mp3', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3', wheelSpin: 'roulette.mp3', gameSelect: 'Game-select.mp3' };
+const GAME_AUDIO_FILES = { 'jump-for-the-meat': { jumpBounce: 'bounce.mp3' }, 'type-in-letters': { ding: 'Ding.mp3', lettersPress: 'Diuup.mp3' }, 'perm-mania': { ding: 'Ding.mp3' }, 'mimicking-monkeys': { ding: 'Ding.mp3' }, 'its-raining-coins': { ding: 'Ding.mp3' }, 'dodge-or-die': { ding: 'Ding.mp3' }, 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3', ding: 'Ding.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3', diceRoll: 'dice-roll.mp3' }, 'facing-which-way': { ding: 'Ding.mp3', facingFlip: 'flip.mp3' } };
 const PROFILES = {
   'dice-dice-more-dice': { music: 'music', urgency: 'urgency', go: 'go' },
   'facing-which-way': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -251,7 +251,7 @@ export class GameAudio {
 
   pressButton(kind = 'menu') {
     if (!this.enabled || this.preferences.effectsVolume === 0) return;
-    const id = kind === 'instructions' ? 'instructionReveal' : kind === 'jump' ? 'jumpBounce' : kind === 'gameplay' ? 'gameplayPress' : 'buttonPress';
+    const id = kind === 'instructions' ? 'instructionReveal' : kind === 'jump' ? 'jumpBounce' : kind === 'letters' ? 'lettersPress' : kind === 'gameplay' ? 'gameplayPress' : 'buttonPress';
     const request = ++this.buttonRequest;
     if (this.context?.state === 'running' && this.buffers.has(id)) {
       this.play(id);
@@ -337,19 +337,24 @@ export class GameAudio {
     });
   }
 
-  facingTurns(run) {
-    const key = `${run.id}/${run.cleared}/${run.demoVersion}`;
+  facingTurns(run) { this.sharedCues(run, 'facing-which-way', 'facingFlip', run.cues); }
+
+  diceRolls(run) { this.sharedCues(run, 'dice-dice-more-dice', 'diceRoll', run.rollCues); }
+
+  sharedCues(run, game, sound, cues) {
+    const key = `${run.id}/${game}`;
     if (key !== this.turnKey) {
-      this.stopVoices(voice => voice.group === 'facing-demo');
+      this.stopVoices(voice => voice.group === 'choice-demo');
       this.turnKey = key;
       this.turnNotes.clear();
     }
-    if (!this.enabled || this.preferences.effectsVolume === 0 || this.context?.state !== 'running' || this.target?.game !== 'facing-which-way' || this.target.id !== run.id || this.target.playerDone || run.done) return;
+    if (!this.enabled || this.preferences.effectsVolume === 0 || this.context?.state !== 'running' || this.target?.game !== game || this.target.id !== run.id || this.target.playerDone || run.done) return;
     const now = this.now();
-    run.cues.forEach((cue, index) => {
+    if (!Number.isFinite(now)) return;
+    cues.forEach((cue, index) => {
       const remaining = cue.at - now;
-      if (remaining < 0 || remaining > 150 || cue.at >= run.end || this.turnNotes.has(index)) return;
-      const voice = this.source('slotLock', { at: this.context.currentTime + remaining / 1000, group: 'facing-demo' });
+      if (remaining < -80 || remaining > 150 || cue.at >= run.end || this.turnNotes.has(index)) return;
+      const voice = this.source(sound, { at: this.context.currentTime + Math.max(0, remaining) / 1000, group: 'choice-demo' });
       if (voice) this.turnNotes.add(index);
     });
   }
@@ -543,12 +548,12 @@ export class GameAudio {
     this.target = null; this.musicKey = null; this.countdownKey = null;
     this.demonstrationKey = null; this.demonstrationNotes.clear();
     this.turnKey = null; this.turnNotes.clear();
-    this.stopVoices(voice => voice.group === 'round' || voice.group === 'music' || voice.group === 'demonstration' || voice.group === 'facing-demo');
+    this.stopVoices(voice => voice.group === 'round' || voice.group === 'music' || voice.group === 'demonstration' || voice.group === 'choice-demo');
   }
 
   endPlayer() {
     if (this.target) this.target.playerDone = true;
-    this.stopVoices(voice => voice.group === 'round' || voice.group === 'demonstration' || voice.group === 'facing-demo');
+    this.stopVoices(voice => voice.group === 'round' || voice.group === 'demonstration' || voice.group === 'choice-demo');
   }
 
   cancel() {

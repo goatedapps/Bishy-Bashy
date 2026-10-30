@@ -2,8 +2,9 @@ export const LETTERS_GAME = 'type-in-letters';
 export const LETTERS_DURATION_MS = 30_000;
 export const LETTERS_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 export const LETTERS_INPUT_MS = 40;
-export const LETTERS_SETTLE_MS = 800;
-export const LETTERS_FEEDBACK_MS = 650;
+export const LETTERS_SETTLE_MS = 120;
+export const LETTERS_FEEDBACK_MS = 300;
+export const LETTERS_PACKET_MS = 800;
 export const LETTERS_MAX_ACTIONS = 768;
 
 export function letterTarget(seed, index) {
@@ -85,7 +86,7 @@ export function validateLetterClaim(round, state, claim, receivedElapsed) {
     if (run.tap(color, at).type === 'ignored') return null;
     last = at;
   }
-  if (!run.claim || receivedElapsed - last > LETTERS_SETTLE_MS || run.claim.actions.length !== claim.actions.length) return null;
+  if (!run.claim || receivedElapsed - last > LETTERS_PACKET_MS || run.claim.actions.length !== claim.actions.length) return null;
   return { elapsed: last, typed: run.typed };
 }
 
@@ -99,12 +100,13 @@ export class LettersMatch {
   }
 
   claim(playerId, message, elapsed) {
-    if (!Object.hasOwn(this.state.scores, playerId) || message.index !== this.state.index || this.state.phase !== 'play' || elapsed < this.state.opensAt || elapsed >= this.round.duration + LETTERS_SETTLE_MS || this.settleAt !== null && elapsed >= this.settleAt) return false;
+    if (!Object.hasOwn(this.state.scores, playerId) || message.index !== this.state.index || this.state.phase !== 'play' || elapsed < this.state.opensAt || elapsed >= this.round.duration + LETTERS_PACKET_MS) return false;
     if (this.candidates.has(playerId)) return true;
+    if (this.settleAt !== null && elapsed >= this.settleAt) return false;
     const candidate = validateLetterClaim(this.round, this.state, message, elapsed);
     if (!candidate) return false;
     this.candidates.set(playerId, candidate);
-    this.settleAt ??= Math.min(this.round.duration + LETTERS_SETTLE_MS, elapsed + LETTERS_SETTLE_MS);
+    this.settleAt ??= Math.min(this.round.duration + LETTERS_PACKET_MS, elapsed + LETTERS_SETTLE_MS);
     return true;
   }
 

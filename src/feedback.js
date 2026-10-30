@@ -77,8 +77,6 @@ export class GameFeedback {
     if (game === 'dodge-or-die' && gained) this.animate(lane.dodge.line, [{ opacity: .4 }, { opacity: 1 }], 240);
     if (game === 'burger-girl' && gained) this.animate(lane.burger.stack, POP, 220);
     if (game === 'me-find-mistake' && gained && feedback) this.animate(lane.mistake.cards[feedback.color].picture, POP, 180);
-    if (game === 'dice-dice-more-dice' && gained && feedback) this.animate(lane.dice.cards[feedback.color].face, POP, 180);
-    if (game === 'facing-which-way' && gained) this.animate(lane.facing.cue, POP, 210);
     if (missed) {
       this.animate(lane.status, [{ opacity: .45 }, { opacity: 1 }], 220);
       return;

@@ -31,7 +31,7 @@ export const AUDIO_FILES = {
 
 export function audioAssetIds(game = 'totem-shrinker') {
   const shared = ['finish', 'timeout'];
-  if (game === 'facing-which-way') return [...shared, 'red', 'green', 'blue', 'mistake', 'go', 'music', 'urgency', 'slotLock'];
+  if (game === 'facing-which-way') return [...shared, 'red', 'green', 'blue', 'mistake', 'go', 'music', 'urgency'];
   if (game === 'jump-for-the-meat') return [...shared, 'red', 'green', 'blue', 'mistake', 'go', 'music', 'urgency', 'permGrow'];
   if (game === 'facial-slot-machine') return [...shared, 'slotMusic', 'slotUrgency', 'slotLock', 'slotMiss', 'slotWin', 'slotGo'];
   return [...shared, ...(game === 'perm-mania' ? ['permMusic', 'permUrgency', 'permDemo', 'permHit', 'permMiss', 'permGrow', 'permGo'] : ['red', 'green', 'blue', 'mistake', 'go', 'music', 'urgency'])];

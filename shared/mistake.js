@@ -3,7 +3,7 @@ import { createSequence } from './totem.js';
 export const MISTAKE_GAME = 'me-find-mistake';
 export const MISTAKE_GOAL = 8;
 export const MISTAKE_DURATION_MS = 35_000;
-export const MISTAKE_RETRY_MS = 600;
+export const MISTAKE_RETRY_MS = 260;
 export const MISTAKE_REVEAL_MS = 260;
 export const MISTAKE_OBSERVE_MS = 250;
 export const PICTURE_NAMES = [
@@ -31,6 +31,7 @@ export class MistakeRun {
     this.end = localStart + round.duration;
     this.goal = round.goal;
     this.sequence = mistakeSequence(round.seed, round.goal, round.difficulty);
+    this.index = 0;
     this.cleared = 0;
     this.mistakes = 0;
     this.shownAt = localStart;
@@ -40,26 +41,22 @@ export class MistakeRun {
     this.elapsed = null;
   }
 
-  get puzzle() { return this.sequence[Math.min(this.cleared, this.goal - 1)]; }
-  get readyAt() { return Math.max(this.blockedUntil, this.shownAt + (this.cleared === 0 ? MISTAKE_OBSERVE_MS : 0)); }
+  get puzzle() { return this.sequence[Math.min(this.index, this.goal - 1)]; }
+  get readyAt() { return Math.max(this.blockedUntil, this.shownAt + (this.index === 0 ? MISTAKE_OBSERVE_MS : 0)); }
 
   tap(color, time) {
     if (this.done || !Number.isInteger(color) || color < 0 || color > 2 || !Number.isFinite(time) || time < this.readyAt || time >= this.end) return { type: 'ignored' };
     const puzzle = this.puzzle;
-    if (color !== puzzle.odd) {
-      this.mistakes++;
-      this.blockedUntil = time + MISTAKE_RETRY_MS;
-      this.feedback = { kind: 'miss', at: time, color, puzzle };
-      return { type: 'mistake' };
-    }
-    this.feedback = { kind: 'hit', at: time, color, puzzle };
-    this.cleared++;
-    if (this.cleared === this.goal) {
+    const hit = color === puzzle.odd;
+    if (hit) this.cleared++; else this.mistakes++;
+    this.feedback = { kind: hit ? 'hit' : 'miss', at: time, color, puzzle };
+    this.index++;
+    this.shownAt = this.blockedUntil = time + MISTAKE_REVEAL_MS;
+    if (this.index === this.goal) {
       this.done = true;
       this.elapsed = time - this.start;
-      return { type: 'finished', elapsed: this.elapsed };
+      return { type: 'finished', elapsed: this.elapsed, correct: hit };
     }
-    this.shownAt = time + MISTAKE_REVEAL_MS;
-    return { type: 'hit' };
+    return { type: hit ? 'hit' : 'mistake' };
   }
 }

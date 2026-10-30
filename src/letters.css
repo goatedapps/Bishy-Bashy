@@ -2,8 +2,8 @@
 .letters-theme .arena { background:#e5f8f4 var(--image-bg-letters-workshop,url('/assets/optimized/bg-letters-workshop-21fcae531114.webp')) center / cover; color:#23394a; }
 .letters-theme .match-hud { background:#fff9df; }
 .letters-theme .match-hud .timer { font-variant-numeric:tabular-nums; }
-.letters-theme #player-lanes { display:none; }
-.letters-stage { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:space-evenly; gap:12px; padding:20px 24px; width:100%; flex:1; min-height:0; }
+.is-playing.letters-theme #player-lanes { display:none; }
+.letters-stage { position:relative; display:grid; grid-template-rows:minmax(60px,1fr) 28px 80px auto; justify-items:center; align-items:center; gap:12px; padding:20px 24px; width:100%; flex:1; min-height:0; }
 .letters-target { display:flex; justify-content:center; gap:14px; padding:14px 30px; border:3px solid #25374a; border-radius:20px; background:#fffdf0; box-shadow:0 6px #487989; }
 .letters-target>strong { display:grid; place-items:center; min-width:58px; color:#25374a; font:clamp(38px,6vw,70px)/1 'Lilita One',system-ui; }
 .letters-notice { min-height:28px; text-align:center; color:#25374a; font:clamp(15px,2.2vw,23px)/1.2 'Lilita One',system-ui; text-shadow:0 2px #fff; }
@@ -15,8 +15,8 @@
 .letter-pointer-1 { background:#167498; }
 .letter-pointer-2 { background:#257943; }
 .letter-pointer-3 { background:#7347a5; }
-.letters-players { display:flex; align-items:stretch; justify-content:center; gap:12px; width:100%; }
-.letter-player { --player-color:#be3153; position:relative; flex:1; min-width:0; max-width:230px; display:grid; grid-template-columns:minmax(0,1fr) auto; align-content:start; gap:8px; padding:12px; border:3px solid var(--player-color); border-radius:15px; background:#fffdf0ed; text-align:center; }
+.letters-players { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); align-items:stretch; gap:12px; width:100%; }
+.letter-player { --player-color:#be3153; position:relative; flex:1; min-width:0; max-width:none; display:grid; grid-template-columns:minmax(0,1fr) auto; align-content:start; gap:8px; padding:12px; border:3px solid var(--player-color); border-radius:15px; background:#fffdf0ed; text-align:center; }
 .letter-player-1 { --player-color:#167498; }
 .letter-player-2 { --player-color:#257943; }
 .letter-player-3 { --player-color:#7347a5; }
@@ -32,6 +32,7 @@
 .letter-win { color:#ffe157; }
 .letter-loss { color:#de3552; }
 .letter-winner { background:#fff5b1; }
+.letter-matched { background:#dcf5d6; }
 .letters-settled .letter-outcome { animation:letter-result-pop .18s ease-out both; }
 .letters-mascot { position:absolute; inset:8%; display:flex; align-items:center; justify-content:center; }
 .letters-mascot>i { display:grid; place-items:center; width:34%; aspect-ratio:.8; border:2px solid #293b50; border-radius:20%; background:#ffda61; color:#293b50; font:normal clamp(16px,3vw,52px)/1 'Lilita One',system-ui; box-shadow:0 5px #d49337; transform:rotate(-12deg) translateY(10%); }
@@ -40,27 +41,27 @@
 .art-type-in-letters { background:#ccf0e9; }
 @keyframes letter-result-pop { from { transform:scale(.65); opacity:0; } to { transform:scale(1); opacity:1; } }
 @media(max-width:700px) {
-  .letters-stage { padding:14px 10px; gap:8px; }
-  .letters-alphabet { grid-template-columns:repeat(9,minmax(0,1fr)); gap:6px; }
-  .letter-key { min-height:45px; padding:5px 0 19px; font-size:21px; }
-  .letter-markers { bottom:1px; }
-  .letter-pointer { min-width:11px; height:14px; font-size:9px; }
-  .letters-target { padding:10px 24px; gap:8px; }
-  .letters-target>strong { min-width:42px; font-size:46px; }
+  .letters-stage { grid-template-rows:minmax(42px,1fr) 20px 64px auto; padding:10px 6px; gap:8px; }
+  .letters-alphabet { grid-template-columns:repeat(27,minmax(0,1fr)); gap:0; }
+  .letter-key { min-height:62px; padding:3px 0 45px; border-width:1px; border-radius:4px; box-shadow:0 2px #72a2ae; font-size:clamp(9px,2.8vw,16px); }
+  .letter-markers { bottom:1px; flex-direction:column; align-items:center; gap:0; }
+  .letter-pointer { min-width:8px; width:10px; height:10px; padding:0; border:0; border-radius:2px; font-size:8px; }
+  .letters-target { padding:6px 15px; gap:8px; }
+  .letters-target>strong { min-width:30px; font-size:36px; }
   .letters-players { gap:6px; }
-  .letter-player { padding:7px 4px; gap:5px; border-width:2px; grid-template-columns:1fr; }
+  .letter-player { padding:6px 2px; gap:3px; border-width:2px; grid-template-columns:1fr; }
   .letter-player-name { font-size:9px; text-align:center; }
   .letter-score { font-size:25px; }
   .letter-typed { gap:2px; }
-  .letter-typed>span { width:22px; font-size:24px; padding:3px 0; }
+  .letter-typed>span { width:19px; font-size:21px; padding:3px 0; }
   .letter-outcome { font-size:94px; }
 }
 @media(max-height:650px) {
-  .letters-stage { gap:5px; padding-block:8px; }
+  .letters-stage { grid-template-rows:minmax(32px,1fr) 16px 54px auto; gap:4px; padding-block:6px; }
   .letters-target { padding-block:6px; }
   .letters-target>strong { font-size:32px; }
   .letters-notice { min-height:19px; font-size:14px; }
-  .letter-key { min-height:32px; padding-block:2px 16px; font-size:17px; }
+  .letter-key { min-height:52px; padding-block:2px 38px; font-size:clamp(9px,2.8vw,17px); }
   .letter-player { gap:3px; padding-block:5px; }
   .letter-score { font-size:20px; }
   .letter-typed>span { font-size:20px; }

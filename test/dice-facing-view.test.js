@@ -1,142 +1,45 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { DiceStage, FacingStage } from '../src/dice-facing-view.js';
+import { SharedChoiceStage } from '../src/shared-choice-view.js';
 import { createRun, roundSettings } from '../shared/games.js';
-import { DICE_REVEAL_MS } from '../shared/dice.js';
-
+import { ChoiceMatch } from '../shared/choice-round.js';
 class Element {
-  constructor() {
-    this.dataset = {};
-    this.children = [];
-    this.attributes = new Map();
-    this.style = { setProperty() {} };
-    this.classes = new Set();
-    this.classList = { add: name => this.classes.add(name), toggle: (name, value) => value ? this.classes.add(name) : this.classes.delete(name) };
-  }
-  append(...nodes) { this.children.push(...nodes); }
-  setAttribute(name, value) { this.attributes.set(name, value); }
-  getAttribute(name) { return this.attributes.get(name); }
+  constructor(){this.dataset={};this.children=[];this.attributes=new Map();this.styles={};this.style={setProperty:(key,value)=>{this.styles[key]=value;}};this.classes=new Set();this.classList={add:name=>this.classes.add(name),toggle:(name,value)=>value?this.classes.add(name):this.classes.delete(name)};}
+  append(...nodes){this.children.push(...nodes);}
+  replaceChildren(...nodes){this.children=[...nodes];}
+  setAttribute(name,value){this.attributes.set(name,value);}
+  getAttribute(name){return this.attributes.get(name);}
 }
-
-function withDocument(run) {
-  const previous = globalThis.document;
-  globalThis.document = { createElement: () => new Element() };
-  try { run(); } finally { globalThis.document = previous; }
-}
-
-test('dice hide rolling/future values, preserve the solved roll, and never expose remote choices', () => withDocument(() => {
-  const round = { id: 'dice', game: 'dice-dice-more-dice', ...roundSettings('dice-dice-more-dice', 123) };
-  const run = createRun(round, 1000), stage = new DiceStage();
-  const values = () => stage.cards.map(card => Number(card.face.dataset.value));
-  stage.render(round, run, 999, 0, true, true, 0);
-  assert.deepEqual(values(), [0, 0, 0]);
-  stage.render(round, run, run.shownAt, 0, true, true, 0);
-  assert.deepEqual(values(), run.puzzle.values);
-  const puzzle = run.puzzle;
-  run.tap(puzzle.answer, run.readyAt);
-  stage.render(round, run, run.feedback.at + 1, 0, true, true, 1);
-  assert.deepEqual(values(), puzzle.values);
-  assert.equal(stage.cards[puzzle.answer].stamp.hidden, false);
-  stage.render(round, run, run.feedback.at + DICE_REVEAL_MS, 0, true, true, 1);
-  assert.deepEqual(values(), [0, 0, 0]);
-  assert.ok(stage.cards.every(card => card.stamp.hidden));
-  stage.render(round, run, run.shownAt, 0, true, true, 1);
-  assert.deepEqual(values(), run.puzzle.values);
-  stage.render(round, undefined, run.shownAt, 0, true, true, 1);
-  assert.deepEqual(values(), [0, 0, 0]);
-  assert.match(stage.element.getAttribute('aria-label'), /Remote player/);
-}));
-
-test('facing hides its picture and answer during turns and play, while feedback shows only the solved trick', () => withDocument(() => {
-  const round = { id: 'facing', game: 'facing-which-way', ...roundSettings('facing-which-way', 123) };
-  const run = createRun(round, 1000), stage = new FacingStage();
-  stage.render(round, run, 999, 0, true, true, 0);
-  assert.equal(stage.duck.hidden, true);
-  stage.render(round, run, run.start, 0, true, true, 0);
-  assert.equal(stage.duck.hidden, false);
-  assert.match(stage.duck.getAttribute('aria-label'), /Duck pointing/);
-  stage.render(round, run, run.turnsAt, 0, true, true, 0);
-  assert.equal(stage.duck.hidden, true);
-  assert.match(stage.element.getAttribute('aria-label'), /move 1 of 2/);
-  stage.render(round, run, run.playAt, 0, true, true, 0);
-  assert.equal(stage.duck.hidden, true);
-  assert.equal(stage.duck.getAttribute('aria-label'), 'Covered picture');
-  const puzzle = run.puzzle;
-  run.tap(puzzle.answer, run.playAt);
-  stage.render(round, run, run.feedback.at + 1, 0, true, true, 1);
-  assert.equal(stage.duck.hidden, false);
-  assert.equal(stage.cue.textContent, '✓');
-  assert.match(stage.card.style.transform, new RegExp(`rotate\\(${puzzle.poses.at(-1).angle}deg\\)`));
-  stage.render(round, run, run.trialAt, 0, true, true, 1);
-  assert.equal(stage.phase.textContent, 'Look!');
-  stage.render(round, undefined, run.trialAt, 0, true, true, 1);
-  assert.equal(stage.duck.hidden, true);
-  assert.equal(stage.cue.textContent, '');
-  assert.match(stage.element.getAttribute('aria-label'), /Remote player/);
-}));
-
-test('a wrong direction never reveals the answer and a replay returns to the original picture', () => withDocument(() => {
-  const round = { id: 'facing', game: 'facing-which-way', ...roundSettings('facing-which-way', 123) };
-  const run = createRun(round, 1000), stage = new FacingStage();
-  run.tap((run.puzzle.answer + 1) % 3, run.playAt);
-  stage.render(round, run, run.feedback.at + 1, 0, true, true, 0);
-  assert.equal(stage.duck.hidden, true);
-  assert.equal(stage.phase.textContent, 'Again!');
-  assert.equal(stage.cue.textContent, '×');
-  stage.render(round, run, run.trialAt, 0, true, true, 0);
-  assert.equal(stage.duck.hidden, false);
-  assert.equal(stage.phase.textContent, 'Look!');
-}));
-
-test('reduced motion closes the flap immediately without changing cue timing or flipping the card', () => withDocument(() => {
-  const previous = globalThis.matchMedia;
-  const preference = { matches: true };
-  globalThis.matchMedia = () => preference;
-  try {
-    const round = { id: 'facing', game: 'facing-which-way', ...roundSettings('facing-which-way', 123) };
-    const run = createRun(round, 1000), stage = new FacingStage();
-    const time = run.coveredAt - 90;
-    assert.equal(run.phase(time).mode, 'cover');
-    stage.render(round, run, time, 0, true, true, 0);
-    assert.ok(!stage.card.style.transform.includes('scaleX'));
-    assert.equal(stage.duck.hidden, true);
-    assert.equal(stage.back.style.transform, 'translateY(0%)');
-    preference.matches = false;
-    stage.render(round, run, time, 0, true, true, 0);
-    assert.ok(!stage.card.style.transform.includes('scaleX'));
-    assert.equal(stage.duck.hidden, false);
-    assert.notEqual(stage.back.style.transform, 'translateY(0%)');
-    assert.equal(run.phase(time).mode, 'cover');
-  } finally { globalThis.matchMedia = previous; }
-}));
-
-test('facing slides a separate flap over the upright card before showing the first turn', () => withDocument(() => {
-  const round={id:'facing',game:'facing-which-way',...roundSettings('facing-which-way',123)};
-  const run=createRun(round,1000),stage=new FacingStage();
-  const flipStart=run.trialAt+700;
-  stage.render(round,run,flipStart+100,0,true,true,0);
-  assert.equal(stage.duck.hidden,false);
-  assert.equal(stage.back.hidden,false);
-  const earlyFlap = stage.back.style.transform;
-  assert.equal(stage.cue.textContent,'');
-  stage.render(round,run,flipStart+300,0,true,true,0);
-  assert.equal(stage.duck.hidden,false);
-  assert.equal(stage.back.hidden,false);
-  assert.notEqual(stage.back.style.transform, earlyFlap);
-  assert.ok(!stage.card.style.transform.includes('scaleX'));
-  for(const time of [run.coveredAt,run.turnsAt-1]) {
-    stage.render(round,run,time,0,true,true,0);
-    assert.equal(stage.phase.textContent,'Covered');
-    assert.equal(stage.duck.hidden,true);
-    assert.equal(stage.back.style.transform,'translateY(0%)');
-    assert.equal(stage.cue.textContent,'');
-    assert.equal(stage.count.textContent,'');
-    assert.ok(!stage.card.style.transform.includes('scaleX'));
-  }
-  stage.render(round,run,run.turnsAt,0,true,true,0);
-  assert.equal(stage.phase.textContent,'Track!');
-  assert.equal(stage.count.textContent,'1 / 2');
-  assert.notEqual(stage.cue.textContent,'');
-  stage.render(round,run,run.turnsAt+run.stepMs,0,true,true,0);
-  assert.equal(stage.count.textContent,'2 / 2');
-}));
+for(const game of ['dice-dice-more-dice','facing-which-way']) test(`${game}: common options and fixed player columns hide answers until the deadline`,()=>{
+  const previous=globalThis.document;globalThis.document={createElement:()=>new Element()};
+  try{
+    const players=[{id:'a',name:'Solo',connected:true}];
+    const round={id:'r',game,playerIds:['a'],...roundSettings(game,123)};
+    const run=createRun(round,1000),match=new ChoiceMatch(round,run.stages);round.choice=match.state;
+    const room={round,players,set:{players}},local={run},view=new SharedChoiceStage(),stage=run.stages[0];
+    view.render(room,'a',local,999);
+    assert.equal(view.rows[0].card.styles['grid-column'],'1');
+    if(game==='facing-which-way'){
+      view.render(room,'a',local,run.start+stage.turnsAt);
+      assert.equal(view.options.hidden,true); assert.equal(view.duck.hidden,true);
+      assert.equal(view.card.getAttribute('aria-label'),'Covered duck card');
+    }
+    run.tap(stage.puzzle.answer,run.start+stage.answerAt+10);
+    match.choose('a',{index:0,color:stage.puzzle.answer,elapsed:stage.answerAt+10},stage.answerAt+20);
+    view.render(room,'a',local,run.start+stage.answerAt+30);
+    assert.equal(view.options.hidden,false);
+    assert.equal(view.rows[0].selection.textContent,'Locked');
+    assert.equal(view.rows[0].result.hidden,true);
+    assert.ok(view.optionCards.every(option=>option.players.children.length===0));
+    match.advance(stage.answerEnd+80);
+    view.render(room,'a',local,run.start+stage.answerEnd-1);
+    assert.equal(view.rows[0].result.hidden,true);
+    view.render(room,'a',local,run.start+stage.answerEnd+80);
+    assert.equal(view.rows[0].result.hidden,false);
+    assert.equal(view.rows[0].score.textContent,'1');
+    assert.equal(view.optionCards[stage.puzzle.answer].players.children.length,1);
+    if(game==='facing-which-way') assert.match(view.optionCards[stage.puzzle.answer].duck.getAttribute('aria-label'), /Front|Back/);
+    view.render(room,'a',local,run.start+run.stages[1].startsAt);
+    assert.ok(view.optionCards.every(option=>option.players.children.length===0));
+  }finally{globalThis.document=previous;}
+});

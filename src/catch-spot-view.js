@@ -107,10 +107,10 @@ export class MistakeStage {
   render(round, run, time, elapsed, active, present, cleared, terminal = false) {
     const feedback = run?.feedback;
     const age = feedback ? time - feedback.at : Infinity;
-    const showing = age >= 0 && age < (feedback?.kind === 'hit' ? 260 : 600);
+    const showing = age >= 0 && age < 260;
     const solved = feedback?.kind === 'hit' && (showing || terminal);
-    const puzzle = solved ? feedback.puzzle : run?.puzzle;
-    const visible = Boolean(run && active && time >= run.start && (time >= run.shownAt || solved));
+    const puzzle = (showing || terminal) && feedback ? feedback.puzzle : run?.puzzle;
+    const visible = Boolean(run && active && time >= run.start && (time >= run.shownAt || showing || terminal && feedback));
     this.element.classList.toggle('unoccupied', !present);
     this.cards.forEach(({ card, picture, stamp }, column) => {
       const selected = (showing || terminal && solved) && feedback?.color === column;

@@ -19,11 +19,13 @@ import { MISTAKE_GAME } from '../shared/mistake.js';
 import { BurgerStage, MistakeStage, chefPortrait, picturePortrait } from './catch-spot-view.js';
 import { DICE_GAME } from '../shared/dice.js';
 import { FACING_GAME } from '../shared/facing.js';
-import { DiceStage, FacingStage, diceMascot, duckPortrait } from './dice-facing-view.js';
+import { diceMascot, duckPortrait } from './dice-facing-view.js';
 import { LETTERS_GAME } from '../shared/letters.js';
 import { LettersStage } from './letters-view.js';
+import { SharedChoiceStage } from './shared-choice-view.js';
+import { isSharedChoice } from '../shared/choice-round.js';
 
-const STAGES = { [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake', [DICE_GAME]: 'dice', [FACING_GAME]: 'facing' };
+const STAGES = { [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake' };
 
 const SHAPES = ['●', '▲', '◆'];
 const $ = id => document.getElementById(id);
@@ -33,7 +35,7 @@ const node = (tag, className, text) => {
   if (text !== undefined) element.textContent = text;
   return element;
 };
-const resultLabel = (result, perm = false, letters = false) => result?.status === 'finished' ? letters ? `${result.cleared} typing points` : perm ? `${result.cleared} growth · ${result.score.toLocaleString()} pts` : `${(result.elapsed / 1000).toFixed(3)} s` : ({ forfeit: 'Forfeited', timeout: 'Time expired', missing: 'No result' }[result?.status] || 'Waiting…');
+const resultLabel = (result, perm = false, letters = false, points = false) => result?.status === 'finished' ? points ? `${result.cleared} correct` : letters ? `${result.cleared} typing points` : perm ? `${result.cleared} growth · ${result.score.toLocaleString()} pts` : `${(result.elapsed / 1000).toFixed(3)} s` : ({ forfeit: 'Forfeited', timeout: 'Time expired', missing: 'No result' }[result?.status] || 'Waiting…');
 
 function block(color, surprised = false) {
   const element = node('div', `block ${COLORS[color]}${surprised ? ' surprised' : ''}`);
@@ -55,6 +57,8 @@ function dancer(index, growth = 0) {
 
 export class GameView {
   constructor() {
+    this.choice = new SharedChoiceStage();
+    $('arena').append(this.choice.element);
     this.letters = new LettersStage();
     $('arena').append(this.letters.element);
     this.feedback = new GameFeedback();
@@ -75,11 +79,9 @@ export class GameView {
       const jump = new JumpStage();
       const burger = new BurgerStage();
       const mistake = new MistakeStage();
-      const dice = new DiceStage();
-      const facing = new FacingStage();
       const coins = new CoinStage();
       const dodge = new DodgeStage();
-      zone.append(tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element, burger.element, mistake.element, dice.element, facing.element, coins.element, dodge.element);
+      zone.append(tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element, burger.element, mistake.element, coins.element, dodge.element);
       const effects = node('div', 'game-feedback');
       effects.setAttribute('aria-hidden', 'true');
       const ring = node('span', 'feedback-ring');
@@ -96,7 +98,7 @@ export class GameView {
       stageResult.setAttribute('role', 'img');
       lane.append(name, finishBadge, zone, node('div', 'base'), remaining, progress, status, stageResult);
       $('player-lanes').append(lane);
-      return { lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, dice, facing, coins, dodge, remaining, progress, fill, status, effects, ring, particles, towerKey: '' };
+      return { lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, coins, dodge, remaining, progress, fill, status, effects, ring, particles, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -113,7 +115,14 @@ export class GameView {
     const active = isRoundActive(round);
     const game = active ? round.game : room.selectedGame;
     $('arena').classList.toggle('lobby', !active);
+    this.choice.element.hidden = !active || !isSharedChoice(game);
     this.letters.element.hidden = !active || game !== LETTERS_GAME;
+    if (active && isSharedChoice(game)) {
+      this.choice.render(room, playerId, local, time);
+      $('play-view').hidden = false;
+      $('results').hidden = true;
+      return;
+    }
     if (active && game === LETTERS_GAME) {
       this.letters.render(room, playerId, local, time);
       $('play-view').hidden = false;
@@ -142,12 +151,12 @@ export class GameView {
       const frozen = shownRun && !shownRun.done && time < shownRun.blockedUntil;
       const stageFeedback = shownRun?.stageFeedback || ([DICE_GAME, MISTAKE_GAME].includes(game) && shownRun?.feedback ? { correct: shownRun.feedback.kind === 'hit', at: shownRun.feedback.at } : null);
       const stageAge = stageFeedback ? time - stageFeedback.at : Infinity;
-      elements.stageResult.hidden = !active || !player || document.hidden || stageAge < 0 || stageAge >= 650;
+      elements.stageResult.hidden = !active || !player || document.hidden || stageAge < 0 || stageAge >= (mistake ? 260 : 650);
       elements.stageResult.className = `stage-result ${stageFeedback?.correct ? 'stage-correct' : 'stage-wrong'}`;
       elements.stageResult.setAttribute('aria-label', stageFeedback?.correct ? 'Correct set' : 'Wrong set');
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.finishBadge.hidden = !active || status?.status !== 'finished';
-      const finishLabel = jump ? `${((status?.elapsed || 0) / 1000).toFixed(2)} s\nCLEAR!` : perm ? '✓ Finished' : '✓ Cleared!';
+      const finishLabel = jump ? `${((status?.elapsed || 0) / 1000).toFixed(2)} s\nCLEAR!` : perm || mistake ? '✓ Finished' : '✓ Cleared!';
       if (elements.finishBadge.textContent !== finishLabel) elements.finishBadge.textContent = finishLabel;
       elements.finishBadge.setAttribute('aria-live', own ? 'off' : 'polite');
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';
@@ -159,8 +168,6 @@ export class GameView {
       elements.jump.element.hidden = !jump;
       elements.burger.element.hidden = !burger;
       elements.mistake.element.hidden = !mistake;
-      elements.dice.element.hidden = !dice;
-      elements.facing.element.hidden = !facing;
       elements.coins.element.hidden = game !== COIN_GAME;
       elements.dodge.element.hidden = game !== DODGE_GAME;
       if (STAGES[game]) {
@@ -191,12 +198,12 @@ export class GameView {
       const value = game === 'totem-shrinker' ? active && player ? Math.max(0, round.blockCount - cleared) : 0 : cleared;
       const counterKey = `${game}/${value}/${round?.goal}`;
       if (!jump && elements.remaining.dataset.value !== counterKey) {
-        elements.remaining.replaceChildren(node('strong', '', String(value)), document.createTextNode(game === 'totem-shrinker' ? 'left' : ` / ${round?.goal || GAMES[game]?.goal || 0}`));
+        elements.remaining.replaceChildren(node('strong', '', String(value)), document.createTextNode(mistake ? 'correct' : game === 'totem-shrinker' ? 'left' : ` / ${round?.goal || GAMES[game]?.goal || 0}`));
         elements.remaining.dataset.value = counterKey;
       }
-      elements.fill.style.width = `${active && player ? cleared / round.goal * 100 : 0}%`;
+      elements.fill.style.width = `${active && player ? (mistake ? shownRun?.index ?? player.progress?.visual?.fields.index ?? cleared : cleared) / round.goal * 100 : 0}%`;
       const score = ownRun?.run.score ?? player?.progress?.score ?? 0;
-      elements.status.textContent = !player ? 'Waiting to join' : !player.connected ? 'Reconnecting…' : active ? status ? jump && status.status === 'finished' ? '' : resultLabel(status, perm) : frozen ? 'Oops!' : perm ? `${score.toLocaleString()} pts` : '' : player.ready ? '✓ Ready' : player.sync?.count >= 3 ? (player.id === room.hostId ? 'Host' : 'Not ready') : 'Syncing…';
+      elements.status.textContent = !player ? 'Waiting to join' : !player.connected ? 'Reconnecting…' : active ? status ? jump && status.status === 'finished' ? '' : resultLabel(status, perm, false, mistake) : frozen ? 'Oops!' : perm ? `${score.toLocaleString()} pts` : '' : player.ready ? '✓ Ready' : player.sync?.count >= 3 ? (player.id === room.hostId ? 'Host' : 'Not ready') : 'Syncing…';
     });
     this.updateFeedback(room, local, time);
     const hasResults = round?.phase === 'results';
@@ -206,7 +213,7 @@ export class GameView {
   }
 
   updateFeedback(room, local, time) {
-    if (room?.round?.game === LETTERS_GAME) { this.feedback.clear(); return; }
+    if (GAMES[room?.round?.game]?.sharedArena) { this.feedback.clear(); return; }
     const lane = room && this.lanes.find(elements => elements.lane.classList.contains('you'));
     this.feedback.update(room?.round, local, lane, time);
   }
@@ -219,6 +226,7 @@ export class GameView {
   }
 
   animate(room, local, time, elapsed) {
+    if (isSharedChoice(room.round?.game) && isRoundActive(room.round)) { this.choice.render(room, this.playerId, local, time); return; }
     if (room.round?.game === LETTERS_GAME && isRoundActive(room.round)) {
       this.letters.render(room, this.playerId, local, time);
       return;
@@ -291,7 +299,7 @@ export class GameView {
     const perm = game === PERM_GAME;
     $('results').classList.toggle('perm-results', perm);
     const sorted = room.players.filter(player => room.round.playerIds.includes(player.id)).sort((a, b) => comparePlayers(a, b, game));
-    const finishers = sorted.filter(player => player.result?.status === 'finished' && (!perm || player.result.score > 0) && (game !== LETTERS_GAME || player.result.cleared > 0));
+    const finishers = sorted.filter(player => player.result?.status === 'finished' && (!perm || player.result.score > 0) && (GAMES[game]?.scoring !== 'points' || player.result.cleared > 0));
     const rank = player => finishers.findIndex(other => comparePlayers(other, player, game) === 0) + 1;
     const winners = finishers.filter(player => comparePlayers(player, finishers[0], game) === 0);
     $('result-round').textContent = `${GAMES[game]?.title || 'Round'} · Round ${room.round.setRound || room.testNumber}`;
@@ -299,14 +307,14 @@ export class GameView {
     $('podium').replaceChildren(...finishers.slice(0, 3).map((player, index) => {
       const seat = node('div', 'podium-seat');
       const step = node('div', 'podium-step');
-      step.append(node('strong', '', String(rank(player))), document.createTextNode(perm ? `${player.result.cleared} / 8` : resultLabel(player.result, false, game === LETTERS_GAME)));
+      step.append(node('strong', '', String(rank(player))), document.createTextNode(perm ? `${player.result.cleared} / 8` : resultLabel(player.result, false, game === LETTERS_GAME, GAMES[game]?.scoring === 'points' && game !== LETTERS_GAME)));
       seat.append(game === DICE_GAME ? diceMascot() : game === FACING_GAME ? duckPortrait() : game === BURGER_GAME ? chefPortrait() : game === MISTAKE_GAME ? picturePortrait(0) : game === JUMP_GAME ? dinoPortrait() : game === MONKEY_GAME ? monkeyPortrait() : game === FIREWORK_GAME ? fireworkBadge() : game === SLOT_GAME ? facePortrait(slotLayout(room.round.seed).target) : perm ? dancer(room.players.indexOf(player), player.result.cleared) : block(index % 3), node('div', 'podium-name', player.name), step);
       return seat;
     }));
     $('result-rows').replaceChildren(...sorted.map(player => {
       const result = player.result;
       const row = node('div', `result-row${player.id === playerId ? ' you' : ''}`);
-      const timing = node('div', 'result-time', resultLabel(result, perm, game === LETTERS_GAME));
+      const timing = node('div', 'result-time', resultLabel(result, perm, game === LETTERS_GAME, GAMES[game]?.scoring === 'points' && game !== LETTERS_GAME));
       if (result?.status === 'finished') timing.append(node('small', '', `${result.mistakes || 0} mistakes`));
       row.append(node('span', 'rank', result?.status === 'finished' ? String(rank(player)) : '—'), node('span', 'result-name', player.name + (player.id === playerId ? ' · You' : '')), timing);
       return row;

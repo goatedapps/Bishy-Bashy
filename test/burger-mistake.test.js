@@ -85,16 +85,17 @@ test('Me Find Mistake generates two identical pictures and one variant, with see
   assert.ok(mistakeSequence(123, 100, 5).some(puzzle => puzzle.pictures.some(picture => picture >= 14)));
 });
 
-test('wrong picture choices retain the puzzle and completed progress, with observation and recovery gates', () => {
+test('wrong picture choices advance once and preserve the correct-answer count', () => {
   const run = new MistakeRun(settings(MISTAKE_GAME), 1000);
   const puzzle = run.puzzle;
   assert.equal(run.tap(puzzle.odd, 1249).type, 'ignored');
   const wrong = (puzzle.odd + 1) % 3;
   assert.equal(run.tap(wrong, run.readyAt).type, 'mistake');
   const retryAt = 1250 + MISTAKE_RETRY_MS;
-  assert.equal(run.puzzle, puzzle);
+  assert.notEqual(run.puzzle, puzzle);
+  assert.equal(run.index, 1);
   assert.equal(run.tap(puzzle.odd, retryAt - 1).type, 'ignored');
-  assert.equal(run.tap(puzzle.odd, retryAt).type, 'hit');
+  assert.equal(run.tap(run.puzzle.odd, retryAt).type, 'hit');
   assert.equal(run.cleared, 1);
   assert.equal(run.tap(run.puzzle.odd, run.readyAt - 1).type, 'ignored');
   run.tap((run.puzzle.odd + 1) % 3, run.readyAt);
@@ -132,15 +133,15 @@ for (const game of [BURGER_GAME, MISTAKE_GAME]) test(`${game}: server rejects in
   }
   const round = room.round;
   time = round.startAt + 25000;
-  const result = { type: 'result', roundId: round.id, status: 'finished', cleared: round.goal - 1, mistakes: 0, elapsed: 17000 };
+  const result = { type: 'result', roundId: round.id, status: 'finished', cleared: round.goal - 1, attempted: round.goal - 1, mistakes: 0, elapsed: 17000 };
   service.handle(host, result);
   assert.equal(room.players[0].result, null);
-  service.handle(friend, { ...result, cleared: round.goal, elapsed: 18000 });
-  service.handle(host, { ...result, cleared: round.goal });
-  service.handle(host, { ...result, cleared: round.goal, elapsed: 1 });
+  service.handle(friend, { ...result, cleared: round.goal, attempted: round.goal, elapsed: 18000 });
+  service.handle(host, { ...result, cleared: round.goal, attempted: round.goal });
+  service.handle(host, { ...result, cleared: round.goal, attempted: round.goal, elapsed: 1 });
   assert.equal(room.players[0].result.elapsed, 17000);
-  assert.ok(comparePlayers(room.players[0], room.players[1], game) < 0);
-  assert.deepEqual(room.set.players.map(player => player.points), [10, 7]);
+  assert.equal(Math.sign(comparePlayers(room.players[0], room.players[1], game)), game === MISTAKE_GAME ? 0 : -1);
+  assert.deepEqual(room.set.players.map(player => player.points), game === MISTAKE_GAME ? [10, 10] : [10, 7]);
   assert.equal(room.set.history.length, 1);
 });
 
@@ -154,4 +155,17 @@ test('Me Find Mistake accepts visible boards immediately in all Game Select roun
       if (!run.done) assert.equal(run.tap(run.puzzle.odd, run.shownAt - 1).type, 'ignored');
     }
   }
+});
+
+test('Me Find Mistake finishes after mixed answers and ranks correct counts ahead of faster completion', () => {
+  const round = settings(MISTAKE_GAME), run = new MistakeRun(round, 1000);
+  while (!run.done) {
+    const correct = run.index % 3 !== 0;
+    run.tap((run.puzzle.odd + (correct ? 0 : 1)) % 3, run.readyAt + 10);
+  }
+  assert.equal(run.index, round.goal);
+  assert.equal(run.cleared + run.mistakes, round.goal);
+  assert.equal(run.cleared, 5);
+  assert.equal(run.mistakes, 3);
+  assert.equal(comparePlayers({result:{status:'finished',cleared:5,elapsed:20000}}, {result:{status:'finished',cleared:4,elapsed:3000}}, MISTAKE_GAME), -1);
 });

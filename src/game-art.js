@@ -72,9 +72,9 @@ export function ruleVisual(game) {
   } else if (game === 'facing-which-way') {
     const trick = node('div', 'tutorial-turn');
     trick.append(duckPortrait(), node('span', '', '↔'));
-    first.append(trick, node('strong', '', 'Right, then a left-right flip'));
-    second.append(shapes([0], 'tutorial-buttons'), node('strong', '', 'Now it points left'));
-    label = 'Remember the duck pointing right. A left-right flip makes it point left. Red answers left, green up, blue right.';
+    first.append(trick, node('strong', '', 'Remember the duck and follow the card'));
+    second.append(shapes([0], 'tutorial-buttons'), node('strong', '', 'Choose the matching picture'));
+    label = 'Follow the covered card through its turns and flips. Choose the matching front or back picture: red left, green middle, blue right. You have three seconds.';
   } else if (game === 'burger-girl') {
     const ingredient = node('div', 'tutorial-ingredient');
     ingredient.append(ingredientPortrait(0));

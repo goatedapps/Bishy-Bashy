@@ -18,6 +18,8 @@ import { DICE_GAME } from '../shared/dice.js';
 import { FACING_GAME } from '../shared/facing.js';
 import { LETTERS_GAME } from '../shared/letters.js';
 import './letters.css';
+import './shared-choice.css';
+import { isSharedChoice } from '../shared/choice-round.js';
 import { GAMES, createRun, roundSettings, isRoundActive, gameRules } from '../shared/games.js';
 import { MODES, roundDetail } from '../shared/sets.js';
 import { GameView } from './game-view.js';
@@ -137,7 +139,7 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 9 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters')) {
+      if (message.protocol !== 10 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -170,6 +172,7 @@ function connect() {
       }
       setupLocalRound();
       synchronizeLetters();
+      synchronizeChoices();
       if (room.round?.phase === 'results') {
         if (previousPhase !== 'results') audio.stopRound();
         if (pending && room.players.find(player => player.id === playerId)?.result) confirmResult();
@@ -177,6 +180,7 @@ function connect() {
       }
       renderRoom();
     }
+    if (message.type === 'shared-choice-ack' && localRound?.id === message.roundId && isSharedChoice(room?.round?.game)) localRound.run.pending.delete(message.index);
     if (message.type === 'letters-claim-ack' && localRound?.id === message.roundId && localRound.run.index === message.index) localRound.run.claimAck = true;
     if (message.type === 'result-ack' && pending?.message.roundId === message.roundId) confirmResult();
     if (message.type === 'error') {
@@ -287,6 +291,7 @@ function complete(status, elapsed = null) {
     mistakes: localRound.run.mistakes, visual: captureVisual(room.round.game, localRound.run, performance.now()), goDelay: localRound.goDelay,
     ...(room.round.game === PERM_GAME ? { score: localRound.run.score } : {}),
     ...(room.round.game === SLOT_GAME ? { reelMask: localRound.run.reelMask } : {}),
+    ...(room.round.game === MISTAKE_GAME ? { attempted: localRound.run.index } : {}),
   } };
   sessionStorage.setItem('bb-pending', JSON.stringify(pending));
   lastPendingSent = -Infinity;
@@ -333,6 +338,25 @@ function synchronizeLetters() {
   }
 }
 
+function synchronizeChoices() {
+  if (!isSharedChoice(room?.round?.game) || !localRound) return;
+  localRound.run.sync(room.round.choice, playerId);
+  const latest = room.round.choice?.results.at(-1);
+  if (latest && localRound.heardChoice !== latest.index) {
+    localRound.heardChoice = latest.index;
+    const age = performance.now() - localRound.start - latest.at;
+    if (!document.hidden && !localRound.mustForfeit && !localRound.done && age >= 0 && age < (room.round.game === DICE_GAME ? 300 : 650)) audio.play(latest.correctIds.includes(playerId) ? 'stageComplete' : 'stageWrong');
+  }
+  const result = room.players.find(player => player.id === playerId)?.result;
+  if (result) { localRound.done = localRound.run.done = true; localRound.status = result.status; localRound.run.elapsed = result.elapsed; }
+}
+
+function flushSharedChoices(time) {
+  if (!isSharedChoice(room?.round?.game) || !joined || !localRound || localRound.done || time - (localRound.lastChoiceSent ?? -Infinity) < 100) return;
+  for (const choice of localRound.run.pending.values()) send({ type: 'shared-choice', roundId: localRound.id, ...choice });
+  localRound.lastChoiceSent = time;
+}
+
 function flushLettersClaim(time) {
   if (room?.round?.game !== LETTERS_GAME || !joined || !localRound || localRound.done || !localRound.run.claim || localRound.run.claimAck || time - (localRound.lastClaimSent ?? -Infinity) < 250) return;
   if (send({ type: 'letters-claim', roundId: localRound.id, ...localRound.run.claim })) localRound.lastClaimSent = time;
@@ -340,9 +364,11 @@ function flushLettersClaim(time) {
 
 function enforceLifecycle(time, beforeInput = false) {
   flushLettersClaim(time);
+  flushSharedChoices(time);
   if (!localRound || localRound.done || room?.round?.phase === 'results' || time < localRound.start) return;
   if (localRound.mustForfeit || document.hidden || localRound.hiddenDuringPlay) complete('forfeit');
-  else if (room.round.game === LETTERS_GAME) {
+  else if (room.round.game === LETTERS_GAME || isSharedChoice(room.round.game)) {
+    if (isSharedChoice(room.round.game)) localRound.run.advance(time);
     if (time >= localRound.end && !localRound.clockEnded) { localRound.clockEnded = true; audio.endPlayer(); }
   }
   else if (room.round.game === PERM_GAME) {
@@ -359,7 +385,7 @@ function enforceLifecycle(time, beforeInput = false) {
       flushLaneEvents(time);
     }
     if (localRound.run.done) complete('finished', localRound.run.elapsed);
-    else if (time >= localRound.end) complete('timeout');
+    else if (time >= localRound.end) complete(room.round.game === MISTAKE_GAME ? 'finished' : 'timeout', room.round.game === MISTAKE_GAME ? room.round.duration : null);
     else if (room.round.game === MONKEY_GAME) audio.demonstrate(`${localRound.id}/${localRound.run.demoVersion}`, localRound.run.cues);
   }
 }
@@ -368,11 +394,17 @@ function tap(color) {
   const time = performance.now();
   enforceLifecycle(time, true);
   if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
-  if (!buttons[color]?.disabled) audio.pressButton(room.round.game === JUMP_GAME ? 'jump' : 'gameplay');
+  if (!buttons[color]?.disabled) audio.pressButton(room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay');
   const clearedBefore = localRound.run.cleared;
   const action = localRound.run.tap(color, time);
   if ([BURGER_GAME, COIN_GAME, DODGE_GAME, FIREWORK_GAME].includes(room.round.game)) flushLaneEvents(time);
   if (action.type === 'ignored') return;
+  if (isSharedChoice(room.round.game)) {
+    flushSharedChoices(time);
+    view.render(room, playerId, localRound, time);
+    updateControls(time);
+    return;
+  }
   if (room.round.game === LETTERS_GAME) {
     if (action.type === 'claim') flushLettersClaim(time);
     if (action.type === 'mistake') audio.play('stageWrong');
@@ -385,7 +417,8 @@ function tap(color) {
   const completedSequence = room.round.game === MONKEY_GAME && localRound.run.cleared > clearedBefore;
   if (completedSequence) audio.play('stageComplete');
   if (action.type === 'finished') {
-    if ([MISTAKE_GAME, DICE_GAME, FACING_GAME].includes(room.round.game)) audio.play('hit', { color, game: room.round.game });
+    if (room.round.game === MISTAKE_GAME && action.correct === false) audio.play('stageWrong');
+    else if ([MISTAKE_GAME, DICE_GAME, FACING_GAME].includes(room.round.game)) audio.play('hit', { color, game: room.round.game });
     complete('finished', action.elapsed);
   }
   else if (action.type !== 'move' && !completedSequence && !(room.round.game === FIREWORK_GAME && action.type === 'mistake')) audio.play(action.type, { color, progress: localRound.run.cleared / room.round.goal, game: room.round.game });
@@ -400,6 +433,7 @@ function sendProgress(time) {
     if (send({ type: 'letters-progress', roundId: localRound.id, index: run.index, cursor: run.cursor, typed: run.typed, sample: time - localRound.start })) lastProgressSent = time;
     return;
   }
+  if (isSharedChoice(room.round.game)) return;
   const { cleared, mistakes } = localRound.run;
   const score = localRound.run.score;
   const reelMask = localRound.run.reelMask;
@@ -519,7 +553,7 @@ function prepareRoundAssets() {
 }
 
 function updateControls(time) {
-  const disabled = !localRound || localRound.done || document.hidden || time < localRound.start || time >= localRound.end || time < localRound.run.blockedUntil || room?.round?.game === LETTERS_GAME && Boolean(localRound.run.claim) || room?.round?.phase === 'results' || room?.round?.game === PERM_GAME && localRound.run.phase(time).mode === 'watch' || [MONKEY_GAME, FACING_GAME].includes(room?.round?.game) && localRound.run.phase(time).mode !== 'play' || [MISTAKE_GAME, DICE_GAME].includes(room?.round?.game) && time < localRound.run.readyAt;
+  const disabled = !localRound || localRound.done || document.hidden || time < localRound.start || time >= localRound.end || time < localRound.run.blockedUntil || isSharedChoice(room?.round?.game) && (localRound.run.phase(time).mode !== 'play' || localRound.run.selections.has(localRound.run.phase(time).index)) || room?.round?.game === LETTERS_GAME && Boolean(localRound.run.claim) || room?.round?.phase === 'results' || room?.round?.game === PERM_GAME && localRound.run.phase(time).mode === 'watch' || room?.round?.game === MONKEY_GAME && localRound.run.phase(time).mode !== 'play' || room?.round?.game === MISTAKE_GAME && time < localRound.run.readyAt;
   for (const button of buttons) {
     const color = Number(button.dataset.color);
     button.disabled = disabled || Boolean(room?.round?.game === SLOT_GAME && localRound && ((localRound.run.reelMask & (1 << color)) || time < localRound.run.blockedReels[color]));
@@ -533,6 +567,7 @@ function animate() {
   let overlay = '', small = false;
   if (round?.game === FIREWORK_GAME && localRound) audio.fireworkLaunch(localRound.run);
   if (round?.game === FACING_GAME && localRound) audio.facingTurns(localRound.run);
+  if (round?.game === DICE_GAME && localRound) audio.diceRolls(localRound.run);
   synchronizeScreenAudio();
   if (isRoundActive(round)) {
     if (!localRound) { overlay = round.playerIds.includes(playerId) ? 'Syncing…' : 'Next round'; small = true; }
@@ -543,7 +578,7 @@ function animate() {
       else if (time - localRound.start < 450) overlay = 'GO!';
     }
     const elapsed = localRound ? localRound.run.elapsed ?? Math.max(0, Math.min(time, localRound.end) - localRound.start) : 0;
-    $('timer').textContent = ((round.game === LETTERS_GAME ? Math.max(0, round.duration - elapsed) : elapsed) / 1000).toFixed(2);
+    $('timer').textContent = ((GAMES[round.game]?.scoring === 'points' ? Math.max(0, round.duration - elapsed) : elapsed) / 1000).toFixed(2);
   } else $('timer').textContent = '00.00';
   if ($('round-overlay').textContent !== overlay) $('round-overlay').textContent = overlay;
   $('round-overlay').hidden = !overlay;
@@ -613,10 +648,10 @@ function updateGameProfile() {
   document.body.classList.toggle('facing-theme', Boolean(themed && game === FACING_GAME));
   document.body.classList.toggle('letters-theme', Boolean(themed && game === LETTERS_GAME));
   buttons.forEach((button, index) => {
-    const action = game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
+    const action = [DICE_GAME, FACING_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
     button.children[1].textContent = action;
     const label = ['Red circle', 'Green triangle', 'Blue diamond'][index];
-    button.setAttribute('aria-label', [COIN_GAME, DODGE_GAME, LETTERS_GAME].includes(game) ? `${label}: ${action}` : label);
+    button.setAttribute('aria-label', [COIN_GAME, DODGE_GAME, LETTERS_GAME, DICE_GAME, FACING_GAME].includes(game) ? `${label}: ${action}` : label);
   });
   document.body.classList.toggle('coin-theme', Boolean(themed && game === COIN_GAME));
   document.body.classList.toggle('dodge-theme', Boolean(themed && game === DODGE_GAME));

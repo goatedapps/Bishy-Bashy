@@ -1,93 +1,59 @@
 import { seededIndex } from './seeded-index.js';
+import { ChoiceRun } from './choice-round.js';
 
 export const FACING_GAME = 'facing-which-way';
 export const FACING_GOAL = 5;
-export const FACING_DURATION_MS = 60_000;
 export const FACING_LOOK_MS = 700;
 export const FACING_COVER_MS = 400;
 export const FACING_COVER_HOLD_MS = 350;
 export const FACING_HANDOFF_MS = 200;
-export const FACING_REVEAL_MS = 260;
-export const FACING_RETRY_MS = 450;
-export const DIRECTION_NAMES = ['Left', 'Up', 'Right'];
-export const DIRECTION_ANGLES = [180, 270, 0];
+export const FACING_ANSWER_MS = 3000;
+export const FACING_REVEAL_MS = 650;
 const normalize = angle => (angle % 360 + 360) % 360;
+export const poseKey = pose => `${normalize(pose.angle)}/${pose.back ? 'back' : 'front'}`;
 
 export function applyTurn(pose, move) {
-  return move.kind === 'mirror' ? { angle: normalize(180 - pose.angle), mirror: -pose.mirror } : { angle: normalize(pose.angle + move.degrees), mirror: pose.mirror };
+  return move.kind === 'mirror' ? { angle: normalize(-pose.angle), back: !pose.back } : { angle: normalize(pose.angle + move.degrees), back: pose.back };
 }
 
 export function facingSequence(seed, count, turnCount) {
   const choose = seededIndex(seed);
   return Array.from({ length: count }, () => {
-    const initial = { angle: DIRECTION_ANGLES[choose(3)], mirror: 1 };
-    const poses = [initial];
+    const initial = { angle: 0, back: false };
     const moves = Array.from({ length: turnCount }, () => {
-      const pose = poses.at(-1);
-      const choice = choose(3);
-      const degrees = pose.angle === 270 ? choice === 0 ? -90 : 90 : choice === 0 ? 180 : pose.angle === 180 ? 90 : -90;
-      const move = choice === 2 ? { kind: 'mirror' } : { kind: 'rotate', degrees };
-      poses.push(applyTurn(pose, move));
-      return move;
+      const pick = choose(4);
+      return pick === 3 ? { kind: 'mirror' } : { kind: 'rotate', degrees: [90, -90, 180][pick] };
     });
-    return { initial, moves, poses, answer: DIRECTION_ANGLES.indexOf(poses.at(-1).angle) };
+    if (!moves.some(move => move.kind === 'mirror')) moves[moves.length - 1] = { kind: 'mirror' };
+    const poses = [initial];
+    moves.forEach(move => poses.push(applyTurn(poses.at(-1), move)));
+    const correct = poses.at(-1);
+    const options = [correct, { angle: correct.angle, back: !correct.back }, { angle: normalize(correct.angle + (choose(3) + 1) * 90), back: correct.back }];
+    for (let index = 2; index > 0; index--) { const other = choose(index + 1); [options[index], options[other]] = [options[other], options[index]]; }
+    return { initial, moves, poses, options, answer: options.findIndex(pose => poseKey(pose) === poseKey(correct)) };
   });
 }
 
-export class FacingRun {
-  constructor(round, localStart) {
-    this.id = round.id;
-    this.start = localStart;
-    this.end = localStart + round.duration;
-    this.goal = round.goal;
-    this.stepMs = round.stepMs;
-    this.sequence = facingSequence(round.seed, round.goal, round.turnCount);
-    this.cleared = 0;
-    this.mistakes = 0;
-    this.trialAt = localStart;
-    this.blockedUntil = 0;
-    this.feedback = null;
-    this.stageFeedback = null;
-    this.demoVersion = 0;
-    this.done = false;
-    this.elapsed = null;
-  }
+export function facingDuration(stepMs = 1000, turnCount = 2) {
+  return FACING_GOAL * (FACING_LOOK_MS + FACING_COVER_MS + FACING_COVER_HOLD_MS + turnCount * stepMs + FACING_HANDOFF_MS + FACING_ANSWER_MS + FACING_REVEAL_MS);
+}
+export const FACING_DURATION_MS = facingDuration();
 
-  get puzzle() { return this.sequence[Math.min(this.cleared, this.goal - 1)]; }
-  get coveredAt() { return this.trialAt + FACING_LOOK_MS + FACING_COVER_MS; }
-  get turnsAt() { return this.coveredAt + FACING_COVER_HOLD_MS; }
-  get playAt() { return this.turnsAt + this.puzzle.moves.length * this.stepMs + FACING_HANDOFF_MS; }
-  get cues() { return this.puzzle.moves.map((_, index) => ({ at: this.turnsAt + index * this.stepMs })); }
+export function facingStages(round) {
+  let startsAt = 0;
+  return facingSequence(round.seed, FACING_GOAL, round.turnCount).map((puzzle, index) => {
+    const coverAt = startsAt + FACING_LOOK_MS;
+    const coveredAt = coverAt + FACING_COVER_MS;
+    const turnsAt = coveredAt + FACING_COVER_HOLD_MS;
+    const answerAt = turnsAt + puzzle.moves.length * round.stepMs + FACING_HANDOFF_MS;
+    const answerEnd = answerAt + FACING_ANSWER_MS;
+    const endsAt = answerEnd + FACING_REVEAL_MS;
+    const stage = { index, startsAt, coverAt, coveredAt, turnsAt, answerAt, answerEnd, endsAt, stepMs: round.stepMs, puzzle, cues: puzzle.moves.map((_, turn) => turnsAt + turn * round.stepMs) };
+    startsAt = endsAt;
+    return stage;
+  });
+}
 
-  phase(time) {
-    if (!Number.isFinite(time) || time < this.start || time < this.trialAt) return { mode: 'wait' };
-    if (time >= this.end || this.done) return { mode: 'done' };
-    if (time < this.trialAt + FACING_LOOK_MS) return { mode: 'look' };
-    if (time < this.coveredAt) return { mode: 'cover', progress: (time - this.trialAt - FACING_LOOK_MS) / FACING_COVER_MS };
-    if (time < this.turnsAt) return { mode: 'covered' };
-    const index = Math.floor((time - this.turnsAt) / this.stepMs);
-    if (index < this.puzzle.moves.length) return { mode: 'turn', index, progress: (time - this.turnsAt - index * this.stepMs) / this.stepMs };
-    return { mode: time < this.playAt ? 'handoff' : 'play' };
-  }
-
-  tap(color, time) {
-    if (this.done || !Number.isInteger(color) || color < 0 || color > 2 || !Number.isFinite(time) || time < this.start || time >= this.end || this.phase(time).mode !== 'play') return { type: 'ignored' };
-    const puzzle = this.puzzle;
-    const hit = color === puzzle.answer;
-    this.feedback = { kind: hit ? 'hit' : 'miss', at: time, color, puzzle };
-    this.stageFeedback = { correct: hit, at: time };
-    this.demoVersion++;
-    if (!hit) {
-      this.mistakes++;
-      this.trialAt = this.blockedUntil = time + FACING_RETRY_MS;
-      return { type: 'mistake' };
-    }
-    if (++this.cleared === this.goal) {
-      this.done = true;
-      this.elapsed = time - this.start;
-      return { type: 'finished', elapsed: this.elapsed };
-    }
-    this.trialAt = time + FACING_REVEAL_MS;
-    return { type: 'hit' };
-  }
+export class FacingRun extends ChoiceRun {
+  constructor(round, localStart) { super(round, localStart, facingStages(round)); }
 }

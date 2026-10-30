@@ -6,7 +6,7 @@ import { roundSettings } from '../shared/games.js';
 
 class Element {
   constructor() {
-    this.children = [];
+    this.children = []; this.style = { setProperty() {} };
     this.textContent = '';
     this.className = '';
     this.attributes = new Map();

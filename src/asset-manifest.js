@@ -136,6 +136,11 @@ export const ASSETS = [
     "hash": "21fcae531114e52d"
   },
   {
+    "path": "assets/optimized/facing-duck-back-bc3f154e9baf.webp",
+    "bytes": 44326,
+    "hash": "bc3f154e9baf08ef"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",
@@ -373,11 +378,24 @@ export const ASSETS = [
     "hash": "05e11d23a60a3f1d"
   },
   {
-    "path": "audio/how-to-play.wav",
-    "bytes": 192078,
-    "hash": "768786aefa00fc64",
-    "compressed": "audio/optimized/how-to-play.wav-768786aefa00fc64.gz",
-    "downloadBytes": 153969
+    "path": "audio/how-to-play.mp3",
+    "bytes": 40760,
+    "hash": "3d5ea3e8b3c8855e"
+  },
+  {
+    "path": "audio/Diuup.mp3",
+    "bytes": 4608,
+    "hash": "dbf0297a3ddf61bc"
+  },
+  {
+    "path": "audio/flip.mp3",
+    "bytes": 21393,
+    "hash": "d39337d446fba40a"
+  },
+  {
+    "path": "audio/dice-roll.mp3",
+    "bytes": 28294,
+    "hash": "69241a624c36c357"
   },
   {
     "path": "audio/countdown.mp3",

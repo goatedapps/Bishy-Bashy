@@ -9,7 +9,7 @@ import { JUMP_GAME, JumpRun, JUMP_GOAL, JUMP_DURATION_MS } from './jump.js';
 import { BURGER_GAME, BurgerRun, BURGER_GOAL, BURGER_DURATION_MS } from './burger.js';
 import { MISTAKE_GAME, MistakeRun, MISTAKE_GOAL, MISTAKE_DURATION_MS } from './mistake.js';
 import { DICE_GAME, DiceRun, DICE_GOAL, DICE_DURATION_MS } from './dice.js';
-import { FACING_GAME, FacingRun, FACING_GOAL, FACING_DURATION_MS } from './facing.js';
+import { FACING_GAME, FacingRun, FACING_GOAL, FACING_DURATION_MS, facingDuration } from './facing.js';
 import { LETTERS_GAME, LettersRun, LETTERS_DURATION_MS } from './letters.js';
 
 export const COUNTDOWN_MS = 3_000;
@@ -22,12 +22,12 @@ export const GAMES = Object.assign(Object.create(null), {
   [MONKEY_GAME]: { id: MONKEY_GAME, title: 'Mimicking Monkeys', subtitle: 'Longer tricks each round', duration: MONKEY_DURATION_MS, goal: MONKEY_STAGES },
   [JUMP_GAME]: { id: JUMP_GAME, title: 'Jump for the Meat', subtitle: 'Land, boost, reach the feast', duration: JUMP_DURATION_MS, goal: JUMP_GOAL },
   [BURGER_GAME]: { id: BURGER_GAME, title: 'Burger Girl', subtitle: 'Catch a fresh stack of ingredients', duration: BURGER_DURATION_MS, goal: BURGER_GOAL },
-  [MISTAKE_GAME]: { id: MISTAKE_GAME, title: 'Me Find Mistake', subtitle: 'Find the picture that does not match', duration: MISTAKE_DURATION_MS, goal: MISTAKE_GOAL },
-  [DICE_GAME]: { id: DICE_GAME, title: 'Dice, Dice, More Dice', subtitle: 'Spot the highest roll', duration: DICE_DURATION_MS, goal: DICE_GOAL },
-  [FACING_GAME]: { id: FACING_GAME, title: 'Facing Which Way', subtitle: 'Follow the turns and flips', duration: FACING_DURATION_MS, goal: FACING_GOAL },
+  [MISTAKE_GAME]: { id: MISTAKE_GAME, title: 'Me Find Mistake', subtitle: 'Find the picture that does not match', scoring: 'points', duration: MISTAKE_DURATION_MS, goal: MISTAKE_GOAL },
+  [DICE_GAME]: { id: DICE_GAME, title: 'Dice, Dice, More Dice', subtitle: 'Spot the highest roll', sharedArena: true, scoring: 'points', duration: DICE_DURATION_MS, goal: DICE_GOAL },
+  [FACING_GAME]: { id: FACING_GAME, title: 'Facing Which Way', subtitle: 'Follow the turns and flips', sharedArena: true, scoring: 'points', duration: FACING_DURATION_MS, goal: FACING_GOAL },
   [COIN_GAME]: { id: COIN_GAME, title: "It's Raining Coins", subtitle: 'Catch the gold, dodge the fakes', duration: COIN_DURATION_MS, goal: COIN_GOAL },
   [DODGE_GAME]: { id: DODGE_GAME, title: 'Dodge or Die!!', subtitle: 'Switch lanes and leap the hurdles', duration: DODGE_DURATION_MS, goal: DODGE_GOAL },
-  [LETTERS_GAME]: { id: LETTERS_GAME, title: 'Type in Letters', subtitle: 'Race to type three letters first', sharedArena: true, duration: LETTERS_DURATION_MS, goal: 0 },
+  [LETTERS_GAME]: { id: LETTERS_GAME, title: 'Type in Letters', subtitle: 'Race to type three letters first', sharedArena: true, scoring: 'points', duration: LETTERS_DURATION_MS, goal: 0 },
 });
 
 export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') {
@@ -35,8 +35,8 @@ export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') 
   if (game === LETTERS_GAME) return { seed, difficulty: level, goal: 0, duration: LETTERS_DURATION_MS };
   if (game === COIN_GAME) return { seed, difficulty: level, goal: COIN_GOAL, duration: COIN_DURATION_MS, fallMs: mode === 'arcade' ? 800 : 1100 - (level - 1) * 90 };
   if (game === DODGE_GAME) return { seed, difficulty: level, goal: DODGE_GOAL + level - 1, duration: DODGE_DURATION_MS, approachMs: 1350 - (level - 1) * 100 };
-  if (game === DICE_GAME) return { seed, difficulty: level, goal: DICE_GOAL + (level - 1) * 2, duration: DICE_DURATION_MS, rollMs: 180 - (level - 1) * 20 };
-  if (game === FACING_GAME) return { seed, difficulty: level, goal: FACING_GOAL + level - 1, duration: FACING_DURATION_MS, turnCount: level + 1, stepMs: 1000 - (level - 1) * 75 };
+  if (game === DICE_GAME) return { seed, difficulty: level, goal: DICE_GOAL, duration: DICE_DURATION_MS };
+  if (game === FACING_GAME) return { seed, difficulty: level, goal: FACING_GOAL, duration: facingDuration(1000 - (level - 1) * 75, level + 1), turnCount: level + 1, stepMs: 1000 - (level - 1) * 75 };
   if (game === BURGER_GAME) return { seed, difficulty: level, goal: BURGER_GOAL, duration: BURGER_DURATION_MS, fallMs: 1100 - (level - 1) * 110 };
   if (game === MISTAKE_GAME) return { seed, difficulty: level, goal: MISTAKE_GOAL + level - 1, duration: MISTAKE_DURATION_MS };
   if (game === JUMP_GAME) return { seed, difficulty: level, goal: JUMP_GOAL, duration: JUMP_DURATION_MS, periodMs: 1200 - (level - 1) * 50, windowMs: 150 - (level - 1) * 15, perfectMs: Math.round((150 - (level - 1) * 15) * .3) };
@@ -73,10 +73,10 @@ export function gameRules(game) {
   if (game === LETTERS_GAME) return ['Red moves left, blue moves right, green enters a letter', 'Type the three letters first to win a point; choose ⌫ to erase', 'Most points in 30 seconds wins'];
   if (game === COIN_GAME) return ['Catch gold coins and avoid cracked purple coins', 'Red = left, green = middle, blue = right'];
   if (game === DODGE_GAME) return ['Move around tall walls and jump over low hurdles', 'Red moves left, blue moves right, green jumps'];
-  if (game === DICE_GAME) return ['Pick the die with the most dots', 'Red = top, green = middle, blue = bottom'];
-  if (game === FACING_GAME) return ['Remember where the duck points', 'Follow the turns and flips', 'When Answer appears: red = left, green = up, blue = right'];
+  if (game === DICE_GAME) return ['Pick the highest of the three shared dice', 'Red = left, green = middle, blue = right', '21 throws get faster; most correct wins'];
+  if (game === FACING_GAME) return ['Watch the shared duck card turn and flip', 'Choose its final picture: red = left, green = middle, blue = right', 'You have 3 seconds; answers reveal together; most correct of 5 wins'];
   if (game === BURGER_GAME) return ['Move the plate to catch the falling food', 'Red = left, green = middle, blue = right'];
-  if (game === MISTAKE_GAME) return ['Pick the picture that is different', 'Red = top, green = middle, blue = bottom'];
+  if (game === MISTAKE_GAME) return ['Pick the picture that is different', 'Red = top, green = middle, blue = bottom', 'Every answer moves on; most correct wins'];
   if (game === JUMP_GAME) return ['Press any button as the dinosaur lands on the trampoline', 'Perfect landings climb twice as high as Good landings'];
   if (game === MONKEY_GAME) return ['Watch the monkey\'s color sequence', 'Copy the order with the matching buttons'];
   if (game === FIREWORK_GAME) return ['Press matching colors before the fireworks land', 'Clear every firework in any order', 'Each set gets harder'];
@@ -90,7 +90,7 @@ export function comparePlayers(a, b, game) {
   const finishedB = b.result?.status === 'finished';
   if (finishedA !== finishedB) return finishedA ? -1 : 1;
   if (!finishedA) return 0;
-  if (game === LETTERS_GAME) return b.result.cleared - a.result.cleared;
+  if (GAMES[game]?.scoring === 'points') return b.result.cleared - a.result.cleared;
   if (game === PERM_GAME) return b.result.cleared - a.result.cleared || b.result.score - a.result.score;
   return a.result.elapsed - b.result.elapsed;
 }

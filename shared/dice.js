@@ -1,11 +1,9 @@
+import { ChoiceRun } from './choice-round.js';
 import { seededIndex } from './seeded-index.js';
 
 export const DICE_GAME = 'dice-dice-more-dice';
-export const DICE_GOAL = 12;
-export const DICE_DURATION_MS = 35_000;
-export const DICE_REVEAL_MS = 220;
-export const DICE_OBSERVE_MS = 180;
-export const DICE_RETRY_MS = 600;
+export const DICE_GOAL = 21;
+export const DICE_DURATION_MS = 25_000;
 
 export function diceSequence(seed, count, difficulty = 1) {
   const choose = seededIndex(seed);
@@ -20,42 +18,20 @@ export function diceSequence(seed, count, difficulty = 1) {
   });
 }
 
-export class DiceRun {
-  constructor(round, localStart) {
-    this.id = round.id;
-    this.start = localStart;
-    this.end = localStart + round.duration;
-    this.goal = round.goal;
-    this.rollMs = round.rollMs;
-    this.sequence = diceSequence(round.seed, round.goal, round.difficulty);
-    this.cleared = 0;
-    this.mistakes = 0;
-    this.shownAt = localStart + this.rollMs;
-    this.blockedUntil = 0;
-    this.feedback = null;
-    this.done = false;
-    this.elapsed = null;
-  }
+export const DICE_WINDOWS_MS = [2000, 1600, 1200, 900, 600, 400, 300];
 
-  get puzzle() { return this.sequence[Math.min(this.cleared, this.goal - 1)]; }
-  get readyAt() { return Math.max(this.blockedUntil, this.shownAt + DICE_OBSERVE_MS); }
+export function diceStages(round) {
+  let startsAt = 0;
+  return diceSequence(round.seed, DICE_GOAL, round.difficulty).map((puzzle, index) => {
+    const answerAt = startsAt;
+    const answerEnd = answerAt + DICE_WINDOWS_MS[Math.floor(index / 3)];
+    const endsAt = answerEnd + 190 + (index === DICE_GOAL - 1 ? 10 : 0);
+    const stage = { index, startsAt, answerAt, answerEnd, endsAt, puzzle };
+    startsAt = endsAt;
+    return stage;
+  });
+}
 
-  tap(color, time) {
-    if (this.done || !Number.isInteger(color) || color < 0 || color > 2 || !Number.isFinite(time) || time < this.readyAt || time >= this.end) return { type: 'ignored' };
-    const puzzle = this.puzzle;
-    const hit = color === puzzle.answer;
-    this.feedback = { kind: hit ? 'hit' : 'miss', at: time, color, puzzle };
-    if (!hit) {
-      this.mistakes++;
-      this.blockedUntil = time + DICE_RETRY_MS;
-      return { type: 'mistake' };
-    }
-    if (++this.cleared === this.goal) {
-      this.done = true;
-      this.elapsed = time - this.start;
-      return { type: 'finished', elapsed: this.elapsed };
-    }
-    this.shownAt = time + DICE_REVEAL_MS + this.rollMs;
-    return { type: 'hit' };
-  }
+export class DiceRun extends ChoiceRun {
+  constructor(round, localStart) { super(round, localStart, diceStages(round)); }
 }

@@ -37,7 +37,7 @@ Before the first countdown this returns immediately; during an active round or a
 Rules screens include visual examples using the same artwork and color/shape controls as the game.
 The instructions card pauses for 1.4 seconds after its playful “How to play” heading, then reveals the illustration after 700 ms and short instruction lines at 850 ms intervals.
 Rules use only as many points as the game needs.
-It uses `public/audio/how-to-play.wav` for the heading and `public/audio/Punch-button.mp3` for the illustration and each rule when effects are enabled.
+It uses `public/audio/how-to-play.mp3` for the heading and `public/audio/Punch-button.mp3` for the illustration and each rule when effects are enabled.
 Ready becomes available once the final line is visible; redraws do not restart the sequence, and reduced-motion settings remove the entrance animation.
 **Leave** stays available during play and asks for confirmation before leaving an active set.
 Leaving forfeits only an unfinished round; an already accepted finish and previously earned points remain credited, and the other players can continue.
@@ -231,7 +231,7 @@ The original generated festival background remains in `public/assets/fireworks-f
 Its prompt is preserved in [Fireworks artwork notes](public/assets/fireworks-artwork.md).
 `src/firework-view.js` and `src/fireworks.css` draw the colored rocket arcs and burst particles.
 Each rocket reuses `Fireworks.mp3` at its scheduled local launch, skipping stale launches after interruptions.
-Frontend and room service must deploy together with protocol 9.
+Frontend and room service must deploy together with protocol 10.
 
 ## Play Mimicking Monkeys
 
@@ -263,7 +263,7 @@ Audio scheduling checks do not establish physical speaker latency or subjective 
 
 The original generated character lives in `public/assets/mimicking-monkey.png`, with its prompt preserved in [artwork notes](public/assets/monkeys-artwork.md).
 The leafy stage, shape cues, and response indicators live in `src/monkey-view.js` and `src/monkeys.css`.
-Deploy frontend and room service together to make the new catalog entry available; protocol 9 carries current scene snapshots and the announcement gate.
+Deploy frontend and room service together to make the new catalog entry available; protocol 10 carries current scene snapshots and the announcement gate.
 
 ## Play Jump for the Meat
 
@@ -324,72 +324,53 @@ The common music bank, punch-button controls, `Ding.mp3` for every successful lo
 ## Play Me Find Mistake
 
 Choose **Game Select → Me Find Mistake**, or encounter it in Arcade.
-Each local board shows three vertically stacked pictures: two identical copies and one changed picture.
-Red circle chooses the top picture, green triangle the middle picture, and blue diamond the bottom picture.
-Differences include silhouette, direction, hats, eyes, badges, and accessories rather than color alone.
-
-Find **8, 9, or 10** odd pictures across the three Game Select rounds.
-The picture pool grows from four to eight pairs, and all devices derive the same boards from the shared seed.
-The first board has a **250 ms** observation gate.
-Later boards accept answers immediately when they appear after the **260 ms** success feedback.
-A correct answer shows a check and keeps the solved board for **260 ms** before revealing the next one.
-A wrong answer marks only the selected picture, keeps the same puzzle, and locks answers for **600 ms** without losing completed puzzles.
-Finish within **35 seconds**, ranked by local elapsed time.
-These initial timings and picture pools are provisional until phone playtesting.
-
-Remote lanes show the current published picture board and selected-answer feedback.
-Only the local answered card pops on success; reduced-motion preferences remove decorative motion.
-Every correct local answer plays `Ding.mp3`, including the final answer, through the existing effects volume and mute controls.
-`shared/mistake.js` owns the seeded puzzle rules; `src/catch-spot-view.js` and `src/catch-spot.css` draw the picture cards.
-The new games use the same instructions, Ready gates, Arcade selection, cumulative podium, reconnect handling, and result acknowledgments as the rest of the catalog.
-Deploy the frontend and room service together; protocol 9 advertises `firework-sets`, `game-announcements`, and `game-picker-screen` alongside the existing required capabilities.
-Original artwork and full generation prompts for both games are preserved in [artwork notes](public/assets/catch-spot-artwork.md).
+Choose the different picture with red for top, green for middle, or blue for bottom.
+Every answer advances to the next board, including wrong answers.
+Correct answers earn one point; mistakes earn none.
+The most correct answers wins, with equal scores sharing a place regardless of completion time.
+Game Select uses 8, 9, and 10 boards across its three rounds, with a 35-second limit.
+The first board has a 250 ms observation gate; subsequent boards accept input immediately after the previous answer's 260 ms feedback.
+Completed correct answers remain credited if the clock expires.
+`shared/mistake.js` owns seeded boards and correct-answer counts; `src/catch-spot-view.js` retains the answered board during feedback before revealing the next.
+Original artwork and generation prompts are preserved in [artwork notes](public/assets/catch-spot-artwork.md).
 
 ## Play Dice, Dice, More Dice
 
-Choose **Game Select → Dice, Dice, More Dice**.
-This game is included in the twelve-game Arcade batch.
-Three dice appear vertically in your lane; choose the die with the most dots using red for top, green for middle, or blue for bottom.
-Each roll contains three distinct values from one to six, so there is always exactly one highest choice.
-All devices receive the same seeded rolls.
-
-Win **12, 14, or 16 rolls** across the three Game Select rounds.
-Dice settle for **180 to 140 ms** across those rounds before revealing their values, then allow **180 ms** to observe the new board before inputs count.
-Higher levels also tilt the dice by up to 20 degrees while preserving readable pip patterns.
-A correct choice shows its check and retains the solved dice for **220 ms** before the next roll.
-A wrong choice marks only the selected die and locks inputs for **600 ms**, retaining the board and all previous wins.
-Finish within **35 seconds**, ranked by locally measured elapsed time.
-These speeds and counts are provisional until phone playtests.
-
-`shared/dice.js` owns seeded rolls and input gates.
-`src/dice-facing-view.js` and `src/dice-facing.css` combine the generated dice jester with a velvet table, exact code-native die pips, rolling anticipation, and brief success pops.
-Remote lanes show the published current dice and progress, and successful feedback never reveals the next board early.
-Existing Punch button feedback, Ding successes, mistake cues, finish cues, and disco music are reused without creating audio files.
+Choose **Game Select → Dice, Dice, More Dice**, or encounter it in the twelve-game Arcade batch.
+Everyone sees the same three dice in one shared row.
+Choose the highest die with red for left, green for middle, or blue for right.
+Each throw has three distinct values from one to six, so exactly one choice is highest.
+Each player locks one answer per throw; every correct answer earns one point.
+Choices and result symbols reveal together after the answer window closes, and individual scores stay in four fixed player columns at the bottom.
+There are **21 throws in exactly 25 seconds**.
+The answer window shortens every three throws: **2.0, 1.6, 1.2, 0.9, 0.6, 0.4, and 0.3 seconds**.
+Brief result holds fill the remaining four seconds without reducing those answer windows.
+The most correct answers wins; equal counts share a place.
+Each throw plays the supplied `dice-roll.mp3`; correct and wrong answers use `Ding.mp3` and `wrong.mp3` once when results reveal.
+`shared/dice.js` owns the deterministic schedule and dice, and `shared/choice-round.js` owns private answers and server scoring.
+`src/shared-choice-view.js` renders the common screen using exact code-native pips and the existing illustrated carnival background.
 
 ## Play Facing Which Way
 
-Choose **Game Select → Facing Which Way**.
-This game is included in the twelve-game Arcade batch.
-Remember which way the duck points, then follow its covered card through clockwise turns, counterclockwise turns, and left-right flips.
-The visible move symbol states a 90-degree turn, 180-degree turn, or horizontal flip; the picture stays hidden until a correct answer.
-When **Answer** appears, red answers left, green up, and blue right.
-Generated tricks never end a move pointing down, so every possible answer has one of the three shared buttons.
+Choose **Game Select → Facing Which Way**, or encounter it in Arcade.
+Everyone watches the same duck card turn and flip on one shared screen.
+Remember its starting picture, follow the covered card, then choose the matching final picture from the three options below.
+Options include front and back views and different rotations; red chooses left, green middle, and blue right.
+Each of the **five sets** gives everyone **three seconds** to lock one answer after the turns finish.
+Answers remain private until the deadline, then reveal together with each player's choice and a correct/wrong symbol.
+Every correct answer earns one point; the most correct answers wins, with ties sharing a place.
+The initial picture shows for 700 ms, the cover closes over 400 ms, and the card stays covered for another 350 ms before turning.
+Game Select increases from two to four turns, lasting 1000, 925, and 850 ms per turn across its three rounds.
+Each turn or flip uses the supplied `flip.mp3`; old cues never replay after mute or interruption.
+The result holds for 650 ms before the next common set.
+`shared/facing.js` owns front/back pose composition, seeded options, and the complete shared schedule.
+`src/shared-choice-view.js` and `src/shared-choice.css` draw the covered card, picture options, choices, and fixed player score columns.
+The original matching reverse-side duck master and optimized delivery file are documented in [duck artwork notes](public/assets/facing-duck-back-artwork.md).
 
-Solve **5, 6, and 7 tricks**, with **2, 3, and 4 moves per trick**, across three rounds.
-Each trick shows the initial duck for **700 ms**, slides a separate flap down over the upright card for **400 ms**, holds it covered for **350 ms**, and then demonstrates moves at **1000, 925, and 850 ms per move** across the three rounds.
-A **200 ms** handoff separates the final move from the answer phase; all demonstration inputs are ignored.
-A correct answer reveals the final direction for **260 ms** and advances the trick count.
-A wrong answer waits **450 ms**, then replays the same initial picture and moves while keeping completed tricks.
-The deadline is **60 seconds**, ranked by local elapsed time; these initial timings are provisional until phone playtests.
-
-`shared/facing.js` owns the seeded transformations, replay gates, and local timing.
-The renderer maximizes the duck card within the lane, fitting diagonal turns inside its boundaries, and uses an opaque flap over the generated aviator duck.
-Remote lanes follow the peer's published current card phase, turns, and answer feedback.
-Reduced-motion settings replace decorative card motion with the same readable move symbols and phase timing.
-Correct answers reuse Ding, and the move demonstration reuses `slot-lock.wav` on the local audio timeline with bounded lookahead, stale-cue skipping, and replay/finish cancellation.
-Both games use original image-generated characters, delivered as resized WebP files with their PNG masters retained.
-The complete prompts and source image details are in [Dice and Facing artwork notes](public/assets/dice-facing-artwork.md).
-No new audio was downloaded or created.
+Both shared choice games accept bounded clock-stamped answers with an 80 ms transport grace after each deadline and acknowledge retries privately.
+The server locks the first valid answer, keeps pending choices out of broadcasts, settles each set once, and owns final scores.
+Missing an answer never pauses the common schedule, and disconnecting does not discard an accepted answer.
+Deploy frontend and backend together with **protocol 10**, including `shared-choices` and `mistake-points` capabilities.
 
 ## Play It's Raining Coins
 
@@ -439,10 +420,13 @@ Type in Letters is the thirteenth game, so it enters Game Select immediately and
 
 `shared/letters.js` owns seeded targets, local input, bounded replay proofs, and shared race settlement.
 Each completed target sends a bounded input proof measured from the frozen local round clock; the server replays it before accepting a claim.
-An **800 ms** collection window compares completion timestamps rather than awarding the first received packet.
+A **120 ms** collection window compares completion timestamps rather than awarding the first received packet.
 This is bounded client-reported timing fairness, not proof of physical device synchronization or protection against a modified client.
 Exact millisecond ties share one typing point.
-Inputs at or after 30 seconds are rejected, but a valid pre-deadline claim can arrive within the final collection window.
+Inputs at or after 30 seconds are rejected, but a valid pre-deadline claim can arrive within an 800 ms final transport grace.
+Correct text highlights immediately on the local device, and the authoritative result follows the short collection window with 300 ms of feedback.
+Button presses use the supplied `Diuup.mp3` for both touch and keyboard input.
+The alphabet stays in one compact row on phones, and typed text occupies the corresponding fixed player column, including solo play.
 The server owns typing points and final results; cosmetic pointer snapshots at **4 Hz** cannot award points or block local input.
 Claims are retried until acknowledged; stale target/round claims, malformed proofs, and duplicate awards are rejected.
 Disconnection preserves accepted points; hiding or reloading still forfeits under the existing lifecycle rules.
@@ -450,7 +434,7 @@ Disconnection preserves accepted points; hiding or reloading still forfeits unde
 `src/letters-view.js` and `src/letters.css` render the shared arena, numbered player pointers, entered letters, scores, and result symbols.
 [Type in Letters artwork notes](public/assets/letters-artwork.md) retain the built-in image-generation prompt and optimized background provenance.
 The selection announcement plays the supplied `type-in-letters-voice.mp3` with the existing applause, using the shared preload and announcement lifecycle.
-Deploy frontend and room service together with **protocol 9** and the `shared-letters` capability.
+Deploy frontend and room service together with **protocol 10** and the `shared-letters` capability.
 The initial repeat interval, collection window, and feedback duration are provisional tuning values checked by deterministic tests and browser play, pending device playtests.
 
 ## Backgrounds, set feedback, and Game Select announcements
@@ -462,11 +446,11 @@ Fireworks retains its existing festival backdrop; eleven new backgrounds cover t
 The eleven new backgrounds total about **1.24 MB**; the full image delivery set stays below **3 MB**.
 New games should follow the same background and optimization workflow.
 
-Perm Mania, Mimicking Monkeys, Facing Which Way, and Fireworks publish set-result timestamps so each lane can display a large yellow circle for success or a red cross for failure.
-Dice and Me Find Mistake show the same symbols for their individual puzzles.
+Perm Mania, Mimicking Monkeys, and Fireworks publish set-result timestamps so each lane can display a large yellow circle for success or a red cross for failure.
+Me Find Mistake shows the same symbols during its 260 ms board feedback; shared Dice and Facing reveal result symbols in their bottom player boxes.
 Successful sets reuse `Ding.mp3`; failed sets reuse the supplied `wrong.mp3` through the effects bus.
 Perm settles the whole phrase before showing or sounding its result; individual rhythm notes keep their existing feedback.
-Symbols last 650 ms, sit at the center of each player panel, span 90% of its width, and remain visible with reduced motion and muted sound.
+Lane symbols last 650 ms except the shorter picture-board feedback, sit at the center of each player panel, span 90% of its width, and remain visible with reduced motion and muted sound.
 
 After Play selected game, the selected game's supplied voice and `applause.mp3` play together once.
 The dedicated announcement screen lasts **two seconds**, then opens instructions while the matching voice and applause finish naturally.
@@ -565,7 +549,7 @@ Physical phone/tablet playtesting remains necessary.
 
 `npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
 `npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
-The health endpoint reports protocol version 9 for the shared Type in Letters race, Game Select picker, and existing gameplay and readiness gates.
+The health endpoint reports protocol version 10 for the shared Type in Letters race, Game Select picker, and existing gameplay and readiness gates.
 Deploy the frontend and backend together when changing the multiplayer protocol.
 
 The Pages workflow tests, builds, and deploys `main`.

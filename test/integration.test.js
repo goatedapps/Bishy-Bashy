@@ -15,9 +15,10 @@ import { JUMP_GAME, JumpRun } from '../shared/jump.js';
 import { comparePlayers, createRun } from '../shared/games.js';
 import { BURGER_GAME } from '../shared/burger.js';
 import { MISTAKE_GAME } from '../shared/mistake.js';
+import { isSharedChoice } from '../shared/choice-round.js';
 import { DICE_GAME } from '../shared/dice.js';
 import { FACING_GAME } from '../shared/facing.js';
-import { LETTERS_GAME, LettersRun, LETTERS_SETTLE_MS } from '../shared/letters.js';
+import { LETTERS_GAME, LettersRun, LETTERS_SETTLE_MS, LETTERS_PACKET_MS } from '../shared/letters.js';
 
 function receiveProtocol(socket, predicate) {
   return new Promise((resolve, reject) => {
@@ -92,7 +93,7 @@ test('Type in Letters: three real clients share targets and pointers, award the 
   snapshots = clients.map(socket => receiveProtocol(socket, message => message.type === 'state' && message.room.round.letters.phase === 'feedback'));
   app.rooms.tick();
   for (const message of await Promise.all(snapshots)) assert.deepEqual(message.room.round.letters.feedback.winners, [ids[1]]);
-  time = round.endAt + LETTERS_SETTLE_MS;
+  time = round.endAt + LETTERS_PACKET_MS;
   snapshots = clients.map(socket => receiveProtocol(socket, message => message.type === 'state' && message.room.round.phase === 'results'));
   app.rooms.tick();
   for (const message of await Promise.all(snapshots)) {
@@ -140,6 +141,19 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
     const round = state.round;
     assert.equal(round.difficulty, mode === 'arcade' ? 1 : index + 1);
     if (mode === 'game-select') assert.equal(round.game, game);
+    if (isSharedChoice(round.game)) {
+      const run = createRun(round, 0);
+      for (const stage of run.stages) {
+        time = round.startAt + stage.answerAt + 10;
+        const acks = clients.map(socket => receiveProtocol(socket, message => message.type === 'shared-choice-ack' && message.index === stage.index));
+        clients.forEach((socket, place) => send(socket, { type: 'shared-choice', roundId: round.id, index: stage.index, color: stage.index < place ? (stage.puzzle.answer + 1) % 3 : stage.puzzle.answer, elapsed: stage.answerAt + 10 }));
+        await Promise.all(acks);
+        const revealed = receiveProtocol(clients[0], message => message.type === 'state' && message.room.round.choice.results.length === stage.index + 1);
+        time = round.startAt + stage.answerEnd + 80; app.rooms.tick(); await revealed;
+      }
+      waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.history.length === index + 1);
+      time = round.endAt; app.rooms.tick(); state = (await waiting).room;
+    } else {
     const simulatedRuns = [COIN_GAME, DODGE_GAME].includes(round.game) ? clients.map((_, place) => {
       const run = createRun(round, 0);
       while (!run.done && (round.game === COIN_GAME ? run.landAt : run.impactAt) < run.end) {
@@ -186,14 +200,15 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
           run.tap(run.column, run.launchedAt + 1);
           run.advance(run.landAt);
         }
-      } else while (!run.done) run.tap(round.game === MISTAKE_GAME ? run.puzzle.odd : run.puzzle.answer, (round.game === FACING_GAME ? run.playAt : run.readyAt) + 100 + place * 25);
+      } else while (!run.done) run.tap(round.game === MISTAKE_GAME ? (run.puzzle.odd + (run.index < place ? 1 : 0)) % 3 : run.puzzle.answer, (round.game === FACING_GAME ? run.playAt : run.readyAt) + 100 + place * 25);
       assert.equal(run.done, true);
       return run;
     }) : null;
     time = simulatedRuns ? round.startAt + Math.max(...simulatedRuns.map(run => run.elapsed)) + 100 : round.game === PERM_GAME ? round.endAt + 100 : round.startAt + 4000;
     waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.history.length === index + 1);
-    clients.forEach((socket, place) => send(socket, { type: 'result', roundId: round.id, status: 'finished', elapsed: simulatedRuns ? simulatedRuns[place].elapsed : round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: round.goal, mistakes: simulatedRuns ? simulatedRuns[place].mistakes : 0, ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}), ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) }));
+    clients.forEach((socket, place) => send(socket, { type: 'result', roundId: round.id, status: 'finished', elapsed: simulatedRuns ? simulatedRuns[place].elapsed : round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: simulatedRuns ? simulatedRuns[place].cleared : round.goal, attempted: round.goal, mistakes: simulatedRuns ? simulatedRuns[place].mistakes : 0, ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}), ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) }));
     state = (await waiting).room;
+    }
     assert.deepEqual(state.set.players.map(player => player.points), [10, 7, 4, 1].map(points => points * (index + 1)));
     if (index + 1 < length) {
       assert.equal(state.set.phase, 'intermission');
@@ -246,7 +261,7 @@ for (const game of ['totem-shrinker', PERM_GAME]) test(`${game}: four real conne
     const waiting = receive(socket, message => message.type === 'joined');
     send(socket, { type: index ? 'join' : 'create', game, mode: 'game-select', code, name: `Player ${index + 1}` });
     const joined = await waiting;
-    assert.equal(joined.protocol, 9);
+    assert.equal(joined.protocol, 10);
     code = joined.code;
     clients.push({ socket, ...joined });
     const ready = receive(socket, message => message.type === 'state' && message.room.players.some(player => player.id === joined.playerId && player.ready));
@@ -335,7 +350,7 @@ test('real WebSocket clients can create, synchronize, and join a room', async t 
   assert.equal(state.room.players[1].name, 'Friend 1');
   assert.equal(JSON.stringify(state).includes(joined.token), false);
   const health = await fetch(`http://127.0.0.1:${port}/health`);
-  assert.deepEqual(await health.json(), { ok: true, protocol: 9, countdownMs: 3000 });
+  assert.deepEqual(await health.json(), { ok: true, protocol: 10, countdownMs: 3000 });
   const info = await fetch(`http://127.0.0.1:${port}/connection-info`);
   assert.ok(Array.isArray((await info.json()).lanUrls));
 });
