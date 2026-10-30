@@ -39,7 +39,7 @@ export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') 
   if (game === FACING_GAME) return { seed, difficulty: level, goal: FACING_GOAL + level - 1, duration: FACING_DURATION_MS, turnCount: level + 1, stepMs: 1000 - (level - 1) * 75 };
   if (game === BURGER_GAME) return { seed, difficulty: level, goal: BURGER_GOAL, duration: BURGER_DURATION_MS, fallMs: 1100 - (level - 1) * 110 };
   if (game === MISTAKE_GAME) return { seed, difficulty: level, goal: MISTAKE_GOAL + level - 1, duration: MISTAKE_DURATION_MS };
-  if (game === JUMP_GAME) return { seed, difficulty: level, goal: JUMP_GOAL + level - 1, duration: JUMP_DURATION_MS, periodMs: 1200 - (level - 1) * 50, windowMs: 150 - (level - 1) * 15, perfectMs: Math.round((150 - (level - 1) * 15) * .3) };
+  if (game === JUMP_GAME) return { seed, difficulty: level, goal: JUMP_GOAL, duration: JUMP_DURATION_MS, periodMs: 1200 - (level - 1) * 50, windowMs: 150 - (level - 1) * 15, perfectMs: Math.round((150 - (level - 1) * 15) * .3) };
   if (game === MONKEY_GAME) return { seed, difficulty: level, goal: MONKEY_STAGES + level - 1, duration: MONKEY_DURATION_MS, stepMs: 650 - (level - 1) * 40 };
   if (game === FIREWORK_GAME) return { seed, difficulty: level, goal: FIREWORK_GOAL, duration: FIREWORK_DURATION_MS, speed: 1 - (level - 1) * .06 };
   if (game === SLOT_GAME) return { seed, difficulty: level, goal: REEL_COUNT, duration: SLOT_DURATION_MS, stepMs: 320 - (level - 1) * 30, retryMs: RETRY_MS };
@@ -77,7 +77,7 @@ export function gameRules(game) {
   if (game === FACING_GAME) return ['Remember where the duck points', 'Follow the turns and flips', 'When Answer appears: red = left, green = up, blue = right'];
   if (game === BURGER_GAME) return ['Move the plate to catch the falling food', 'Red = left, green = middle, blue = right'];
   if (game === MISTAKE_GAME) return ['Pick the picture that is different', 'Red = top, green = middle, blue = bottom'];
-  if (game === JUMP_GAME) return ['Press any button as the dinosaur lands on the trampoline', 'A Perfect landing gives +2 boosts'];
+  if (game === JUMP_GAME) return ['Press any button as the dinosaur lands on the trampoline', 'Perfect landings climb twice as high as Good landings'];
   if (game === MONKEY_GAME) return ['Watch the monkey\'s color sequence', 'Copy the order with the matching buttons'];
   if (game === FIREWORK_GAME) return ['Press matching colors before the fireworks land', 'Clear every firework in any order', 'Each set gets harder'];
   if (game === SLOT_GAME) return ['Match all three rows to the model face', 'Red stops the red row, green the green row, and blue the blue row'];

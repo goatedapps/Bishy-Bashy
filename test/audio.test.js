@@ -20,6 +20,28 @@ test('Jump loads an existing flourish for perfect landings without requiring the
   assert.equal([...audio.voices].at(-1).id, 'permGrow');
 });
 
+test('Jump button feedback uses the supplied bounce once per press, with caching, effects volume, and mute', async () => {
+  const { audio, requests } = setup();
+  audio.selectGame('jump-for-the-meat');
+  await audio.unlock();
+  assert.equal(requests.filter(url => url.includes('/bounce.mp3?')).length, 1);
+  audio.pressButton('jump');
+  assert.deepEqual([...audio.voices].map(voice => voice.id), ['jumpBounce']);
+  audio.pressButton('jump');
+  assert.equal([...audio.voices].filter(voice => voice.id === 'jumpBounce').length, 2);
+  await audio.load();
+  assert.equal(requests.filter(url => url.includes('/bounce.mp3?')).length, 1);
+  audio.pressButton('gameplay');
+  assert.equal([...audio.voices].at(-1).id, 'gameplayPress');
+  audio.setPreferences({ effectsVolume: 0 });
+  const sources = audio.context.sources.length;
+  audio.pressButton('jump');
+  assert.equal(audio.context.sources.length, sources);
+  audio.setEnabled(false);
+  audio.pressButton('jump');
+  assert.equal(audio.voices.size, 0);
+});
+
 class Parameter {
   constructor() { this.value = 1; this.events = []; }
   record(method, value, time, constant) { this.value = value; this.events.push({ method, value, time, constant }); return this; }

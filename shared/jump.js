@@ -2,7 +2,7 @@ import { createSequence } from './totem.js';
 
 export const JUMP_GAME = 'jump-for-the-meat';
 export const JUMP_DURATION_MS = 30_000;
-export const JUMP_GOAL = 6;
+export const JUMP_GOAL = 16;
 export const JUMP_RECOVERY_MS = 450;
 
 export class JumpRun {

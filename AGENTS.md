@@ -34,8 +34,9 @@ Wrong responses replay the current prefix after recovery; completed stages persi
 Memory demonstration tones use the local run's cue timestamps and a bounded audio lookahead; cancel them on replay, mute, finish, or interruption, and skip past cues on resume.
 `shared/jump.js` owns seeded bounce arcs, inclusive landing windows, recovery, and the elapsed-time race to the final meat-reaching apex.
 Any of the three buttons boosts a valid landing; preserve successful boosts after a miss and resolve final completion at its scheduled local apex, even on a delayed frame.
-The wide gold landing window earns one boost; its green Perfect center (30% of the half-window) earns two, capped at the remaining goal.
-Jump has no timing bar; judge landings from the dinosaur and trampoline, keeping the landing ring, +1/+2 feedback, and Perfect flourish aligned to the local input timestamp.
+The fixed meat height is 16 height units in every round: Good landings add one unit and Perfect landings add two, so eight Perfect or sixteen Good landings reach it.
+The green Perfect center is 30% of the landing half-window; show height progress instead of a jump counter, and retain the accepted elapsed time above CLEAR on each finished lane.
+Jump has no timing bar; judge landings from the dinosaur and trampoline, keeping the landing ring, Good/Perfect feedback, and Perfect flourish aligned to the local input timestamp.
 `src/jump-view.js` and `src/jump.css` draw the original dinosaur and landing guide; remote bounces follow published jump timing, and the home cast stays bounded to five characters as the catalog grows.
 `shared/burger.js` owns seeded falling ingredients and automatic local catches; red/green/blue move the plate left/middle/right, misses keep completed layers, and delayed frames preserve scheduled landing times.
 `shared/mistake.js` accepts answers as soon as each new board appears after success feedback; the initial board keeps its observation gate.
@@ -107,7 +108,7 @@ Menu and transition screens stream `public/audio/Background-ActionRock.mp3` thro
 Menu tracks reuse one gesture-authorized media element and retain separate playback positions to support first-entry playback on tablets.
 The illustrated instructions screen streams `game-instructions.mp3` instead; pause the previous track before switching and preserve each track's position.
 Post-game podiums play `podium-winner.mp3` once per round before menu music resumes; preserve deduplication across redraws and cancel the cue on navigation, mute, or interruption.
-Enabled menu buttons use the cached `Button-Press.mp3` effect; the three gameplay buttons and their keyboard shortcuts use `Punch-button.mp3` once through the shared tap handler, preserving game-specific sound cues.
+Enabled menu buttons use the cached `Button-Press.mp3` effect; the three gameplay buttons and their keyboard shortcuts use `Punch-button.mp3` (Jump uses supplied `bounce.mp3`) once through the shared tap handler, preserving game-specific sound cues.
 `src/backgrounds.css` maps all non-Fireworks arenas to their optimized illustrated environments.
 Set-based games briefly overlay a yellow circle or red cross across 90% of the lane width, centered in the player panel, and use `wrong.mp3` for failed sets; Perm judges at phrase settlement, not individual notes.
 `src/feedback.js` owns bounded local success and finish effects; keep decorative particles off reaction targets, cancel effects across round/lifecycle changes, and honor reduced motion.

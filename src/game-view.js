@@ -147,7 +147,7 @@ export class GameView {
       elements.stageResult.setAttribute('aria-label', stageFeedback?.correct ? 'Correct set' : 'Wrong set');
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.finishBadge.hidden = !active || status?.status !== 'finished';
-      const finishLabel = perm ? '✓ Finished' : '✓ Cleared!';
+      const finishLabel = jump ? `${((status?.elapsed || 0) / 1000).toFixed(2)} s\nCLEAR!` : perm ? '✓ Finished' : '✓ Cleared!';
       if (elements.finishBadge.textContent !== finishLabel) elements.finishBadge.textContent = finishLabel;
       elements.finishBadge.setAttribute('aria-live', own ? 'off' : 'polite');
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';
@@ -166,7 +166,7 @@ export class GameView {
       if (STAGES[game]) {
         elements[STAGES[game]].render(round || {}, shownRun, time, 0, active, Boolean(player), cleared, Boolean(status));
       } else if (jump) {
-        elements.jump.render(round || {}, shownRun, time, 0, active, Boolean(player), cleared, Boolean(status));
+        elements.jump.render(round || {}, shownRun, time, 0, active, Boolean(player), cleared, Boolean(status), status?.status === 'finished');
       } else if (monkeys) {
         elements.monkeys.render(round || {}, shownRun, time, active, Boolean(player), cleared, Boolean(status));
       } else if (fireworks) {
@@ -186,15 +186,15 @@ export class GameView {
           elements.towerKey = key;
         }
       }
-      const value = game === 'totem-shrinker' ? active && player ? Math.max(0, round.blockCount - cleared) : 0 : cleared;
+      const value = jump ? Math.min(100, Math.round(cleared / (round?.goal || GAMES[game].goal) * 100)) : game === 'totem-shrinker' ? active && player ? Math.max(0, round.blockCount - cleared) : 0 : cleared;
       const counterKey = `${game}/${value}/${round?.goal}`;
       if (elements.remaining.dataset.value !== counterKey) {
-        elements.remaining.replaceChildren(node('strong', '', String(value)), document.createTextNode(game === 'totem-shrinker' ? 'left' : ` / ${round?.goal || GAMES[game]?.goal || 0}`));
+        elements.remaining.replaceChildren(node('strong', '', jump ? `${value}%` : String(value)), document.createTextNode(jump ? 'height' : game === 'totem-shrinker' ? 'left' : ` / ${round?.goal || GAMES[game]?.goal || 0}`));
         elements.remaining.dataset.value = counterKey;
       }
       elements.fill.style.width = `${active && player ? cleared / round.goal * 100 : 0}%`;
       const score = ownRun?.run.score ?? player?.progress?.score ?? 0;
-      elements.status.textContent = !player ? 'Waiting to join' : !player.connected ? 'Reconnecting…' : active ? status ? resultLabel(status, perm) : frozen ? 'Oops!' : perm ? `${score.toLocaleString()} pts` : '' : player.ready ? '✓ Ready' : player.sync?.count >= 3 ? (player.id === room.hostId ? 'Host' : 'Not ready') : 'Syncing…';
+      elements.status.textContent = !player ? 'Waiting to join' : !player.connected ? 'Reconnecting…' : active ? status ? jump && status.status === 'finished' ? '' : resultLabel(status, perm) : frozen ? 'Oops!' : perm ? `${score.toLocaleString()} pts` : '' : player.ready ? '✓ Ready' : player.sync?.count >= 3 ? (player.id === room.hostId ? 'Host' : 'Not ready') : 'Syncing…';
     });
     this.updateFeedback(room, local, time);
     const hasResults = round?.phase === 'results';
@@ -234,7 +234,7 @@ export class GameView {
       this.lanes.forEach((elements, index) => {
         const player = room.players[index];
         const own = this.projectPlayer(room.round, player, local, elements.lane.classList.contains('you'));
-        elements.jump.render(room.round, own?.run, time, elapsed, true, Boolean(player), own?.run.cleared ?? player?.progress?.cleared ?? 0, Boolean(own?.done || player?.result));
+        elements.jump.render(room.round, own?.run, time, elapsed, true, Boolean(player), own?.run.cleared ?? player?.progress?.cleared ?? 0, Boolean(own?.done || player?.result), (player?.result?.status || own?.status) === 'finished');
       });
       return;
     }

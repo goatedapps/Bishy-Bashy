@@ -90,9 +90,9 @@ export function ruleVisual(game) {
   } else if (game === 'jump-for-the-meat') {
     first.append(gameArt(game), node('span', 'jump-meat'), node('strong', '', 'Time the landing'));
     const landing = node('div', 'tutorial-landing');
-    landing.append(node('span', 'tutorial-good', 'Good +1'), node('span', 'tutorial-perfect', 'Perfect +2'));
+    landing.append(node('span', 'tutorial-good', 'Good'), node('span', 'tutorial-perfect', 'Perfect ×2'));
     second.append(landing, shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Press as it lands'));
-    label = 'Watch the dinosaur land on the trampoline and press any button. A good landing gives one boost; a Perfect landing gives two boosts.';
+    label = 'Watch the dinosaur land on the trampoline and press any button. A Perfect landing gains twice the height of a Good landing, reaching the meat faster.';
   } else if (game === 'mimicking-monkeys') {
     first.append(gameArt(game), shapes([0, 1, 2]), node('strong', '', 'Watch the order'));
     second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Copy the order'));

@@ -92,7 +92,7 @@ Sound is optional and off by default.
 Use the music-note button to enable music and effects, and the gear button for separate volume controls and a sound preview.
 All essential cues also appear visually.
 Enabled menu buttons play the user-supplied `public/audio/Button-Press.mp3` once per activation through the existing effects volume and mute controls.
-The three gameplay buttons and their keyboard shortcuts play `public/audio/Punch-button.mp3` once per enabled press, alongside the game's success and mistake cues.
+The three gameplay buttons and their keyboard shortcuts play `public/audio/Punch-button.mp3` once per enabled press (Jump uses the supplied `public/audio/bounce.mp3` instead), alongside the game's success and mistake cues.
 Fireworks Craze loads `public/audio/Fireworks.mp3` for each local rocket launch, including retries, without playing sounds for remote player rockets or replaying launches missed while muted or interrupted.
 Local successes use brief, proportional feedback: colored chips for cleared Totem blocks, dancer pops and growth bursts in Perm Mania, matched reel badge pops in Slots, and copied-move dots and stage bursts in Monkeys.
 Fireworks retain their expanding bursts with an impact ring, while Jump retains its boost sparks and squash-and-stretch with rising landing feedback.
@@ -271,15 +271,18 @@ Choose **Game Select → Jump for the Meat**, or encounter it in Arcade.
 The dinosaur bounces automatically; press **any of the three buttons** as it lands, when the landing ring turns gold or green.
 Keyboard controls remain **1 / 2 / 3** or **J / K / L**.
 Watch the dinosaur descend onto the trampoline to judge when to press; the timing bar has been removed so the scene has more vertical space.
-The wide gold zone gives **Good +1**, while its smaller green center gives **Perfect +2**, making a larger height gain and shortening the race.
-You can take a safe early landing or wait for the center to gain two boosts; remaining progress is capped at the goal.
+The wide gold zone gives a **Good** landing, while its smaller green center gives **Perfect**, which adds twice as much height and shortens the race.
+The meat stays at the same target height: **8 Perfect landings**, **16 Good landings**, or an equivalent mixture reaches it.
+Each Good adds one of 16 height units; each Perfect adds two, capped at the target.
+The arena shows height percentage rather than a fixed jump count.
 Accepted boosts stretch the dinosaur briefly and create an impact burst; a Perfect landing also plays a distinct optional flourish.
-After the last boost, reach the meat at the final jump's apex to finish; final flight time is included in your locally measured result.
+After reaching the target height, reach the meat at the final jump's apex to finish; final flight time is included in your locally measured result.
+Each finished lane immediately shows the accepted elapsed seconds above **CLEAR!**, including remote players while others continue.
 An early tap or missed landing causes a 450 ms recovery before another attempt, while successful boosts remain credited.
 A 100 ms input guard ignores simultaneous buttons and accidental double presses.
 Unfinished players time out after 30 seconds and receive zero set points.
 
-Arcade requires six boosts; Game Select requires **6, 7, and 8 boosts**.
+Arcade and every Game Select round use the same 16-unit meat height; later Game Select rounds adjust bounce speed and landing windows.
 Base bounce periods shorten from **1,200 to 1,100 ms** in 50 ms steps, with a seeded −80, 0, or +80 ms adjustment per height shared by all players.
 Landing windows narrow from **±150 to ±120 ms** in 15 ms steps; both window boundaries are inclusive.
 The Perfect half-window is 30% of the landing half-window, rounded to **45, 41, 36, 32, and 27 ms** across the five difficulties, with inclusive boundaries.
@@ -291,7 +294,9 @@ The game uses an original generated dinosaur and roasted drumstick on a peach-an
 The delivered character is `public/assets/jump-dino.png`, with its full prompt preserved in [artwork notes](public/assets/jump-artwork.md).
 Illustrated rules explain the landing and the three interchangeable buttons, and all essential cues remain visible while muted.
 The game reuses the original opt-in disco audio bank for backing music, accepted boosts, misses, GO, and finish cues, plus the existing Perm growth flourish for Perfect landings.
-Only that additional flourish is loaded for Jump; the full Perm music bank is unnecessary.
+Jump also preloads the user-supplied `public/audio/bounce.mp3` for each enabled gameplay button press, replacing Punch for both touch and keyboard input.
+The finish cue, Perfect flourish, shared mute controls, and other games' button sounds keep their existing behavior.
+Only the additional flourish and bounce clip are loaded for Jump; the full Perm music bank is unnecessary.
 Automated timing comparisons confirm that all-Perfect play beats safe early landings at every difficulty; physical phone testing still needs to establish whether the choice feels satisfying.
 Deploy frontend and room service together to register the new game in both catalogs.
 

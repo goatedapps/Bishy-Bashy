@@ -50,3 +50,11 @@
   .jump-stage .jump-sparks { display:none; }
   .jump-stage .jump-meat { animation:none; }
 }
+
+.jump-theme .lane-finish-badge {
+  top:48px; width:calc(100% - 12px); white-space:pre-line; text-align:center;
+  padding:10px 2px; border:2px solid #9a632b; border-radius:12px;
+  background:#fff7dced; color:#307145; box-shadow:0 4px #8f5e2733;
+  font:clamp(13px,2.2vw,28px)/1.45 'Lilita One',system-ui,sans-serif;
+}
+.jump-theme .lane-finish-badge::first-line { font-size:clamp(18px,3.3vw,44px); color:#68452b; }

@@ -36,9 +36,9 @@ export class JumpStage {
     this.element.setAttribute('role', 'group');
   }
 
-  render(round, run, time, elapsed, active, present, cleared, terminal = false) {
+  render(round, run, time, elapsed, active, present, cleared, terminal = false, finished = run?.done === true) {
     const ownPhase = run?.phase(time);
-    const phase = !active || !present ? 'waiting' : terminal ? cleared === round.goal ? 'finished' : 'expired' : ownPhase || 'remote';
+    const phase = !active || !present ? 'waiting' : terminal ? finished ? 'finished' : 'expired' : ownPhase || 'remote';
     const motion = Math.max(0, elapsed) % (round.periodMs || 1200) / (round.periodMs || 1200);
     const height = run ? run.heightAt(time) : phase === 'remote' ? (.18 + cleared / round.goal * .58) * 4 * motion * (1 - motion) : phase === 'finished' ? .76 : 0;
     this.element.style.setProperty('--jump-height', String(height));
@@ -53,16 +53,16 @@ export class JumpStage {
     this.element.classList.toggle('jump-perfect-boost', Boolean(boosted && feedback.perfect));
     this.feedback.hidden = !showingFeedback;
     this.feedback.style.setProperty('--feedback-rise', `${showingFeedback ? Math.min(1, age / 650) * 12 : 0}px`);
-    this.feedback.textContent = !showingFeedback ? '' : feedback.kind === 'miss' ? feedback.label : feedback.perfect ? `Perfect! +${feedback.gain}` : `Nice! +${feedback.gain}`;
+    this.feedback.textContent = !showingFeedback ? '' : feedback.kind === 'miss' ? feedback.label : feedback.perfect ? 'Perfect! ×2' : 'Good!';
     const launchAge = run ? time - run.launchedAt : Infinity;
     const stretch = boosted && launchAge >= 0 && launchAge < 220 ? .15 * (1 - launchAge / 220) : 0;
     this.actor.style.setProperty('--dino-stretch', String(stretch));
     this.ring.style.setProperty('--landing-scale', String(run && (phase === 'air' || phase === 'land' || phase === 'perfect') ? Math.max(.6, Math.min(1.65, 1 + (run.landAt - time) / run.arcMs)) : 1));
     this.actor.hidden = !present;
     this.meat.hidden = !present || phase === 'finished';
-    const text = !present ? '' : ({ perfect: 'Perfect!', land: 'Good!', air: '', stumble: 'Oops!', reaching: 'Chomp!', finished: 'Yum!', expired: 'Round over' }[phase] || '');
+    const text = !present ? '' : ({ perfect: 'Perfect!', land: 'Good!', air: '', stumble: 'Oops!', reaching: 'Chomp!', finished: '', expired: 'Round over' }[phase] || '');
     if (this.phase.textContent !== text) this.phase.textContent = text;
-    const label = !present ? 'Open spot' : phase === 'perfect' ? 'Perfect landing, press any button for two boosts' : phase === 'land' ? 'Good landing, press any button for one boost' : phase === 'finished' ? 'Meat reached' : `${text || 'Dinosaur'}: ${cleared} boosts`;
+    const label = !present ? 'Open spot' : phase === 'perfect' ? 'Perfect landing, press any button for double height' : phase === 'land' ? 'Good landing, press any button to climb' : phase === 'finished' ? 'Meat reached' : `${text || 'Dinosaur'}: ${Math.min(100, Math.round(cleared / round.goal * 100))}% height`;
     if (this.element.getAttribute('aria-label') !== label) this.element.setAttribute('aria-label', label);
   }
 }

@@ -52,7 +52,7 @@ test('early taps stumble, missed windows recover once, and completed boosts rema
 });
 
 test('five difficulties finish at the final apex, independent of frame delivery and network time', () => {
-  assert.deepEqual([1, 2, 3, 4, 5].map(level => settings(level).goal), [6, 7, 8, 9, 10]);
+  assert.deepEqual([1, 2, 3, 4, 5].map(level => settings(level).goal), [16, 16, 16, 16, 16]);
   assert.deepEqual([1, 2, 3, 4, 5].map(level => settings(level).windowMs), [150, 135, 120, 105, 90]);
   for (let level = 1; level <= 5; level++) {
     const round = settings(level), run = createRun(round, 5000);
@@ -98,6 +98,45 @@ test('perfect center timings earn two boosts, safe edges earn one, and perfects 
       assert.equal(outside.cleared, 1);
     }
   }
+});
+
+test('the same meat height takes eight Perfect landings or sixteen Good landings in every mode and difficulty', () => {
+  for (const mode of ['arcade', 'game-select']) for (let level = 1; level <= 5; level++) {
+    const round = { id: 'height-race', game: JUMP_GAME, ...roundSettings(JUMP_GAME, 123, level, mode) };
+    const perfect = new JumpRun(round, 1000), good = new JumpRun(round, 1000);
+    let perfectLandings = 0, goodLandings = 0;
+    while (perfect.cleared < perfect.goal) {
+      perfect.tap(perfectLandings % 3, perfect.landAt);
+      perfectLandings++;
+      if (perfectLandings < 8) assert.equal(perfect.finishAt, null);
+    }
+    while (good.cleared < good.goal) {
+      good.tap(goodLandings % 3, good.landAt - good.windowMs);
+      goodLandings++;
+      if (goodLandings < 16) assert.equal(good.finishAt, null);
+    }
+    assert.equal(perfectLandings, 8);
+    assert.equal(goodLandings, 16);
+    perfect.advance(perfect.finishAt); good.advance(good.finishAt);
+    assert.ok(perfect.elapsed < good.elapsed);
+    assert.ok(good.elapsed < round.duration);
+  }
+});
+
+test('mixed Good and Perfect landings reach the same height and misses preserve earned height', () => {
+  const run = new JumpRun(settings(), 0);
+  for (let index = 0; index < 4; index++) run.tap(0, run.landAt);
+  assert.equal(run.cleared, 8);
+  assert.equal(run.amplitude, .18 + .58 / 2);
+  run.tap(0, run.launchedAt + 200);
+  assert.equal(run.cleared, 8);
+  assert.equal(run.finishAt, null);
+  for (let index = 0; index < 8; index++) run.tap(2, run.landAt - run.windowMs);
+  assert.equal(run.cleared, 16);
+  assert.ok(run.finishAt > run.launchedAt);
+  run.advance(run.finishAt);
+  assert.equal(run.done, true);
+  assert.equal(run.mistakes, 1);
 });
 
 test('invalid, pre-start, and deadline taps cannot progress; reaching meat after the deadline does not finish', () => {

@@ -54,7 +54,7 @@ export function roundDetail(round) {
   if (round.game === 'facing-which-way') return `${round.goal} tricks · ${round.turnCount} turns`;
   if (round.game === 'burger-girl') return `${round.goal / 4} burgers · Speed ${round.difficulty}`;
   if (round.game === 'me-find-mistake') return `${round.goal} puzzles · Level ${round.difficulty}`;
-  if (round.game === JUMP_GAME) return `${round.goal} boosts · Speed ${round.difficulty}`;
+  if (round.game === JUMP_GAME) return `Reach the meat · Speed ${round.difficulty}`;
   if (round.game === MONKEY_GAME) return `${round.goal} stages · ${round.goal + 1} moves`;
   if (round.game === FIREWORK_GAME) return `${round.goal} sets · Speed ${round.difficulty}`;
   if (round.game === SLOT_GAME) return `3 reels · Speed ${round.difficulty}`;

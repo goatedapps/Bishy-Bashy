@@ -368,7 +368,7 @@ function tap(color) {
   const time = performance.now();
   enforceLifecycle(time, true);
   if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
-  if (!buttons[color]?.disabled) audio.pressButton('gameplay');
+  if (!buttons[color]?.disabled) audio.pressButton(room.round.game === JUMP_GAME ? 'jump' : 'gameplay');
   const clearedBefore = localRound.run.cleared;
   const action = localRound.run.tap(color, time);
   if ([BURGER_GAME, COIN_GAME, DODGE_GAME, FIREWORK_GAME].includes(room.round.game)) flushLaneEvents(time);
@@ -539,7 +539,7 @@ function animate() {
     else if (time < localRound.start) overlay = String(Math.ceil((localRound.start - time) / 1000));
     else {
       if (localRound.goDelay === null && !localRound.done) localRound.goDelay = time - localRound.start;
-      if (localRound.done) { overlay = localRound.status === 'finished' ? round.game === PERM_GAME ? 'Fabulous!' : 'Cleared!' : localRound.status === 'forfeit' ? 'Forfeited' : 'Time’s up!'; small = true; }
+      if (localRound.done) { overlay = localRound.status === 'finished' ? round.game === JUMP_GAME ? '' : round.game === PERM_GAME ? 'Fabulous!' : 'Cleared!' : localRound.status === 'forfeit' ? 'Forfeited' : 'Time’s up!'; small = true; }
       else if (time - localRound.start < 450) overlay = 'GO!';
     }
     const elapsed = localRound ? localRound.run.elapsed ?? Math.max(0, Math.min(time, localRound.end) - localRound.start) : 0;
