@@ -10,9 +10,6 @@ export function mealPortrait(kind = 1) {
   const item = node('span', `meal-item meal-item-${kind}`);
   item.setAttribute('role', 'img');
   item.setAttribute('aria-label', MEAL_NAMES[kind]);
-  if (kind === 0) item.append(node('i', 'meal-fries'), node('i', 'meal-carton'));
-  else if (kind === 1) item.append(node('i', 'meal-bun meal-bun-top'), node('i', 'meal-lettuce'), node('i', 'meal-patty'), node('i', 'meal-bun meal-bun-bottom'));
-  else item.append(node('i', 'meal-straw'), node('i', 'meal-cup'), node('i', 'meal-lid'));
   return item;
 }
 
@@ -21,7 +18,6 @@ export class MealsStage {
     this.element = node('div', 'meals-stage');
     this.element.hidden = true;
     this.element.setAttribute('role', 'group');
-    this.count = node('strong', 'meals-set');
     this.chutes = node('div', 'meals-chutes');
     this.columns = Array.from({ length: 3 }, (_, color) => {
       const chute = node('div', `meal-column meal-color-${color}`);
@@ -37,9 +33,8 @@ export class MealsStage {
       this.chutes.append(chute);
       return { chute, slots, falling };
     });
-    this.tray = node('div', 'meal-tray');
     this.toast = node('strong', 'meals-toast', 'Served!');
-    this.element.append(this.count, this.chutes, this.tray, this.toast);
+    this.element.append(this.chutes, this.toast);
     this.motion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
   }
 
@@ -53,7 +48,6 @@ export class MealsStage {
     const filled = run?.filled || [0, 0, 0];
     this.element.classList.toggle('meal-served', feedback);
     this.element.classList.toggle('unoccupied', !present);
-    this.count.textContent = present && active ? `Meal ${Math.min(cleared + (feedback ? 0 : 1), round.goal)} / ${round.goal}` : '';
     this.toast.hidden = !feedback;
     this.columns.forEach(({ chute, slots, falling }, color) => {
       const at = run?.pendingAt[color] ?? -10000;

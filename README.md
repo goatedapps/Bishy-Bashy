@@ -624,10 +624,16 @@ Fill every empty slot with fries, burgers, and drinks using red, green, and blue
 Six seeded meals each require one to three items of every kind.
 Button presses use `plop.mp3`; each item falls for 300 ms into its matching slot.
 Each colour can have one item falling while the other colours remain available.
-Taps on full columns are ignored, and every completed meal plays Ding once before a 300 ms serving hold.
+Taps on full columns play Wrong without changing the meal, and every completed meal plays Ding once before a 300 ms serving hold.
 The final clear time includes the last item's landing and appears above CLEAR at the top of the player's column.
 The fastest completion wins, with a 45-second deadline.
 [Artwork notes](public/assets/meals-artwork.md) retain the original restaurant background prompt and master.
 Both new games are available in Game Select; Arcade retains the existing 12-game batch until the catalog reaches 16.
 Deploy frontend and server together with protocol 11 and the `dynamite-meals` capability.
 These initial input and animation timings remain provisional pending physical phone playtests.
+
+Both games use original generated food and dynamite sprites in gameplay, game posters, and the illustrated rules.
+The optimized shared sprite sheet and retained master are documented in [sprite artwork notes](public/assets/dynamite-meals-sprites.md).
+Meals sit at the bottom of the player panel without meal counters, progress bars, or decorative ovals.
+Dynamite Spark has no section counter; a locally clocked GSAP tween scrolls the continuous wire smoothly as each correct input moves the spark.
+The final explosion uses a protected finish sound, reduces backing music while it plays, and finishes before podium audio begins.

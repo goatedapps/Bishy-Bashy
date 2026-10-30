@@ -73,7 +73,11 @@ export class MealsRun {
     if (this.done || !Number.isInteger(color) || color < 0 || color > 2 || !Number.isFinite(time) || time < this.start || time >= this.end) return { type: 'ignored' };
     this.advance(time);
     if (this.done) return { type: 'finished', elapsed: this.elapsed };
-    if (time < this.blockedUntil || this.pendingAt[color] >= this.start || this.filled[color] >= this.requirements[color]) return { type: 'ignored' };
+    if (time < this.blockedUntil || this.pendingAt[color] >= this.start) return { type: 'ignored' };
+    if (this.filled[color] >= this.requirements[color]) {
+      this.mistakes++; this.feedback = { kind: 'miss', color, at: time };
+      this.events.push({ type: 'stageWrong', at: time }); return { type: 'move' };
+    }
     this.pendingAt[color] = time;
     return { type: 'drop' };
   }

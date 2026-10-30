@@ -203,11 +203,11 @@ export class GameView {
           elements.towerKey = key;
         }
       }
-      elements.remaining.hidden = jump;
-      elements.progress.hidden = jump;
+      elements.remaining.hidden = jump || game === MEALS_GAME || game === DYNAMITE_GAME;
+      elements.progress.hidden = jump || game === MEALS_GAME || game === DYNAMITE_GAME;
       const value = game === 'totem-shrinker' ? active && player ? Math.max(0, round.blockCount - cleared) : 0 : cleared;
       const counterKey = `${game}/${value}/${round?.goal}`;
-      if (!jump && elements.remaining.dataset.value !== counterKey) {
+      if (!jump && game !== MEALS_GAME && game !== DYNAMITE_GAME && elements.remaining.dataset.value !== counterKey) {
         elements.remaining.replaceChildren(node('strong', '', String(value)), document.createTextNode(mistake ? 'correct' : game === 'totem-shrinker' ? 'left' : ` / ${round?.goal || GAMES[game]?.goal || 0}`));
         elements.remaining.dataset.value = counterKey;
       }

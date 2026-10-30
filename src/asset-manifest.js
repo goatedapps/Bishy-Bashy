@@ -151,6 +151,11 @@ export const ASSETS = [
     "hash": "aae8b332c4212c9f"
   },
   {
+    "path": "assets/optimized/dynamite-meals-sprites-2e73a04cfb68.webp",
+    "bytes": 173556,
+    "hash": "2e73a04cfb68f79d"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",

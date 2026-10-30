@@ -16,3 +16,5 @@ Wide 3:2 landscape.
 Broad quiet uncluttered central wall and counter surface so many gameplay slots can remain clear and legible.
 No foreground food, no people, no letters, words, brands, logos or numbers.
 Keep decorative details toward outer edges.
+
+Food items now use the generated transparent sprites documented in `dynamite-meals-sprites.md` throughout gameplay, posters, and illustrated rules.

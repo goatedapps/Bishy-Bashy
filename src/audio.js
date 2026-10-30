@@ -218,6 +218,7 @@ export class GameAudio {
     source.onended = () => {
       this.voices.delete(voice);
       source.disconnect(); gain.disconnect();
+      if (group === 'finish') this.synchronizeMenu();
       if (group === 'podium' && this.podium?.voice === voice) {
         this.podium.voice = null;
         this.synchronizeMenu();
@@ -359,6 +360,20 @@ export class GameAudio {
     });
   }
 
+  finishDynamite(roundId) {
+    if (this.dynamiteFinish === roundId || !this.enabled || this.preferences.effectsVolume === 0 || this.context?.state !== 'running') return;
+    this.endPlayer();
+    this.stopVoices(voice => voice.id === 'gameplayPress' || voice.id === 'ding');
+    const voice = this.source('dynamiteExplosion', { group: 'finish' });
+    if (!voice) return;
+    this.dynamiteFinish = roundId;
+    const at = this.context.currentTime;
+    this.duck.gain.cancelScheduledValues(at);
+    this.duck.gain.setValueAtTime(.15, at);
+    this.duck.gain.setTargetAtTime(1, at + this.buffers.get('dynamiteExplosion').duration, .1);
+    this.source('ding', { at: at + .15, group: 'finish' });
+  }
+
   dynamiteBuzz(run) {
     const allowed = this.enabled && this.preferences.effectsVolume > 0 && this.context?.state === 'running' && this.target?.id === run.id && !this.target.playerDone && !run.done && this.now() >= run.start && this.now() < run.end;
     if (!allowed) { this.stopVoices(voice => voice.id === 'dynamiteBuzz'); return; }
@@ -467,6 +482,7 @@ export class GameAudio {
       this.stopPodium();
       return false;
     }
+    if ([...this.voices].some(voice => voice.group === 'finish' && !voice.stopped)) return true;
     if (this.podium.voice) return true;
     if (this.podium.played) return false;
     if (!this.buffers.has('podiumWinner')) {
@@ -481,7 +497,7 @@ export class GameAudio {
   }
 
   synchronizeMenu(fromGesture = false) {
-    const podiumPlaying = this.synchronizePodium();
+    const podiumPlaying = this.synchronizePodium() || [...this.voices].some(voice => voice.group === 'finish' && !voice.stopped);
     const allowed = this.preferences.musicMode === 'on' || this.preferences.musicMode === 'auto' && this.menu.musicOwner;
     if (podiumPlaying || !this.menu.active || !allowed || !this.enabled || this.preferences.musicVolume === 0 || this.previewing || !this.context || !fromGesture && this.context.state !== 'running') {
       this.stopMenu();

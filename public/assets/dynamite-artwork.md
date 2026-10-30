@@ -2,7 +2,7 @@
 
 Original illustrated background created using the built-in image-generation tool on 2026-10-30.
 The master is `bg-dynamite-workshop.png`; the optimized WebP delivery image is generated at 1280 pixels, quality 86 and method 6.
-The wire, spark and stylized dynamite bundle are code-native artwork.
+The wire and spark are code-native geometry; the dynamite bundle uses the generated sprite documented in `dynamite-meals-sprites.md`.
 
 ## Prompt
 

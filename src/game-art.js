@@ -53,7 +53,9 @@ export function ruleVisual(game) {
   const second = node('div', 'rule-example');
   let label;
   if (game === 'get-those-burgers-out') {
-    first.append(mealPortrait(0), mealPortrait(1), mealPortrait(2));
+    const items = node('div', 'tutorial-meal-items');
+    items.append(mealPortrait(0), mealPortrait(1), mealPortrait(2));
+    first.append(items);
     second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Fries · Burger · Drink'));
     label = 'Fill each empty slot with fries, a burger or a drink using red, green or blue. Serve six meals to finish.';
   } else if (game === 'dynamite-spark') {

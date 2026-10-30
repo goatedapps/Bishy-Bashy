@@ -55,6 +55,7 @@ test('full columns cannot overflow, and a drop landing at the deadline cannot co
   assert.equal(run.done,false);
   const full=new MealsRun(round,0);
   for(let count=0;count<full.requirements[0];count++) {full.tap(0,count*300);full.advance((count+1)*300);}
-  assert.equal(full.tap(0,10000).type,'ignored');
-  assert.equal(full.mistakes,0);
+  assert.equal(full.tap(0,10000).type,'move');
+  assert.equal(full.events.at(-1).type,'stageWrong');
+  assert.equal(full.mistakes,1);
 });

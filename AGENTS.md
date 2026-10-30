@@ -13,6 +13,8 @@ For every new minigame, use the game-designer (game-design) and game-feel skills
 Reuse suitable existing audio; do not download or create new audio, and let the user supply any missing sounds.
 For new games, use `public/audio/Ding.mp3` once for each correctly completed set, phrase, sequence, or other meaningful success, including the final success where applicable.
 Give every new minigame a suitable original illustrated background using the imagegen skill, keeping gameplay targets readable.
+Use imagegen for illustrated game objects and characters in gameplay, posters, and How to play; do not substitute CSS shapes or emoji for food, dynamite, or other illustrated sprites.
+Keep gameplay free of counts, progress trackers, item totals, and decorative bases or ovals unless explicitly requested; preserve the round timer, essential target slots, and final clear time.
 Optimize all generated artwork before use, retain the masters, and record prompts in `public/assets/`.
 `shared/totem.js` owns the deterministic shared-seed sequence and local gameplay rules.
 Initial tuning is 30 blocks, a 300 ms wrong-tap freeze, and a 45-second deadline.
@@ -121,8 +123,8 @@ Keep background music on one fixed participant by default, allow personal overri
 Results may stop music and countdown cues, but must not truncate an accepted local finish cue.
 
 `shared/dynamite.js` owns 13 seeded colour groups of four sections, a 40 ms input guard, 250 ms wrong-colour recovery, and a 45-second elapsed-time race.
-`src/dynamite-view.js` scrolls the segmented wire while the spark descends; loop `electrical-buzz.mp3` only for the active local spark, stop it on finish/interruption, and preserve `dynamite-explode.mp3` through results.
-`shared/meals.js` owns six seeded fries/burger/drink orders; independent 300 ms drops fill required slots, each completed meal plays Ding once, and final elapsed time includes the last landing.
+`src/dynamite-view.js` uses a paused, locally clocked GSAP tween to smoothly scroll the continuous segmented wire while the spark descends; loop `electrical-buzz.mp3` only for the active local spark, stop it on finish/interruption, and preserve `dynamite-explode.mp3` in a dedicated finish group through results, defer podium audio until it ends, and duck music during the explosion.
+`shared/meals.js` owns six seeded fries/burger/drink orders; independent 300 ms drops fill required slots, taps on a full column play Wrong without altering the meal, each completed meal plays Ding once, and final elapsed time includes the last landing.
 `src/meals-view.js` shows empty slots and falling items; presses use `plop.mp3`, and both new games show accepted clear times at the top of each player's column.
 Both games join Game Select immediately; the 15-game catalog keeps Arcade at its existing 12-game batch until 16.
 The handshake requires `dynamite-meals` alongside existing capabilities.

@@ -985,7 +985,13 @@ test('Dynamite buzz loops once only while active and its explosion survives roun
  const buzz=[...audio.voices].filter(v=>v.id==='dynamiteBuzz');assert.equal(buzz.length,1);assert.equal(buzz[0].source.loop,true);
  audio.pressButton('gameplay');assert.equal([...audio.voices].at(-1).id,'gameplayPress');
  audio.endPlayer();assert.ok(![...audio.voices].some(v=>v.id==='dynamiteBuzz'));
- audio.play('dynamiteExplosion');const explosion=[...audio.voices].at(-1);audio.stopRound();assert.ok(audio.voices.has(explosion));
+ audio.finishDynamite(run.id);const explosion=[...audio.voices].find(v=>v.id==='dynamiteExplosion');
+ assert.ok(explosion);assert.equal(explosion.group,'finish');
+ audio.finishDynamite(run.id);assert.equal([...audio.voices].filter(v=>v.id==='dynamiteExplosion').length,1);
+ audio.stopRound();assert.ok(audio.voices.has(explosion));
+ audio.setMenuScreen(true,true,run.id);assert.ok(![...audio.voices].some(v=>v.id==='podiumWinner'));
+ for(const voice of [...audio.voices].filter(v=>v.group==='finish'))voice.source.onended();
+ assert.ok([...audio.voices].some(v=>v.id==='podiumWinner'));
  assert.ok(requests.some(url=>url.includes('electrical-buzz.mp3')));assert.ok(requests.some(url=>url.includes('dynamite-explode.mp3')));
  audio.setEnabled(false);assert.equal(audio.voices.size,0);
 });

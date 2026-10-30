@@ -47,6 +47,8 @@ export function setStandings(players) {
 }
 
 export function roundDetail(round) {
+  if (round.game === 'dynamite-spark') return 'Reach the dynamite · Fastest wins';
+  if (round.game === 'get-those-burgers-out') return 'Serve the meals · Fastest wins';
   if (round.game === 'type-in-letters') return '30 seconds · Most points wins';
   if (round.game === 'its-raining-coins') return `${round.goal} coins · Speed ${round.difficulty}`;
   if (round.game === 'dodge-or-die') return `${round.goal} obstacles · Speed ${round.difficulty}`;

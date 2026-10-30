@@ -4,10 +4,8 @@
 .dynamite-stage svg path { paint-order:stroke; }
 .dynamite-stage svg text { animation:spark-flicker .12s infinite alternate; }
 .dynamite-idle svg text { animation:none; }
-.dynamite-bundle { position:relative; display:flex; flex-direction:column; justify-content:center; width:80px; height:65px; }
-.dynamite-bundle i { display:block; width:90%; height:17px; margin-top:-2px; border:2px solid #64273f; border-radius:12px; background:linear-gradient(#ff6c73,#d92c44); box-shadow:inset 7px 0 #9a2043; }
-.dynamite-bundle:after { content:''; position:absolute; width:17%; height:88%; left:43%; top:6%; background:#fff0c4; border:2px solid #64273f; transform:rotate(-12deg); }
-.dynamite-stage>.dynamite-bundle { position:absolute; left:50%; transform:translate(-50%,-10%); width:75%; max-width:110px; }
+.dynamite-bundle { position:relative; display:block; width:80px; height:80px; background:var(--image-dynamite-meals-sprites,url('/assets/optimized/dynamite-meals-sprites-2e73a04cfb68.webp')) 100% 100% / 200% 200% no-repeat; }
+.dynamite-stage>.dynamite-bundle { position:absolute; left:50%; transform:translate(-50%,-10%); width:85%; max-width:120px; height:auto; aspect-ratio:1; }
 .dynamite-blast { position:absolute; top:15%; left:0; width:100%; text-align:center; color:#ffe564; font:140px/1 system-ui; text-shadow:0 0 12px #fa563c; animation:dynamite-burst .4s ease-out both; }
 .dynamite-theme .lane-finish-badge { white-space:pre-line; top:30px; z-index:8; }
 .art-dynamite-spark { background:#ffe0a0; }

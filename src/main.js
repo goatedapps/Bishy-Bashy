@@ -304,7 +304,8 @@ function complete(status, elapsed = null) {
   log(status === 'finished' ? `Local finish: ${(elapsed / 1000).toFixed(3)} s.` : status === 'forfeit' ? 'Forfeited: game screen hidden or reloaded.' : 'Time expired.');
   if (status === 'finished') {
     audio.endPlayer();
-    audio.play(room.round.game === DYNAMITE_GAME ? 'dynamiteExplosion' : room.round.game === SLOT_GAME ? 'slotWin' : 'finish');
+    if (room.round.game === DYNAMITE_GAME) audio.finishDynamite(localRound.id);
+    else audio.play(room.round.game === SLOT_GAME ? 'slotWin' : 'finish');
   } else {
     audio.stopRound();
     if (status === 'timeout' && !document.hidden) audio.play('timeout');
@@ -421,7 +422,6 @@ function tap(color) {
   const completedSequence = room.round.game === MONKEY_GAME && localRound.run.cleared > clearedBefore;
   if (completedSequence) audio.play('stageComplete');
   if (action.type === 'finished') {
-    if (room.round.game === DYNAMITE_GAME) audio.play('stageComplete');
     if (room.round.game === MISTAKE_GAME && action.correct === false) audio.play('stageWrong');
     else if ([MISTAKE_GAME, DICE_GAME, FACING_GAME].includes(room.round.game)) audio.play('hit', { color, game: room.round.game });
     complete('finished', action.elapsed);
