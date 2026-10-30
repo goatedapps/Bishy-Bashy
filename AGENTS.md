@@ -5,7 +5,7 @@ The Vite frontend deploys independently to GitHub Pages; `server/` is a separate
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 13 adds longer Arcade rounds for Mistake, Facing, and Fireworks; deploy frontend and backend together.
+Protocol version 14 adds concurrent per-slot meal drops; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -175,3 +175,6 @@ Dice result circles remain visible in each player’s score box for 650 ms along
 Arcade uses 15 Me Find Mistake boards with a 45-second deadline, eight Facing Which Way sets with a derived 58.4-second schedule, and ten Fireworks sets with a 60-second deadline.
 Game Select retains its existing board/set counts and timing; extra Arcade Fireworks sets reuse the final five-rocket pattern, and run models must honor `round.goal`.
 Facing instructions and the match HUD derive their set counts from the scheduled round.
+
+Get Those Burgers Out! accepts repeated presses while the same item is falling: each press reserves its own empty slot and launches an independent 300 ms drop.
+Keep up to nine bounded per-slot timestamps in visual snapshots, map them between viewer clocks, and derive completion from the final scheduled landing; taps beyond filled or reserved requirements still play Wrong.

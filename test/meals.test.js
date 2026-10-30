@@ -10,13 +10,12 @@ test('meal orders are deterministic six-set requirements with one to three slots
   assert.ok(mealSequence(123).every(set => set.length === 3 && set.every(n => n >= 1 && n <= 3)));
 });
 
-test('meal inputs reserve one slot per colour, allow simultaneous other colours and settle on scheduled landings', () => {
+test('meal inputs allow simultaneous colours and settle on scheduled landings', () => {
   const run = new MealsRun(round,1000);
   assert.equal(run.tap(0,999).type,'ignored');
   for(const color of [-1,3,NaN,.5]) assert.equal(run.tap(color,1000).type,'ignored');
   assert.equal(run.tap(0,NaN).type,'ignored');
   for(let color=0;color<3;color++) assert.equal(run.tap(color,1000).type,'drop');
-  assert.equal(run.tap(0,1001).type,'ignored');
   run.advance(1299); assert.equal(run.filledMask,0);
   run.advance(1300); assert.deepEqual(run.filled,[1,1,1]);
   assert.equal(run.feedback.at,1300);
@@ -58,4 +57,30 @@ test('full columns cannot overflow, and a drop landing at the deadline cannot co
   assert.equal(full.tap(0,10000).type,'move');
   assert.equal(full.events.at(-1).type,'stageWrong');
   assert.equal(full.mistakes,1);
+});
+
+test('rapid repeated presses reserve separate slots, reject overflow, and land independently',()=>{
+ const run=new MealsRun(round,1000);run.sequence[0]=[3,2,1];
+ assert.equal(run.tap(0,1000).type,'drop');assert.equal(run.tap(0,1020).type,'drop');assert.equal(run.tap(0,1040).type,'drop');
+ assert.deepEqual(run.pendingAt.slice(0,3),[1000,1020,1040]);
+ assert.equal(run.tap(0,1060).type,'move');assert.equal(run.events.at(-1).type,'stageWrong');assert.equal(run.mistakes,1);
+ run.advance(1300);assert.deepEqual(run.filled,[1,0,0]);
+ run.advance(1320);assert.deepEqual(run.filled,[2,0,0]);
+ run.advance(1340);assert.deepEqual(run.filled,[3,0,0]);assert.equal(run.cleared,0);
+});
+
+test('six rapid-fire meals finish once at the last scheduled landing even with delayed frames',()=>{
+ const run=new MealsRun(round,5000);let at=5000,lastLanding;
+ for(let meal=0;meal<6;meal++){
+  const wanted=[...run.requirements];let lastPress=at;
+  for(let item=0;item<Math.max(...wanted);item++)for(let color=0;color<3;color++)if(item<wanted[color]){
+   const pressedAt=at+item*20;assert.equal(run.tap(color,pressedAt).type,'drop');lastPress=Math.max(lastPress,pressedAt);
+  }
+  lastLanding=lastPress+MEALS_DROP_MS;
+  run.advance(lastLanding+100);assert.equal(run.cleared,meal+1);
+  at=lastLanding+MEALS_SERVE_MS;run.advance(at);
+ }
+ assert.equal(run.elapsed,lastLanding-run.start);assert.equal(run.done,true);
+ assert.equal(run.events.filter(event=>event.type==='stageComplete').length,6);
+ assert.equal(run.mistakes,0);
 });

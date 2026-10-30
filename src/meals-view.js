@@ -27,9 +27,12 @@ export class MealsStage {
         slot.append(mealPortrait(color));
         return slot;
       });
-      const falling = node('span', 'meal-falling');
-      falling.append(mealPortrait(color));
-      chute.append(symbol, ...slots, falling);
+      const falling = Array.from({ length: 3 }, () => {
+        const item = node('span', 'meal-falling');
+        item.append(mealPortrait(color));
+        return item;
+      });
+      chute.append(symbol, ...slots, ...falling);
       this.chutes.append(chute);
       return { chute, slots, falling };
     });
@@ -50,10 +53,9 @@ export class MealsStage {
     this.element.classList.toggle('unoccupied', !present);
     this.toast.hidden = !feedback;
     this.columns.forEach(({ chute, slots, falling }, color) => {
-      const at = run?.pendingAt[color] ?? -10000;
-      const progress = Math.max(0, Math.min(1, (time - at) / MEALS_DROP_MS));
-      const isFalling = !beforeStart && present && !terminal && at >= (run?.start ?? Infinity) && time >= at && progress < 1;
-      const renderedFilled = feedback || completed ? requirements[color] : Math.min(requirements[color], filled[color] + (at >= (run?.start ?? Infinity) && !beforeStart && progress === 1 ? 1 : 0));
+      const pending = (run?.pendingAt || []).slice(color * 3, color * 3 + 3);
+      const landed = pending.filter(at => at >= (run?.start ?? Infinity) && time >= at + MEALS_DROP_MS).length;
+      const renderedFilled = feedback || completed ? requirements[color] : Math.min(requirements[color], filled[color] + (!beforeStart ? landed : 0));
       chute.style.setProperty('--required', requirements[color]);
       slots.forEach((slot, index) => {
         slot.hidden = !present || index >= requirements[color];
@@ -61,10 +63,13 @@ export class MealsStage {
         slot.style.setProperty('--slot', index);
         slot.setAttribute('aria-label', `${MEAL_NAMES[color]} slot ${index + 1}: ${!beforeStart && index < renderedFilled ? 'filled' : 'empty'}`);
       });
-      falling.hidden = !isFalling;
-      const eased = this.motion?.matches ? 1 : progress * progress;
-      falling.style.setProperty('--fall', eased);
-      falling.style.setProperty('--target-slot', filled[color]);
+      falling.forEach((item, slot) => {
+        const at = pending[slot] ?? -Infinity;
+        const progress = Math.max(0, Math.min(1, (time - at) / MEALS_DROP_MS));
+        item.hidden = beforeStart || !present || terminal || at < (run?.start ?? Infinity) || time < at || progress >= 1;
+        item.style.setProperty('--fall', this.motion?.matches ? 1 : progress * progress);
+        item.style.setProperty('--target-slot', slot);
+      });
     });
     this.element.setAttribute('aria-label', !present ? 'Open spot' : beforeStart ? 'Get ready to pack meals' : `${cleared} of ${round.goal} meals served. Required: ${requirements.map((count, color) => `${count} ${MEAL_NAMES[color]}`).join(', ')}`);
   }

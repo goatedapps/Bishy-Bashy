@@ -232,7 +232,7 @@ The original generated festival background remains in `public/assets/fireworks-f
 Its prompt is preserved in [Fireworks artwork notes](public/assets/fireworks-artwork.md).
 `src/firework-view.js` and `src/fireworks.css` draw the colored rocket arcs and burst particles.
 Each rocket reuses `Fireworks.mp3` at its scheduled local launch, skipping stale launches after interruptions.
-Frontend and room service must deploy together with protocol 13.
+Frontend and room service must deploy together with protocol 14.
 
 ## Play Mimicking Monkeys
 
@@ -264,7 +264,7 @@ Audio scheduling checks do not establish physical speaker latency or subjective 
 
 The original generated character lives in `public/assets/mimicking-monkey.png`, with its prompt preserved in [artwork notes](public/assets/monkeys-artwork.md).
 The leafy stage, shape cues, and response indicators live in `src/monkey-view.js` and `src/monkeys.css`.
-Deploy frontend and room service together to make the new catalog entry available; protocol 13 carries current scene snapshots and the announcement gate.
+Deploy frontend and room service together to make the new catalog entry available; protocol 14 carries current scene snapshots and the announcement gate.
 
 ## Play Jump for the Meat
 
@@ -371,7 +371,7 @@ The original matching reverse-side duck master and optimized delivery file are d
 Both shared choice games accept bounded clock-stamped answers with an 80 ms transport grace after each deadline and acknowledge retries privately.
 The server locks the first valid answer, keeps pending choices out of broadcasts, settles each set once, and owns final scores.
 Missing an answer never pauses the common schedule, and disconnecting does not discard an accepted answer.
-Deploy frontend and backend together with **protocol 13**, including `shared-choices` and `mistake-points` capabilities.
+Deploy frontend and backend together with **protocol 14**, including `shared-choices` and `mistake-points` capabilities.
 
 ## Play It's Raining Coins
 
@@ -435,7 +435,7 @@ Disconnection preserves accepted points; hiding or reloading still forfeits unde
 `src/letters-view.js` and `src/letters.css` render the shared arena, numbered player pointers, entered letters, scores, and result symbols.
 [Type in Letters artwork notes](public/assets/letters-artwork.md) retain the built-in image-generation prompt and optimized background provenance.
 The selection announcement plays the supplied `type-in-letters-voice.mp3` with the existing applause, using the shared preload and announcement lifecycle.
-Deploy frontend and room service together with **protocol 13** and the `shared-letters` capability.
+Deploy frontend and room service together with **protocol 14** and the `shared-letters` capability.
 The initial repeat interval, collection window, and feedback duration are provisional tuning values checked by deterministic tests and browser play, pending device playtests.
 
 ## Backgrounds, set feedback, and Game Select announcements
@@ -550,7 +550,7 @@ Physical phone/tablet playtesting remains necessary.
 
 `npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
 `npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
-The health endpoint reports protocol version 13 for the shared Type in Letters race, Game Select picker, and existing gameplay and readiness gates.
+The health endpoint reports protocol version 14 for the shared Type in Letters race, Game Select picker, and existing gameplay and readiness gates.
 Deploy the frontend and backend together when changing the multiplayer protocol.
 
 The Pages workflow tests, builds, and deploys `main`.
@@ -624,13 +624,13 @@ The supplied `dynamite-spark-voice.mp3` announces selection.
 Fill every empty slot with fries, burgers, and drinks using red, green, and blue respectively.
 Six seeded meals each require one to three items of every kind.
 Button presses use `plop.mp3`; each item falls for 300 ms into its matching slot.
-Each colour can have one item falling while the other colours remain available.
+Repeated presses launch multiple items in the same column while earlier items are still falling, with one independent drop per required slot.
 Taps on full columns play Wrong without changing the meal, and every completed meal plays Ding once before a 300 ms serving hold.
 The final clear time includes the last item's landing and appears above CLEAR at the top of the player's column.
 The fastest completion wins, with a 45-second deadline.
 [Artwork notes](public/assets/meals-artwork.md) retain the original restaurant background prompt and master.
 Both new games are available in Game Select and Arcade.
-Deploy frontend and server together with protocol 13 and the `dynamite-meals` capability.
+Deploy frontend and server together with protocol 14 and the `dynamite-meals` capability.
 These initial input and animation timings remain provisional pending physical phone playtests.
 
 Both games use original generated food and dynamite sprites in gameplay, game posters, and the illustrated rules.
@@ -650,5 +650,9 @@ Arcade plays 15 Me Find Mistake boards with a 45-second deadline, eight Facing W
 Fireworks keeps its opening seven sets and adds three more five-rocket sets at the existing final-set speed.
 Game Select retains its existing counts and difficulty progression.
 Facing keeps the full three-second answer window in every added set, with all clients following the same extended schedule.
-Deploy frontend and server together with protocol 13 so every device follows the scheduled set count.
+Deploy frontend and server together with protocol 14 so every device follows the scheduled set count.
 These longer Arcade counts are initial tuning values pending play feedback.
+
+Meal input immediately reserves an available slot, including when several items are already falling in that column.
+Each item keeps its own 300 ms landing time, and overflow presses play Wrong without adding another item.
+Remote snapshots carry nine bounded per-slot launch times so every device can show simultaneous falls and the same accepted finish time.

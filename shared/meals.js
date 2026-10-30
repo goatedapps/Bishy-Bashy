@@ -22,7 +22,7 @@ export class MealsRun {
     this.cleared = 0;
     this.mistakes = 0;
     this.filledMask = 0;
-    this.pendingAt = [this.start - 10000, this.start - 10000, this.start - 10000];
+    this.pendingAt = Array(9).fill(this.start - 10000);
     this.setAt = localStart;
     this.blockedUntil = localStart;
     this.feedback = null;
@@ -42,12 +42,12 @@ export class MealsRun {
     if (this.inFeedback) {
       if (time < this.blockedUntil) return;
       this.filledMask = 0;
-      this.pendingAt = [this.start - 10000, this.start - 10000, this.start - 10000];
+      this.pendingAt = Array(9).fill(this.start - 10000);
       this.setAt = this.blockedUntil;
     }
-    const landings = this.pendingAt.map((at, color) => ({ at: at + MEALS_DROP_MS, color })).filter(drop => this.pendingAt[drop.color] >= this.start && drop.at <= time && drop.at < this.end).sort((a, b) => a.at - b.at);
-    for (const { at, color } of landings) {
-      this.pendingAt[color] = this.start - 10000;
+    const landings = this.pendingAt.map((at, slot) => ({ at: at + MEALS_DROP_MS, slot, color: Math.floor(slot / 3) })).filter(drop => this.pendingAt[drop.slot] >= this.start && drop.at <= time && drop.at < this.end).sort((a, b) => a.at - b.at);
+    for (const { at, color, slot } of landings) {
+      this.pendingAt[slot] = this.start - 10000;
       this.filledMask += 1 << color * 2;
       this.feedback = { kind: 'catch', color, at };
       if (this.filled.every((count, column) => count === this.requirements[column])) {
@@ -61,7 +61,7 @@ export class MealsRun {
           this.elapsed = at - this.start;
         } else if (time >= this.blockedUntil) {
           this.filledMask = 0;
-          this.pendingAt = [this.start - 10000, this.start - 10000, this.start - 10000];
+          this.pendingAt = Array(9).fill(this.start - 10000);
           this.setAt = this.blockedUntil;
         }
         return;
@@ -73,12 +73,13 @@ export class MealsRun {
     if (this.done || !Number.isInteger(color) || color < 0 || color > 2 || !Number.isFinite(time) || time < this.start || time >= this.end) return { type: 'ignored' };
     this.advance(time);
     if (this.done) return { type: 'finished', elapsed: this.elapsed };
-    if (time < this.blockedUntil || this.pendingAt[color] >= this.start) return { type: 'ignored' };
-    if (this.filled[color] >= this.requirements[color]) {
+    if (time < this.blockedUntil) return { type: 'ignored' };
+    const reserved = this.filled[color] + this.pendingAt.slice(color * 3, color * 3 + 3).filter(at => at >= this.start).length;
+    if (reserved >= this.requirements[color]) {
       this.mistakes++; this.feedback = { kind: 'miss', color, at: time };
       this.events.push({ type: 'stageWrong', at: time }); return { type: 'move' };
     }
-    this.pendingAt[color] = time;
+    this.pendingAt[color * 3 + reserved] = time;
     return { type: 'drop' };
   }
 }

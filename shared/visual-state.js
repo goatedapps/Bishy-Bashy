@@ -1,7 +1,7 @@
 import { createRun } from './games.js';
 
 const SCHEMAS = {
-  'get-those-burgers-out': { filledMask: 'index', pendingAt: 'times', setAt: 'time', blockedUntil: 'time' },
+  'get-those-burgers-out': { filledMask: 'index', pendingAt: 'mealTimes', setAt: 'time', blockedUntil: 'time' },
   'dynamite-spark': { blockedUntil: 'time' },
   'totem-shrinker': { blockedUntil: 'time' },
   'perm-mania': { blockedUntil: 'time' },
@@ -23,7 +23,7 @@ export function captureVisual(game, run, time) {
   const fields = {};
   for (const [key, type] of Object.entries(schema)) {
     const value = run[key];
-    fields[key] = type === 'time' ? relative(value, run.start) : type === 'nullableTime' ? value === null ? null : relative(value, run.start) : ['times', 'rocketTimes'].includes(type) ? value.map(item => relative(item, run.start)) : Array.isArray(value) ? [...value] : value;
+    fields[key] = type === 'time' ? relative(value, run.start) : type === 'nullableTime' ? value === null ? null : relative(value, run.start) : ['times', 'rocketTimes', 'mealTimes'].includes(type) ? value.map(item => relative(item, run.start)) : Array.isArray(value) ? [...value] : value;
   }
   const feedback = run.feedback ? { kind: run.feedback.kind, at: relative(run.feedback.at, run.start) } : null;
   if (feedback) for (const key of ['color', 'ingredient', 'gain', 'perfect', 'served']) if (run.feedback[key] !== undefined) feedback[key] = run.feedback[key];
@@ -50,7 +50,7 @@ export function sanitizeVisual(round, visual, receivedElapsed) {
       fields[key] = value;
       continue;
     }
-    const valid = type === 'time' || type === 'nullableTime' ? type === 'nullableTime' && value === null || number(value, -10000, round.duration + 10000) : type === 'height' ? number(value, 0, 1) : ['times', 'durations', 'faces'].includes(type) ? Array.isArray(value) && value.length === 3 && value.every(item => type === 'faces' ? item === null || number(item, 0, 5, true) : number(item, type === 'times' ? -10000 : 0, round.duration + 10000)) : number(value, 0, type === 'column' ? 2 : type === 'mask' ? 7 : 2048, true);
+    const valid = type === 'time' || type === 'nullableTime' ? type === 'nullableTime' && value === null || number(value, -10000, round.duration + 10000) : type === 'height' ? number(value, 0, 1) : ['times', 'mealTimes', 'durations', 'faces'].includes(type) ? Array.isArray(value) && value.length === (type === 'mealTimes' ? 9 : 3) && value.every(item => type === 'faces' ? item === null || number(item, 0, 5, true) : number(item, ['times', 'mealTimes'].includes(type) ? -10000 : 0, round.duration + 10000)) : number(value, 0, type === 'column' ? 2 : type === 'mask' ? 7 : 2048, true);
     if (!valid) return null;
     fields[key] = Array.isArray(value) ? [...value] : value;
   }
@@ -96,7 +96,7 @@ export class RemoteRuns {
       Object.assign(run, { cleared: progress.cleared, mistakes: progress.mistakes, done: visual.done, elapsed: visual.elapsed });
       for (const [name, type] of Object.entries(SCHEMAS[round.game])) {
         const value = visual.fields[name];
-        run[name] = type === 'time' ? start + value : type === 'nullableTime' ? value === null ? null : start + value : ['times', 'rocketTimes'].includes(type) ? value.map(item => start + item) : Array.isArray(value) ? [...value] : value;
+        run[name] = type === 'time' ? start + value : type === 'nullableTime' ? value === null ? null : start + value : ['times', 'rocketTimes', 'mealTimes'].includes(type) ? value.map(item => start + item) : Array.isArray(value) ? [...value] : value;
       }
       run.feedback = visual.feedback ? { ...visual.feedback, at: start + visual.feedback.at } : null;
       run.stageFeedback = visual.stageFeedback ? { ...visual.stageFeedback, at: start + visual.stageFeedback.at } : null;
