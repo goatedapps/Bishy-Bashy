@@ -383,6 +383,16 @@ export const ASSETS = [
     "hash": "1c62e4a15bd52171"
   },
   {
+    "path": "audio/piano-do.mp3",
+    "bytes": 17924,
+    "hash": "92c1e31f036cb963"
+  },
+  {
+    "path": "audio/piano-re.mp3",
+    "bytes": 19076,
+    "hash": "421644811747a362"
+  },
+  {
     "path": "audio/plop.mp3",
     "bytes": 15058,
     "hash": "8aa543a3d4115c08"

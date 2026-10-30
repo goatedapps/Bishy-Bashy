@@ -1,3 +1,5 @@
+import { LettersRun, LETTERS_SETTLE_MS, LETTERS_FEEDBACK_MS, LETTERS_PACKET_MS } from '../shared/letters.js';
+import { letterClaim } from './helpers/letters.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { RoomService, RECONNECT_WAIT_MS } from '../server/rooms.js';
@@ -24,6 +26,19 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
   ready();
   const finish = (order = clients.map((_, index) => index), winner = 0) => {
     const round = room.round;
+    if (round.game === 'type-in-letters') {
+      for (let set = 0; set < clients.length; set++) {
+        const claim = letterClaim(new LettersRun(round, 0));
+        time = round.startAt + claim.actions.at(-1)[1] + 20;
+        for (const index of order) {
+          const place = index === winner ? 0 : index === 0 ? 1 : index;
+          if (place < clients.length - set) service.handle(clients[index], { type: 'letters-claim', roundId: round.id, ...claim });
+        }
+        time += LETTERS_SETTLE_MS; service.tick();
+        time += LETTERS_FEEDBACK_MS; service.tick();
+      }
+      time = round.endAt + LETTERS_PACKET_MS; service.tick(); return;
+    }
     if (round.game === 'dice-dice-more-dice' || round.game === 'facing-which-way') {
       const run = createRun(round, 0);
       for (const stage of run.stages) {

@@ -41,5 +41,11 @@ for(const game of ['dice-dice-more-dice','facing-which-way']) test(`${game}: com
     if(game==='facing-which-way') assert.match(view.optionCards[stage.puzzle.answer].duck.getAttribute('aria-label'), /Front|Back/);
     view.render(room,'a',local,run.start+run.stages[1].startsAt);
     assert.ok(view.optionCards.every(option=>option.players.children.length===0));
+    if(game==='dice-dice-more-dice'){
+      assert.equal(view.rows[0].result.hidden,false);
+      assert.equal(view.rows[0].result.textContent,'○');
+      view.render(room,'a',local,run.start+stage.answerEnd+650);
+      assert.equal(view.rows[0].result.hidden,true);
+    }
   }finally{globalThis.document=previous;}
 });

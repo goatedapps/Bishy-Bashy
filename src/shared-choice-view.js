@@ -111,11 +111,15 @@ export class SharedChoiceStage {
         players.replaceChildren(...(result ? roster.flatMap((player, index) => result.choices[player.id] === color ? [node('span', `shared-choice-chip letter-pointer-${index}`, `${index + 1} ${result.correctIds.includes(player.id) ? '✓' : '×'}`)] : []) : []));
       }
     });
+    const feedbackResult = [...round.choice.results].reverse().find(entry => {
+      const age = time - run.start - entry.at;
+      return age >= 0 && age < 650;
+    });
     roster.forEach((player, index) => {
       const row = this.rows[index], member = room.players.find(member => member.id === player.id);
       row.score.textContent = String(round.choice.scores[player.id] || 0);
-      row.result.hidden = !result;
-      const correct = result?.correctIds.includes(player.id);
+      row.result.hidden = !feedbackResult;
+      const correct = feedbackResult?.correctIds.includes(player.id);
       row.result.textContent = correct ? '○' : '×';
       row.result.className = `shared-player-result ${correct ? 'shared-player-correct' : 'shared-player-wrong'}`;
       row.result.setAttribute('aria-label', correct ? 'Correct answer' : 'Wrong or missed answer');

@@ -1,3 +1,5 @@
+import { letterClaim } from './helpers/letters.js';
+import { LETTERS_FEEDBACK_MS } from '../shared/letters.js';
 import { captureVisual, RemoteRuns } from '../shared/visual-state.js';
 import { COIN_GAME } from '../shared/coins.js';
 import { DODGE_GAME, JUMP_MS, MOVE_MS } from '../shared/dodge.js';
@@ -141,7 +143,23 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
     const round = state.round;
     assert.equal(round.difficulty, mode === 'arcade' ? 1 : index + 1);
     if (mode === 'game-select') assert.equal(round.game, game);
-    if (isSharedChoice(round.game)) {
+    if (round.game === LETTERS_GAME) {
+      let current = round;
+      for (let set = 0; set < clients.length; set++) {
+        const claim = letterClaim(new LettersRun(current, 0));
+        time = current.startAt + claim.actions.at(-1)[1] + 20;
+        const claiming = clients.slice(0, clients.length - set);
+        const acks = claiming.map(socket => receiveProtocol(socket, message => message.type === 'letters-claim-ack' && message.index === set));
+        claiming.forEach(socket => send(socket, { type: 'letters-claim', roundId: round.id, ...claim }));
+        await Promise.all(acks);
+        let updated = receiveProtocol(clients[0], message => message.type === 'state' && message.room.round.letters.phase === 'feedback');
+        time += LETTERS_SETTLE_MS; app.rooms.tick(); await updated;
+        updated = receiveProtocol(clients[0], message => message.type === 'state' && message.room.round.letters.index === set + 1);
+        time += LETTERS_FEEDBACK_MS; app.rooms.tick(); current = (await updated).room.round;
+      }
+      waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.history.length === index + 1);
+      time = round.endAt + LETTERS_PACKET_MS; app.rooms.tick(); state = (await waiting).room;
+    } else if (isSharedChoice(round.game)) {
       const run = createRun(round, 0);
       for (const stage of run.stages) {
         time = round.startAt + stage.answerAt + 10;
@@ -261,7 +279,7 @@ for (const game of ['totem-shrinker', PERM_GAME]) test(`${game}: four real conne
     const waiting = receive(socket, message => message.type === 'joined');
     send(socket, { type: index ? 'join' : 'create', game, mode: 'game-select', code, name: `Player ${index + 1}` });
     const joined = await waiting;
-    assert.equal(joined.protocol, 11);
+    assert.equal(joined.protocol, 12);
     code = joined.code;
     clients.push({ socket, ...joined });
     const ready = receive(socket, message => message.type === 'state' && message.room.players.some(player => player.id === joined.playerId && player.ready));
@@ -350,7 +368,7 @@ test('real WebSocket clients can create, synchronize, and join a room', async t 
   assert.equal(state.room.players[1].name, 'Friend 1');
   assert.equal(JSON.stringify(state).includes(joined.token), false);
   const health = await fetch(`http://127.0.0.1:${port}/health`);
-  assert.deepEqual(await health.json(), { ok: true, protocol: 11, countdownMs: 3000 });
+  assert.deepEqual(await health.json(), { ok: true, protocol: 12, countdownMs: 3000 });
   const info = await fetch(`http://127.0.0.1:${port}/connection-info`);
   assert.ok(Array.isArray((await info.json()).lanUrls));
 });

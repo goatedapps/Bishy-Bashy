@@ -20,10 +20,10 @@ export function typeTarget(run, at = run.state.opensAt + 100) {
   return run.claim;
 }
 
-test('letter targets are seeded three-letter sequences; Game Select includes the shared game before the next Arcade batch', () => {
+test('letter targets are seeded three-letter sequences; Arcade and Game Select include the shared game', () => {
   assert.equal(GAMES[LETTERS_GAME].sharedArena, true);
   assert.equal(round().duration, 30_000);
-  assert.equal(arcadeGameIds().includes(LETTERS_GAME), false);
+  assert.equal(arcadeGameIds().includes(LETTERS_GAME), true);
   assert.deepEqual(Array.from({ length: 100 }, (_, i) => letterTarget(123, i)), Array.from({ length: 100 }, (_, i) => letterTarget(123, i)));
   assert.notEqual(letterTarget(123, 0), letterTarget(124, 0));
   for (let i = 0; i < 100; i++) assert.match(letterTarget(123, i), /^[A-Z]{3}$/);

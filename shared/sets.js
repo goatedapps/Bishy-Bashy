@@ -12,7 +12,6 @@ export const INTERMISSION_MS = 5_000;
 export const WHEEL_SPIN_MS = 4_700;
 export const REEL_HOLD_MS = 2_000;
 export const GAME_ANNOUNCEMENT_MS = 2_000;
-export const ARCADE_BATCH_SIZE = 4;
 export const PLACE_POINTS = [10, 7, 4, 1];
 export const MODES = Object.assign(Object.create(null), {
   arcade: { title: 'Arcade', length: ARCADE_LENGTH },
@@ -20,7 +19,7 @@ export const MODES = Object.assign(Object.create(null), {
 });
 
 export function arcadeGameIds(gameIds = Object.keys(GAMES)) {
-  return gameIds.slice(0, Math.floor(gameIds.length / ARCADE_BATCH_SIZE) * ARCADE_BATCH_SIZE);
+  return [...gameIds];
 }
 
 export function createSetPlan(mode, game, chooseIndex = max => Math.floor(Math.random() * max), gameIds = Object.keys(GAMES)) {

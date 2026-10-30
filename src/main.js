@@ -143,7 +143,7 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 11 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals')) {
+      if (message.protocol !== 12 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -350,7 +350,7 @@ function synchronizeChoices() {
   if (latest && localRound.heardChoice !== latest.index) {
     localRound.heardChoice = latest.index;
     const age = performance.now() - localRound.start - latest.at;
-    if (!document.hidden && !localRound.mustForfeit && !localRound.done && age >= 0 && age < (room.round.game === DICE_GAME ? 300 : 650)) audio.play(latest.correctIds.includes(playerId) ? 'stageComplete' : 'stageWrong');
+    if (!document.hidden && !localRound.mustForfeit && !localRound.done && age >= 0 && age < 650) audio.play(latest.correctIds.includes(playerId) ? 'stageComplete' : 'stageWrong');
   }
   const result = room.players.find(player => player.id === playerId)?.result;
   if (result) { localRound.done = localRound.run.done = true; localRound.status = result.status; localRound.run.elapsed = result.elapsed; }
@@ -399,7 +399,8 @@ function tap(color) {
   const time = performance.now();
   enforceLifecycle(time, true);
   if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
-  if (!buttons[color]?.disabled) audio.pressButton(room.round.game === MEALS_GAME ? 'meals' : room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay');
+  if (!buttons[color]?.disabled && room.round.game === PERM_GAME) audio.permTap(localRound.run, time);
+  else if (!buttons[color]?.disabled) audio.pressButton(room.round.game === MEALS_GAME ? 'meals' : room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay');
   const clearedBefore = localRound.run.cleared;
   const action = localRound.run.tap(color, time);
   if ([MEALS_GAME, BURGER_GAME, COIN_GAME, DODGE_GAME, FIREWORK_GAME].includes(room.round.game)) flushLaneEvents(time);
@@ -426,7 +427,7 @@ function tap(color) {
     else if ([MISTAKE_GAME, DICE_GAME, FACING_GAME].includes(room.round.game)) audio.play('hit', { color, game: room.round.game });
     complete('finished', action.elapsed);
   }
-  else if (action.type !== 'drop' && action.type !== 'move' && !completedSequence && !(room.round.game === FIREWORK_GAME && action.type === 'mistake')) audio.play(action.type, { color, progress: localRound.run.cleared / room.round.goal, game: room.round.game });
+  else if (room.round.game !== PERM_GAME && action.type !== 'drop' && action.type !== 'move' && !completedSequence && !(room.round.game === FIREWORK_GAME && action.type === 'mistake')) audio.play(action.type, { color, progress: localRound.run.cleared / room.round.goal, game: room.round.game });
   view.render(room, playerId, localRound, time);
   updateControls(time);
 }

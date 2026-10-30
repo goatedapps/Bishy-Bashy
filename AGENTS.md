@@ -5,7 +5,7 @@ The Vite frontend deploys independently to GitHub Pages; `server/` is a separate
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 11 adds Dynamite Spark and Get Those Burgers Out!; deploy frontend and backend together.
+Protocol version 12 includes every registered game in the Arcade selection pool and roulette; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -54,13 +54,13 @@ Use `dice-roll.mp3` once per throw and `flip.mp3` once per duck turn with bounde
 Both games keep completed progress after mistakes; `src/coins-dodge-view.js` renders local and published remote challenges using the same seeded models.
 `shared/letters.js` owns Type in Letters' 30-second shared-target race, wraparound alphabet/backspace input, bounded replay proofs, and 120 ms completion-time arbitration with 300 ms result feedback; the server owns scores and final results.
 `src/letters-view.js` and `src/letters.css` keep the alphabet in one compact phone row and typed player boxes in fixed columns, including solo play; local matches highlight immediately and button presses use `Diuup.mp3`.
-Type in Letters uses red/green/blue for left/enter/right and announces with supplied `type-in-letters-voice.mp3` plus applause; keep it outside Arcade until the next four-game catalog milestone.
+Type in Letters uses red/green/blue for left/enter/right and announces with supplied `type-in-letters-voice.mp3` plus applause; include it in both Arcade and Game Select.
 `shared/sets.js` defines five-game Arcade, three-round Game Select, shared placement points, and cumulative standings.
 `server/rooms.js` owns the fixed set roster, idempotent point awards, intermissions, and readiness gates.
 Selecting Arcade stays in the lobby; Start set begins the shared single reel, which spins for 4.7 seconds, holds the chosen game for two seconds, then opens instructions.
 The server owns the result, selection timestamps, and five-game plan without repeats; render only seven recycled reel rows.
-Expand the Arcade reel and selection pool only at catalog counts divisible by four (8, 12, 16, and so on); games added between those milestones are available immediately in Game Select.
-`shared/sets.js` owns the common `arcadeGameIds()` batch boundary for both server selection and reel artwork.
+Include every registered game in the Arcade reel and selection pool immediately; Arcade still chooses five distinct games per set.
+`shared/sets.js` owns the common complete `arcadeGameIds()` catalog for both server selection and reel artwork.
 After each Arcade podium's five seconds, show the next spin, then illustrated rules and an all-player Ready gate.
 Game Select opens a separate shared game picker after Start set; Play selected game confirms the centered poster and announces it with its supplied voice and applause once, then opens instructions after two seconds while the matching voice/applause tails finish naturally.
 Game Select shows rules once and uses the podium's all-player Ready gate between subsequent rounds, with a five-second minimum intermission.
@@ -126,7 +126,7 @@ Results may stop music and countdown cues, but must not truncate an accepted loc
 `src/dynamite-view.js` uses a paused, locally clocked GSAP tween to smoothly scroll the continuous segmented wire while the spark descends; loop `electrical-buzz.mp3` only for the active local spark, stop it on finish/interruption, and preserve `dynamite-explode.mp3` in a dedicated finish group through results, defer podium audio until it ends, and duck music during the explosion.
 `shared/meals.js` owns six seeded fries/burger/drink orders; independent 300 ms drops fill required slots, taps on a full column play Wrong without altering the meal, each completed meal plays Ding once, and final elapsed time includes the last landing.
 `src/meals-view.js` shows empty slots and falling items; presses use `plop.mp3`, and both new games show accepted clear times at the top of each player's column.
-Both games join Game Select immediately; the 15-game catalog keeps Arcade at its existing 12-game batch until 16.
+All 15 registered games are available in both Arcade and Game Select.
 The handshake requires `dynamite-meals` alongside existing capabilities.
 
 ## Timing invariants
@@ -168,3 +168,6 @@ Commit and push every completed change unless the user explicitly instructs othe
 Keep the static frontend independently deployable with a configurable secure WebSocket endpoint.
 Keep the canonical gameplay and hosting notes in README.md current.
 Use one full sentence per line when substantially editing Markdown, and comment only on non-obvious constraints.
+
+Perm demonstrations alternate `piano-do.mp3` and `piano-re.mp3` by seeded note index; response taps use the nearest corresponding rhythm note with the frozen timing offset, and never layer Punch or the old Perm tap cues.
+Dice result circles remain visible in each player’s score box for 650 ms alongside one Ding per correct set, even when the next fast throw has begun.

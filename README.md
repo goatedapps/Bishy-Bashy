@@ -62,7 +62,7 @@ The server awards points once per round and retains earned points if a player le
 New guests can join only after the full set ends; original players can reconnect during it.
 The Arcade length and Game Select round count live in `shared/sets.js`, and new games join the shared catalog in `shared/games.js`.
 The catalog currently contains thirteen games, all available in Game Select.
-Arcade expands only at four-game milestones: it now selects five distinct games from twelve, adding the next batch when the catalog reaches sixteen.
+Arcade selects five distinct games from the complete registered catalog, and its roulette includes all 15 games.
 `arcadeGameIds()` in `shared/sets.js` supplies the same eligible pool to server selection and the reel, so a spin cannot land on an omitted game.
 
 ## Play Totem Shrinker
@@ -231,7 +231,7 @@ The original generated festival background remains in `public/assets/fireworks-f
 Its prompt is preserved in [Fireworks artwork notes](public/assets/fireworks-artwork.md).
 `src/firework-view.js` and `src/fireworks.css` draw the colored rocket arcs and burst particles.
 Each rocket reuses `Fireworks.mp3` at its scheduled local launch, skipping stale launches after interruptions.
-Frontend and room service must deploy together with protocol 11.
+Frontend and room service must deploy together with protocol 12.
 
 ## Play Mimicking Monkeys
 
@@ -263,7 +263,7 @@ Audio scheduling checks do not establish physical speaker latency or subjective 
 
 The original generated character lives in `public/assets/mimicking-monkey.png`, with its prompt preserved in [artwork notes](public/assets/monkeys-artwork.md).
 The leafy stage, shape cues, and response indicators live in `src/monkey-view.js` and `src/monkeys.css`.
-Deploy frontend and room service together to make the new catalog entry available; protocol 11 carries current scene snapshots and the announcement gate.
+Deploy frontend and room service together to make the new catalog entry available; protocol 12 carries current scene snapshots and the announcement gate.
 
 ## Play Jump for the Meat
 
@@ -336,7 +336,7 @@ Original artwork and generation prompts are preserved in [artwork notes](public/
 
 ## Play Dice, Dice, More Dice
 
-Choose **Game Select → Dice, Dice, More Dice**, or encounter it in the twelve-game Arcade batch.
+Choose **Game Select → Dice, Dice, More Dice**, or encounter it in Arcade.
 Everyone sees the same three dice in one shared row.
 Choose the highest die with red for left, green for middle, or blue for right.
 Each throw has three distinct values from one to six, so exactly one choice is highest.
@@ -370,7 +370,7 @@ The original matching reverse-side duck master and optimized delivery file are d
 Both shared choice games accept bounded clock-stamped answers with an 80 ms transport grace after each deadline and acknowledge retries privately.
 The server locks the first valid answer, keeps pending choices out of broadcasts, settles each set once, and owns final scores.
 Missing an answer never pauses the common schedule, and disconnecting does not discard an accepted answer.
-Deploy frontend and backend together with **protocol 11**, including `shared-choices` and `mistake-points` capabilities.
+Deploy frontend and backend together with **protocol 12**, including `shared-choices` and `mistake-points` capabilities.
 
 ## Play It's Raining Coins
 
@@ -396,7 +396,7 @@ Both games use the existing Ding success cue, mistake cue, gameplay button sound
 Their initial difficulty values are provisional tuning, verified by deterministic simulations and desktop UI checks; player trials on phones can inform later pacing adjustments.
 The new generated raccoon and fox are retained as PNG masters with hashed 512-pixel WebP delivery images totaling 105,204 bytes.
 [Artwork prompts and provenance](public/assets/coins-dodge-artwork.md) record the built-in image-generation prompts and selected outputs.
-Both games enter Game Select and the twelve-game Arcade batch immediately, together with Dice and Facing Which Way.
+Both games enter Game Select and Arcade immediately, together with Dice and Facing Which Way.
 
 
 ## Play Type in Letters
@@ -416,7 +416,7 @@ The winner gets a yellow circle and `Ding.mp3`; everyone else gets a red cross a
 After **650 ms** of result feedback, a new shared target appears and the race continues until the timer reaches zero.
 Most typing points wins the round; exact ties share placement, and players with zero typing points receive no placement points.
 Game Select plays three 30-second rounds with the usual cumulative placement points and between-round Ready gates.
-Type in Letters is the thirteenth game, so it enters Game Select immediately and waits for the next four-game catalog milestone before joining Arcade.
+Type in Letters is available in both Game Select and Arcade.
 
 `shared/letters.js` owns seeded targets, local input, bounded replay proofs, and shared race settlement.
 Each completed target sends a bounded input proof measured from the frozen local round clock; the server replays it before accepting a claim.
@@ -434,7 +434,7 @@ Disconnection preserves accepted points; hiding or reloading still forfeits unde
 `src/letters-view.js` and `src/letters.css` render the shared arena, numbered player pointers, entered letters, scores, and result symbols.
 [Type in Letters artwork notes](public/assets/letters-artwork.md) retain the built-in image-generation prompt and optimized background provenance.
 The selection announcement plays the supplied `type-in-letters-voice.mp3` with the existing applause, using the shared preload and announcement lifecycle.
-Deploy frontend and room service together with **protocol 11** and the `shared-letters` capability.
+Deploy frontend and room service together with **protocol 12** and the `shared-letters` capability.
 The initial repeat interval, collection window, and feedback duration are provisional tuning values checked by deterministic tests and browser play, pending device playtests.
 
 ## Backgrounds, set feedback, and Game Select announcements
@@ -549,7 +549,7 @@ Physical phone/tablet playtesting remains necessary.
 
 `npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
 `npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
-The health endpoint reports protocol version 11 for the shared Type in Letters race, Game Select picker, and existing gameplay and readiness gates.
+The health endpoint reports protocol version 12 for the shared Type in Letters race, Game Select picker, and existing gameplay and readiness gates.
 Deploy the frontend and backend together when changing the multiplayer protocol.
 
 The Pages workflow tests, builds, and deploys `main`.
@@ -628,8 +628,8 @@ Taps on full columns play Wrong without changing the meal, and every completed m
 The final clear time includes the last item's landing and appears above CLEAR at the top of the player's column.
 The fastest completion wins, with a 45-second deadline.
 [Artwork notes](public/assets/meals-artwork.md) retain the original restaurant background prompt and master.
-Both new games are available in Game Select; Arcade retains the existing 12-game batch until the catalog reaches 16.
-Deploy frontend and server together with protocol 11 and the `dynamite-meals` capability.
+Both new games are available in Game Select and Arcade.
+Deploy frontend and server together with protocol 12 and the `dynamite-meals` capability.
 These initial input and animation timings remain provisional pending physical phone playtests.
 
 Both games use original generated food and dynamite sprites in gameplay, game posters, and the illustrated rules.
@@ -637,3 +637,8 @@ The optimized shared sprite sheet and retained master are documented in [sprite 
 Meals sit at the bottom of the player panel without meal counters, progress bars, or decorative ovals.
 Dynamite Spark has no section counter; a locally clocked GSAP tween scrolls the continuous wire smoothly as each correct input moves the spark.
 The final explosion uses a protected finish sound, reduces backing music while it plays, and finishes before podium audio begins.
+
+Dice keeps each result circle or cross visible in the player's bottom score box for 650 ms, including across fast throw transitions, with Ding on each correct answer.
+Perm Mania alternates the supplied `piano-do.mp3` and `piano-re.mp3` for demonstration notes and plays the matching note on response taps instead of Punch or the previous Perm input sounds.
+Piano note choice follows the same seeded rhythm sequence and timing adjustment at every tempo, while music, successful phrase Ding, and settled phrase results retain their existing behavior.
+Arcade includes every registered game immediately; games without a supplied announcement voice still play the selection cue and applause.
