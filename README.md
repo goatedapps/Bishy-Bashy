@@ -211,12 +211,13 @@ Press matching color buttons before the rockets fall back to the ground.
 Colors are visible from launch; rockets have no shape symbols.
 Keyboard controls remain **1 / 2 / 3** or **J / K / L**.
 
-Clear seven sets: **1 rocket, 3 rockets, 3 faster rockets, 4 rockets, then three sets of 5 rockets**.
+Game Select has seven sets: **1 rocket, 3 rockets, 3 faster rockets, 4 rockets, then three sets of 5 rockets**.
+Arcade adds three more sets of five rockets for ten sets total.
 Rockets launch one after another, and you may burst airborne colors in any order.
 Repeated colors consume the oldest airborne matching rocket first.
 A wrong color or an unburst rocket landing fails only the current set, followed by a **650 ms** recovery.
 Completed sets remain credited.
-Clear all seven sets before the **45-second** deadline; fastest local elapsed time wins.
+Clear all sets before the **45-second Game Select or 60-second Arcade** deadline; fastest local elapsed time wins.
 
 At base difficulty, airtimes are **2600, 2600, 2200, 2100, 2000, 2000, and 2000 ms** across the sets.
 Launch gaps are **420, 420, 340, 300, 260, 260, and 260 ms**.
@@ -231,7 +232,7 @@ The original generated festival background remains in `public/assets/fireworks-f
 Its prompt is preserved in [Fireworks artwork notes](public/assets/fireworks-artwork.md).
 `src/firework-view.js` and `src/fireworks.css` draw the colored rocket arcs and burst particles.
 Each rocket reuses `Fireworks.mp3` at its scheduled local launch, skipping stale launches after interruptions.
-Frontend and room service must deploy together with protocol 12.
+Frontend and room service must deploy together with protocol 13.
 
 ## Play Mimicking Monkeys
 
@@ -263,7 +264,7 @@ Audio scheduling checks do not establish physical speaker latency or subjective 
 
 The original generated character lives in `public/assets/mimicking-monkey.png`, with its prompt preserved in [artwork notes](public/assets/monkeys-artwork.md).
 The leafy stage, shape cues, and response indicators live in `src/monkey-view.js` and `src/monkeys.css`.
-Deploy frontend and room service together to make the new catalog entry available; protocol 12 carries current scene snapshots and the announcement gate.
+Deploy frontend and room service together to make the new catalog entry available; protocol 13 carries current scene snapshots and the announcement gate.
 
 ## Play Jump for the Meat
 
@@ -356,7 +357,7 @@ Choose **Game Select → Facing Which Way**, or encounter it in Arcade.
 Everyone watches the same duck card turn and flip on one shared screen.
 Remember its starting picture, follow the covered card, then choose the matching final picture from the three options below.
 Options include front and back views and different rotations; red chooses left, green middle, and blue right.
-Each of the **five sets** gives everyone **three seconds** to lock one answer after the turns finish.
+Each of the **five Game Select or eight Arcade sets** gives everyone **three seconds** to lock one answer after the turns finish.
 Answers remain private until the deadline, then reveal together with each player's choice and a correct/wrong symbol.
 Every correct answer earns one point; the most correct answers wins, with ties sharing a place.
 The initial picture shows for 700 ms, the cover closes over 400 ms, and the card stays covered for another 350 ms before turning.
@@ -370,7 +371,7 @@ The original matching reverse-side duck master and optimized delivery file are d
 Both shared choice games accept bounded clock-stamped answers with an 80 ms transport grace after each deadline and acknowledge retries privately.
 The server locks the first valid answer, keeps pending choices out of broadcasts, settles each set once, and owns final scores.
 Missing an answer never pauses the common schedule, and disconnecting does not discard an accepted answer.
-Deploy frontend and backend together with **protocol 12**, including `shared-choices` and `mistake-points` capabilities.
+Deploy frontend and backend together with **protocol 13**, including `shared-choices` and `mistake-points` capabilities.
 
 ## Play It's Raining Coins
 
@@ -434,7 +435,7 @@ Disconnection preserves accepted points; hiding or reloading still forfeits unde
 `src/letters-view.js` and `src/letters.css` render the shared arena, numbered player pointers, entered letters, scores, and result symbols.
 [Type in Letters artwork notes](public/assets/letters-artwork.md) retain the built-in image-generation prompt and optimized background provenance.
 The selection announcement plays the supplied `type-in-letters-voice.mp3` with the existing applause, using the shared preload and announcement lifecycle.
-Deploy frontend and room service together with **protocol 12** and the `shared-letters` capability.
+Deploy frontend and room service together with **protocol 13** and the `shared-letters` capability.
 The initial repeat interval, collection window, and feedback duration are provisional tuning values checked by deterministic tests and browser play, pending device playtests.
 
 ## Backgrounds, set feedback, and Game Select announcements
@@ -549,7 +550,7 @@ Physical phone/tablet playtesting remains necessary.
 
 `npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
 `npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
-The health endpoint reports protocol version 12 for the shared Type in Letters race, Game Select picker, and existing gameplay and readiness gates.
+The health endpoint reports protocol version 13 for the shared Type in Letters race, Game Select picker, and existing gameplay and readiness gates.
 Deploy the frontend and backend together when changing the multiplayer protocol.
 
 The Pages workflow tests, builds, and deploys `main`.
@@ -629,7 +630,7 @@ The final clear time includes the last item's landing and appears above CLEAR at
 The fastest completion wins, with a 45-second deadline.
 [Artwork notes](public/assets/meals-artwork.md) retain the original restaurant background prompt and master.
 Both new games are available in Game Select and Arcade.
-Deploy frontend and server together with protocol 12 and the `dynamite-meals` capability.
+Deploy frontend and server together with protocol 13 and the `dynamite-meals` capability.
 These initial input and animation timings remain provisional pending physical phone playtests.
 
 Both games use original generated food and dynamite sprites in gameplay, game posters, and the illustrated rules.
@@ -642,3 +643,12 @@ Dice keeps each result circle or cross visible in the player's bottom score box 
 Perm Mania alternates the supplied `piano-do.mp3` and `piano-re.mp3` for demonstration notes and plays the matching note on response taps instead of Punch or the previous Perm input sounds.
 Piano note choice follows the same seeded rhythm sequence and timing adjustment at every tempo, while music, successful phrase Ding, and settled phrase results retain their existing behavior.
 Arcade includes every registered game immediately; games without a supplied announcement voice still play the selection cue and applause.
+
+## Longer Arcade rounds
+
+Arcade plays 15 Me Find Mistake boards with a 45-second deadline, eight Facing Which Way sets over 58.4 seconds, and ten Fireworks sets with a 60-second deadline.
+Fireworks keeps its opening seven sets and adds three more five-rocket sets at the existing final-set speed.
+Game Select retains its existing counts and difficulty progression.
+Facing keeps the full three-second answer window in every added set, with all clients following the same extended schedule.
+Deploy frontend and server together with protocol 13 so every device follows the scheduled set count.
+These longer Arcade counts are initial tuning values pending play feedback.

@@ -23,7 +23,7 @@ export class FireworkRun {
     this.id = round.id;
     this.start = localStart;
     this.end = localStart + round.duration;
-    this.goal = FIREWORK_GOAL;
+    this.goal = round.goal || FIREWORK_GOAL;
     this.speed = round.speed || 1;
     this.sequence = fireworkSequence(round.seed);
     this.index = 0;

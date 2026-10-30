@@ -5,7 +5,7 @@ The Vite frontend deploys independently to GitHub Pages; `server/` is a separate
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 12 includes every registered game in the Arcade selection pool and roulette; deploy frontend and backend together.
+Protocol version 13 adds longer Arcade rounds for Mistake, Facing, and Fireworks; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -26,7 +26,7 @@ Red, green, and blue stop their own continuously scrolling slot rows in any orde
 Reels show approaching faces and judge the portrait nearest the center marker; Game Select reduces travel time per portrait from 320 to 260 ms across three Game Select rounds.
 Track slot locks as a monotonic three-bit `reelMask`, rather than assuming the first N rows were stopped.
 `shared/games.js` is the common game registry, difficulty settings, and result ordering.
-`shared/fireworks.js` owns seven seeded sets of 1, 3, 3 faster, 4, 5, 5, and 5 rockets, with colors visible from launch and inputs accepted until each scheduled landing.
+`shared/fireworks.js` owns seven Game Select sets of 1, 3, 3 faster, 4, 5, 5, and 5 rockets, extended to ten in Arcade by repeating the final pattern, with colors visible from launch and inputs accepted until each scheduled landing.
 Match airborne colors in any order; repeated colors consume the oldest matching rocket, and wrong or landed rockets retry only the current set after 650 ms.
 `src/firework-view.js` and `src/fireworks.css` draw the live cues over the generated festival backdrop; remote cues follow published player state.
 Fireworks launch audio follows each rocket's scheduled launch with bounded lookahead; deduplicate per rocket and attempt, and skip stale launches after interruption.
@@ -44,7 +44,7 @@ Jump has no timing bar; judge landings from the dinosaur and trampoline, keeping
 `shared/mistake.js` owns seeded odd-picture boards; red/green/blue choose top/middle/bottom, every answer advances after 260 ms feedback, and ranking uses correct-answer count without elapsed-time tiebreaks.
 `src/catch-spot-view.js` and `src/catch-spot.css` render both games with original generated sprites; show the published current peer board and never show a future board during success feedback.
 `shared/dice.js` owns 21 synchronized highest-die sets over 25 seconds; answer windows shrink every three sets from 2000 through 1600, 1200, 900, 600, 400, and 300 ms.
-`shared/facing.js` owns five synchronized covered-card sets, front/back pose composition, and three unique picture options; red/green/blue choose left/middle/right within three seconds after the turns.
+`shared/facing.js` owns five Game Select or eight Arcade synchronized covered-card sets, front/back pose composition, and three unique picture options; red/green/blue choose left/middle/right within three seconds after the turns.
 Facing keeps the initial card upright while its cover closes over 400 ms, then holds it covered for 350 ms before turning.
 `shared/choice-round.js` locks each player’s first answer privately, acknowledges retries, and settles server-owned scores only after each deadline plus 80 ms transport grace; missed answers never pause the shared schedule.
 `src/shared-choice-view.js` renders common Dice/Facing challenges and options with fixed four-column player scores and post-deadline answer reveals.
@@ -171,3 +171,7 @@ Use one full sentence per line when substantially editing Markdown, and comment 
 
 Perm demonstrations alternate `piano-do.mp3` and `piano-re.mp3` by seeded note index; response taps use the nearest corresponding rhythm note with the frozen timing offset, and never layer Punch or the old Perm tap cues.
 Dice result circles remain visible in each player’s score box for 650 ms alongside one Ding per correct set, even when the next fast throw has begun.
+
+Arcade uses 15 Me Find Mistake boards with a 45-second deadline, eight Facing Which Way sets with a derived 58.4-second schedule, and ten Fireworks sets with a 60-second deadline.
+Game Select retains its existing board/set counts and timing; extra Arcade Fireworks sets reuse the final five-rocket pattern, and run models must honor `round.goal`.
+Facing instructions and the match HUD derive their set counts from the scheduled round.

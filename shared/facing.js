@@ -34,14 +34,14 @@ export function facingSequence(seed, count, turnCount) {
   });
 }
 
-export function facingDuration(stepMs = 1000, turnCount = 2) {
-  return FACING_GOAL * (FACING_LOOK_MS + FACING_COVER_MS + FACING_COVER_HOLD_MS + turnCount * stepMs + FACING_HANDOFF_MS + FACING_ANSWER_MS + FACING_REVEAL_MS);
+export function facingDuration(stepMs = 1000, turnCount = 2, goal = FACING_GOAL) {
+  return goal * (FACING_LOOK_MS + FACING_COVER_MS + FACING_COVER_HOLD_MS + turnCount * stepMs + FACING_HANDOFF_MS + FACING_ANSWER_MS + FACING_REVEAL_MS);
 }
 export const FACING_DURATION_MS = facingDuration();
 
 export function facingStages(round) {
   let startsAt = 0;
-  return facingSequence(round.seed, FACING_GOAL, round.turnCount).map((puzzle, index) => {
+  return facingSequence(round.seed, round.goal || FACING_GOAL, round.turnCount).map((puzzle, index) => {
     const coverAt = startsAt + FACING_LOOK_MS;
     const coveredAt = coverAt + FACING_COVER_MS;
     const turnsAt = coveredAt + FACING_COVER_HOLD_MS;

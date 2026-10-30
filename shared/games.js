@@ -44,12 +44,12 @@ export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') 
   if (game === COIN_GAME) return { seed, difficulty: level, goal: COIN_GOAL, duration: COIN_DURATION_MS, fallMs: mode === 'arcade' ? 800 : 1100 - (level - 1) * 90 };
   if (game === DODGE_GAME) return { seed, difficulty: level, goal: DODGE_GOAL + level - 1, duration: DODGE_DURATION_MS, approachMs: 1350 - (level - 1) * 100 };
   if (game === DICE_GAME) return { seed, difficulty: level, goal: DICE_GOAL, duration: DICE_DURATION_MS };
-  if (game === FACING_GAME) return { seed, difficulty: level, goal: FACING_GOAL, duration: facingDuration(1000 - (level - 1) * 75, level + 1), turnCount: level + 1, stepMs: 1000 - (level - 1) * 75 };
+  if (game === FACING_GAME) return { seed, difficulty: level, goal: mode === 'arcade' ? 8 : FACING_GOAL, duration: facingDuration(1000 - (level - 1) * 75, level + 1, mode === 'arcade' ? 8 : FACING_GOAL), turnCount: level + 1, stepMs: 1000 - (level - 1) * 75 };
   if (game === BURGER_GAME) return { seed, difficulty: level, goal: BURGER_GOAL, duration: BURGER_DURATION_MS, fallMs: 1100 - (level - 1) * 110 };
-  if (game === MISTAKE_GAME) return { seed, difficulty: level, goal: MISTAKE_GOAL + level - 1, duration: MISTAKE_DURATION_MS };
+  if (game === MISTAKE_GAME) return { seed, difficulty: level, goal: mode === 'arcade' ? 15 : MISTAKE_GOAL + level - 1, duration: mode === 'arcade' ? 45000 : MISTAKE_DURATION_MS };
   if (game === JUMP_GAME) return { seed, difficulty: level, goal: JUMP_GOAL, duration: JUMP_DURATION_MS, periodMs: 1200 - (level - 1) * 50, windowMs: 150 - (level - 1) * 15, perfectMs: Math.round((150 - (level - 1) * 15) * .3) };
   if (game === MONKEY_GAME) return { seed, difficulty: level, goal: MONKEY_STAGES + level - 1, duration: MONKEY_DURATION_MS, stepMs: 650 - (level - 1) * 40 };
-  if (game === FIREWORK_GAME) return { seed, difficulty: level, goal: FIREWORK_GOAL, duration: FIREWORK_DURATION_MS, speed: 1 - (level - 1) * .06 };
+  if (game === FIREWORK_GAME) return { seed, difficulty: level, goal: mode === 'arcade' ? 10 : FIREWORK_GOAL, duration: mode === 'arcade' ? 60000 : FIREWORK_DURATION_MS, speed: 1 - (level - 1) * .06 };
   if (game === SLOT_GAME) return { seed, difficulty: level, goal: REEL_COUNT, duration: SLOT_DURATION_MS, stepMs: 320 - (level - 1) * 30, retryMs: RETRY_MS };
   if (game === PERM_GAME) {
     const bpm = PERM_BPM + (level - 1) * 8;
@@ -79,14 +79,14 @@ export function createRun(round, localStart, timingOffset = 0) {
 
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
-export function gameRules(game) {
+export function gameRules(game, round = {}) {
   if (game === MEALS_GAME) return ['Fill the empty slots to complete each meal', 'Red = fries, green = burger, blue = drink', 'Serve all six meals as fast as you can'];
   if (game === DYNAMITE_GAME) return ['Match the wire colour with the same button', 'Tap four sections per colour; clear all 13 groups', 'Reach the dynamite first; wrong colours briefly pause the spark'];
   if (game === LETTERS_GAME) return ['Red moves left, blue moves right, green enters a letter', 'Type the three letters first to win a point; choose ⌫ to erase', 'Most points in 30 seconds wins'];
   if (game === COIN_GAME) return ['Catch gold coins and avoid cracked purple coins', 'Red = left, green = middle, blue = right'];
   if (game === DODGE_GAME) return ['Move around tall walls and jump over low hurdles', 'Red moves left, blue moves right, green jumps'];
   if (game === DICE_GAME) return ['Pick the highest of the three shared dice', 'Red = left, green = middle, blue = right', '21 throws get faster; most correct wins'];
-  if (game === FACING_GAME) return ['Watch the shared duck card turn and flip', 'Choose its final picture: red = left, green = middle, blue = right', 'You have 3 seconds; answers reveal together; most correct of 5 wins'];
+  if (game === FACING_GAME) return ['Watch the shared duck card turn and flip', 'Choose its final picture: red = left, green = middle, blue = right', `You have 3 seconds; answers reveal together; most correct of ${round.goal || FACING_GOAL} wins`];
   if (game === BURGER_GAME) return ['Move the plate to catch the falling food', 'Red = left, green = middle, blue = right'];
   if (game === MISTAKE_GAME) return ['Pick the picture that is different', 'Red = top, green = middle, blue = bottom', 'Every answer moves on; most correct wins'];
   if (game === JUMP_GAME) return ['Press any button as the dinosaur lands on the trampoline', 'Perfect landings climb twice as high as Good landings'];
