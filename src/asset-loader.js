@@ -1,7 +1,7 @@
 import { ASSETS } from './asset-manifest.js';
 
 const BASE = import.meta.env?.BASE_URL || '/';
-const CACHE = 'bishy-bashy-assets-v1';
+const CACHE = 'dokidoki-dash-assets-v1';
 
 export class AssetLoader {
   constructor({ fetchFile = (...args) => fetch(...args), storage = globalThis.caches, decodeImage = async blob => {

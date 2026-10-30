@@ -84,7 +84,7 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   const app = await createApp({ dev: process.argv.includes('--dev'), allowedOrigins: (process.env.ALLOWED_ORIGINS || '').split(',').filter(Boolean) });
   const port = Number(process.env.PORT || 3000);
   app.server.listen(port, '0.0.0.0', () => {
-    console.log(`Bishy Bashy: http://localhost:${port}`);
+    console.log(`Dokidoki Dash!: http://localhost:${port}`);
     for (const addresses of Object.values(networkInterfaces())) for (const address of addresses || []) if (address.family === 'IPv4' && !address.internal) console.log(`Same Wi-Fi: http://${address.address}:${port}`);
   });
   for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, async () => { await app.close(); process.exit(0); });

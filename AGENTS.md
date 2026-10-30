@@ -1,4 +1,4 @@
-# Bishy Bashy
+# Dokidoki Dash!
 
 This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, and Get Those Burgers Out!.
 The Vite frontend deploys independently to GitHub Pages; `server/` is a separate Node WebSocket room service on Render.

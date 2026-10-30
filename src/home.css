@@ -42,6 +42,7 @@ body:not(.in-room) main,body:not(.in-room) .game-top { position:relative; z-inde
   text-shadow:0 6px 0 #fffdf5,0 10px 0 #ad76352b;
 }
 .home-logo>span { display:block; }
+.home-logo>span:first-child { font-size:.75em; }
 .home-logo>span+span { margin-top:8px; }
 .home-logo b { color:#f7477d; font-weight:400; display:inline-block; transform-origin:50% 85%; }
 #welcome { position:relative; isolation:isolate; }

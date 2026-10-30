@@ -666,10 +666,10 @@ function updateGameProfile() {
   document.body.classList.toggle('in-set', Boolean(inSet));
   document.body.classList.toggle('is-playing', Boolean(active));
   document.body.classList.toggle('is-instructions', room?.set?.phase === 'instructions');
-  const title = !room ? 'Bishy Bashy!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'selecting' ? 'Pick our next game!' : room.set?.phase === 'intermission' ? 'Standings' : ['instructions', 'announcing'].includes(room.set?.phase) || active ? GAMES[game].title : room.gameChoosing ? 'Choose a game' : room.arcadePreview ? 'Arcade' : 'Choose your mode';
+  const title = !room ? 'Dokidoki Dash!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'selecting' ? 'Pick our next game!' : room.set?.phase === 'intermission' ? 'Standings' : ['instructions', 'announcing'].includes(room.set?.phase) || active ? GAMES[game].title : room.gameChoosing ? 'Choose a game' : room.arcadePreview ? 'Arcade' : 'Choose your mode';
   if (document.querySelector('.game-title').textContent !== title) document.querySelector('.game-title').textContent = title;
-  document.title = `${room ? title : 'Party games'} · Bishy Bashy`;
-  $('rules-open').setAttribute('aria-label', room ? 'How to play' : 'About Bishy Bashy');
+  document.title = `${room ? title : 'Party games'} · Dokidoki Dash!`;
+  $('rules-open').setAttribute('aria-label', room ? 'How to play' : 'About Dokidoki Dash!');
   $('lobby-setup').hidden = !room || Boolean(room.set);
   $('game-browser').hidden = !room?.gameChoosing;
   $('mode-picker').hidden = Boolean(room?.gameChoosing);
@@ -713,11 +713,11 @@ function showRules() {
   const game = profile.game;
   const activeSet = room?.set && room.set.phase !== 'complete';
   const gameHelp = activeSet || room?.mode === 'game-select';
-  $('rules-title').textContent = introduction ? 'Welcome to Bishy Bashy!' : gameHelp ? GAMES[game].title : 'How to play a set';
+  $('rules-title').textContent = introduction ? 'Welcome to Dokidoki Dash!' : gameHelp ? GAMES[game].title : 'How to play a set';
   $('rules-visual').replaceChildren(...(introduction ? [] : [ruleVisual(gameHelp ? game : null)]));
   $('rules-visual').hidden = introduction;
   $('rules').querySelector('.shape-legend').hidden = introduction;
-  const rules = introduction ? ['Bishy Bashy is a multiplayer party game packed with quick, playful mini-games for up to four players.', 'One player creates a room and shares the room code with friends.', 'Everyone else opens Bishy Bashy on their own device and enters that code to join the same game.'] : !gameHelp ? ['Arcade plays five different random games. Game Select plays three rounds of one game.', 'Read the rules and tap Ready. Every connected player must be ready before the countdown.', 'Each round awards 10 / 7 / 4 / 1 points by place. Most total points wins.'] : gameRules(game, profile);
+  const rules = introduction ? ['Dokidoki Dash! is a multiplayer party game packed with quick, playful mini-games for up to four players.', 'One player creates a room and shares the room code with friends.', 'Everyone else opens Dokidoki Dash! on their own device and enters that code to join the same game.'] : !gameHelp ? ['Arcade plays five different random games. Game Select plays three rounds of one game.', 'Read the rules and tap Ready. Every connected player must be ready before the countdown.', 'Each round awards 10 / 7 / 4 / 1 points by place. Most total points wins.'] : gameRules(game, profile);
   $('rules-list').replaceChildren(...rules.map(text => { const item = document.createElement('li'); item.textContent = text; return item; }));
   $('rules-note').textContent = introduction ? 'Pick your mini-games in the room, then get ready to play together!' : 'Stay on this screen during the round; switching apps or reloading forfeits it.';
   $('rules').showModal();
@@ -822,7 +822,7 @@ $('disconnect').addEventListener('click', () => {
 $('export').addEventListener('click', () => {
   const report = { exportedAt: new Date().toISOString(), room: room ? { code: room.code, roundNumber: room.testNumber, round: room.round, players: room.players } : null, clock: clock.estimate(performance.now()), local: localRound ? { roundId: localRound.id, uncertainty: localRound.uncertainty, goDelay: localRound.goDelay, cleared: localRound.run.cleared, mistakes: localRound.run.mistakes } : null, events, note: 'Client-reported timing; uncertainty and GO delay do not measure physical display or input latency.' };
   const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' }));
-  const anchor = document.createElement('a'); anchor.href = url; anchor.download = `bishy-bashy-${room?.code || 'timing'}.json`; anchor.click();
+  const anchor = document.createElement('a'); anchor.href = url; anchor.download = `dokidoki-dash-${room?.code || 'timing'}.json`; anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
