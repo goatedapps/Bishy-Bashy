@@ -313,6 +313,11 @@ export const ASSETS = [
     "hash": "bb08279f242e5be1"
   },
   {
+    "path": "audio/get-the-burgers-out-voice.mp3",
+    "bytes": 47030,
+    "hash": "d40f775d3dd9f2ba"
+  },
+  {
     "path": "audio/dynamite-spark-voice.mp3",
     "bytes": 44522,
     "hash": "811fdf4d7be1fbf9"
