@@ -1,6 +1,8 @@
 import { createRun } from './games.js';
 
 const SCHEMAS = {
+  'get-those-burgers-out': { filledMask: 'index', pendingAt: 'times', setAt: 'time', blockedUntil: 'time' },
+  'dynamite-spark': { blockedUntil: 'time' },
   'totem-shrinker': { blockedUntil: 'time' },
   'perm-mania': { blockedUntil: 'time' },
   'burger-girl': { index: 'index', position: 'column', launchedAt: 'time', blockedUntil: 'time' },

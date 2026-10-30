@@ -19,7 +19,7 @@ class Element {
 
 test('every finished peer has a completion badge, local completion appears before acknowledgement, and new rounds reset badges',()=>{
   const previous=globalThis.document,nodes=new Map();
-  globalThis.document={hidden:false,createElement:()=>new Element(),createTextNode:text=>text,getElementById:id=>{
+  globalThis.document={hidden:false,createElement:()=>new Element(),createElementNS:()=>new Element(),createTextNode:text=>text,getElementById:id=>{
     if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(id);
   }};
   try{
@@ -48,7 +48,7 @@ test('every finished peer has a completion badge, local completion appears befor
 
 test('Jump hides progress counters and shows each accepted local or remote finish time above CLEAR without waiting for other players', () => {
   const previous = globalThis.document, nodes = new Map();
-  globalThis.document = { hidden: false, createElement: () => new Element(), createTextNode: text => text, getElementById: id => {
+  globalThis.document = { hidden: false, createElement: () => new Element(), createElementNS: () => new Element(), createTextNode: text => text, getElementById: id => {
     if (!nodes.has(id)) nodes.set(id, new Element()); return nodes.get(id);
   } };
   try {

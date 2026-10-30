@@ -975,3 +975,24 @@ test('Type in Letters reuses Ding for each won set and announces with its suppli
   audio.announceGame('letters-announcement', 'type-in-letters');
   assert.equal(context.sources.length, count);
 });
+
+test('Dynamite buzz loops once only while active and its explosion survives round results', async () => {
+ const {audio,setTime,requests}=setup();audio.selectGame('dynamite-spark');await audio.unlock();
+ const run=createRun({id:'d',game:'dynamite-spark',...roundSettings('dynamite-spark',123)},1000);
+ audio.scheduleRound(run.id,run.start,run.end,true,false,{game:'dynamite-spark'});
+ audio.dynamiteBuzz(run);assert.equal([...audio.voices].filter(v=>v.id==='dynamiteBuzz').length,0);
+ setTime(1100);audio.dynamiteBuzz(run);audio.dynamiteBuzz(run);
+ const buzz=[...audio.voices].filter(v=>v.id==='dynamiteBuzz');assert.equal(buzz.length,1);assert.equal(buzz[0].source.loop,true);
+ audio.pressButton('gameplay');assert.equal([...audio.voices].at(-1).id,'gameplayPress');
+ audio.endPlayer();assert.ok(![...audio.voices].some(v=>v.id==='dynamiteBuzz'));
+ audio.play('dynamiteExplosion');const explosion=[...audio.voices].at(-1);audio.stopRound();assert.ok(audio.voices.has(explosion));
+ assert.ok(requests.some(url=>url.includes('electrical-buzz.mp3')));assert.ok(requests.some(url=>url.includes('dynamite-explode.mp3')));
+ audio.setEnabled(false);assert.equal(audio.voices.size,0);
+});
+
+test('meal buttons use cached Plop and respect mute', async()=>{
+ const {audio,requests}=setup();audio.selectGame('get-those-burgers-out');await audio.unlock();
+ audio.pressButton('meals');assert.equal([...audio.voices].at(-1).id,'mealPlop');
+ await audio.load();assert.equal(requests.filter(url=>url.includes('plop.mp3')).length,1);
+ audio.setEnabled(false);audio.pressButton('meals');assert.equal(audio.voices.size,0);
+});

@@ -141,6 +141,16 @@ export const ASSETS = [
     "hash": "bc3f154e9baf08ef"
   },
   {
+    "path": "assets/optimized/bg-dynamite-workshop-01ed95b6cbf9.webp",
+    "bytes": 99392,
+    "hash": "01ed95b6cbf905f8"
+  },
+  {
+    "path": "assets/optimized/bg-meals-counter-aae8b332c421.webp",
+    "bytes": 84138,
+    "hash": "aae8b332c4212c9f"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",
@@ -298,6 +308,11 @@ export const ASSETS = [
     "hash": "bb08279f242e5be1"
   },
   {
+    "path": "audio/dynamite-spark-voice.mp3",
+    "bytes": 44522,
+    "hash": "811fdf4d7be1fbf9"
+  },
+  {
     "path": "audio/totem-shrinker-voice.mp3",
     "bytes": 46694,
     "hash": "96c4e2de66f72098"
@@ -361,6 +376,21 @@ export const ASSETS = [
     "path": "audio/type-in-letters-voice.mp3",
     "bytes": 44522,
     "hash": "1c62e4a15bd52171"
+  },
+  {
+    "path": "audio/plop.mp3",
+    "bytes": 15058,
+    "hash": "8aa543a3d4115c08"
+  },
+  {
+    "path": "audio/electrical-buzz.mp3",
+    "bytes": 23128,
+    "hash": "44e12e76668191e7"
+  },
+  {
+    "path": "audio/dynamite-explode.mp3",
+    "bytes": 39817,
+    "hash": "41e1e4bdf2f0a408"
   },
   {
     "path": "audio/wrong.mp3",

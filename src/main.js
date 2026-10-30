@@ -16,6 +16,10 @@ import { BURGER_GAME } from '../shared/burger.js';
 import { MISTAKE_GAME } from '../shared/mistake.js';
 import { DICE_GAME } from '../shared/dice.js';
 import { FACING_GAME } from '../shared/facing.js';
+import { MEALS_GAME } from '../shared/meals.js';
+import './meals.css';
+import { DYNAMITE_GAME } from '../shared/dynamite.js';
+import './dynamite.css';
 import { LETTERS_GAME } from '../shared/letters.js';
 import './letters.css';
 import './shared-choice.css';
@@ -139,7 +143,7 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 10 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points')) {
+      if (message.protocol !== 11 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -300,7 +304,7 @@ function complete(status, elapsed = null) {
   log(status === 'finished' ? `Local finish: ${(elapsed / 1000).toFixed(3)} s.` : status === 'forfeit' ? 'Forfeited: game screen hidden or reloaded.' : 'Time expired.');
   if (status === 'finished') {
     audio.endPlayer();
-    audio.play(room.round.game === SLOT_GAME ? 'slotWin' : 'finish');
+    audio.play(room.round.game === DYNAMITE_GAME ? 'dynamiteExplosion' : room.round.game === SLOT_GAME ? 'slotWin' : 'finish');
   } else {
     audio.stopRound();
     if (status === 'timeout' && !document.hidden) audio.play('timeout');
@@ -380,7 +384,7 @@ function enforceLifecycle(time, beforeInput = false) {
   } else {
     if (room.round.game === FIREWORK_GAME || room.round.game === JUMP_GAME) localRound.run.advance(time);
     if (room.round.game === FIREWORK_GAME) flushLaneEvents(time);
-    if ([BURGER_GAME, COIN_GAME, DODGE_GAME].includes(room.round.game)) {
+    if ([MEALS_GAME, BURGER_GAME, COIN_GAME, DODGE_GAME].includes(room.round.game)) {
       localRound.run.advance(time, !beforeInput);
       flushLaneEvents(time);
     }
@@ -394,10 +398,10 @@ function tap(color) {
   const time = performance.now();
   enforceLifecycle(time, true);
   if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
-  if (!buttons[color]?.disabled) audio.pressButton(room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay');
+  if (!buttons[color]?.disabled) audio.pressButton(room.round.game === MEALS_GAME ? 'meals' : room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay');
   const clearedBefore = localRound.run.cleared;
   const action = localRound.run.tap(color, time);
-  if ([BURGER_GAME, COIN_GAME, DODGE_GAME, FIREWORK_GAME].includes(room.round.game)) flushLaneEvents(time);
+  if ([MEALS_GAME, BURGER_GAME, COIN_GAME, DODGE_GAME, FIREWORK_GAME].includes(room.round.game)) flushLaneEvents(time);
   if (action.type === 'ignored') return;
   if (isSharedChoice(room.round.game)) {
     flushSharedChoices(time);
@@ -417,11 +421,12 @@ function tap(color) {
   const completedSequence = room.round.game === MONKEY_GAME && localRound.run.cleared > clearedBefore;
   if (completedSequence) audio.play('stageComplete');
   if (action.type === 'finished') {
+    if (room.round.game === DYNAMITE_GAME) audio.play('stageComplete');
     if (room.round.game === MISTAKE_GAME && action.correct === false) audio.play('stageWrong');
     else if ([MISTAKE_GAME, DICE_GAME, FACING_GAME].includes(room.round.game)) audio.play('hit', { color, game: room.round.game });
     complete('finished', action.elapsed);
   }
-  else if (action.type !== 'move' && !completedSequence && !(room.round.game === FIREWORK_GAME && action.type === 'mistake')) audio.play(action.type, { color, progress: localRound.run.cleared / room.round.goal, game: room.round.game });
+  else if (action.type !== 'drop' && action.type !== 'move' && !completedSequence && !(room.round.game === FIREWORK_GAME && action.type === 'mistake')) audio.play(action.type, { color, progress: localRound.run.cleared / room.round.goal, game: room.round.game });
   view.render(room, playerId, localRound, time);
   updateControls(time);
 }
@@ -565,6 +570,7 @@ function animate() {
   enforceLifecycle(time);
   const round = room?.round;
   let overlay = '', small = false;
+  if (round?.game === DYNAMITE_GAME && localRound) audio.dynamiteBuzz(localRound.run);
   if (round?.game === FIREWORK_GAME && localRound) audio.fireworkLaunch(localRound.run);
   if (round?.game === FACING_GAME && localRound) audio.facingTurns(localRound.run);
   if (round?.game === DICE_GAME && localRound) audio.diceRolls(localRound.run);
@@ -646,12 +652,14 @@ function updateGameProfile() {
   document.body.classList.toggle('mistake-theme', Boolean(themed && game === MISTAKE_GAME));
   document.body.classList.toggle('dice-theme', Boolean(themed && game === DICE_GAME));
   document.body.classList.toggle('facing-theme', Boolean(themed && game === FACING_GAME));
+  document.body.classList.toggle('meals-theme', Boolean(themed && game === MEALS_GAME));
+  document.body.classList.toggle('dynamite-theme', Boolean(themed && game === DYNAMITE_GAME));
   document.body.classList.toggle('letters-theme', Boolean(themed && game === LETTERS_GAME));
   buttons.forEach((button, index) => {
-    const action = [DICE_GAME, FACING_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
+    const action = game === MEALS_GAME ? ['Fries', 'Burger', 'Drink'][index] : [DICE_GAME, FACING_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
     button.children[1].textContent = action;
     const label = ['Red circle', 'Green triangle', 'Blue diamond'][index];
-    button.setAttribute('aria-label', [COIN_GAME, DODGE_GAME, LETTERS_GAME, DICE_GAME, FACING_GAME].includes(game) ? `${label}: ${action}` : label);
+    button.setAttribute('aria-label', [MEALS_GAME, COIN_GAME, DODGE_GAME, LETTERS_GAME, DICE_GAME, FACING_GAME].includes(game) ? `${label}: ${action}` : label);
   });
   document.body.classList.toggle('coin-theme', Boolean(themed && game === COIN_GAME));
   document.body.classList.toggle('dodge-theme', Boolean(themed && game === DODGE_GAME));

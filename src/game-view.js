@@ -25,7 +25,13 @@ import { LettersStage } from './letters-view.js';
 import { SharedChoiceStage } from './shared-choice-view.js';
 import { isSharedChoice } from '../shared/choice-round.js';
 
-const STAGES = { [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake' };
+import { DYNAMITE_GAME } from '../shared/dynamite.js';
+import { DynamiteStage, dynamitePortrait } from './dynamite-view.js';
+
+import { MEALS_GAME } from '../shared/meals.js';
+import { MealsStage, mealPortrait } from './meals-view.js';
+
+const STAGES = { [MEALS_GAME]: 'meals', [DYNAMITE_GAME]: 'dynamite', [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake' };
 
 const SHAPES = ['●', '▲', '◆'];
 const $ = id => document.getElementById(id);
@@ -77,11 +83,13 @@ export class GameView {
       const fireworks = new FireworkStage();
       const monkeys = new MonkeyStage();
       const jump = new JumpStage();
+      const dynamite = new DynamiteStage();
+      const meals = new MealsStage();
       const burger = new BurgerStage();
       const mistake = new MistakeStage();
       const coins = new CoinStage();
       const dodge = new DodgeStage();
-      zone.append(tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element, burger.element, mistake.element, coins.element, dodge.element);
+      zone.append(meals.element, dynamite.element, tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element, burger.element, mistake.element, coins.element, dodge.element);
       const effects = node('div', 'game-feedback');
       effects.setAttribute('aria-hidden', 'true');
       const ring = node('span', 'feedback-ring');
@@ -98,7 +106,7 @@ export class GameView {
       stageResult.setAttribute('role', 'img');
       lane.append(name, finishBadge, zone, node('div', 'base'), remaining, progress, status, stageResult);
       $('player-lanes').append(lane);
-      return { lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, coins, dodge, remaining, progress, fill, status, effects, ring, particles, towerKey: '' };
+      return { meals, dynamite, lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, coins, dodge, remaining, progress, fill, status, effects, ring, particles, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -151,21 +159,23 @@ export class GameView {
       const frozen = shownRun && !shownRun.done && time < shownRun.blockedUntil;
       const stageFeedback = shownRun?.stageFeedback || ([DICE_GAME, MISTAKE_GAME].includes(game) && shownRun?.feedback ? { correct: shownRun.feedback.kind === 'hit', at: shownRun.feedback.at } : null);
       const stageAge = stageFeedback ? time - stageFeedback.at : Infinity;
-      elements.stageResult.hidden = !active || !player || document.hidden || stageAge < 0 || stageAge >= (mistake ? 260 : 650);
+      elements.stageResult.hidden = !active || !player || document.hidden || stageAge < 0 || stageAge >= (mistake ? 260 : game === MEALS_GAME ? 300 : 650);
       elements.stageResult.className = `stage-result ${stageFeedback?.correct ? 'stage-correct' : 'stage-wrong'}`;
       elements.stageResult.setAttribute('aria-label', stageFeedback?.correct ? 'Correct set' : 'Wrong set');
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.finishBadge.hidden = !active || status?.status !== 'finished';
-      const finishLabel = jump ? `${((status?.elapsed || 0) / 1000).toFixed(2)} s\nCLEAR!` : perm || mistake ? '✓ Finished' : '✓ Cleared!';
+      const finishLabel = jump || game === DYNAMITE_GAME || game === MEALS_GAME ? `${((status?.elapsed || 0) / 1000).toFixed(2)} s\nCLEAR!` : perm || mistake ? '✓ Finished' : '✓ Cleared!';
       if (elements.finishBadge.textContent !== finishLabel) elements.finishBadge.textContent = finishLabel;
       elements.finishBadge.setAttribute('aria-live', own ? 'off' : 'polite');
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';
-      elements.tower.hidden = perm || slots || fireworks || monkeys || jump || burger || mistake || dice || facing || game === COIN_GAME || game === DODGE_GAME;
+      elements.tower.hidden = game === MEALS_GAME || game === DYNAMITE_GAME || perm || slots || fireworks || monkeys || jump || burger || mistake || dice || facing || game === COIN_GAME || game === DODGE_GAME;
       elements.avatar.hidden = !perm;
       elements.slots.cabinet.hidden = !slots;
       elements.fireworks.element.hidden = !fireworks;
       elements.monkeys.element.hidden = !monkeys;
       elements.jump.element.hidden = !jump;
+      elements.dynamite.element.hidden = game !== DYNAMITE_GAME;
+      elements.meals.element.hidden = game !== MEALS_GAME;
       elements.burger.element.hidden = !burger;
       elements.mistake.element.hidden = !mistake;
       elements.coins.element.hidden = game !== COIN_GAME;
@@ -308,7 +318,7 @@ export class GameView {
       const seat = node('div', 'podium-seat');
       const step = node('div', 'podium-step');
       step.append(node('strong', '', String(rank(player))), document.createTextNode(perm ? `${player.result.cleared} / 8` : resultLabel(player.result, false, game === LETTERS_GAME, GAMES[game]?.scoring === 'points' && game !== LETTERS_GAME)));
-      seat.append(game === DICE_GAME ? diceMascot() : game === FACING_GAME ? duckPortrait() : game === BURGER_GAME ? chefPortrait() : game === MISTAKE_GAME ? picturePortrait(0) : game === JUMP_GAME ? dinoPortrait() : game === MONKEY_GAME ? monkeyPortrait() : game === FIREWORK_GAME ? fireworkBadge() : game === SLOT_GAME ? facePortrait(slotLayout(room.round.seed).target) : perm ? dancer(room.players.indexOf(player), player.result.cleared) : block(index % 3), node('div', 'podium-name', player.name), step);
+      seat.append(game === MEALS_GAME ? mealPortrait(1) : game === DYNAMITE_GAME ? dynamitePortrait() : game === DICE_GAME ? diceMascot() : game === FACING_GAME ? duckPortrait() : game === BURGER_GAME ? chefPortrait() : game === MISTAKE_GAME ? picturePortrait(0) : game === JUMP_GAME ? dinoPortrait() : game === MONKEY_GAME ? monkeyPortrait() : game === FIREWORK_GAME ? fireworkBadge() : game === SLOT_GAME ? facePortrait(slotLayout(room.round.seed).target) : perm ? dancer(room.players.indexOf(player), player.result.cleared) : block(index % 3), node('div', 'podium-name', player.name), step);
       return seat;
     }));
     $('result-rows').replaceChildren(...sorted.map(player => {

@@ -4,7 +4,7 @@ import { gzipSync } from 'node:zlib';
 import { AUDIO_FILES } from './audio/score.js';
 import { ARCADE_AUDIO_FILES } from './audio/arcade.js';
 const images = JSON.parse(await readFile(new URL('./image-assets.json', import.meta.url)));
-const sounds = [...new Set([...Object.values(AUDIO_FILES).filter(file => file !== 'countdown.wav'), ...Object.values(ARCADE_AUDIO_FILES), 'wrong.mp3', 'Button-Press.mp3', 'Punch-button.mp3', 'how-to-play.mp3', 'Diuup.mp3', 'flip.mp3', 'dice-roll.mp3', 'countdown.mp3', 'podium-winner.mp3', 'Fireworks.mp3', 'bounce.mp3', 'Ding.mp3', 'roulette.mp3', 'Game-select.mp3', 'Background-ActionRock.mp3', 'game-instructions.mp3'])];
+const sounds = [...new Set([...Object.values(AUDIO_FILES).filter(file => file !== 'countdown.wav'), ...Object.values(ARCADE_AUDIO_FILES), 'plop.mp3', 'electrical-buzz.mp3', 'dynamite-explode.mp3', 'wrong.mp3', 'Button-Press.mp3', 'Punch-button.mp3', 'how-to-play.mp3', 'Diuup.mp3', 'flip.mp3', 'dice-roll.mp3', 'countdown.mp3', 'podium-winner.mp3', 'Fireworks.mp3', 'bounce.mp3', 'Ding.mp3', 'roulette.mp3', 'Game-select.mp3', 'Background-ActionRock.mp3', 'game-instructions.mp3'])];
 await mkdir(new URL('../public/audio/optimized/', import.meta.url), { recursive: true });
 const assets = await Promise.all([...images, ...sounds.map(file => `audio/${file}`)].map(async path => {
   const folder = path.slice(0, path.lastIndexOf('/') + 1);

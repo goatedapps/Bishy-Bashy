@@ -231,7 +231,7 @@ The original generated festival background remains in `public/assets/fireworks-f
 Its prompt is preserved in [Fireworks artwork notes](public/assets/fireworks-artwork.md).
 `src/firework-view.js` and `src/fireworks.css` draw the colored rocket arcs and burst particles.
 Each rocket reuses `Fireworks.mp3` at its scheduled local launch, skipping stale launches after interruptions.
-Frontend and room service must deploy together with protocol 10.
+Frontend and room service must deploy together with protocol 11.
 
 ## Play Mimicking Monkeys
 
@@ -263,7 +263,7 @@ Audio scheduling checks do not establish physical speaker latency or subjective 
 
 The original generated character lives in `public/assets/mimicking-monkey.png`, with its prompt preserved in [artwork notes](public/assets/monkeys-artwork.md).
 The leafy stage, shape cues, and response indicators live in `src/monkey-view.js` and `src/monkeys.css`.
-Deploy frontend and room service together to make the new catalog entry available; protocol 10 carries current scene snapshots and the announcement gate.
+Deploy frontend and room service together to make the new catalog entry available; protocol 11 carries current scene snapshots and the announcement gate.
 
 ## Play Jump for the Meat
 
@@ -370,7 +370,7 @@ The original matching reverse-side duck master and optimized delivery file are d
 Both shared choice games accept bounded clock-stamped answers with an 80 ms transport grace after each deadline and acknowledge retries privately.
 The server locks the first valid answer, keeps pending choices out of broadcasts, settles each set once, and owns final scores.
 Missing an answer never pauses the common schedule, and disconnecting does not discard an accepted answer.
-Deploy frontend and backend together with **protocol 10**, including `shared-choices` and `mistake-points` capabilities.
+Deploy frontend and backend together with **protocol 11**, including `shared-choices` and `mistake-points` capabilities.
 
 ## Play It's Raining Coins
 
@@ -434,7 +434,7 @@ Disconnection preserves accepted points; hiding or reloading still forfeits unde
 `src/letters-view.js` and `src/letters.css` render the shared arena, numbered player pointers, entered letters, scores, and result symbols.
 [Type in Letters artwork notes](public/assets/letters-artwork.md) retain the built-in image-generation prompt and optimized background provenance.
 The selection announcement plays the supplied `type-in-letters-voice.mp3` with the existing applause, using the shared preload and announcement lifecycle.
-Deploy frontend and room service together with **protocol 10** and the `shared-letters` capability.
+Deploy frontend and room service together with **protocol 11** and the `shared-letters` capability.
 The initial repeat interval, collection window, and feedback duration are provisional tuning values checked by deterministic tests and browser play, pending device playtests.
 
 ## Backgrounds, set feedback, and Game Select announcements
@@ -549,7 +549,7 @@ Physical phone/tablet playtesting remains necessary.
 
 `npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
 `npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
-The health endpoint reports protocol version 10 for the shared Type in Letters race, Game Select picker, and existing gameplay and readiness gates.
+The health endpoint reports protocol version 11 for the shared Type in Letters race, Game Select picker, and existing gameplay and readiness gates.
 Deploy the frontend and backend together when changing the multiplayer protocol.
 
 The Pages workflow tests, builds, and deploys `main`.
@@ -606,3 +606,28 @@ The first playback request happens before awaiting audio-context resume or file 
 The local Cleared banner sits above every character and effect inside the arena.
 Each finished lane also shows a compact Cleared badge (Finished for Perm Mania), including peers who finish before the local player.
 The final Exit action uses the current completed set ID and is available to hosts and guests without changing active-set navigation permissions.
+
+## Play Dynamite Spark
+
+Match the current wire section with red, green, or blue to move the spark toward the dynamite.
+There are 13 seeded colour groups of four sections, requiring 52 correct presses.
+A wrong colour pauses input for 250 ms while keeping cleared sections; a 40 ms guard rejects simultaneous presses.
+The first player to reach the dynamite wins by local elapsed time, with a 45-second deadline.
+The electrical buzz loops while the local spark is active, button presses use the supplied `Punch-button.mp3`, and the final press plays `dynamite-explode.mp3` and Ding.
+Each finished column shows its accepted time above CLEAR.
+The supplied `dynamite-spark-voice.mp3` announces selection.
+[Artwork notes](public/assets/dynamite-artwork.md) retain the original background prompt and master.
+
+## Play Get Those Burgers Out!
+
+Fill every empty slot with fries, burgers, and drinks using red, green, and blue respectively.
+Six seeded meals each require one to three items of every kind.
+Button presses use `plop.mp3`; each item falls for 300 ms into its matching slot.
+Each colour can have one item falling while the other colours remain available.
+Taps on full columns are ignored, and every completed meal plays Ding once before a 300 ms serving hold.
+The final clear time includes the last item's landing and appears above CLEAR at the top of the player's column.
+The fastest completion wins, with a 45-second deadline.
+[Artwork notes](public/assets/meals-artwork.md) retain the original restaurant background prompt and master.
+Both new games are available in Game Select; Arcade retains the existing 12-game batch until the catalog reaches 16.
+Deploy frontend and server together with protocol 11 and the `dynamite-meals` capability.
+These initial input and animation timings remain provisional pending physical phone playtests.

@@ -1,11 +1,11 @@
 # Bishy Bashy
 
-This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, and Type in Letters.
+This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, and Get Those Burgers Out!.
 The Vite frontend deploys independently to GitHub Pages; `server/` is a separate Node WebSocket room service on Render.
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 10 adds synchronized shared Dice/Facing answers and correct-count picture scoring; deploy frontend and backend together.
+Protocol version 11 adds Dynamite Spark and Get Those Burgers Out!; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -120,6 +120,13 @@ Freeze any per-device rhythm timing adjustment when scheduling the round; muted 
 Keep background music on one fixed participant by default, allow personal overrides, and preserve its phase across mute and interruption.
 Results may stop music and countdown cues, but must not truncate an accepted local finish cue.
 
+`shared/dynamite.js` owns 13 seeded colour groups of four sections, a 40 ms input guard, 250 ms wrong-colour recovery, and a 45-second elapsed-time race.
+`src/dynamite-view.js` scrolls the segmented wire while the spark descends; loop `electrical-buzz.mp3` only for the active local spark, stop it on finish/interruption, and preserve `dynamite-explode.mp3` through results.
+`shared/meals.js` owns six seeded fries/burger/drink orders; independent 300 ms drops fill required slots, each completed meal plays Ding once, and final elapsed time includes the last landing.
+`src/meals-view.js` shows empty slots and falling items; presses use `plop.mp3`, and both new games show accepted clear times at the top of each player's column.
+Both games join Game Select immediately; the 15-game catalog keeps Arcade at its existing 12-game batch until 16.
+The handshake requires `dynamite-meals` alongside existing capabilities.
+
 ## Timing invariants
 
 - Measure local input with `performance.now()` and freeze the server-clock mapping when a round is scheduled.
@@ -155,6 +162,7 @@ Mark each entry complete as its game is implemented.
 
 ## Maintenance
 
+Commit and push every completed change unless the user explicitly instructs otherwise.
 Keep the static frontend independently deployable with a configurable secure WebSocket endpoint.
 Keep the canonical gameplay and hosting notes in README.md current.
 Use one full sentence per line when substantially editing Markdown, and comment only on non-obvious constraints.

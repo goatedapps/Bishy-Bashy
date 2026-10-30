@@ -61,8 +61,8 @@ test('delivery manifest verifies every asset and compressed WAVs retain exact sa
       assert.deepEqual(gunzipSync(compressed), bytes);
     }
   }
-  assert.equal(ASSETS.filter(asset => asset.path.endsWith('.webp')).length, 28);
-  assert.equal(ASSETS.filter(asset => asset.path.includes('/bg-')).length, 12);
+  assert.equal(ASSETS.filter(asset => asset.path.endsWith('.webp')).length, 30);
+  assert.equal(ASSETS.filter(asset => asset.path.includes('/bg-')).length, 14);
   assert.ok(ASSETS.filter(asset => asset.path.endsWith('.webp')).reduce((sum, asset) => sum + asset.bytes, 0) < 3_000_000);
 });
 

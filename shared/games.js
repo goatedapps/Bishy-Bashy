@@ -12,6 +12,10 @@ import { DICE_GAME, DiceRun, DICE_GOAL, DICE_DURATION_MS } from './dice.js';
 import { FACING_GAME, FacingRun, FACING_GOAL, FACING_DURATION_MS, facingDuration } from './facing.js';
 import { LETTERS_GAME, LettersRun, LETTERS_DURATION_MS } from './letters.js';
 
+import { DYNAMITE_GAME, DynamiteRun, DYNAMITE_GOAL, DYNAMITE_DURATION_MS } from './dynamite.js';
+
+import { MEALS_GAME, MealsRun, MEALS_GOAL, MEALS_DURATION_MS } from './meals.js';
+
 export const COUNTDOWN_MS = 3_000;
 
 export const GAMES = Object.assign(Object.create(null), {
@@ -28,10 +32,14 @@ export const GAMES = Object.assign(Object.create(null), {
   [COIN_GAME]: { id: COIN_GAME, title: "It's Raining Coins", subtitle: 'Catch the gold, dodge the fakes', duration: COIN_DURATION_MS, goal: COIN_GOAL },
   [DODGE_GAME]: { id: DODGE_GAME, title: 'Dodge or Die!!', subtitle: 'Switch lanes and leap the hurdles', duration: DODGE_DURATION_MS, goal: DODGE_GOAL },
   [LETTERS_GAME]: { id: LETTERS_GAME, title: 'Type in Letters', subtitle: 'Race to type three letters first', sharedArena: true, scoring: 'points', duration: LETTERS_DURATION_MS, goal: 0 },
+  [DYNAMITE_GAME]: { id: DYNAMITE_GAME, title: 'Dynamite Spark', subtitle: 'Race the spark down the wire', duration: DYNAMITE_DURATION_MS, goal: DYNAMITE_GOAL },
+  [MEALS_GAME]: { id: MEALS_GAME, title: 'Get Those Burgers Out!', subtitle: 'Fill every slot and serve six meals', goal: MEALS_GOAL, duration: MEALS_DURATION_MS },
 });
 
 export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') {
   const level = Math.max(1, Math.min(5, Math.trunc(difficulty) || 1));
+  if (game === MEALS_GAME) return { seed, difficulty: level, goal: MEALS_GOAL, duration: MEALS_DURATION_MS };
+  if (game === DYNAMITE_GAME) return { seed, difficulty: level, goal: DYNAMITE_GOAL, duration: DYNAMITE_DURATION_MS };
   if (game === LETTERS_GAME) return { seed, difficulty: level, goal: 0, duration: LETTERS_DURATION_MS };
   if (game === COIN_GAME) return { seed, difficulty: level, goal: COIN_GOAL, duration: COIN_DURATION_MS, fallMs: mode === 'arcade' ? 800 : 1100 - (level - 1) * 90 };
   if (game === DODGE_GAME) return { seed, difficulty: level, goal: DODGE_GOAL + level - 1, duration: DODGE_DURATION_MS, approachMs: 1350 - (level - 1) * 100 };
@@ -53,6 +61,8 @@ export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') 
 }
 
 export function createRun(round, localStart, timingOffset = 0) {
+  if (round.game === MEALS_GAME) return new MealsRun(round, localStart);
+  if (round.game === DYNAMITE_GAME) return new DynamiteRun(round, localStart);
   if (round.game === LETTERS_GAME) return new LettersRun(round, localStart);
   if (round.game === COIN_GAME) return new CoinRun(round, localStart);
   if (round.game === DODGE_GAME) return new DodgeRun(round, localStart);
@@ -70,6 +80,8 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game) {
+  if (game === MEALS_GAME) return ['Fill the empty slots to complete each meal', 'Red = fries, green = burger, blue = drink', 'Serve all six meals as fast as you can'];
+  if (game === DYNAMITE_GAME) return ['Match the wire colour with the same button', 'Tap four sections per colour; clear all 13 groups', 'Reach the dynamite first; wrong colours briefly pause the spark'];
   if (game === LETTERS_GAME) return ['Red moves left, blue moves right, green enters a letter', 'Type the three letters first to win a point; choose ⌫ to erase', 'Most points in 30 seconds wins'];
   if (game === COIN_GAME) return ['Catch gold coins and avoid cracked purple coins', 'Red = left, green = middle, blue = right'];
   if (game === DODGE_GAME) return ['Move around tall walls and jump over low hurdles', 'Red moves left, blue moves right, green jumps'];

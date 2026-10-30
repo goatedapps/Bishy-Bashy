@@ -1,4 +1,5 @@
 export const ARCADE_VOICE_FILES = {
+  'dynamite-spark': 'dynamite-spark-voice.mp3',
   'totem-shrinker': 'totem-shrinker-voice.mp3',
   'perm-mania': 'perm-mania-voice.mp3',
   'facial-slot-machine': 'facial-slot-machine-voice.mp3',

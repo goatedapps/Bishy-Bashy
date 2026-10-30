@@ -8,7 +8,7 @@ const MUSIC_MODES = ['auto', 'on', 'off'];
 const MENU_TRACKS = { menu: 'Background-ActionRock.mp3', instructions: 'game-instructions.mp3' };
 const MENU_TRACK_GAINS = { menu: 1, instructions: 2 };
 const EXTRA_AUDIO_FILES = { wrong: 'wrong.mp3', buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.mp3', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3', wheelSpin: 'roulette.mp3', gameSelect: 'Game-select.mp3' };
-const GAME_AUDIO_FILES = { 'jump-for-the-meat': { jumpBounce: 'bounce.mp3' }, 'type-in-letters': { ding: 'Ding.mp3', lettersPress: 'Diuup.mp3' }, 'perm-mania': { ding: 'Ding.mp3' }, 'mimicking-monkeys': { ding: 'Ding.mp3' }, 'its-raining-coins': { ding: 'Ding.mp3' }, 'dodge-or-die': { ding: 'Ding.mp3' }, 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3', ding: 'Ding.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3', diceRoll: 'dice-roll.mp3' }, 'facing-which-way': { ding: 'Ding.mp3', facingFlip: 'flip.mp3' } };
+const GAME_AUDIO_FILES = { 'get-those-burgers-out': { mealPlop: 'plop.mp3', ding: 'Ding.mp3' }, 'dynamite-spark': { dynamiteBuzz: 'electrical-buzz.mp3', dynamiteExplosion: 'dynamite-explode.mp3', ding: 'Ding.mp3' }, 'jump-for-the-meat': { jumpBounce: 'bounce.mp3' }, 'type-in-letters': { ding: 'Ding.mp3', lettersPress: 'Diuup.mp3' }, 'perm-mania': { ding: 'Ding.mp3' }, 'mimicking-monkeys': { ding: 'Ding.mp3' }, 'its-raining-coins': { ding: 'Ding.mp3' }, 'dodge-or-die': { ding: 'Ding.mp3' }, 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3', ding: 'Ding.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3', diceRoll: 'dice-roll.mp3' }, 'facing-which-way': { ding: 'Ding.mp3', facingFlip: 'flip.mp3' } };
 const PROFILES = {
   'dice-dice-more-dice': { music: 'music', urgency: 'urgency', go: 'go' },
   'facing-which-way': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -251,7 +251,7 @@ export class GameAudio {
 
   pressButton(kind = 'menu') {
     if (!this.enabled || this.preferences.effectsVolume === 0) return;
-    const id = kind === 'instructions' ? 'instructionReveal' : kind === 'jump' ? 'jumpBounce' : kind === 'letters' ? 'lettersPress' : kind === 'gameplay' ? 'gameplayPress' : 'buttonPress';
+    const id = kind === 'instructions' ? 'instructionReveal' : kind === 'meals' ? 'mealPlop' : kind === 'jump' ? 'jumpBounce' : kind === 'letters' ? 'lettersPress' : kind === 'gameplay' ? 'gameplayPress' : 'buttonPress';
     const request = ++this.buttonRequest;
     if (this.context?.state === 'running' && this.buffers.has(id)) {
       this.play(id);
@@ -357,6 +357,12 @@ export class GameAudio {
       const voice = this.source(sound, { at: this.context.currentTime + Math.max(0, remaining) / 1000, group: 'choice-demo' });
       if (voice) this.turnNotes.add(index);
     });
+  }
+
+  dynamiteBuzz(run) {
+    const allowed = this.enabled && this.preferences.effectsVolume > 0 && this.context?.state === 'running' && this.target?.id === run.id && !this.target.playerDone && !run.done && this.now() >= run.start && this.now() < run.end;
+    if (!allowed) { this.stopVoices(voice => voice.id === 'dynamiteBuzz'); return; }
+    if (![...this.voices].some(voice => voice.id === 'dynamiteBuzz')) this.source('dynamiteBuzz', { loop: true, group: 'round' });
   }
 
   fireworkLaunch(run) {

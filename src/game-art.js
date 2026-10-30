@@ -7,6 +7,9 @@ import { chefPortrait, ingredientPortrait, picturePortrait } from './catch-spot-
 import { diePortrait, diceMascot, duckPortrait } from './dice-facing-view.js';
 import { lettersPortrait } from './letters-view.js';
 
+import { mealPortrait } from './meals-view.js';
+import { dynamitePortrait } from './dynamite-view.js';
+
 const node = (tag, className, text) => {
   const element = document.createElement(tag);
   element.className = className;
@@ -17,7 +20,9 @@ const node = (tag, className, text) => {
 export function gameArt(game) {
   const art = node('span', `game-art art-${game}`);
   art.setAttribute('aria-hidden', 'true');
-  if (game === 'type-in-letters') art.append(lettersPortrait());
+  if (game === 'get-those-burgers-out') art.append(mealPortrait(1));
+  else if (game === 'dynamite-spark') art.append(dynamitePortrait());
+  else if (game === 'type-in-letters') art.append(lettersPortrait());
   else if (game === 'its-raining-coins') art.append(raccoonPortrait());
   else if (game === 'dodge-or-die') art.append(runnerPortrait());
   else if (game === 'dice-dice-more-dice') art.append(diceMascot());
@@ -47,7 +52,15 @@ export function ruleVisual(game) {
   const first = node('div', 'rule-example');
   const second = node('div', 'rule-example');
   let label;
-  if (game === 'type-in-letters') {
+  if (game === 'get-those-burgers-out') {
+    first.append(mealPortrait(0), mealPortrait(1), mealPortrait(2));
+    second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Fries · Burger · Drink'));
+    label = 'Fill each empty slot with fries, a burger or a drink using red, green or blue. Serve six meals to finish.';
+  } else if (game === 'dynamite-spark') {
+    first.append(gameArt(game), node('strong', '', 'Follow the coloured wire'));
+    second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Four taps per colour'));
+    label = 'Match each wire section with its colour button. Clear 13 groups of four sections to explode the dynamite.';
+  } else if (game === 'type-in-letters') {
     first.append(gameArt(game), node('strong', '', 'Match three letters first'));
     second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Left · Enter · Right'));
     label = 'Move through A to Z with red and blue; green enters the selected letter. Choose backspace to erase. First to type the target earns a point.';
