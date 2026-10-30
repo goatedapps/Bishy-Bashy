@@ -41,3 +41,9 @@ body.is-playing,body.is-instructions { display:flex; flex-direction:column; heig
 
 .is-instructions #ready-players { margin-top:auto; padding-top:16px; }
 .is-instructions #game-instructions > * { flex-shrink:0; }
+
+.is-playing:is(.totem-theme,.dodge-theme,.monkey-theme) .lane { padding-bottom:0; }
+.is-playing:is(.totem-theme,.dodge-theme,.monkey-theme) .lane>.base { display:none; }
+.is-playing:is(.totem-theme,.dodge-theme,.monkey-theme) .tower-zone { flex:1; min-height:0; height:auto; padding-bottom:0; }
+.is-playing:is(.totem-theme,.dodge-theme,.monkey-theme) .seat-status:empty { display:none; }
+.is-playing.totem-theme .tower-zone .block { width:min(100%,calc((var(--tower-height) + 4 * var(--overlap) - 8px) * .3)); }

@@ -5,7 +5,7 @@ The Vite frontend deploys independently to GitHub Pages; `server/` is a separate
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 14 adds concurrent per-slot meal drops; deploy frontend and backend together.
+Protocol version 15 slows Dice to a 30.7-second schedule; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -43,7 +43,7 @@ Jump has no timing bar; judge landings from the dinosaur and trampoline, keeping
 `shared/burger.js` owns seeded falling ingredients and automatic local catches; red/green/blue move the plate left/middle/right, misses keep completed layers, and delayed frames preserve scheduled landing times.
 `shared/mistake.js` owns seeded odd-picture boards; red/green/blue choose top/middle/bottom, every answer advances after 260 ms feedback, and ranking uses correct-answer count without elapsed-time tiebreaks.
 `src/catch-spot-view.js` and `src/catch-spot.css` render both games with original generated sprites; show the published current peer board and never show a future board during success feedback.
-`shared/dice.js` owns 21 synchronized highest-die sets over 25 seconds; answer windows shrink every three sets from 2000 through 1600, 1200, 900, 600, 400, and 300 ms.
+`shared/dice.js` owns 21 synchronized highest-die sets over 30.7 seconds; answer windows shrink every three sets from 2000 through 1600, 1400, 1200, 1000, 900, and 800 ms.
 `shared/facing.js` owns five Game Select or eight Arcade synchronized covered-card sets, front/back pose composition, and three unique picture options; red/green/blue choose left/middle/right within three seconds after the turns.
 Facing keeps the initial card upright while its cover closes over 400 ms, then holds it covered for 350 ms before turning.
 `shared/choice-round.js` locks each player’s first answer privately, acknowledges retries, and settles server-owned scores only after each deadline plus 80 ms transport grace; missed answers never pause the shared schedule.
@@ -178,3 +178,6 @@ Facing instructions and the match HUD derive their set counts from the scheduled
 
 Get Those Burgers Out! accepts repeated presses while the same item is falling: each press reserves its own empty slot and launches an independent 300 ms drop.
 Keep up to nine bounded per-slot timestamps in visual snapshots, map them between viewer clocks, and derive completion from the final scheduled landing; taps beyond filled or reserved requirements still play Wrong.
+
+Totem Shrinker, Dodge or Die, and Mimicking Monkeys hide their bottom counters, progress bars, and decorative bases during gameplay so the active scene fills the available player-panel height.
+Shared Facing/Dice layouts explicitly place their heading, demonstration, options, and scores in grid rows; the scores stay in the final bottom row even while options are hidden.

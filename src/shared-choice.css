@@ -1,13 +1,13 @@
 .is-playing:is(.dice-theme,.facing-theme) #player-lanes { display:none; }
 .shared-choice-stage { display:grid; grid-template-rows:30px minmax(0,1fr) 110px 90px; align-items:center; justify-items:center; gap:10px; padding:12px 16px; width:100%; flex:1; min-height:0; }
-.shared-choice-heading { display:flex; justify-content:space-between; align-items:center; width:100%; gap:10px; color:#3b214d; font:clamp(15px,2vw,24px)/1.1 'Lilita One',system-ui; }
-.shared-dice .shared-choice-heading { color:#fff9dc; text-shadow:0 2px #213a46; }
+.shared-choice-heading { grid-row:1; grid-column:1; display:flex; justify-content:space-between; align-items:center; width:100%; gap:10px; color:#3b214d; font:clamp(15px,2vw,24px)/1.1 'Lilita One',system-ui; }
+.shared-dice .shared-choice-heading { grid-row:1; grid-column:1; color:#fff9dc; text-shadow:0 2px #213a46; }
 .shared-answer-clock { font-variant-numeric:tabular-nums; }
-.shared-demo { display:grid; place-items:center; width:100%; height:100%; min-height:0; perspective:700px; }
+.shared-demo { grid-row:2; grid-column:1; display:grid; place-items:center; width:100%; height:100%; min-height:0; perspective:700px; }
 .shared-duck-card { position:relative; width:min(210px,28vh); aspect-ratio:1; border:3px solid #3b214d; border-radius:18%; background:#fff8df; overflow:hidden; box-shadow:0 4px #476b8844; }
 .shared-duck-card>.direction-duck { position:absolute; inset:3%; width:94%; height:94%; }
 .direction-duck.is-back { background-image:var(--image-facing-duck-back,url('/assets/optimized/facing-duck-back-bc3f154e9baf.webp')); }
-.shared-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); width:100%; height:100%; gap:12px; }
+.shared-options { grid-row:3; grid-column:1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); width:100%; height:100%; gap:12px; }
 .shared-option { position:relative; display:flex; justify-content:center; align-items:center; min-width:0; min-height:0; padding:10px 8px 23px; border:3px solid currentColor; border-radius:16px; background:#fff8e3; box-shadow:0 4px #223a5355; }
 .shared-option .direction-duck { width:min(90px,100%); max-height:100%; aspect-ratio:1; }
 .shared-option .die-portrait { width:min(120px,70%); padding:14%; }
@@ -16,7 +16,7 @@
 .shared-choice-chip { padding:2px 5px; border-radius:4px; color:#fff; background:#be3153; font:900 11px/1 Nunito,system-ui; }
 .shared-correct-option { background:#e4f2b9; box-shadow:inset 0 0 0 4px #76ad68; }
 .shared-dice .shared-options { grid-row:2 / 4; height:min(200px,80%); align-self:center; }
-.shared-choice-players { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; width:100%; height:100%; }
+.shared-choice-players { grid-row:4; grid-column:1; display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; width:100%; height:100%; }
 .shared-player { position:relative; display:flex; flex-direction:column; align-items:center; justify-content:center; min-width:0; padding:8px 4px; gap:3px; border:3px solid #be3153; border-radius:13px; color:#3b214d; background:#fff8e7ed; }
 .shared-player.letter-player-1 { border-color:#167498; }
 .shared-player.letter-player-2 { border-color:#257943; }

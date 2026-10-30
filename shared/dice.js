@@ -3,7 +3,8 @@ import { seededIndex } from './seeded-index.js';
 
 export const DICE_GAME = 'dice-dice-more-dice';
 export const DICE_GOAL = 21;
-export const DICE_DURATION_MS = 25_000;
+export const DICE_WINDOWS_MS = [2000, 1600, 1400, 1200, 1000, 900, 800];
+export const DICE_DURATION_MS = DICE_WINDOWS_MS.reduce((sum, ms) => sum + ms * 3, 4000);
 
 export function diceSequence(seed, count, difficulty = 1) {
   const choose = seededIndex(seed);
@@ -18,7 +19,6 @@ export function diceSequence(seed, count, difficulty = 1) {
   });
 }
 
-export const DICE_WINDOWS_MS = [2000, 1600, 1200, 900, 600, 400, 300];
 
 export function diceStages(round) {
   let startsAt = 0;

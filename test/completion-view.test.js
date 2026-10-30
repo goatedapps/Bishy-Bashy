@@ -83,3 +83,19 @@ test('Jump hides progress counters and shows each accepted local or remote finis
     assert.equal(view.lanes[1].jump.element.dataset.phase, 'expired');
   } finally { globalThis.document = previous; }
 });
+
+for (const game of ['totem-shrinker','dodge-or-die','mimicking-monkeys']) test(`${game} hides bottom counters and progress without affecting the active scene`,()=>{
+ const previous=globalThis.document,nodes=new Map();
+ globalThis.document={hidden:false,createElement:()=>new Element(),createElementNS:()=>new Element(),createTextNode:text=>text,getElementById:id=>{if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(id);}};
+ try{
+  const round={id:game,game,phase:'running',...roundSettings(game,123)};
+  const local={id:round.id,start:1000,run:createRun(round,1000),done:false};
+  const room={selectedGame:game,round,players:[{id:'a',name:'You',connected:true,progress:{cleared:0,mistakes:0}}]};
+  const view=new GameView();view.render(room,'a',local,1100);
+  assert.equal(view.lanes[0].remaining.hidden,true);assert.equal(view.lanes[0].progress.hidden,true);
+  assert.equal(view.lanes[0].finishBadge.hidden,true);
+  if(game==='dodge-or-die')assert.equal(view.lanes[0].dodge.element.hidden,false);
+  if(game==='mimicking-monkeys')assert.equal(view.lanes[0].monkeys.element.hidden,false);
+  if(game==='totem-shrinker')assert.equal(view.lanes[0].tower.hidden,false);
+ }finally{globalThis.document=previous;}
+});

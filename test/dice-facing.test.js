@@ -7,7 +7,7 @@ import { ChoiceMatch, CHOICE_GRACE_MS } from '../shared/choice-round.js';
 import { RoomService } from '../server/rooms.js';
 const settings = (game, level = 1) => ({ id: 'round', game, playerIds: ['a', 'b', 'c'], ...roundSettings(game, 123, level) });
 
-test('dice have exactly one seeded highest face and all seven speed groups total exactly 25 seconds', () => {
+test('dice have exactly one seeded highest face and all seven speed groups give at least 800 ms per throw over 30.7 seconds', () => {
   const boards = diceSequence(123, 1000);
   assert.deepEqual(boards, diceSequence(123, 1000));
   assert.notDeepEqual(boards, diceSequence(124, 1000));
@@ -18,10 +18,10 @@ test('dice have exactly one seeded highest face and all seven speed groups total
   }
   for (let level = 1; level <= 5; level++) {
     const round = settings(DICE_GAME, level), run = createRun(round, 1000);
-    assert.equal(round.duration, 25000);
+    assert.equal(round.duration, 30700);
     assert.equal(run.goal, 21);
-    assert.equal(run.stages.at(-1).endsAt, 25000);
-    assert.deepEqual(run.stages.map(s => s.answerEnd - s.answerAt), [2000,1600,1200,900,600,400,300].flatMap(ms => [ms,ms,ms]));
+    assert.equal(run.stages.at(-1).endsAt, 30700);
+    assert.deepEqual(run.stages.map(s => s.answerEnd - s.answerAt), [2000,1600,1400,1200,1000,900,800].flatMap(ms => [ms,ms,ms]));
     run.stages.forEach((stage, index) => assert.equal(stage.startsAt, index ? run.stages[index - 1].endsAt : 0));
   }
 });

@@ -137,6 +137,7 @@ export class GameView {
       $('results').hidden = true;
       return;
     }
+    const hideCounters = ['totem-shrinker', DODGE_GAME, MONKEY_GAME, JUMP_GAME, MEALS_GAME, DYNAMITE_GAME].includes(game);
     const perm = game === PERM_GAME;
     const slots = game === SLOT_GAME;
     const fireworks = game === FIREWORK_GAME;
@@ -203,11 +204,11 @@ export class GameView {
           elements.towerKey = key;
         }
       }
-      elements.remaining.hidden = jump || game === MEALS_GAME || game === DYNAMITE_GAME;
-      elements.progress.hidden = jump || game === MEALS_GAME || game === DYNAMITE_GAME;
+      elements.remaining.hidden = hideCounters;
+      elements.progress.hidden = hideCounters;
       const value = game === 'totem-shrinker' ? active && player ? Math.max(0, round.blockCount - cleared) : 0 : cleared;
       const counterKey = `${game}/${value}/${round?.goal}`;
-      if (!jump && game !== MEALS_GAME && game !== DYNAMITE_GAME && elements.remaining.dataset.value !== counterKey) {
+      if (!hideCounters && elements.remaining.dataset.value !== counterKey) {
         elements.remaining.replaceChildren(node('strong', '', String(value)), document.createTextNode(mistake ? 'correct' : game === 'totem-shrinker' ? 'left' : ` / ${round?.goal || GAMES[game]?.goal || 0}`));
         elements.remaining.dataset.value = counterKey;
       }

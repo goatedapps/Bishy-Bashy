@@ -51,7 +51,7 @@ export function roundDetail(round) {
   if (round.game === 'type-in-letters') return '30 seconds · Most points wins';
   if (round.game === 'its-raining-coins') return `${round.goal} coins · Speed ${round.difficulty}`;
   if (round.game === 'dodge-or-die') return `${round.goal} obstacles · Speed ${round.difficulty}`;
-  if (round.game === 'dice-dice-more-dice') return '21 throws · 25 seconds';
+  if (round.game === 'dice-dice-more-dice') return `${round.goal} throws · ${round.duration / 1000} seconds`;
   if (round.game === 'facing-which-way') return `${round.goal} sets · Most correct wins`;
   if (round.game === 'burger-girl') return `${round.goal / 4} burgers · Speed ${round.difficulty}`;
   if (round.game === 'me-find-mistake') return `${round.goal} pictures · Most correct wins`;
