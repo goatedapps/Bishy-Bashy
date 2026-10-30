@@ -41,7 +41,7 @@ export class MistakeRun {
   }
 
   get puzzle() { return this.sequence[Math.min(this.cleared, this.goal - 1)]; }
-  get readyAt() { return Math.max(this.blockedUntil, this.shownAt + MISTAKE_OBSERVE_MS); }
+  get readyAt() { return Math.max(this.blockedUntil, this.shownAt + (this.cleared === 0 ? MISTAKE_OBSERVE_MS : 0)); }
 
   tap(color, time) {
     if (this.done || !Number.isInteger(color) || color < 0 || color > 2 || !Number.isFinite(time) || time < this.readyAt || time >= this.end) return { type: 'ignored' };

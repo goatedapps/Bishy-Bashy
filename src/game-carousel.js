@@ -6,6 +6,15 @@ export class GameCarousel {
   constructor(onChoose) {
     this.onChoose = onChoose;
     this.track = document.getElementById('game-picker');
+    this.originals = [...this.track.children];
+    this.originals.forEach(card => { card.dataset.copy = '1'; });
+    const copies = copy => this.originals.map(card => {
+      const clone = card.cloneNode(true);
+      clone.dataset.copy = String(copy);
+      return clone;
+    });
+    this.track.prepend(...copies(0));
+    this.track.append(...copies(2));
     this.cards = [...this.track.children];
     this.active = false;
     this.canChoose = false;
@@ -32,7 +41,10 @@ export class GameCarousel {
     this.track.addEventListener('scroll', () => {
       if (!this.active) return;
       cancelAnimationFrame(this.frame);
-      this.frame = requestAnimationFrame(() => this.paint());
+      this.frame = requestAnimationFrame(() => {
+        if (this.drag) this.recenter(this.nearest());
+        this.paint();
+      });
       this.scheduleSettle();
     }, { passive: true });
     this.track.addEventListener('scrollend', () => this.settle());
@@ -49,7 +61,7 @@ export class GameCarousel {
       const cards = this.visibleCards();
       const index = cards.indexOf(this.nearest());
       const target = event.key === 'Home' ? 0 : event.key === 'End' ? cards.length - 1 : index + (event.key === 'ArrowLeft' ? -1 : 1);
-      this.goTo(cards[Math.max(0, Math.min(cards.length - 1, target))], false);
+      this.goTo(cards[(target + cards.length) % cards.length], false);
     });
     this.track.addEventListener('pointerdown', event => {
       if (this.canChoose) this.programmatic = null;
@@ -90,7 +102,7 @@ export class GameCarousel {
     this.track.addEventListener('wheel', () => { if (this.canChoose) this.programmatic = null; }, { passive: true });
     this.track.addEventListener('dragstart', event => event.preventDefault());
     this.observer = new ResizeObserver(() => {
-      if (this.active) this.goTo(this.cards.find(card => card.dataset.game === this.selected && !card.hidden) || this.visibleCards()[0], true, false);
+      if (this.active) this.goTo(this.originals.find(card => card.dataset.game === this.selected && !card.hidden) || this.visibleCards()[0], true, false);
     });
     this.observer.observe(this.track);
     this.reduced.addEventListener('change', () => this.animateCenter());
@@ -107,12 +119,27 @@ export class GameCarousel {
     button.addEventListener('click', () => {
       if (!this.canChoose) return;
       const cards = this.visibleCards();
-      this.goTo(cards[cards.indexOf(this.nearest()) + direction], false);
+      this.goTo(cards[(cards.indexOf(this.nearest()) + direction + cards.length) % cards.length], false);
     });
     return button;
   }
 
   visibleCards() { return this.cards.filter(card => !card.hidden); }
+
+  confirmSelection() {
+    if (!this.active || !this.canChoose) return;
+    const card = this.nearest();
+    if (card && card.dataset.game !== this.selected) this.onChoose(card.dataset.game);
+  }
+
+  recenter(card) {
+    if (!card || card.dataset.copy === '1') return card;
+    const original = this.originals.find(item => item.dataset.game === card.dataset.game);
+    const shift = original.offsetLeft - card.offsetLeft;
+    this.track.scrollLeft += shift;
+    if (this.drag) this.drag.left += shift;
+    return original;
+  }
 
   nearest(left = this.track.scrollLeft) {
     const middle = left + this.track.clientWidth / 2;
@@ -134,10 +161,11 @@ export class GameCarousel {
 
   settle() {
     if (!this.active || this.drag) return;
-    const card = this.nearest();
+    let card = this.nearest();
     if (!card) return;
     const distance = Math.abs(card.offsetLeft + card.offsetWidth / 2 - this.track.clientWidth / 2 - this.track.scrollLeft);
     if (distance > 2) return;
+    card = this.recenter(card);
     this.paint();
     if (this.programmatic || !this.canChoose) return;
     if (card.dataset.game !== this.selected && card.dataset.game !== this.submitted) {
@@ -154,10 +182,11 @@ export class GameCarousel {
       card.classList.toggle('is-center', card === center);
       card.classList.toggle('is-before', visible.indexOf(card) < index);
       card.tabIndex = this.canChoose && card === center ? 0 : -1;
+      card.setAttribute('aria-hidden', String(card !== center));
     });
-    this.previous.disabled = !this.canChoose || index <= 0;
-    this.next.disabled = !this.canChoose || index < 0 || index >= visible.length - 1;
-    const position = `${index + 1} / ${visible.length}`;
+    const games = this.originals.filter(card => !card.hidden);
+    this.previous.disabled = this.next.disabled = !this.canChoose || games.length < 2;
+    const position = `${games.findIndex(card => card.dataset.game === center?.dataset.game) + 1} / ${games.length}`;
     if (this.position.textContent !== position) this.position.textContent = position;
     if (center !== this.center) {
       this.center = center;
@@ -191,7 +220,11 @@ export class GameCarousel {
     clearTimeout(this.filterTimer);
     clearTimeout(this.settleTimer);
     if (!this.active) return;
-    const card = this.cards.find(item => item.dataset.game === this.selected && !item.hidden) || this.visibleCards()[0];
+    const matches = this.originals.filter(card => !card.hidden);
+    this.cards.filter(card => card.dataset.copy !== '1').forEach(card => {
+      card.hidden = matches.length < 2 || !matches.some(original => original.dataset.game === card.dataset.game);
+    });
+    const card = this.originals.find(item => item.dataset.game === this.selected && !item.hidden) || matches[0];
     this.goTo(card, true, false);
     this.paint();
     this.filterTimer = setTimeout(() => {
@@ -203,7 +236,7 @@ export class GameCarousel {
   }
 
   render(room, playerId) {
-    const active = Boolean(room && !room.set && !isRoundActive(room.round) && room.mode === 'game-select');
+    const active = Boolean(room && !room.set && !isRoundActive(room.round) && room.mode === 'game-select' && room.gameChoosing);
     const entered = active && !this.active;
     const permissionsChanged = this.canChoose !== (active && room.hostId === playerId);
     this.active = active;
@@ -231,7 +264,7 @@ export class GameCarousel {
       this.track.classList.remove('is-dragging');
       this.selected = room.selectedGame;
       this.submitted = null;
-      const selected = this.cards.find(card => card.dataset.game === this.selected);
+      const selected = this.originals.find(card => card.dataset.game === this.selected);
       if (!this.canChoose && selected?.hidden) {
         document.getElementById('game-search').value = '';
         this.cards.forEach(card => { card.hidden = false; });

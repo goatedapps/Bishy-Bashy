@@ -25,7 +25,7 @@ export class RoomService {
 
   snapshot(room) {
     return {
-      code: room.code, hostId: room.hostId, testNumber: room.testNumber, selectedGame: room.selectedGame, mode: room.mode, arcadePreview: room.arcadePreview, set: room.set,
+      code: room.code, hostId: room.hostId, testNumber: room.testNumber, selectedGame: room.selectedGame, mode: room.mode, arcadePreview: room.arcadePreview, gameChoosing: Boolean(room.gameChoosing), set: room.set,
       players: room.players.map(({ id, name, connected, ready, sync, result, progress, disconnectedAt }) => ({ id, name, connected, ready, sync, result, progress, disconnectedAt })),
       round: room.round ? { ...room.round } : null,
     };
@@ -67,7 +67,7 @@ export class RoomService {
     if (!returning) room.players.push(player);
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 7, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 8, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -110,15 +110,23 @@ export class RoomService {
       const game = message.game || room.selectedGame;
       if (!MODES[mode] || !GAMES[game] || room.selectedGame === game && room.mode === mode) return;
       room.selectedGame = game;
+      if (room.mode !== mode) room.gameChoosing = false;
       room.mode = mode;
       room.arcadePreview = false;
       room.players.forEach(p => { p.ready = false; });
+      return this.broadcast(room);
+    }
+    if (message.type === 'open-game-picker') {
+      if (player.id !== room.hostId || room.mode !== 'game-select' || room.set || isRoundActive(room.round)) return;
+      room.gameChoosing = true;
+      room.players.forEach(member => { member.ready = false; });
       return this.broadcast(room);
     }
     if (message.type === 'start') {
       if (player.id !== room.hostId) return this.error(client, 'Only the room host can start the round.');
       if (room.set) return;
       if (room.round && room.round.phase !== 'results') return;
+      room.gameChoosing = false;
       const participants = room.players.filter(p => p.connected);
       if (message.mode === 'sync' && room.players.some(p => !p.connected && received - p.disconnectedAt < RECONNECT_WAIT_MS)) return this.error(client, 'Waiting up to 15 seconds for a disconnected player.');
       if (message.mode === 'sync' && !participants.every(p => p.ready && this.isSynced(p))) return this.error(client, 'Everyone connected must be synchronized and ready.');
@@ -138,9 +146,10 @@ export class RoomService {
     if (message.type === 'back-to-modes' || message.type === 'exit-set') {
       if (message.type === 'exit-set' && room.set?.phase !== 'complete') return;
       if (message.type === 'back-to-modes' && player.id !== room.hostId) return this.error(client, 'Only the host can return everyone to mode selection.');
-      if (!room.set && room.arcadePreview) { room.arcadePreview = false; return this.broadcast(room); }
+      if (!room.set && (room.arcadePreview || room.gameChoosing)) { room.arcadePreview = false; room.gameChoosing = false; return this.broadcast(room); }
       if (!room.set || message.setId !== room.set.id) return;
       room.set = null;
+      room.gameChoosing = false;
       room.round = null;
       room.arcadePreview = false;
       room.players.forEach(member => { member.ready = false; member.result = null; member.progress = { cleared: 0, mistakes: 0 }; });

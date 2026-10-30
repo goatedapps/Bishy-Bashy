@@ -143,3 +143,15 @@ for (const game of [BURGER_GAME, MISTAKE_GAME]) test(`${game}: server rejects in
   assert.deepEqual(room.set.players.map(player => player.points), [10, 7]);
   assert.equal(room.set.history.length, 1);
 });
+
+
+test('Me Find Mistake accepts visible boards immediately in all Game Select rounds', () => {
+  for (let level = 1; level <= 3; level++) {
+    const run = new MistakeRun(settings(MISTAKE_GAME, level), 1000);
+    while (!run.done) {
+      const at = run.cleared === 0 ? run.readyAt : run.shownAt;
+      assert.equal(run.tap(run.puzzle.odd, at).type, run.done ? 'finished' : 'hit');
+      if (!run.done) assert.equal(run.tap(run.puzzle.odd, run.shownAt - 1).type, 'ignored');
+    }
+  }
+});

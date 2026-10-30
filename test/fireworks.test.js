@@ -19,11 +19,11 @@ function clearSet(run) {
   return time - 100;
 }
 
-test('five seeded sets have counts 1, 3, 3, 4, 5 and the third set is faster', () => {
+test('seven seeded sets have counts 1, 3, 3, 4, 5, 5, 5 and the third set is faster', () => {
   assert.deepEqual(fireworkSequence(123), fireworkSequence(123));
   assert.notDeepEqual(fireworkSequence(123), fireworkSequence(124));
   assert.equal(new Set(fireworkSequence(123).map(rocket => rocket.color)).size, 3);
-  assert.deepEqual(FIREWORK_SETS.map(set => set.count), [1, 3, 3, 4, 5]);
+  assert.deepEqual(FIREWORK_SETS.map(set => set.count), [1, 3, 3, 4, 5, 5, 5]);
   assert.ok(FIREWORK_SETS[2].airMs < FIREWORK_SETS[1].airMs);
   assert.ok(FIREWORK_SETS[2].gapMs < FIREWORK_SETS[1].gapMs);
 });
@@ -94,9 +94,9 @@ test('every difficulty finishes all sets in any color order, with exactly one su
     for (const color of [-1, 3, .5, NaN]) assert.equal(run.tap(color, 5000).type, 'ignored');
     assert.equal(run.tap(0, NaN).type, 'ignored');
     while (!run.done) clearSet(run);
-    assert.equal(run.cleared, 5);
+    assert.equal(run.cleared, 7);
     assert.equal(run.mistakes, 0);
-    assert.equal(run.events.filter(event => event.type === 'stageComplete').length, 5);
+    assert.equal(run.events.filter(event => event.type === 'stageComplete').length, 7);
     assert.ok(run.elapsed < round.duration);
     assert.equal(run.tap(0, run.start + run.elapsed).type, 'ignored');
     assert.equal(new FireworkRun(round, 0).tap(0, round.duration).type, 'ignored');
@@ -135,12 +135,12 @@ test('room rejects incomplete sets, accepts a delayed finish once, and ranks loc
   }
   const round = room.round;
   time = round.startAt + 20_000;
-  const result = { type: 'result', roundId: round.id, status: 'finished', elapsed: 15000, cleared: 4, mistakes: 0 };
+  const result = { type: 'result', roundId: round.id, status: 'finished', elapsed: 15000, cleared: 6, mistakes: 0 };
   service.handle(host, result);
   assert.equal(room.players[0].result, null);
-  service.handle(friend, { ...result, cleared: 5, elapsed: 16000 });
-  service.handle(host, { ...result, cleared: 5 });
-  service.handle(host, { ...result, cleared: 5, elapsed: 1 });
+  service.handle(friend, { ...result, cleared: 7, elapsed: 16000 });
+  service.handle(host, { ...result, cleared: 7 });
+  service.handle(host, { ...result, cleared: 7, elapsed: 1 });
   assert.equal(room.players[0].result.elapsed, 15000);
   assert.ok(comparePlayers(room.players[0], room.players[1], FIREWORK_GAME) < 0);
   assert.deepEqual(room.set.players.map(player => player.points), [10, 7]);

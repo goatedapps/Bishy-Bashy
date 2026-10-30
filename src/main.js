@@ -135,7 +135,7 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 7 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements')) {
+      if (message.protocol !== 8 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -387,7 +387,7 @@ function updateMetrics() {
   const mine = room.players.find(player => player.id === playerId);
   $('ready').disabled = !gate || !preparingAssets?.ready || room.set?.phase === 'instructions' && !setView.instructionsComplete(room.round?.id) || !connected || !estimate || estimate.count < 3 || estimate.rtt > 1500 || !mine?.sync || mine.sync.count < 3 || time + estimate.offset - mine.sync.at >= 20_000;
   $('ready').textContent = mine?.ready ? 'Not ready' : 'Ready';
-  $('start').textContent = room.set?.phase === 'complete' ? 'Start new set' : 'Start set';
+  $('start').textContent = room.gameChoosing ? 'Play selected game' : room.set?.phase === 'complete' ? 'Start new set' : 'Start set';
   const serverNow = time + (estimate?.offset || 0);
   const disconnected = room.players.filter(player => !player.connected);
   const wait = Math.max(0, ...disconnected.map(player => 15_000 - (serverNow - player.disconnectedAt)));
@@ -395,6 +395,8 @@ function updateMetrics() {
   let status = '';
   if (!connected) status = 'Reconnecting… Keep playing; your result stays saved on this device.';
   else if (room.set?.phase === 'complete') status = '';
+  else if (room.gameChoosing) status = '';
+  else if (room.gameChoosing) status = '';
   else if (idle) status = playerId === room.hostId ? 'Start the set when your friends have joined.' : 'Waiting for the host to start.';
   else if (gate) status = wait > 0 ? `Waiting ${Math.ceil(wait / 1000)}s for a friend to reconnect…` : !estimate || estimate.count < 3 ? 'Synchronizing clocks…' : mine?.ready ? 'Waiting for everyone to be ready…' : 'Tap Ready when you’re set.';
   else if (['intermission', 'selecting'].includes(room.set?.phase)) status = '';
@@ -415,7 +417,7 @@ function renderRoom() {
   $('room-code').textContent = room.code;
   $('occupancy').textContent = `· ${room.players.length}/4`;
   $('leave').disabled = false;
-  $('back').hidden = room.set?.phase === 'complete' || playerId !== room.hostId || !room.set && !room.arcadePreview;
+  $('back').hidden = room.set?.phase === 'complete' || playerId !== room.hostId || !room.set && !room.arcadePreview && !room.gameChoosing;
   $('exit').hidden = room.set?.phase !== 'complete';
   $('exit').disabled = !joined || socket?.readyState !== WebSocket.OPEN;
   $('ready-actions').hidden = Boolean(active || room.set?.phase === 'selecting' || room.set?.phase === 'intermission' && room.mode === 'arcade');
@@ -426,7 +428,7 @@ function renderRoom() {
   view.render(room, playerId, localRound, performance.now());
   setView.render(room, playerId);
   lobbyMotion.render(room);
-  if (room.set?.phase === 'selecting' || room.mode === 'arcade' && room.arcadePreview && !room.set) $('play-view').hidden = true;
+  if (room.gameChoosing || room.set?.phase === 'selecting' || room.mode === 'arcade' && room.arcadePreview && !room.set) $('play-view').hidden = true;
   synchronizeScreenAudio();
 }
 
@@ -577,12 +579,13 @@ function updateGameProfile() {
   document.body.classList.toggle('in-set', Boolean(inSet));
   document.body.classList.toggle('is-playing', Boolean(active));
   document.body.classList.toggle('is-instructions', room?.set?.phase === 'instructions');
-  const title = !room ? 'Bishy Bashy!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'selecting' ? 'Pick our next game!' : room.set?.phase === 'intermission' ? 'Standings' : ['instructions', 'announcing'].includes(room.set?.phase) || active ? GAMES[game].title : room.arcadePreview ? 'Arcade' : 'Choose your mode';
+  const title = !room ? 'Bishy Bashy!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'selecting' ? 'Pick our next game!' : room.set?.phase === 'intermission' ? 'Standings' : ['instructions', 'announcing'].includes(room.set?.phase) || active ? GAMES[game].title : room.gameChoosing ? 'Choose a game' : room.arcadePreview ? 'Arcade' : 'Choose your mode';
   if (document.querySelector('.game-title').textContent !== title) document.querySelector('.game-title').textContent = title;
   document.title = `${room ? title : 'Party games'} · Bishy Bashy`;
   $('rules-open').setAttribute('aria-label', room ? 'How to play' : 'About Bishy Bashy');
   $('lobby-setup').hidden = !room || Boolean(room.set);
-  $('game-browser').hidden = mode !== 'game-select';
+  $('game-browser').hidden = !room?.gameChoosing;
+  $('mode-picker').hidden = Boolean(room?.gameChoosing);
   $('rhythm-guide').hidden = !perm || !active;
   $('slot-guide').hidden = !slots || !active;
   for (const button of document.querySelectorAll('[data-game]')) {
@@ -648,7 +651,7 @@ document.addEventListener('click', event => {
 }, { capture: true });
 $('entry-form').addEventListener('submit', event => { event.preventDefault(); enter('join'); });
 $('ready').addEventListener('click', () => { notice(''); audio.unlock(); send({ type: 'ready', ready: !room.players.find(player => player.id === playerId)?.ready }); });
-$('start').addEventListener('click', () => { audio.unlock(); send({ type: 'start' }); });
+$('start').addEventListener('click', () => { audio.unlock(); setView.carousel.confirmSelection(); send({ type: room?.mode === 'game-select' && !room.gameChoosing ? 'open-game-picker' : 'start' }); });
 $('leave').addEventListener('click', () => requestNavigation('leave'));
 $('back').addEventListener('click', () => requestNavigation('back-to-modes'));
 $('exit').addEventListener('click', () => {

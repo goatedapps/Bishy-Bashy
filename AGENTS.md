@@ -5,7 +5,7 @@ The Vite frontend deploys independently to GitHub Pages; `server/` is a separate
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 7 includes the Game Select announcement gate and multi-rocket Fireworks snapshots; coordinate frontend/backend releases when changing it.
+Protocol version 8 adds the shared Game Select picker screen and seven Fireworks sets; coordinate frontend/backend releases when changing it.
 
 ## Game and visuals
 
@@ -24,7 +24,7 @@ Red, green, and blue stop their own continuously scrolling slot rows in any orde
 Reels show approaching faces and judge the portrait nearest the center marker; Game Select reduces travel time per portrait from 320 to 260 ms across three Game Select rounds.
 Track slot locks as a monotonic three-bit `reelMask`, rather than assuming the first N rows were stopped.
 `shared/games.js` is the common game registry, difficulty settings, and result ordering.
-`shared/fireworks.js` owns five seeded sets of 1, 3, 3 faster, 4, and 5 rockets, with colors visible from launch and inputs accepted until each scheduled landing.
+`shared/fireworks.js` owns seven seeded sets of 1, 3, 3 faster, 4, 5, 5, and 5 rockets, with colors visible from launch and inputs accepted until each scheduled landing.
 Match airborne colors in any order; repeated colors consume the oldest matching rocket, and wrong or landed rockets retry only the current set after 650 ms.
 `src/firework-view.js` and `src/fireworks.css` draw the live cues over the generated festival backdrop; remote cues follow published player state.
 Fireworks launch audio follows each rocket's scheduled launch with bounded lookahead; deduplicate per rocket and attempt, and skip stale launches after interruption.
@@ -38,6 +38,7 @@ The wide gold landing window earns one boost; its green Perfect center (30% of t
 Jump has no timing bar; judge landings from the dinosaur and trampoline, keeping the landing ring, +1/+2 feedback, and Perfect flourish aligned to the local input timestamp.
 `src/jump-view.js` and `src/jump.css` draw the original dinosaur and landing guide; remote bounces follow published jump timing, and the home cast stays bounded to five characters as the catalog grows.
 `shared/burger.js` owns seeded falling ingredients and automatic local catches; red/green/blue move the plate left/middle/right, misses keep completed layers, and delayed frames preserve scheduled landing times.
+`shared/mistake.js` accepts answers as soon as each new board appears after success feedback; the initial board keeps its observation gate.
 `shared/mistake.js` owns seeded odd-picture boards; red/green/blue choose top/middle/bottom, wrong answers keep the board, and correct answers retain their feedback before revealing the next board.
 `src/catch-spot-view.js` and `src/catch-spot.css` render both games with original generated sprites; show the published current peer board and never show a future board during success feedback.
 `shared/dice.js` owns seeded rolls with one unique maximum; red/green/blue choose top/middle/bottom, and misses preserve the current roll and completed progress.
@@ -55,7 +56,7 @@ The server owns the result, selection timestamps, and five-game plan without rep
 Expand the Arcade reel and selection pool only at catalog counts divisible by four (8, 12, 16, and so on); games added between those milestones are available immediately in Game Select.
 `shared/sets.js` owns the common `arcadeGameIds()` batch boundary for both server selection and reel artwork.
 After each Arcade podium's five seconds, show the next spin, then illustrated rules and an all-player Ready gate.
-Game Select announces the chosen game with its supplied voice and applause once after Start set, then opens instructions after two seconds while the matching voice/applause tails finish naturally.
+Game Select opens a separate shared game picker after Start set; Play selected game confirms the centered poster and announces it with its supplied voice and applause once, then opens instructions after two seconds while the matching voice/applause tails finish naturally.
 Game Select shows rules once and uses the podium's all-player Ready gate between subsequent rounds, with a five-second minimum intermission.
 Readiness never carries across a round or instructions screen, and countdowns require every connected player to be ready and freshly synchronized.
 `shared/games.js` defines the three-second countdown for both room scheduling and the single `countdown.mp3` cue; resume at the current offset, preserve its tail past GO, and avoid layering the old GO cue.
@@ -76,13 +77,13 @@ The two sky stars wiggle continuously above `home-landscape-motion.png`; match t
 Choose modes and games inside the room, with a short explanation visible on each mode card.
 `src/lobby-motion.js` and `src/lobby.css` own decorative cabinet/fan attract loops and four dancing mascot seats; use existing room players for occupancy, keep controls stationary, and revert all motion outside the lobby or under reduced motion.
 Use the shared `src/game-art.js` artwork for the home cast, game posters, and illustrated rules.
-`src/game-carousel.js` and `src/game-carousel.css` own Game Select's searchable horizontal poster carousel; settle host input before configuring, follow authoritative selections on guests, and cancel carousel motion outside the lobby.
+`src/game-carousel.js` and `src/game-carousel.css` own Game Select's searchable looping horizontal poster carousel; settle host input before configuring, follow authoritative selections on guests, and cancel carousel motion outside the lobby.
 Keep game instructions short and focused on the action and buttons; use only as many points as needed.
 `src/instruction-sequence.js` pauses 1400 ms after the heading, then 700 ms after the artwork and 850 ms between instruction lines, with `how-to-play.wav` for the heading and `Punch-button.mp3` for later steps.
 Avoid hidden-tab reveal catch-up and enable Ready only after the last line and selected audio bank are ready.
 The host's Back to modes action resets the shared set while keeping the room; confirm if a round has begun or scores exist.
 Players may explicitly leave active sets after confirmation; preserve accepted finishes, forfeit unfinished rounds, and let remaining players continue without a missing-player wait.
-The join handshake advertises `room-navigation`, `arcade-reel`, `asset-readiness`, `coins-dodge`, `live-gameplay-v2`, `set-exit`, `firework-sets`, and `game-announcements`; deploy frontend and backend together and show an actionable update message if required capabilities are absent.
+The join handshake advertises `room-navigation`, `arcade-reel`, `asset-readiness`, `coins-dodge`, `live-gameplay-v2`, `set-exit`, `firework-sets`, and `game-announcements`, and `game-picker-screen`; deploy frontend and backend together and show an actionable update message if required capabilities are absent.
 Facial Slot Machine uses `src/slot-view.js` and `src/slots.css`; remote reels use the published lock masks, per-row pauses, and stopped positions without resetting on snapshots.
 Use the same three buttons and shared fixed control bar in every current and future game; do not add game-specific button layouts or replace them with a single Stop button.
 Show three horizontal scrolling slot rows per player, stacked red, green, and blue, with upcoming faces visible at narrow widths too.

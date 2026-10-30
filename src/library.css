@@ -9,7 +9,7 @@
 .art-mimicking-monkeys { background:#e4edbd; }
 .game-art>.block { position:absolute; width:46px; left:7px; top:5px; }
 .game-art>.block+.block { top:28px; left:18px; }
-.game-art>.perm-character { position:absolute; --hair-size:70%; width:64px; height:64px; max-width:none; left:3px; bottom:0; }
+.game-art>.perm-character { position:absolute; --hair-size:70%; width:94%; height:94%; max-width:none; left:3%; bottom:0; }
 .game-art>.face-portrait { position:absolute; width:62px; height:62px; left:4px; top:7px; }
 .game-art>.monkey-portrait { position:absolute; inset:0; width:100%; height:100%; }
 .game-art>.firework-badge { position:absolute; inset:0; display:grid; place-items:center; font-size:58px; }

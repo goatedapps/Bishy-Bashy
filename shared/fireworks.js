@@ -1,7 +1,7 @@
 import { createSequence } from './totem.js';
 
 export const FIREWORK_GAME = 'fireworks-craze';
-export const FIREWORK_GOAL = 5;
+export const FIREWORK_GOAL = 7;
 export const FIREWORK_DURATION_MS = 45_000;
 export const FIREWORK_FREEZE_MS = 650;
 export const FIREWORK_SETS = [
@@ -9,6 +9,8 @@ export const FIREWORK_SETS = [
   { count: 3, airMs: 2600, gapMs: 420 },
   { count: 3, airMs: 2200, gapMs: 340 },
   { count: 4, airMs: 2100, gapMs: 300 },
+  { count: 5, airMs: 2000, gapMs: 260 },
+  { count: 5, airMs: 2000, gapMs: 260 },
   { count: 5, airMs: 2000, gapMs: 260 },
 ];
 

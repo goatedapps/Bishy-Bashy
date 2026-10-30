@@ -19,7 +19,8 @@ Reduced-motion preferences show the settled homepage immediately, and leaving th
 After creating or joining a room, choose a mode on the room screen.
 The lobby uses animated arcade-cabinet and fanned-card mode illustrations, chasing lights, drifting shapes, and four mascot seats with staggered squash-and-stretch dances and join bursts.
 `src/lobby-motion.js` and `src/lobby.css` keep text and controls stationary, pause decorations while hidden or in dialogs, honor reduced motion, and clear lobby animations before a set starts.
-Game Select uses a horizontal illustrated poster carousel with touch scrolling, mouse dragging, snapping, arrow and keyboard controls, and title search.
+Game Select opens a separate **Choose a game** screen after **Start set**; **Play selected game** confirms the centered poster.
+The horizontal illustrated poster carousel loops in both directions with touch scrolling, mouse dragging, snapping, arrow and keyboard controls, and title search.
 The host's centered poster selects the game after scrolling settles; guests follow the shared selection and cannot move the carousel.
 The selected character dances inside its yellow frame, while neighboring posters stay smaller and tilted; reduced motion keeps the artwork still and makes centering immediate.
 Choose **Arcade** for five different games selected at random, played once each in a random order.
@@ -210,15 +211,15 @@ Press matching color buttons before the rockets fall back to the ground.
 Colors are visible from launch; rockets have no shape symbols.
 Keyboard controls remain **1 / 2 / 3** or **J / K / L**.
 
-Clear five sets: **1 rocket, 3 rockets, 3 faster rockets, 4 rockets, then 5 rockets**.
+Clear seven sets: **1 rocket, 3 rockets, 3 faster rockets, 4 rockets, then three sets of 5 rockets**.
 Rockets launch one after another, and you may burst airborne colors in any order.
 Repeated colors consume the oldest airborne matching rocket first.
 A wrong color or an unburst rocket landing fails only the current set, followed by a **650 ms** recovery.
 Completed sets remain credited.
-Clear all five sets before the **45-second** deadline; fastest local elapsed time wins.
+Clear all seven sets before the **45-second** deadline; fastest local elapsed time wins.
 
-At base difficulty, airtimes are **2600, 2600, 2200, 2100, and 2000 ms** across the sets.
-Launch gaps are **420, 420, 340, 300, and 260 ms**.
+At base difficulty, airtimes are **2600, 2600, 2200, 2100, 2000, 2000, and 2000 ms** across the sets.
+Launch gaps are **420, 420, 340, 300, 260, 260, and 260 ms**.
 Game Select scales those times to **100%, 94%, and 88%** across its three rounds.
 These are provisional timings pending phone playtests.
 Every accepted rocket creates a small firework display.
@@ -230,7 +231,7 @@ The original generated festival background remains in `public/assets/fireworks-f
 Its prompt is preserved in [Fireworks artwork notes](public/assets/fireworks-artwork.md).
 `src/firework-view.js` and `src/fireworks.css` draw the colored rocket arcs and burst particles.
 Each rocket reuses `Fireworks.mp3` at its scheduled local launch, skipping stale launches after interruptions.
-Frontend and room service must deploy together with protocol 7.
+Frontend and room service must deploy together with protocol 8.
 
 ## Play Mimicking Monkeys
 
@@ -262,7 +263,7 @@ Audio scheduling checks do not establish physical speaker latency or subjective 
 
 The original generated character lives in `public/assets/mimicking-monkey.png`, with its prompt preserved in [artwork notes](public/assets/monkeys-artwork.md).
 The leafy stage, shape cues, and response indicators live in `src/monkey-view.js` and `src/monkeys.css`.
-Deploy frontend and room service together to make the new catalog entry available; protocol 7 carries current scene snapshots and the announcement gate.
+Deploy frontend and room service together to make the new catalog entry available; protocol 8 carries current scene snapshots and the announcement gate.
 
 ## Play Jump for the Meat
 
@@ -324,7 +325,8 @@ Differences include silhouette, direction, hats, eyes, badges, and accessories r
 
 Find **8, 9, or 10** odd pictures across the three Game Select rounds.
 The picture pool grows from four to eight pairs, and all devices derive the same boards from the shared seed.
-Each newly shown board has a **250 ms** observation gate before answers are accepted.
+The first board has a **250 ms** observation gate.
+Later boards accept answers immediately when they appear after the **260 ms** success feedback.
 A correct answer shows a check and keeps the solved board for **260 ms** before revealing the next one.
 A wrong answer marks only the selected picture, keeps the same puzzle, and locks answers for **600 ms** without losing completed puzzles.
 Finish within **35 seconds**, ranked by local elapsed time.
@@ -335,7 +337,7 @@ Only the local answered card pops on success; reduced-motion preferences remove 
 Every correct local answer plays `Ding.mp3`, including the final answer, through the existing effects volume and mute controls.
 `shared/mistake.js` owns the seeded puzzle rules; `src/catch-spot-view.js` and `src/catch-spot.css` draw the picture cards.
 The new games use the same instructions, Ready gates, Arcade selection, cumulative podium, reconnect handling, and result acknowledgments as the rest of the catalog.
-Deploy the frontend and room service together; protocol 7 advertises `firework-sets` and `game-announcements` alongside the existing required capabilities.
+Deploy the frontend and room service together; protocol 8 advertises `firework-sets`, `game-announcements`, and `game-picker-screen` alongside the existing required capabilities.
 Original artwork and full generation prompts for both games are preserved in [artwork notes](public/assets/catch-spot-artwork.md).
 
 ## Play Dice, Dice, More Dice
@@ -523,7 +525,7 @@ Physical phone/tablet playtesting remains necessary.
 
 `npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
 `npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
-The health endpoint reports protocol version 7 for Ready-gated sets, multi-rocket Fireworks snapshots, and Game Select announcements.
+The health endpoint reports protocol version 8 for the shared Game Select picker, seven Fireworks sets, and existing Ready and announcement gates.
 Deploy the frontend and backend together when changing the multiplayer protocol.
 
 The Pages workflow tests, builds, and deploys `main`.

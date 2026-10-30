@@ -86,3 +86,29 @@ test('everyone may leave during countdown and the empty room is removed', () => 
   service.handle(clients[1], { type: 'leave' });
   assert.equal(service.rooms.has(room.code), false);
 });
+
+
+test('Game Select picker is shared, host controlled, cancellable, and starts the confirmed game', () => {
+  const service = new RoomService({ now: () => 1_000_000, send() {} });
+  const host = {}, guest = {};
+  service.handle(host, { type: 'create', name: 'Host', mode: 'game-select' });
+  const room = service.rooms.get(host.room);
+  service.handle(guest, { type: 'join', code: room.code, name: 'Guest' });
+  service.handle(guest, { type: 'open-game-picker' });
+  assert.equal(service.snapshot(room).gameChoosing, false);
+  service.handle(host, { type: 'open-game-picker' });
+  assert.equal(service.snapshot(room).gameChoosing, true);
+  assert.equal(room.set, null);
+  service.handle(guest, { type: 'back-to-modes' });
+  assert.equal(room.gameChoosing, true);
+  service.handle(host, { type: 'back-to-modes' });
+  assert.equal(room.gameChoosing, false);
+  service.handle(host, { type: 'open-game-picker' });
+  service.handle(host, { type: 'configure', mode: 'game-select', game: 'perm-mania' });
+  assert.equal(room.gameChoosing, true);
+  service.handle(host, { type: 'start' });
+  assert.equal(room.gameChoosing, false);
+  assert.deepEqual(room.set.plan, ['perm-mania', 'perm-mania', 'perm-mania']);
+  service.handle(host, { type: 'open-game-picker' });
+  assert.equal(room.gameChoosing, false);
+});
