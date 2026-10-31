@@ -40,7 +40,10 @@ export class SlotStage {
   }
 
   render(round, mask, elapsed, run, active, present) {
-    if (this.seed !== round.seed) { this.seed = round.seed; this.layout = slotLayout(round.seed); }
+    if (this.roundId !== round.id || this.seed !== round.seed) {
+      this.roundId = round.id; this.seed = round.seed; this.layout = slotLayout(round.seed);
+      this.reels.forEach(reel => { reel.key = ''; reel.window.dataset.frame = ''; });
+    }
     this.reels.forEach((reel, index) => {
       const { window, strip, faces, badge } = reel;
       const locked = active && Boolean(mask & (1 << index));

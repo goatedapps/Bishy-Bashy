@@ -47,11 +47,11 @@ test('Facing turns are slower at every difficulty and Arcade coin rain keeps its
   const room=service.rooms.get(host.room);
   service.handle(host,{type:'start'});
   room.set.plan[0]='its-raining-coins';service.prepareRound(room);
-  assert.equal(room.round.fallMs,800);
+  assert.equal(room.round.fallMs,750);
   time=room.set.selectionEndAt;service.tick();
   service.handle(host,{type:'sync',rtt:10,uncertainty:5,count:5});service.handle(host,{type:'ready',ready:true});
-  assert.equal(room.round.phase,'countdown');assert.equal(room.round.fallMs,800);
-  assert.equal(roundSettings('its-raining-coins',123).fallMs,1100);
+  assert.equal(room.round.phase,'countdown');assert.equal(room.round.fallMs,750);
+  assert.equal(roundSettings('its-raining-coins',123).fallMs,900);
 });
 
 test('Exit is final-results-only, accepts a guest, and returns every player to modes once', () => {

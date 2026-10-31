@@ -1,3 +1,4 @@
+import { characterPortrait } from './characters.js';
 import { RemoteRuns } from '../shared/visual-state.js';
 import { COIN_GAME } from '../shared/coins.js';
 import { DODGE_GAME } from '../shared/dodge.js';
@@ -319,7 +320,7 @@ export class GameView {
       const seat = node('div', 'podium-seat');
       const step = node('div', 'podium-step');
       step.append(node('strong', '', String(rank(player))), document.createTextNode(perm ? `${player.result.cleared} / 8` : resultLabel(player.result, false, game === LETTERS_GAME, GAMES[game]?.scoring === 'points' && game !== LETTERS_GAME)));
-      seat.append(game === MEALS_GAME ? mealPortrait(1) : game === DYNAMITE_GAME ? dynamitePortrait() : game === DICE_GAME ? diceMascot() : game === FACING_GAME ? duckPortrait() : game === BURGER_GAME ? chefPortrait() : game === MISTAKE_GAME ? picturePortrait(0) : game === JUMP_GAME ? dinoPortrait() : game === MONKEY_GAME ? monkeyPortrait() : game === FIREWORK_GAME ? fireworkBadge() : game === SLOT_GAME ? facePortrait(slotLayout(room.round.seed).target) : perm ? dancer(room.players.indexOf(player), player.result.cleared) : block(index % 3), node('div', 'podium-name', player.name), step);
+      seat.append(characterPortrait(player.characterId), node('div', 'podium-name', player.name), step);
       return seat;
     }));
     $('result-rows').replaceChildren(...sorted.map(player => {

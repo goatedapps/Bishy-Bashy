@@ -5,7 +5,7 @@ The Vite frontend deploys independently to GitHub Pages; `server/` is a separate
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 15 slows Dice to a 30.7-second schedule; deploy frontend and backend together.
+Protocol version 16 adds shared character choices and overlapping Coins drops; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -74,7 +74,7 @@ Keep the arena overlay above all character and effect layers, and show an explic
 `src/viewport.js` and `src/viewport.css` fit the active arena and shared controls inside the visual viewport, with controls outside the arena and instructions keeping Ready visible.
 Final standings hide setup and restart controls and show Exit to every connected player.
 `exit-set` accepts only the current completed set ID and returns the whole room to mode selection; active-set Back to modes remains host-only.
-Facing turns take 1000–700 ms across five available difficulties; Arcade coin falls take 800 ms, while Game Select starts at 1100 ms.
+Facing turns take 1000–700 ms across five available difficulties; Arcade coin pairs launch every 400 ms and fall for 750 ms; Game Select starts with 500 ms launches and 900 ms falls, accelerating independently each round.
 Shared styles live in `src/style.css`; the pink disco stage lives in `src/games.css`.
 The landing page and set standings use `src/sets.css` and `src/set-view.js`.
 The illustrated landing screen only creates or joins rooms; `src/home.css` scopes its landscape, central title, and form to outside rooms, and its help button introduces multiplayer room-code setup.
@@ -169,7 +169,7 @@ Keep the static frontend independently deployable with a configurable secure Web
 Keep the canonical gameplay and hosting notes in README.md current.
 Use one full sentence per line when substantially editing Markdown, and comment only on non-obvious constraints.
 
-Perm demonstrations alternate `piano-do.mp3` and `piano-re.mp3` by seeded note index; response taps use the nearest corresponding rhythm note with the frozen timing offset, and never layer Punch or the old Perm tap cues.
+Perm demonstrations and all response taps use the supplied `perm-beat.mp3`; preserve the shared rhythm clock, phase and timing offset, and never layer Punch or the removed piano files.
 Dice result circles remain visible in each player’s score box for 650 ms alongside one Ding per correct set, even when the next fast throw has begun.
 
 Arcade uses 15 Me Find Mistake boards with a 45-second deadline, eight Facing Which Way sets with a derived 58.4-second schedule, and ten Fireworks sets with a 60-second deadline.
@@ -181,3 +181,8 @@ Keep up to nine bounded per-slot timestamps in visual snapshots, map them betwee
 
 Totem Shrinker, Dodge or Die, and Mimicking Monkeys hide their bottom counters, progress bars, and decorative bases during gameplay so the active scene fills the available player-panel height.
 Shared Facing/Dice layouts explicitly place their heading, demonstration, options, and scores in grid rows; the scores stay in the final bottom row even while options are hidden.
+
+`shared/characters.js` defines sixteen generated player characters; fresh create/join clients choose one before mode selection, and the server validates and preserves `characterId` across reconnects and set standings.
+`src/characters.js` and `src/characters.css` own the character grid; use the chosen portraits in lobby seats and podiums, keeping minigame protagonist art unchanged.
+Coins requires 36 catches and resolves the earliest outstanding pair on a fixed spawn schedule with no recovery pause, renders up to three overlapping pairs, and derives launch times from round start plus index so remote snapshots cannot resize or restart the rain.
+Coins and Slots fill fixed-size player-panel containers; never let reel contents, completion state or cached previous-round sizes determine panel height, and reset slot portrait caches on round changes.

@@ -1,7 +1,7 @@
 import { seededIndex } from './seeded-index.js';
 
 export const COIN_GAME = 'its-raining-coins';
-export const COIN_GOAL = 18;
+export const COIN_GOAL = 36;
 export const COIN_DURATION_MS = 40_000;
 
 export function coinSequence(seed, count = 128) {
@@ -16,12 +16,22 @@ export function coinSequence(seed, count = 128) {
 
 export class CoinRun {
   constructor(round, localStart) {
-    Object.assign(this, { id: round.id, start: localStart, end: localStart + round.duration, goal: round.goal, fallMs: round.fallMs,
-      index: 0, position: 1, launchedAt: localStart, blockedUntil: 0, cleared: 0, mistakes: 0, feedback: null, events: [], done: false, elapsed: null });
+    Object.assign(this, { id: round.id, start: localStart, end: localStart + round.duration, goal: round.goal, fallMs: round.fallMs, spawnMs: round.spawnMs || Math.round(round.fallMs * .55),
+      index: 0, position: 1, blockedUntil: 0, cleared: 0, mistakes: 0, feedback: null, events: [], done: false, elapsed: null });
     this.sequence = coinSequence(round.seed);
   }
 
   get wave() { return this.sequence[this.index % this.sequence.length]; }
+  get launchedAt() { return this.start + this.index * this.spawnMs; }
+  activeWaves(time) {
+    if (this.done || !Number.isFinite(time) || time < this.start || time >= this.end) return [];
+    const last = Math.floor((time - this.start) / this.spawnMs);
+    const first = Math.max(this.index, Math.floor((time - this.start - this.fallMs) / this.spawnMs) + 1);
+    return Array.from({ length: Math.max(0, Math.min(3, last - first + 1)) }, (_, offset) => {
+      const index = first + offset;
+      return { ...this.sequence[index % this.sequence.length], index, launchedAt: this.start + index * this.spawnMs };
+    });
+  }
   get landAt() { return this.launchedAt + this.fallMs; }
 
   advance(time, inclusive = true) {
@@ -34,8 +44,7 @@ export class CoinRun {
       if (caught) this.cleared++;
       else this.mistakes++;
       this.index++;
-      this.launchedAt = at + (caught ? 100 : 400);
-      this.blockedUntil = caught ? 0 : this.launchedAt;
+      this.blockedUntil = 0;
       if (this.cleared === this.goal) {
         this.done = true;
         this.elapsed = at - this.start;

@@ -33,18 +33,19 @@ test('coin rain is seeded, separates gold from fakes, and never repeats the gold
   });
 });
 
-test('coins accept an input exactly at landing, retain catches after a fake, and reject recovery taps', () => {
+test('coins accept an input exactly at landing, retain catches after a fake, and allow immediate lane changes', () => {
   const run = new CoinRun(settings(COIN_GAME), 1000);
   const at = run.landAt;
   run.tap(run.wave.column, at);
   assert.equal(run.cleared, 1);
   assert.equal(run.feedback.at, at);
-  run.tap(run.wave.decoy, run.launchedAt + 10);
+  run.tap(run.wave.decoy, at + 10);
   run.advance(run.landAt);
   assert.equal(run.feedback.kind, 'decoy');
   assert.equal(run.cleared, 1);
   assert.equal(run.mistakes, 1);
-  assert.equal(run.tap(run.wave.column, run.blockedUntil - 1).type, 'ignored');
+  run.tap(run.wave.column, run.landAt - 1);
+  assert.equal(run.position, run.wave.column);
   assert.equal(run.events.filter(event => event.type === 'hit').length, 1);
 });
 
@@ -190,4 +191,18 @@ test('both automatic games retain the scheduled final finish when rendering resu
     assert.equal(run.done, true);
     assert.equal(run.events.filter(event => event.type === 'hit').length, 2);
   }
+});
+
+test('coin drops overlap on a fixed schedule in Arcade and every Game Select difficulty, including after misses',()=>{
+ for(const mode of ['arcade','game-select'])for(let difficulty=1;difficulty<=5;difficulty++){
+  const round={id:'overlap',game:COIN_GAME,...roundSettings(COIN_GAME,123,difficulty,mode)},run=new CoinRun(round,1000);
+  assert.ok(round.spawnMs<round.fallMs);
+  const active=run.activeWaves(run.start+round.spawnMs+1);
+  assert.equal(active.length,2);assert.equal(active[1].launchedAt-active[0].launchedAt,round.spawnMs);
+  run.position=run.wave.decoy;const firstLand=run.landAt;run.advance(firstLand);
+  assert.equal(run.mistakes,1);assert.equal(run.launchedAt,run.start+round.spawnMs);
+  assert.ok(run.launchedAt<firstLand);assert.equal(run.blockedUntil,0);
+  run.tap(run.wave.column,firstLand+1);assert.equal(run.position,run.wave.column);
+  assert.ok(run.activeWaves(firstLand+1).length>=1);
+ }
 });

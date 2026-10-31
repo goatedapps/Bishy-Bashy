@@ -1,3 +1,4 @@
+import { characterPortrait, setCharacter } from './characters.js';
 import { gsap } from 'gsap';
 import { isRoundActive } from '../shared/games.js';
 import { gameArt } from './game-art.js';
@@ -56,10 +57,10 @@ export class LobbyMotion {
       const shadow = node('span', 'lobby-avatar-shadow');
       const burst = node('span', 'lobby-join-burst');
       burst.append(...Array.from({ length: 6 }, () => node('i', '', '★')));
-      avatar.append(gameArt(MASCOTS[index]));
+      const portrait = characterPortrait(index); avatar.append(portrait);
       stage.append(ring, shadow, avatar, burst);
       lane.insertBefore(stage, lane.querySelector('.tower-zone'));
-      return { lane, stage, avatar, shadow, burst };
+      return { lane, stage, avatar, portrait, shadow, burst };
     });
     this.syncPlayback = () => {
       const quiet = document.hidden || Boolean(document.querySelector('dialog[open]'));
@@ -89,6 +90,8 @@ export class LobbyMotion {
     this.players = room.players;
     this.seats.forEach((seat, index) => {
       const player = this.players[index];
+      seat.avatar.hidden = Boolean(player && !Number.isInteger(player.characterId));
+      setCharacter(seat.portrait, player?.characterId ?? index);
       seat.stage.classList.toggle('is-occupied', Boolean(player));
       seat.stage.classList.toggle('is-reconnecting', Boolean(player && !player.connected));
       if (player?.id && player.id !== this.seatIds[index]) this.arrivals[index]?.restart();
@@ -136,7 +139,7 @@ export class LobbyMotion {
         gsap.timeline({ paused: true }).to(`[data-mode="${mode}"] .lobby-mode-visual`, { scale: 1.12, duration: 0.15, repeat: 1, yoyo: true, ease: 'power2.out' }),
       ]));
       this.seats.forEach((seat, index) => {
-        const art = seat.avatar.querySelector('.game-art');
+        const art = seat.portrait;
         const height = compact ? 22 : 36;
         const dance = gsap.timeline({ repeat: -1, repeatDelay: 0.65 + index * 0.15, delay: 0.3 + index * 0.3 })
           .to(art, { scaleX: 1.2, scaleY: 0.76, rotation: 5, duration: 0.18 })

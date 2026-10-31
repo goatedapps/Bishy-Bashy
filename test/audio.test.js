@@ -133,7 +133,7 @@ test('Burger, picture, dice, and direction successes reuse one Ding MP3, while T
 
 test('Perm and Monkey stage successes preload Ding, preserve input cues, and honor finish and mute lifecycle', async () => {
   const { audio, context, requests } = setup();
-  for (const [game, inputCue] of [['perm-mania', 'pianoDo'], ['mimicking-monkeys', 'green']]) {
+  for (const [game, inputCue] of [['perm-mania', 'permBeat'], ['mimicking-monkeys', 'green']]) {
     audio.selectGame(game);
     await audio.unlock();
     assert.ok(audio.buffers.has('ding'));
@@ -893,10 +893,10 @@ test('Perm Mania loads its own bank and schedules each demonstration on the audi
   await audio.unlock();
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), true);
-  assert.equal(requests.length, audioAssetIds('perm-mania').length + 11 + Object.keys(ARCADE_AUDIO_FILES).length);
+  assert.equal(requests.length, audioAssetIds('perm-mania').length + 10 + Object.keys(ARCADE_AUDIO_FILES).length);
   const cues = demoCues(123);
   audio.scheduleRound('perm', 5000, 35_000, true, false, { game: 'perm-mania', cues });
-  const guide = [...audio.voices].filter(voice => ['pianoDo','pianoRe'].includes(voice.id));
+  const guide = [...audio.voices].filter(voice => voice.id === 'permBeat');
   assert.equal(guide.length, cues.length);
   assert.deepEqual(guide.map(voice => voice.source.started.at), cues.map(at => context.currentTime + 5 + at / 1000));
   assert.equal([...audio.voices].filter(voice => voice.id === 'permMusic').length, 1);
@@ -904,7 +904,7 @@ test('Perm Mania loads its own bank and schedules each demonstration on the audi
   audio.synchronize();
   assert.equal(audio.voices.size, count);
   audio.play('hit', { game: 'perm-mania' });
-  assert.ok([...audio.voices].some(voice => voice.id === 'pianoDo'));
+  assert.ok([...audio.voices].some(voice => voice.id === 'permBeat'));
   audio.stopRound();
   assert.equal([...audio.voices].filter(voice => voice.group === 'round').length, 0);
 });
@@ -922,7 +922,7 @@ test('faster Perm rounds speed up backing tracks and preserve the correct phase 
   const resumed = [...audio.voices].find(voice => voice.id === 'permMusic');
   assert.equal(resumed.source.playbackRate.value, 1.25);
   assert.equal(resumed.source.started.offset, 0);
-  assert.ok([...audio.voices].filter(voice => ['pianoDo','pianoRe'].includes(voice.id)).every(voice => voice.source.started.at >= context.currentTime));
+  assert.ok([...audio.voices].filter(voice => voice.id === 'permBeat').every(voice => voice.source.started.at >= context.currentTime));
 });
 
 test('Facial Slot Machine uses its own bank, bounded match feedback, and a finish tail across results', async () => {
@@ -1003,23 +1003,23 @@ test('meal buttons use cached Plop and respect mute', async()=>{
  audio.setEnabled(false);audio.pressButton('meals');assert.equal(audio.voices.size,0);
 });
 
-test('Perm piano demonstrations and response taps match note-for-note at every tempo without Punch',async()=>{
+test('Perm beat demonstrations and response taps use the supplied beat at every tempo without Punch',async()=>{
  const {audio,setTime,requests}=setup();audio.selectGame('perm-mania');await audio.unlock();
  for(const bpm of [128,144]){
-  const round={id:`piano-${bpm}`,game:'perm-mania',...roundSettings('perm-mania',123,bpm===128?1:3)};
+  const round={id:`beat-${bpm}`,game:'perm-mania',...roundSettings('perm-mania',123,bpm===128?1:3)};
   const run=createRun(round,5000,50),cues=demoCues(round.seed,round.bpm);
   setTime(4000);audio.scheduleRound(round.id,run.start,run.end,true,false,{game:round.game,bpm:round.bpm,cues});
-  const guide=[...audio.voices].filter(v=>v.group==='round'&&['pianoDo','pianoRe'].includes(v.id));
+  const guide=[...audio.voices].filter(v=>v.group==='round'&&v.id === 'permBeat');
   assert.equal(guide.length,run.notes.length);
   for(let index=0;index<run.notes.length;index++){
    const at=run.start+run.notes[index].at+run.offset;setTime(at);
    audio.permTap(run,at);const voice=[...audio.voices].at(-1);
-   assert.equal(voice.id,guide[index].id);assert.equal(voice.id,index%2?'pianoRe':'pianoDo');
+   assert.equal(voice.id,guide[index].id);assert.equal(voice.id,'permBeat');
   }
   audio.stopRound();assert.ok(![...audio.voices].some(v=>v.group==='round'));
  }
- assert.equal(requests.filter(url=>url.includes('/piano-do.mp3?')).length,1);
- assert.equal(requests.filter(url=>url.includes('/piano-re.mp3?')).length,1);
+ assert.equal(requests.filter(url=>url.includes('/perm-beat.mp3?')).length,1);
+ assert.equal(requests.filter(url=>url.includes('/perm-beat.mp3?')).length,1);
  assert.ok(![...audio.voices].some(v=>v.id==='gameplayPress'||v.id==='permHit'||v.id==='permDemo'));
  const count=audio.context.sources.length;audio.setPreferences({effectsVolume:0});
  audio.permTap(createRun({id:'muted',game:'perm-mania',...roundSettings('perm-mania',123)},0),2000);

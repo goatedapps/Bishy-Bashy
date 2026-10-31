@@ -41,7 +41,7 @@ export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') 
   if (game === MEALS_GAME) return { seed, difficulty: level, goal: MEALS_GOAL, duration: MEALS_DURATION_MS };
   if (game === DYNAMITE_GAME) return { seed, difficulty: level, goal: DYNAMITE_GOAL, duration: DYNAMITE_DURATION_MS };
   if (game === LETTERS_GAME) return { seed, difficulty: level, goal: 0, duration: LETTERS_DURATION_MS };
-  if (game === COIN_GAME) return { seed, difficulty: level, goal: COIN_GOAL, duration: COIN_DURATION_MS, fallMs: mode === 'arcade' ? 800 : 1100 - (level - 1) * 90 };
+  if (game === COIN_GAME) return { seed, difficulty: level, goal: COIN_GOAL, duration: COIN_DURATION_MS, fallMs: mode === 'arcade' ? 750 : 900 - (level - 1) * 100, spawnMs: mode === 'arcade' ? 400 : 500 - (level - 1) * 70 };
   if (game === DODGE_GAME) return { seed, difficulty: level, goal: DODGE_GOAL + level - 1, duration: DODGE_DURATION_MS, approachMs: 1350 - (level - 1) * 100 };
   if (game === DICE_GAME) return { seed, difficulty: level, goal: DICE_GOAL, duration: DICE_DURATION_MS };
   if (game === FACING_GAME) return { seed, difficulty: level, goal: mode === 'arcade' ? 8 : FACING_GOAL, duration: facingDuration(1000 - (level - 1) * 75, level + 1, mode === 'arcade' ? 8 : FACING_GOAL), turnCount: level + 1, stepMs: 1000 - (level - 1) * 75 };

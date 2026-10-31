@@ -8,7 +8,7 @@ from PIL import Image
 root = Path(__file__).resolve().parents[1]
 destination = root / 'public/assets/optimized'
 destination.mkdir(exist_ok=True)
-sizes = {'dynamite-meals-sprites': 1024, 'totem-blocks': 768, 'perm-disco-sprites': 1152, 'facial-slot-faces': 1152,
+sizes = {**{f'party-character-{i:02d}': 256 for i in range(16)}, 'dynamite-meals-sprites': 1024, 'totem-blocks': 768, 'perm-disco-sprites': 1152, 'facial-slot-faces': 1152,
          'fireworks-festival': 1280, 'mimicking-monkey': 512, 'jump-dino': 512,
          'jump-meat': 256, 'burger-chef-chibi': 512, 'burger-ingredients': 768, 'odd-pictures': 1024,
          'dice-jester': 512, 'facing-duck': 512, 'facing-duck-back': 512, 'coin-raccoon': 512, 'dodge-fox': 512,

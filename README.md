@@ -232,7 +232,7 @@ The original generated festival background remains in `public/assets/fireworks-f
 Its prompt is preserved in [Fireworks artwork notes](public/assets/fireworks-artwork.md).
 `src/firework-view.js` and `src/fireworks.css` draw the colored rocket arcs and burst particles.
 Each rocket reuses `Fireworks.mp3` at its scheduled local launch, skipping stale launches after interruptions.
-Frontend and room service must deploy together with protocol 15.
+Frontend and room service must deploy together with protocol 16.
 
 ## Play Mimicking Monkeys
 
@@ -264,7 +264,7 @@ Audio scheduling checks do not establish physical speaker latency or subjective 
 
 The original generated character lives in `public/assets/mimicking-monkey.png`, with its prompt preserved in [artwork notes](public/assets/monkeys-artwork.md).
 The leafy stage, shape cues, and response indicators live in `src/monkey-view.js` and `src/monkeys.css`.
-Deploy frontend and room service together to make the new catalog entry available; protocol 15 carries current scene snapshots and the announcement gate.
+Deploy frontend and room service together to make the new catalog entry available; protocol 16 carries current scene snapshots and the announcement gate.
 
 ## Play Jump for the Meat
 
@@ -371,15 +371,16 @@ The original matching reverse-side duck master and optimized delivery file are d
 Both shared choice games accept bounded clock-stamped answers with an 80 ms transport grace after each deadline and acknowledge retries privately.
 The server locks the first valid answer, keeps pending choices out of broadcasts, settles each set once, and owns final scores.
 Missing an answer never pauses the common schedule, and disconnecting does not discard an accepted answer.
-Deploy frontend and backend together with **protocol 15**, including `shared-choices` and `mistake-points` capabilities.
+Deploy frontend and backend together with **protocol 16**, including `shared-choices` and `mistake-points` capabilities.
 
 ## Play It's Raining Coins
 
 Move the raccoon with **red = left, green = middle, blue = right** to catch gold star coins while avoiding the cracked purple fakes.
 The three marked chutes match the shared control bar, whose captions show Left / Middle / Right during this game.
-Collect 18 coins before the 40-second deadline; fastest completion wins.
-A missed gold coin or a caught fake adds a mistake and a 400 ms recovery, keeping all collected coins.
-Game Select shortens each fall from 1100 to 920 ms across three rounds, with a 100 ms handoff after a successful catch.
+Collect 36 coins before the 40-second deadline; fastest completion wins.
+A missed gold coin or a caught fake adds a mistake while keeping collected coins; movement remains responsive and the next drop keeps its fixed launch time.
+Game Select falls last 900, 800, and 700 ms, with new pairs launching every 500, 430, and 360 ms across its three rounds.
+Arcade pairs fall for 750 ms and launch every 400 ms, so several pairs are visible at once.
 `shared/coins.js` owns seeded chute pairs and resolves landings at their scheduled local timestamp, accepting a lane change exactly at landing.
 
 ## Play Dodge or Die!!
@@ -435,7 +436,7 @@ Disconnection preserves accepted points; hiding or reloading still forfeits unde
 `src/letters-view.js` and `src/letters.css` render the shared arena, numbered player pointers, entered letters, scores, and result symbols.
 [Type in Letters artwork notes](public/assets/letters-artwork.md) retain the built-in image-generation prompt and optimized background provenance.
 The selection announcement plays the supplied `type-in-letters-voice.mp3` with the existing applause, using the shared preload and announcement lifecycle.
-Deploy frontend and room service together with **protocol 15** and the `shared-letters` capability.
+Deploy frontend and room service together with **protocol 16** and the `shared-letters` capability.
 The initial repeat interval, collection window, and feedback duration are provisional tuning values checked by deterministic tests and browser play, pending device playtests.
 
 ## Backgrounds, set feedback, and Game Select announcements
@@ -550,7 +551,7 @@ Physical phone/tablet playtesting remains necessary.
 
 `npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
 `npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
-The health endpoint reports protocol version 15 for the shared Type in Letters race, Game Select picker, and existing gameplay and readiness gates.
+The health endpoint reports protocol version 16 for the shared Type in Letters race, Game Select picker, and existing gameplay and readiness gates.
 Deploy the frontend and backend together when changing the multiplayer protocol.
 
 The Pages workflow tests, builds, and deploys `main`.
@@ -599,7 +600,7 @@ Refresh every device after deploying the paired frontend and server update; the 
 Active gameplay uses the visual viewport height and a flex layout, with the shared control bar outside the arena so tablet browser chrome cannot push it below the screen.
 The Ready action remains visible while short screens can scroll the instructions card internally.
 Facing turns now take 1000/925/850/775/700 ms across available difficulty levels, and Game Select plays only levels 1–3.
-Arcade Coins uses 800 ms falls instead of 1100 ms; its instructions and actual countdown preserve that setting.
+Arcade Coins uses 750 ms falls with new pairs every 400 ms; every Game Select round also has overlapping drops.
 
 Menu and instructions music share one gesture-authorized media element with separate remembered positions, following [WebKit's media-element reuse guidance](https://webkit.org/blog/7734/auto-play-policy-changes-for-macos/).
 The first playback request happens before awaiting audio-context resume or file decoding, so it stays attached to the enabling gesture.
@@ -630,7 +631,7 @@ The final clear time includes the last item's landing and appears above CLEAR at
 The fastest completion wins, with a 45-second deadline.
 [Artwork notes](public/assets/meals-artwork.md) retain the original restaurant background prompt and master.
 Both new games are available in Game Select and Arcade.
-Deploy frontend and server together with protocol 15 and the `dynamite-meals` capability.
+Deploy frontend and server together with protocol 16 and the `dynamite-meals` capability.
 These initial input and animation timings remain provisional pending physical phone playtests.
 
 Both games use original generated food and dynamite sprites in gameplay, game posters, and the illustrated rules.
@@ -640,8 +641,8 @@ Dynamite Spark has no section counter; a locally clocked GSAP tween scrolls the 
 The final explosion uses a protected finish sound, reduces backing music while it plays, and finishes before podium audio begins.
 
 Dice keeps each result circle or cross visible in the player's bottom score box for 650 ms, including across fast throw transitions, with Ding on each correct answer.
-Perm Mania alternates the supplied `piano-do.mp3` and `piano-re.mp3` for demonstration notes and plays the matching note on response taps instead of Punch or the previous Perm input sounds.
-Piano note choice follows the same seeded rhythm sequence and timing adjustment at every tempo, while music, successful phrase Ding, and settled phrase results retain their existing behavior.
+Perm Mania uses the supplied `perm-beat.mp3` for demonstration notes and response taps instead of the piano, Punch or previous Perm input sounds.
+The beat follows the same seeded rhythm sequence and timing adjustment at every tempo, while music, successful phrase Ding, and settled phrase results retain their existing behavior.
 Arcade includes every registered game immediately; games without a supplied announcement voice still play the selection cue and applause.
 
 ## Longer Arcade rounds
@@ -650,7 +651,7 @@ Arcade plays 15 Me Find Mistake boards with a 45-second deadline, eight Facing W
 Fireworks keeps its opening seven sets and adds three more five-rocket sets at the existing final-set speed.
 Game Select retains its existing counts and difficulty progression.
 Facing keeps the full three-second answer window in every added set, with all clients following the same extended schedule.
-Deploy frontend and server together with protocol 15 so every device follows the scheduled set count.
+Deploy frontend and server together with protocol 16 so every device follows the scheduled set count.
 These longer Arcade counts are initial tuning values pending play feedback.
 
 Meal input immediately reserves an available slot, including when several items are already falling in that column.
@@ -660,3 +661,14 @@ Remote snapshots carry nine bounded per-slot launch times so every device can sh
 Totem Shrinker, Dodge or Die, and Mimicking Monkeys use the freed space from bottom counters, progress bars, and decorative bases for taller play areas.
 Facing Which Way keeps player scores in a fixed bottom row while the card demonstration and answer options change above them.
 Dice retains 21 throws and eases its final speed to an 800 ms answer window, with the complete timeline extended to 30.7 seconds.
+
+## Player characters and stable round layouts
+
+After creating or joining a room, choose one of sixteen original cute characters before continuing to mode selection.
+The selected character appears in lobby seats and podiums and stays attached to that player through reconnects and across the set.
+The selection screen uses sixteen individually optimized transparent sprites extracted from the retained generated master.
+[Character artwork notes](public/assets/party-characters.md) preserve the prompt and delivery details.
+Coins and Facial Slot Machine use bounded player panels whose dimensions remain independent of the current round's contents; Slots also clears its cached portrait frames when a new round begins.
+Deploy frontend and backend together with protocol 16, including `character-picker` and `overlapping-coins` capabilities.
+
+The catch target is 36 coins so the overlapping launch schedule increases pressure without halving the race length.

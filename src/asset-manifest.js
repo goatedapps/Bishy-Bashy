@@ -156,6 +156,86 @@ export const ASSETS = [
     "hash": "2e73a04cfb68f79d"
   },
   {
+    "path": "assets/optimized/party-character-00-b2ca3f0d69d7.webp",
+    "bytes": 18198,
+    "hash": "b2ca3f0d69d70171"
+  },
+  {
+    "path": "assets/optimized/party-character-01-73bc6b430eb1.webp",
+    "bytes": 19492,
+    "hash": "73bc6b430eb1f2fb"
+  },
+  {
+    "path": "assets/optimized/party-character-02-a76fefca948f.webp",
+    "bytes": 19306,
+    "hash": "a76fefca948f99e5"
+  },
+  {
+    "path": "assets/optimized/party-character-03-3bd1b6d59adb.webp",
+    "bytes": 16300,
+    "hash": "3bd1b6d59adb3da1"
+  },
+  {
+    "path": "assets/optimized/party-character-04-1a6e3d8f7205.webp",
+    "bytes": 18132,
+    "hash": "1a6e3d8f7205c75e"
+  },
+  {
+    "path": "assets/optimized/party-character-05-d1f3350e58cb.webp",
+    "bytes": 17140,
+    "hash": "d1f3350e58cbe5c5"
+  },
+  {
+    "path": "assets/optimized/party-character-06-b5638282f542.webp",
+    "bytes": 16892,
+    "hash": "b5638282f542e3da"
+  },
+  {
+    "path": "assets/optimized/party-character-07-fb9265594948.webp",
+    "bytes": 16976,
+    "hash": "fb9265594948a00a"
+  },
+  {
+    "path": "assets/optimized/party-character-08-3b36637224fa.webp",
+    "bytes": 17908,
+    "hash": "3b36637224faa7c7"
+  },
+  {
+    "path": "assets/optimized/party-character-09-41f4b1922fa5.webp",
+    "bytes": 16064,
+    "hash": "41f4b1922fa5cd92"
+  },
+  {
+    "path": "assets/optimized/party-character-10-e4611561e55d.webp",
+    "bytes": 16406,
+    "hash": "e4611561e55d00ad"
+  },
+  {
+    "path": "assets/optimized/party-character-11-5fa1b85b3014.webp",
+    "bytes": 19114,
+    "hash": "5fa1b85b3014bc88"
+  },
+  {
+    "path": "assets/optimized/party-character-12-e1cc0e9b1308.webp",
+    "bytes": 14810,
+    "hash": "e1cc0e9b1308b499"
+  },
+  {
+    "path": "assets/optimized/party-character-13-6ec1ce4f6b42.webp",
+    "bytes": 15610,
+    "hash": "6ec1ce4f6b4234c1"
+  },
+  {
+    "path": "assets/optimized/party-character-14-34f58e5a5f80.webp",
+    "bytes": 18392,
+    "hash": "34f58e5a5f80c368"
+  },
+  {
+    "path": "assets/optimized/party-character-15-7c716ea11d45.webp",
+    "bytes": 14892,
+    "hash": "7c716ea11d452501"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",
@@ -388,14 +468,9 @@ export const ASSETS = [
     "hash": "1c62e4a15bd52171"
   },
   {
-    "path": "audio/piano-do.mp3",
-    "bytes": 17924,
-    "hash": "92c1e31f036cb963"
-  },
-  {
-    "path": "audio/piano-re.mp3",
-    "bytes": 19076,
-    "hash": "421644811747a362"
+    "path": "audio/perm-beat.mp3",
+    "bytes": 12761,
+    "hash": "6792a5ec788e4179"
   },
   {
     "path": "audio/plop.mp3",

@@ -6,7 +6,7 @@ const SCHEMAS = {
   'totem-shrinker': { blockedUntil: 'time' },
   'perm-mania': { blockedUntil: 'time' },
   'burger-girl': { index: 'index', position: 'column', launchedAt: 'time', blockedUntil: 'time' },
-  'its-raining-coins': { index: 'index', position: 'column', launchedAt: 'time', blockedUntil: 'time' },
+  'its-raining-coins': { index: 'index', position: 'column', blockedUntil: 'time' },
   'dodge-or-die': { index: 'index', position: 'column', launchedAt: 'time', blockedUntil: 'time', jumpAt: 'time' },
   'fireworks-craze': { index: 'index', launchedAt: 'time', blockedUntil: 'time', burstMask: 'rocketMask', burstTimes: 'rocketTimes' },
   'jump-for-the-meat': { launchedAt: 'time', blockedUntil: 'time', launchHeight: 'height', finishAt: 'nullableTime' },

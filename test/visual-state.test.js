@@ -43,7 +43,7 @@ test('coin, burger, and dodge remote scenes retain the true lane and event timin
 test('visual relays reject oversized indices, invalid lanes, future samples, non-finite times, and unsafe metadata', () => {
   const round = { id: 'coin', game: 'its-raining-coins', ...roundSettings('its-raining-coins', 123) };
   const run = createRun(round, 1000), valid = captureVisual(round.game, run, 1200);
-  for (const mutate of [state => state.fields.position = 3, state => state.fields.index = 2049, state => state.fields.launchedAt = Infinity, state => state.sample = 2000]) {
+  for (const mutate of [state => state.fields.position = 3, state => state.fields.index = 2049, state => state.fields.blockedUntil = Infinity, state => state.sample = 2000]) {
     const state = structuredClone(valid); mutate(state);
     assert.equal(sanitizeVisual(round, state, 200), null);
   }

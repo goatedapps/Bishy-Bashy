@@ -38,3 +38,15 @@ for (const [game, Stage] of [['its-raining-coins', CoinStage], ['dodge-or-die', 
     assert.ok(targets.every(target => target.hidden));
   }));
 }
+
+test('Coins renders each overlapping pair without exposing future launches',()=>withDocument(()=>{
+ const game='its-raining-coins',round={id:'overlap',game,...roundSettings(game,123)},run=createRun(round,1000),view=new CoinStage();
+ view.render(round,run,run.start+round.spawnMs-1,0,true,true,0);
+ assert.equal(view.drops.filter(pair=>!pair[0].hidden).length,1);
+ view.render(round,run,run.start+round.spawnMs+1,0,true,true,0);
+ assert.equal(view.drops.filter(pair=>!pair[0].hidden).length,2);
+ assert.ok(view.drops[2].every(drop=>drop.hidden));
+ run.position=run.wave.column;run.advance(run.landAt);
+ view.render(round,run,run.start+round.fallMs+1,0,true,true,run.cleared);
+ assert.ok(view.drops.filter(pair=>!pair[0].hidden).length>=1);
+}));

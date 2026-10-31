@@ -1,0 +1,31 @@
+#character-picker { width:100%; max-width:920px; margin:0 auto 32px; padding:20px; border:3px solid #3b214d; border-radius:28px; background:#fff9e6; box-shadow:0 8px #c3a5da; }
+#character-picker h2 { text-align:center; margin:0 0 18px; font:30px 'Lilita One',system-ui; }
+.character-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.character-card { display:flex; flex-direction:column; align-items:center; gap:5px; min-width:0; padding:8px; border:2px solid #d8c2e5; border-radius:20px; background:#fffdf6; color:#3b214d; cursor:pointer; }
+.character-card:hover,.character-card:focus-visible { outline:3px solid #3b214d; outline-offset:2px; background:#ffe986; }
+.character-card strong { font:900 12px/1.2 Nunito,system-ui; }
+.character-portrait { display:block; width:100px; aspect-ratio:1; flex-shrink:0; background-size:contain; background-position:center; background-repeat:no-repeat; }
+.character-card>.character-portrait { width:100%; max-width:155px; }
+.is-choosing-character #lobby-setup,.is-choosing-character #play-view,.is-choosing-character #ready-actions,.is-choosing-character #set-progress,.is-choosing-character #set-standings,.is-choosing-character #standings-panel,.is-choosing-character #results { display:none!important; }
+.is-choosing-character #lobby-status,.is-choosing-character .lobby-confetti { display:none; }
+.lobby-avatar>.character-portrait { width:116px; height:116px; }
+.set-podium-seat>.character-portrait,.podium-seat>.character-portrait { width:100px; margin:auto; }
+@media(max-width:620px) { #character-picker { padding:12px 8px; border-radius:20px; } .character-grid { gap:7px; } .character-card { padding:5px; border-radius:12px; } .character-card strong { font-size:10px; } .lobby-avatar>.character-portrait { width:65px; height:65px; } }
+
+
+.character-portrait[data-character='0'] { background-image:var(--image-party-character-00,url('/assets/optimized/party-character-00-b2ca3f0d69d7.webp')); }
+.character-portrait[data-character='1'] { background-image:var(--image-party-character-01,url('/assets/optimized/party-character-01-73bc6b430eb1.webp')); }
+.character-portrait[data-character='2'] { background-image:var(--image-party-character-02,url('/assets/optimized/party-character-02-a76fefca948f.webp')); }
+.character-portrait[data-character='3'] { background-image:var(--image-party-character-03,url('/assets/optimized/party-character-03-3bd1b6d59adb.webp')); }
+.character-portrait[data-character='4'] { background-image:var(--image-party-character-04,url('/assets/optimized/party-character-04-1a6e3d8f7205.webp')); }
+.character-portrait[data-character='5'] { background-image:var(--image-party-character-05,url('/assets/optimized/party-character-05-d1f3350e58cb.webp')); }
+.character-portrait[data-character='6'] { background-image:var(--image-party-character-06,url('/assets/optimized/party-character-06-b5638282f542.webp')); }
+.character-portrait[data-character='7'] { background-image:var(--image-party-character-07,url('/assets/optimized/party-character-07-fb9265594948.webp')); }
+.character-portrait[data-character='8'] { background-image:var(--image-party-character-08,url('/assets/optimized/party-character-08-3b36637224fa.webp')); }
+.character-portrait[data-character='9'] { background-image:var(--image-party-character-09,url('/assets/optimized/party-character-09-41f4b1922fa5.webp')); }
+.character-portrait[data-character='10'] { background-image:var(--image-party-character-10,url('/assets/optimized/party-character-10-e4611561e55d.webp')); }
+.character-portrait[data-character='11'] { background-image:var(--image-party-character-11,url('/assets/optimized/party-character-11-5fa1b85b3014.webp')); }
+.character-portrait[data-character='12'] { background-image:var(--image-party-character-12,url('/assets/optimized/party-character-12-e1cc0e9b1308.webp')); }
+.character-portrait[data-character='13'] { background-image:var(--image-party-character-13,url('/assets/optimized/party-character-13-6ec1ce4f6b42.webp')); }
+.character-portrait[data-character='14'] { background-image:var(--image-party-character-14,url('/assets/optimized/party-character-14-34f58e5a5f80.webp')); }
+.character-portrait[data-character='15'] { background-image:var(--image-party-character-15,url('/assets/optimized/party-character-15-7c716ea11d45.webp')); }

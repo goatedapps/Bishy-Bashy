@@ -1,3 +1,5 @@
+import './characters.css';
+import { CharacterPicker } from './characters.js';
 import { captureVisual } from '../shared/visual-state.js';
 import { installViewportLayout } from './viewport.js';
 import { COIN_GAME } from '../shared/coins.js';
@@ -65,6 +67,7 @@ const setView = new SetView({
   onInstructionStep: step => audio.pressButton(step === 0 ? 'instructions' : 'gameplay'),
   onGameChoose: game => { if (room) send({ type: 'configure', mode: room.mode, game }); },
 });
+const characterPicker = new CharacterPicker(characterId => send({ type: 'select-character', characterId }));
 const buttons = [...document.querySelectorAll('.hit-button')];
 installViewportLayout();
 
@@ -124,7 +127,7 @@ function connect() {
     notice('');
     const saved = readStored('bb-session');
     if (entryRequest) send(entryRequest);
-    else if (saved) send({ type: 'join', code: saved.code, name: saved.name, token: saved.token, assetGates: true, announceGates: true });
+    else if (saved) send({ type: 'join', code: saved.code, name: saved.name, token: saved.token, assetGates: true, announceGates: true, characterGate: true });
     for (let i = 0; i < 8; i++) setTimeout(() => { if (socket === connection && connection.readyState === WebSocket.OPEN) ping(); }, i * 200);
   });
   connection.addEventListener('message', event => {
@@ -143,7 +146,7 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 15 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals')) {
+      if (message.protocol !== 16 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals') || !message.capabilities?.includes('character-picker') || !message.capabilities?.includes('overlapping-coins')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -217,7 +220,7 @@ function enter(type) {
   serverUrl = $('server-url').value.trim() || defaultServer;
   if (!serverUrl) return notice('Enter the hosted multiplayer server address in Connection settings.');
   localStorage.setItem('bb-server', serverUrl);
-  entryRequest = { type, name: $('name').value.trim(), code, game: selectedGame, mode: selectedMode, assetGates: true, announceGates: true };
+  entryRequest = { type, name: $('name').value.trim(), code, game: selectedGame, mode: selectedMode, assetGates: true, announceGates: true, characterGate: true };
   joining = true; intentionalClose = false;
   audio.unlock();
   notice('Connecting to the room…');
@@ -226,6 +229,7 @@ function enter(type) {
 }
 
 function resetSession() {
+  characterPicker.render(null, playerId);
   lobbyMotion.render(null);
   setView.carousel.render(null);
   setView.instructionSequence.cancel();
@@ -474,7 +478,7 @@ function updateMetrics() {
   const serverNow = time + (estimate?.offset || 0);
   const disconnected = room.players.filter(player => !player.connected);
   const wait = Math.max(0, ...disconnected.map(player => 15_000 - (serverNow - player.disconnectedAt)));
-  $('start').disabled = !connected || !idle;
+  $('start').disabled = !connected || !idle || room.players.some(player => player.connected && !Number.isInteger(player.characterId));
   let status = '';
   if (!connected) status = 'Reconnecting… Keep playing; your result stays saved on this device.';
   else if (room.set?.phase === 'complete') status = '';
@@ -491,7 +495,7 @@ function updateMetrics() {
 
 function renderRoom() {
   homeMotion.setVisible(startupReady && !room);
-  if (!room) { lobbyMotion.render(null); return; }
+  if (!room) { lobbyMotion.render(null); characterPicker.render(null, playerId); return; }
   updateGameProfile();
   prepareRoundAssets();
   updateMetrics();
@@ -511,6 +515,7 @@ function renderRoom() {
   view.render(room, playerId, localRound, performance.now());
   setView.render(room, playerId);
   lobbyMotion.render(room);
+  characterPicker.render(room, playerId);
   if (room.gameChoosing || room.set?.phase === 'selecting' || room.mode === 'arcade' && room.arcadePreview && !room.set) $('play-view').hidden = true;
   synchronizeScreenAudio();
 }

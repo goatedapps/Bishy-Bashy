@@ -42,20 +42,25 @@ class LaneStage {
 export class CoinStage extends LaneStage {
   constructor() {
     super('coin', raccoonPortrait);
-    this.coin = node('div', 'coin-drop');
-    this.coin.append(coinPortrait());
-    this.decoy = node('div', 'coin-drop');
-    this.decoy.append(coinPortrait(true));
-    this.element.append(this.coin, this.decoy);
+    this.drops = Array.from({ length: 3 }, () => {
+      const pair = [false, true].map(fake => {
+        const element = node('div', 'coin-drop'); element.append(coinPortrait(fake)); this.element.append(element); return element;
+      });
+      return pair;
+    });
+    [this.coin, this.decoy] = this.drops[0];
   }
 
   render(round, run, time, elapsed, active, present, cleared, terminal = false) {
     const playing = this.renderPlayer(run, time, present, terminal, cleared);
-    const progress = run ? (time - run.launchedAt) / run.fallMs : 0;
-    [this.coin, this.decoy].forEach((drop, index) => {
-      drop.hidden = active && (!playing || progress < 0 || progress > 1);
-      drop.style.setProperty('--drop-column', String(run ? index ? run.wave.decoy : run.wave.column : index ? 2 : 0));
-      drop.style.setProperty('--fall-progress', String(Math.max(0, Math.min(1, progress))));
+    const waves = playing ? run.activeWaves(time) : [];
+    this.drops.forEach((pair, index) => {
+      const wave = waves[index];
+      pair.forEach((drop, fake) => {
+        drop.hidden = !present || active && (!playing || !wave);
+        drop.style.setProperty('--drop-column', String(wave ? fake ? wave.decoy : wave.column : fake ? 2 : 0));
+        drop.style.setProperty('--fall-progress', String(wave ? Math.max(0, Math.min(1, (time - wave.launchedAt) / run.fallMs)) : 0));
+      });
     });
     this.element.setAttribute('aria-label', !present ? 'Open spot' : playing ? `Gold coin ${['left', 'middle', 'right'][run.wave.column]}, fake ${['left', 'middle', 'right'][run.wave.decoy]}; raccoon ${['left', 'middle', 'right'][run.position]}` : `${cleared} coins caught`);
   }

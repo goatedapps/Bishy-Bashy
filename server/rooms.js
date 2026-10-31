@@ -1,3 +1,4 @@
+import { validCharacter } from '../shared/characters.js';
 import { sanitizeVisual } from '../shared/visual-state.js';
 import { randomBytes, randomUUID, randomInt } from 'node:crypto';
 import { TOTEM_GAME } from '../shared/totem.js';
@@ -29,7 +30,7 @@ export class RoomService {
   snapshot(room) {
     return {
       code: room.code, hostId: room.hostId, testNumber: room.testNumber, selectedGame: room.selectedGame, mode: room.mode, arcadePreview: room.arcadePreview, gameChoosing: Boolean(room.gameChoosing), set: room.set,
-      players: room.players.map(({ id, name, connected, ready, sync, result, progress, disconnectedAt }) => ({ id, name, connected, ready, sync, result, progress, disconnectedAt })),
+      players: room.players.map(({ id, name, connected, ready, sync, result, progress, disconnectedAt, characterId }) => ({ id, name, characterId, connected, ready, sync, result, progress, disconnectedAt })),
       round: room.round ? { ...room.round } : null,
     };
   }
@@ -67,10 +68,10 @@ export class RoomService {
     player.requiresAssets = message.assetGates === true;
     player.requiresAnnouncement = message.announceGates === true;
     player.assetRound = null;
-    if (!returning) room.players.push(player);
+    if (!returning) { player.characterId = message.characterGate === true ? null : room.players.length % 16; room.players.push(player); }
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 15, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 16, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -84,6 +85,14 @@ export class RoomService {
     const room = this.roomFor(client);
     const player = this.playerFor(client);
     if (!room || !player) return this.error(client, 'Join a room first.');
+    if (message.type === 'select-character') {
+      if (!validCharacter(message.characterId)) return;
+      if ((room.set && room.set.phase !== 'complete' || room.round && isRoundActive(room.round)) && (validCharacter(player.characterId) || room.round?.playerIds.includes(player.id))) return;
+      player.characterId = message.characterId; player.ready = false;
+      const member = room.set?.players.find(member => member.id === player.id);
+      if (member) member.characterId = player.characterId;
+      return this.broadcast(room);
+    }
     if (message.type === 'sync') {
       const { rtt, uncertainty, count } = message;
       if (![rtt, uncertainty, count].every(Number.isFinite) || rtt < 0 || uncertainty < 0 || count < 0) return;
@@ -126,6 +135,7 @@ export class RoomService {
       return this.broadcast(room);
     }
     if (message.type === 'start') {
+      if (room.players.some(member => member.connected && !validCharacter(member.characterId))) return this.error(client, 'Everyone needs to choose a character first.');
       if (player.id !== room.hostId) return this.error(client, 'Only the room host can start the round.');
       if (room.set) return;
       if (room.round && room.round.phase !== 'results') return;
@@ -137,7 +147,7 @@ export class RoomService {
       else room.set = {
         id: randomUUID(), mode: room.mode, phase: 'playing', roundIndex: 0,
         plan: createSetPlan(room.mode, room.selectedGame, randomInt),
-        players: room.players.map(p => ({ id: p.id, name: p.name, points: 0 })),
+        players: room.players.map(p => ({ id: p.id, name: p.name, characterId: p.characterId, points: 0 })),
         history: [], nextStartAt: null, waitReason: null,
       };
       if (message.mode === 'sync') this.beginRound(room, true);

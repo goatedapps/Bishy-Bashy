@@ -8,7 +8,7 @@ const MUSIC_MODES = ['auto', 'on', 'off'];
 const MENU_TRACKS = { menu: 'Background-ActionRock.mp3', instructions: 'game-instructions.mp3' };
 const MENU_TRACK_GAINS = { menu: 1, instructions: 2 };
 const EXTRA_AUDIO_FILES = { wrong: 'wrong.mp3', buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.mp3', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3', wheelSpin: 'roulette.mp3', gameSelect: 'Game-select.mp3' };
-const GAME_AUDIO_FILES = { 'get-those-burgers-out': { mealPlop: 'plop.mp3', ding: 'Ding.mp3' }, 'dynamite-spark': { dynamiteBuzz: 'electrical-buzz.mp3', dynamiteExplosion: 'dynamite-explode.mp3', ding: 'Ding.mp3' }, 'jump-for-the-meat': { jumpBounce: 'bounce.mp3' }, 'type-in-letters': { ding: 'Ding.mp3', lettersPress: 'Diuup.mp3' }, 'perm-mania': { ding: 'Ding.mp3', pianoDo: 'piano-do.mp3', pianoRe: 'piano-re.mp3' }, 'mimicking-monkeys': { ding: 'Ding.mp3' }, 'its-raining-coins': { ding: 'Ding.mp3' }, 'dodge-or-die': { ding: 'Ding.mp3' }, 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3', ding: 'Ding.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3', diceRoll: 'dice-roll.mp3' }, 'facing-which-way': { ding: 'Ding.mp3', facingFlip: 'flip.mp3' } };
+const GAME_AUDIO_FILES = { 'get-those-burgers-out': { mealPlop: 'plop.mp3', ding: 'Ding.mp3' }, 'dynamite-spark': { dynamiteBuzz: 'electrical-buzz.mp3', dynamiteExplosion: 'dynamite-explode.mp3', ding: 'Ding.mp3' }, 'jump-for-the-meat': { jumpBounce: 'bounce.mp3' }, 'type-in-letters': { ding: 'Ding.mp3', lettersPress: 'Diuup.mp3' }, 'perm-mania': { ding: 'Ding.mp3', permBeat: 'perm-beat.mp3' }, 'mimicking-monkeys': { ding: 'Ding.mp3' }, 'its-raining-coins': { ding: 'Ding.mp3' }, 'dodge-or-die': { ding: 'Ding.mp3' }, 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3', ding: 'Ding.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3', diceRoll: 'dice-roll.mp3' }, 'facing-which-way': { ding: 'Ding.mp3', facingFlip: 'flip.mp3' } };
 const PROFILES = {
   'dice-dice-more-dice': { music: 'music', urgency: 'urgency', go: 'go' },
   'facing-which-way': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -237,10 +237,10 @@ export class GameAudio {
   play(id, { color = 0, progress = 0, at = this.context?.currentTime, group = 'effects', game = this.game } = {}) {
     if (id === 'stageComplete') id = 'ding';
     if (id === 'stageWrong' || id === 'mistake' && ['mimicking-monkeys', 'facing-which-way', 'dice-dice-more-dice', 'me-find-mistake'].includes(game)) id = 'wrong';
-    if (id === 'permDemo' || id === 'permHit' || id === 'permMiss') id = 'pianoDo';
+    if (id === 'permDemo' || id === 'permHit' || id === 'permMiss') id = 'permBeat';
     if (id === 'jumpPerfect') id = 'permGrow';
-    if (id === 'hit') id = ['burger-girl', 'me-find-mistake', 'dice-dice-more-dice', 'facing-which-way', 'its-raining-coins', 'dodge-or-die'].includes(game) ? 'ding' : game === 'perm-mania' ? 'pianoDo' : ['red', 'green', 'blue'][color] || 'red';
-    if (id === 'mistake' && game === 'perm-mania') id = 'pianoDo';
+    if (id === 'hit') id = ['burger-girl', 'me-find-mistake', 'dice-dice-more-dice', 'facing-which-way', 'its-raining-coins', 'dodge-or-die'].includes(game) ? 'ding' : game === 'perm-mania' ? 'permBeat' : ['red', 'green', 'blue'][color] || 'red';
+    if (id === 'mistake' && game === 'perm-mania') id = 'permBeat';
     const voice = this.source(id, { at, group, rate: ['red', 'green', 'blue'].includes(id) ? 1 + clamp(progress) * .04 : 1 });
     if (voice && group === 'effects') {
       const time = Math.max(this.context.currentTime, at);
@@ -324,12 +324,7 @@ export class GameAudio {
 
   permTap(run, time) {
     if (!this.enabled || this.preferences.effectsVolume === 0 || !Number.isFinite(time)) return;
-    const elapsed = time - run.start - run.offset;
-    let nearest = 0;
-    run.notes.forEach((note, index) => {
-      if (Math.abs(note.at - elapsed) < Math.abs(run.notes[nearest].at - elapsed)) nearest = index;
-    });
-    this.play(nearest % 2 ? 'pianoRe' : 'pianoDo');
+    this.play('permBeat');
   }
 
   demonstrate(key, cues) {
@@ -442,7 +437,7 @@ export class GameAudio {
       if (!this.buffers.has('countdown') && now <= start) this.play(profile.go, { at: audioNow + (start - now) / 1000, group: 'round' });
       if (perm) for (const [index, cue] of cues.entries()) {
         const remaining = (start + cue - now) / 1000;
-        if (remaining >= 0) this.play(index % 2 ? 'pianoRe' : 'pianoDo', { at: audioNow + remaining, group: 'round' });
+        if (remaining >= 0) this.play('permBeat', { at: audioNow + remaining, group: 'round' });
       }
     }
     const allowed = this.preferences.musicMode === 'on' || this.preferences.musicMode === 'auto' && musicOwner;
@@ -616,7 +611,7 @@ export class GameAudio {
     this.stopMenu();
     const at = this.context.currentTime + .03;
     if (this.preferences.musicMode !== 'off' && this.preferences.musicVolume > 0) this.source((PROFILES[game] || PROFILES['totem-shrinker']).music, { at, group: 'preview-music', loop: true, end: at + 8 });
-    const cues = game === 'facial-slot-machine' ? [['slotGo', .3], ['slotLock', 1.1], ['slotMiss', 1.8], ['slotLock', 3], ['slotWin', 4.5]] : game === 'perm-mania' ? [['pianoDo', .5], ['pianoRe', .5 + BEAT], ['pianoDo', .5 + BEAT * 2], ['pianoRe', .5 + BEAT * 3], ['pianoDo', .5 + BEAT * 4], ['pianoRe', .5 + BEAT * 5], ['pianoDo', .5 + BEAT * 6], ['pianoRe', .5 + BEAT * 7], ['stageComplete', .5 + BEAT * 8], ['finish', 6.3]] : [['red', .5], ['green', .8], ['blue', 1.1], ['mistake', 1.6], ['finish', 7.2]];
+    const cues = game === 'facial-slot-machine' ? [['slotGo', .3], ['slotLock', 1.1], ['slotMiss', 1.8], ['slotLock', 3], ['slotWin', 4.5]] : game === 'perm-mania' ? [['permBeat', .5], ['permBeat', .5 + BEAT], ['permBeat', .5 + BEAT * 2], ['permBeat', .5 + BEAT * 3], ['permBeat', .5 + BEAT * 4], ['permBeat', .5 + BEAT * 5], ['permBeat', .5 + BEAT * 6], ['permBeat', .5 + BEAT * 7], ['stageComplete', .5 + BEAT * 8], ['finish', 6.3]] : [['red', .5], ['green', .8], ['blue', 1.1], ['mistake', 1.6], ['finish', 7.2]];
     if (!['facial-slot-machine', 'perm-mania'].includes(game)) this.source('countdown', { at: at + 2.5, group: 'preview-effects' });
     for (const [id, delay] of cues) this.play(id, { at: at + delay, group: 'preview-effects' });
     this.onChange();

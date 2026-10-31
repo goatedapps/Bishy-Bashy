@@ -1,3 +1,4 @@
+import { characterPortrait } from './characters.js';
 import { GAMES, gameRules } from '../shared/games.js';
 import { MODES, setStandings } from '../shared/sets.js';
 import { gameArt, ruleVisual } from './game-art.js';
@@ -90,7 +91,7 @@ export class SetView {
       if (!player) return node('div', 'set-podium-empty');
       const seat = node('div', `set-podium-seat place-${player.placement}${player.id === playerId ? ' you' : ''}`);
       if (player.placement === 1 && player.points > 0) seat.append(node('span', 'podium-crown', '♛'));
-      const avatar = node('div', `block ${['red', 'blue', 'green'][set.players.findIndex(member => member.id === player.id) % 3]}`);
+      const avatar = characterPortrait(player.characterId);
       avatar.setAttribute('aria-hidden', 'true');
       const step = node('div', 'set-podium-step');
       const points = node('strong', '', `${player.points}`);

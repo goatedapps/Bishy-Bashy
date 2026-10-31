@@ -1,0 +1,23 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { RoomService } from '../server/rooms.js';
+import { CHARACTERS, validCharacter } from '../shared/characters.js';
+test('character selection gates starting a room, validates choices and persists them in reconnects and standings',()=>{
+ let time=100000;const messages=[];
+ const service=new RoomService({now:()=>time,send:(client,message)=>messages.push({client,message:structuredClone(message)})}),host={},guest={};
+ service.handle(host,{type:'create',name:'Host',mode:'game-select',characterGate:true});const room=service.rooms.get(host.room);
+ service.handle(guest,{type:'join',name:'Guest',code:room.code,characterGate:true});
+ assert.equal(room.players[0].characterId,null);assert.equal(room.players[1].characterId,null);
+ service.handle(host,{type:'start'});assert.equal(room.set,null);
+ for(const characterId of [-1,16,1.1,'2',NaN])service.handle(host,{type:'select-character',characterId});assert.equal(room.players[0].characterId,null);
+ service.handle(host,{type:'select-character',characterId:15});service.handle(host,{type:'start'});assert.equal(room.set,null);
+ service.handle(guest,{type:'select-character',characterId:3});
+ assert.deepEqual(service.snapshot(room).players.map(p=>p.characterId),[15,3]);
+ service.handle(host,{type:'start'});assert.deepEqual(room.set.players.map(p=>p.characterId),[15,3]);
+ service.handle(host,{type:'select-character',characterId:0});assert.equal(room.players[0].characterId,15);
+ const member=room.players[1],token=member.token;service.disconnect(guest);
+ const returning={};service.handle(returning,{type:'join',code:room.code,name:'Guest',token,characterGate:true});
+ assert.equal(room.players[1].characterId,3);assert.equal(service.playerFor(returning).id,member.id);
+ assert.equal(JSON.stringify(service.snapshot(room)).includes(token),false);
+ assert.equal(CHARACTERS.length,16);assert.ok(CHARACTERS.every((_,i)=>validCharacter(i)));
+});
