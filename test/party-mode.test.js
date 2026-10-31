@@ -50,6 +50,10 @@ test('Party locks are immutable, ordered by player, and unselected players recei
   at(set.pickEndAt); lock(clients[0], 'totem-shrinker');
   assert.equal(set.choices[room.players[0].id], undefined);
   service.tick();
+  assert.equal(set.phase, 'party-picking');
+  assert.equal(Object.keys(set.choices).length, 3);
+  at(set.pickCompleteAt - 1); service.tick(); assert.equal(set.phase, 'party-picking');
+  at(set.pickCompleteAt); service.tick();
   assert.equal(set.plan.length, 3); assert.equal(set.plan[1], 'jump-for-the-meat');
   assert.ok(set.plan.every(game => GAMES[game])); assert.equal(set.phase, 'instructions');
   const plan = [...set.plan]; service.tick(); lock(clients[1], 'totem-shrinker');
@@ -63,6 +67,8 @@ test('Party plays every player pick, keeps points and wins across a unanimous co
   const set = room.set;
   const pick = () => clients.forEach(client => service.handle(client, { type: 'party-lock', setId: set.id, cycle: set.cycle, game: 'jump-for-the-meat' }));
   pick();
+  assert.equal(set.phase, 'party-picking');
+  at(set.pickCompleteAt); service.tick();
   assert.deepEqual(set.plan, ['jump-for-the-meat', 'jump-for-the-meat']);
   assert.equal(set.phase, 'instructions');
   for (let index = 0; index < 2; index++) {
@@ -93,6 +99,7 @@ test('Party plays every player pick, keeps points and wins across a unanimous co
   service.handle(clients[0], { type: 'party-lock', setId: set.id, cycle: 1, game: 'totem-shrinker' });
   assert.equal(Object.keys(set.choices).length, 0);
   service.handle(clients[0], { type: 'party-lock', setId: set.id, cycle: 2, game: 'totem-shrinker' });
+  at(set.pickCompleteAt); service.tick();
   assert.equal(set.plan.length, 3); assert.equal(set.history.length, 2); assert.equal(set.roundIndex, 2);
   assert.equal(set.plan[2], 'totem-shrinker');
 });

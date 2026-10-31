@@ -677,10 +677,13 @@ The catch target is 36 coins so the overlapping launch schedule increases pressu
 
 ## Party mode
 
-Choose **Party**, then **Start set** to open one scrolling game list per player.
+Choose **Party** between Arcade and Game Select, then **Start set** to open four fixed player columns.
+Unused or offline columns are greyed out.
+Game lists loop in both directions through a fluorescent selection frame.
 Each player has 30 seconds to choose from the full catalog using touch/scroll, the list's arrow keys and Enter, or the shared red Down, green Select, and blue Up buttons.
 Only your own column can be controlled on your device.
-Each locked choice plays the supplied `Ding.mp3` and stays visible to everyone; missing choices are assigned randomly by the server at the deadline.
+Each locked choice plays the supplied `Ding.mp3` and bursts into sparkles; missing choices are assigned randomly by the server at the deadline.
+The server holds the completed selections for 900 ms so the last lock effect can finish, with a static confirmation for reduced motion.
 The group plays one round of every selected game in player order, including repeated picks.
 Each game has illustrated instructions and an all-player Ready gate; between games, the podium holds for five seconds before the next instructions.
 After everyone's picks have been played, each connected player may choose **Continue**, or **Exit** returns the room to mode selection.

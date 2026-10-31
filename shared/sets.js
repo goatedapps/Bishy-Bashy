@@ -8,6 +8,7 @@ import { LETTERS_GAME } from './letters.js';
 
 export const ARCADE_LENGTH = 5;
 export const PARTY_PICK_MS = 30_000;
+export const PARTY_LOCK_HOLD_MS = 900;
 export function arcadeLength(value) {
   return Number.isInteger(value) ? Math.max(3, Math.min(Object.keys(GAMES).length, value)) : ARCADE_LENGTH;
 }

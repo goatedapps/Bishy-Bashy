@@ -8,7 +8,7 @@ import { SLOT_GAME, validReelMask } from '../shared/slots.js';
 import { LETTERS_GAME, LettersMatch, LETTERS_PACKET_MS } from '../shared/letters.js';
 import { ChoiceMatch, isSharedChoice } from '../shared/choice-round.js';
 import { MISTAKE_GAME } from '../shared/mistake.js';
-import { MODES, INTERMISSION_MS, WHEEL_SPIN_MS, REEL_HOLD_MS, GAME_ANNOUNCEMENT_MS, PARTY_PICK_MS, arcadeLength, createSetPlan, awardRound } from '../shared/sets.js';
+import { MODES, INTERMISSION_MS, WHEEL_SPIN_MS, REEL_HOLD_MS, GAME_ANNOUNCEMENT_MS, PARTY_PICK_MS, PARTY_LOCK_HOLD_MS, arcadeLength, createSetPlan, awardRound } from '../shared/sets.js';
 
 export const ROUND_MS = 10_000;
 export const GRACE_MS = 10_000;
@@ -219,6 +219,7 @@ export class RoomService {
     set.pickerIds = room.players.filter(player => player.connected).map(player => player.id);
     for (const player of room.players) if (!set.players.some(member => member.id === player.id)) set.players.push({ id: player.id, name: player.name, characterId: player.characterId, points: 0, wins: 0 });
     set.choices = {};
+    set.pickCompleteAt = null;
     set.pickEndAt = this.now() + PARTY_PICK_MS;
     set.cycleStart = set.plan.length;
     set.roundIndex = set.plan.length;
@@ -233,6 +234,8 @@ export class RoomService {
     if (!expired && !set.pickerIds.every(id => set.choices[id])) return false;
     const games = Object.keys(GAMES);
     for (const id of set.pickerIds) set.choices[id] ||= games[randomInt(games.length)];
+    if (!set.pickCompleteAt) { set.pickCompleteAt = this.now() + PARTY_LOCK_HOLD_MS; return true; }
+    if (this.now() < set.pickCompleteAt) return false;
     set.plan.push(...set.pickerIds.map(id => set.choices[id]));
     this.prepareRound(room);
     return true;

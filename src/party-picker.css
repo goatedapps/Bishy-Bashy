@@ -8,22 +8,31 @@
 .party-pick-heading h2 { margin:0; font:clamp(22px,4vw,38px) 'Lilita One',system-ui; }
 .party-pick-timer { display:grid; place-content:center; width:66px; height:66px; border:4px solid #3b214d; border-radius:50%; background:#ffdf62; font:34px 'Lilita One',system-ui; font-variant-numeric:tabular-nums; }
 .party-pick-help { text-align:center; margin:0 0 16px; font-weight:800; }
-.party-pick-columns { display:grid; grid-template-columns:repeat(var(--party-players),minmax(0,1fr)); gap:12px; }
-.party-pick-lane { min-width:0; border:3px solid #3b214d; border-radius:24px; overflow:hidden; background:var(--player-color); box-shadow:0 6px #3b214d; }
+.party-pick-columns { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:12px; }
+.party-pick-lane { position:relative; min-width:0; border:3px solid #3b214d; border-radius:24px; background:var(--player-color); box-shadow:0 6px #3b214d; }
+.party-pick-lane.is-empty { filter:grayscale(1); background:#d0d0d0; color:#777; border-color:#929292; box-shadow:0 6px #a2a2a2; }
+.is-empty .party-game-list { background:#dedede; }
+.is-empty .party-game-row { opacity:.3; }
+.is-empty .party-player,.is-empty .party-pick-status { opacity:.65; }
+.party-empty-avatar { display:grid; place-items:center; width:54px; height:54px; font-size:40px; }
 .party-pick-lane.you { outline:3px solid #fffdf5; outline-offset:3px; }
 .party-player { display:flex; align-items:center; justify-content:center; gap:8px; padding:8px; min-height:72px; text-align:center; }
 .party-player .character-portrait { width:54px; }
 .party-player strong { overflow-wrap:anywhere; }
 .party-game-list { position:relative; padding-block:var(--pick-padding,0px); overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; scrollbar-width:thin; background:#fffdf5b8; }
+.party-list-window { position:relative; flex:1; min-height:0; overflow:hidden; }
+.party-selection-frame { position:absolute; z-index:2; pointer-events:none; top:calc(50% - 35px); left:5px; right:5px; height:70px; border:3px solid #e3ff27; border-radius:14px; box-shadow:0 0 5px #fff,0 0 14px #d4ff00,inset 0 0 9px #c9ff2399; }
+.party-lock-sparkles { position:absolute; z-index:20; pointer-events:none; }
+.party-lock-sparkles i { position:absolute; left:-12px; top:-12px; font:26px/1 system-ui; text-shadow:0 0 7px currentColor; }
 .party-game-row { height:70px; display:flex; gap:8px; align-items:center; margin:0 7px; padding:5px 8px; border:2px solid transparent; border-radius:14px; cursor:pointer; font:18px/1.1 'Lilita One',system-ui; opacity:.65; }
 .party-game-row .game-art { flex:0 0 48px; width:48px; height:54px; overflow:hidden; }
 .party-game-row .game-art>.block { width:60%; left:8%; top:8%; }
 .party-game-row .game-art>.block+.block { top:38%; left:30%; }
 .party-game-row .game-art>.face-portrait { width:90%; height:90%; left:5%; top:5%; }
 .party-game-row .game-art>.firework-badge { font-size:40px; }
-.party-game-row[aria-selected=true] { background:#fffdf5; border-color:#3b214d; opacity:1; box-shadow:0 3px #3b214d; }
+.party-game-row.is-selected { background:#f8ffd9; border-color:#3b214d; opacity:1; box-shadow:0 3px #3b214d; }
 .party-game-row>span:last-child { min-width:0; max-width:100%; overflow-wrap:anywhere; }
-.party-pick-status { display:block; text-align:center; padding:14px 4px; min-height:50px; }
+.party-pick-status { display:block; text-align:center; padding:14px 4px; min-height:50px; border-radius:0 0 20px 20px; }
 .is-locked .party-pick-status { background:#3b214d; color:#fffdf5; }
 .party-game-list:focus-visible { outline:4px solid #3b214d; outline-offset:-4px; }
 .party-picking #set-progress,.party-picking #play-view,.party-picking #submission-status { display:none!important; }
@@ -38,7 +47,7 @@ body.party-picking { display:flex; flex-direction:column; height:var(--viewport-
 .party-picking .party-pick-columns { flex:1; min-height:0; }
 .party-picking .party-pick-lane { display:flex; flex-direction:column; min-height:0; }
 .party-picking .party-player,.party-picking .party-pick-status { flex-shrink:0; }
-.party-picking .party-game-list { flex:1; height:0; min-height:0; }
+.party-picking .party-game-list { height:100%; min-height:0; }
 .party-picking #control-deck { position:static; transform:none; flex-shrink:0; align-self:center; margin:0 0 calc(10px + env(safe-area-inset-bottom,0px)); padding:10px 16px 14px; }
 .party-picking #control-deck .hit-button { height:66px; }
 .party-picking #lobby-status:empty { display:none; }
@@ -51,6 +60,8 @@ body.party-picking { display:flex; flex-direction:column; height:var(--viewport-
   .party-pick-lane { border-width:2px; border-radius:15px; }
   .party-player { flex-direction:column; gap:0; padding:4px; font-size:11px; }
   .party-player .character-portrait { width:40px; }
+  .party-empty-avatar { width:40px; height:40px; font-size:32px; }
+  .party-selection-frame { left:1px; right:1px; }
   .party-game-row { margin:0 2px; padding:3px; gap:3px; flex-direction:column; justify-content:center; text-align:center; font-size:11px; }
   .party-game-row .game-art { width:32px; height:32px; flex:0 0 32px; }
   .party-game-row .game-art>.firework-badge { font-size:28px; }
