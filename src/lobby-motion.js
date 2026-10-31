@@ -49,6 +49,10 @@ export class LobbyMotion {
       fan.append(card);
     }
     document.querySelector('.select-card').prepend(fan);
+    const party = node('span', 'lobby-mode-visual');
+    party.setAttribute('aria-hidden', 'true');
+    party.append(...[1, 9, 14].map(characterPortrait));
+    document.querySelector('.party-card').prepend(party);
     this.seats = [...document.querySelectorAll('#player-lanes .lane')].map((lane, index) => {
       const stage = node('div', 'lobby-seat-stage');
       stage.setAttribute('aria-hidden', 'true');

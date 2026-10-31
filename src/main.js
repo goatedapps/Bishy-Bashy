@@ -1,5 +1,7 @@
 import './characters.css';
 import { CharacterPicker } from './characters.js';
+import { PartyPicker } from './party-picker.js';
+import './party-picker.css';
 import { captureVisual } from '../shared/visual-state.js';
 import { installViewportLayout } from './viewport.js';
 import { COIN_GAME } from '../shared/coins.js';
@@ -27,7 +29,7 @@ import './letters.css';
 import './shared-choice.css';
 import { isSharedChoice } from '../shared/choice-round.js';
 import { GAMES, createRun, roundSettings, isRoundActive, gameRules } from '../shared/games.js';
-import { MODES, roundDetail } from '../shared/sets.js';
+import { MODES, roundDetail, arcadeLength } from '../shared/sets.js';
 import { GameView } from './game-view.js';
 import { SetView } from './set-view.js';
 import { GameAudio } from './audio.js';
@@ -54,8 +56,10 @@ let reconnectAt = 0, reconnectTimer, entryRequest = null, joining = false, inten
 let lastPong = 0, lastSyncSent = 0, lastPendingSent = -Infinity, lastProgressSent = 0, lastProgressKey = '';
 let inviteUrl = '', lanUrls = [], events = [];
 let hiddenSince = document.hidden ? performance.now() : null;
+let partyAudioBaseline = true;
 let selectedGame = GAMES[localStorage.getItem('bb-game')] ? localStorage.getItem('bb-game') : TOTEM_GAME;
 let selectedMode = MODES[localStorage.getItem('bb-mode')] ? localStorage.getItem('bb-mode') : 'arcade';
+let selectedArcadeLength = arcadeLength(Number(localStorage.getItem('bb-arcade-length')) || 5);
 let timingOffset = Math.max(-150, Math.min(150, Number(localStorage.getItem('bb-timing-offset')) || 0));
 const view = new GameView();
 const assets = new AssetLoader();
@@ -68,6 +72,7 @@ const setView = new SetView({
   onGameChoose: game => { if (room) send({ type: 'configure', mode: room.mode, game }); },
 });
 const characterPicker = new CharacterPicker(characterId => send({ type: 'select-character', characterId }));
+const partyPicker = new PartyPicker(message => { audio.unlock(); send(message); });
 const buttons = [...document.querySelectorAll('.hit-button')];
 installViewportLayout();
 
@@ -146,7 +151,8 @@ function connect() {
       updateMetrics();
     }
     if (message.type === 'joined') {
-      if (message.protocol !== 16 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals') || !message.capabilities?.includes('character-picker') || !message.capabilities?.includes('overlapping-coins')) {
+      partyAudioBaseline = true;
+      if (message.protocol !== 17 || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals') || !message.capabilities?.includes('character-picker') || !message.capabilities?.includes('overlapping-coins') || !message.capabilities?.includes('party-mode') || !message.capabilities?.includes('arcade-length')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -166,6 +172,8 @@ function connect() {
       flushPending();
     }
     if (message.type === 'state' && joined) {
+      const locked = !partyAudioBaseline && room?.set?.phase === 'party-picking' && message.room.set?.id === room.set.id && message.room.set.cycle === room.set.cycle && !document.hidden ? message.room.set.pickerIds.filter(id => !room.set.choices[id] && message.room.set.choices[id]).length : 0;
+      partyAudioBaseline = false;
       const previousId = room?.round?.id;
       const previousPhase = room?.round?.phase;
       room = message.room;
@@ -186,6 +194,7 @@ function connect() {
         sessionStorage.removeItem('bb-active-round');
       }
       renderRoom();
+      for (let index = 0; index < locked; index++) audio.play('partyLock');
     }
     if (message.type === 'shared-choice-ack' && localRound?.id === message.roundId && isSharedChoice(room?.round?.game)) localRound.run.pending.delete(message.index);
     if (message.type === 'letters-claim-ack' && localRound?.id === message.roundId && localRound.run.index === message.index) localRound.run.claimAck = true;
@@ -220,7 +229,7 @@ function enter(type) {
   serverUrl = $('server-url').value.trim() || defaultServer;
   if (!serverUrl) return notice('Enter the hosted multiplayer server address in Connection settings.');
   localStorage.setItem('bb-server', serverUrl);
-  entryRequest = { type, name: $('name').value.trim(), code, game: selectedGame, mode: selectedMode, assetGates: true, announceGates: true, characterGate: true };
+  entryRequest = { type, name: $('name').value.trim(), code, game: selectedGame, mode: selectedMode, arcadeLength: selectedArcadeLength, assetGates: true, announceGates: true, characterGate: true };
   joining = true; intentionalClose = false;
   audio.unlock();
   notice('Connecting to the room…');
@@ -229,6 +238,7 @@ function enter(type) {
 }
 
 function resetSession() {
+  partyPicker.render(null, playerId);
   characterPicker.render(null, playerId);
   lobbyMotion.render(null);
   setView.carousel.render(null);
@@ -400,6 +410,7 @@ function enforceLifecycle(time, beforeInput = false) {
 }
 
 function tap(color) {
+  if (room?.set?.phase === 'party-picking') { if (!document.hidden && !document.querySelector('dialog[open]')) partyPicker.input(color); return; }
   const time = performance.now();
   enforceLifecycle(time, true);
   if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
@@ -479,10 +490,15 @@ function updateMetrics() {
   const disconnected = room.players.filter(player => !player.connected);
   const wait = Math.max(0, ...disconnected.map(player => 15_000 - (serverNow - player.disconnectedAt)));
   $('start').disabled = !connected || !idle || room.players.some(player => player.connected && !Number.isInteger(player.characterId));
+  const continuing = room.set?.mode === 'party' && room.set.phase === 'complete';
+  $('party-continue').hidden = !continuing;
+  $('party-continue').disabled = !connected || Boolean(mine?.ready) || !Number.isInteger(mine?.characterId);
+  $('party-continue').textContent = mine?.ready ? 'Waiting for friends…' : 'Continue';
+  updateArcadeSettings();
   let status = '';
   if (!connected) status = 'Reconnecting… Keep playing; your result stays saved on this device.';
   else if (room.set?.phase === 'complete') status = '';
-  else if (room.gameChoosing) status = '';
+  else if (room.set?.phase === 'party-picking') status = '';
   else if (room.gameChoosing) status = '';
   else if (idle) status = playerId === room.hostId ? 'Start the set when your friends have joined.' : 'Waiting for the host to start.';
   else if (gate) status = wait > 0 ? `Waiting ${Math.ceil(wait / 1000)}s for a friend to reconnect…` : !estimate || estimate.count < 3 ? 'Synchronizing clocks…' : mine?.ready ? 'Waiting for everyone to be ready…' : 'Tap Ready when you’re set.';
@@ -495,7 +511,7 @@ function updateMetrics() {
 
 function renderRoom() {
   homeMotion.setVisible(startupReady && !room);
-  if (!room) { lobbyMotion.render(null); characterPicker.render(null, playerId); return; }
+  if (!room) { lobbyMotion.render(null); characterPicker.render(null, playerId); partyPicker.render(null, playerId); return; }
   updateGameProfile();
   prepareRoundAssets();
   updateMetrics();
@@ -507,15 +523,16 @@ function renderRoom() {
   $('back').hidden = room.set?.phase === 'complete' || playerId !== room.hostId || !room.set && !room.arcadePreview && !room.gameChoosing;
   $('exit').hidden = room.set?.phase !== 'complete';
   $('exit').disabled = !joined || socket?.readyState !== WebSocket.OPEN;
-  $('ready-actions').hidden = Boolean(active || room.set?.phase === 'selecting' || room.set?.phase === 'intermission' && room.mode === 'arcade');
+  $('ready-actions').hidden = Boolean(active || ['selecting', 'party-picking'].includes(room.set?.phase) || room.set?.phase === 'intermission' && room.mode !== 'game-select');
   $('ready').hidden = !gate;
   $('start').hidden = playerId !== room.hostId || Boolean(room.set);
-  $('control-deck').hidden = !active || !room.round.playerIds.includes(playerId);
+  $('control-deck').hidden = room.set?.phase === 'party-picking' ? !room.set.pickerIds.includes(playerId) : !active || !room.round.playerIds.includes(playerId);
   $('round-label').textContent = active ? room.set ? roundDetail(room.round) : `Round ${room.testNumber}` : 'Lobby';
   view.render(room, playerId, localRound, performance.now());
   setView.render(room, playerId);
   lobbyMotion.render(room);
   characterPicker.render(room, playerId);
+  partyPicker.render(room, playerId);
   if (room.gameChoosing || room.set?.phase === 'selecting' || room.mode === 'arcade' && room.arcadePreview && !room.set) $('play-view').hidden = true;
   synchronizeScreenAudio();
 }
@@ -564,6 +581,11 @@ function prepareRoundAssets() {
 }
 
 function updateControls(time) {
+  if (room?.set?.phase === 'party-picking') {
+    const mine = room.set.choices[playerId];
+    for (const button of buttons) button.disabled = Boolean(mine) || !joined || socket?.readyState !== WebSocket.OPEN || document.hidden || !room.set.pickerIds.includes(playerId);
+    return;
+  }
   const disabled = !localRound || localRound.done || document.hidden || time < localRound.start || time >= localRound.end || time < localRound.run.blockedUntil || isSharedChoice(room?.round?.game) && (localRound.run.phase(time).mode !== 'play' || localRound.run.selections.has(localRound.run.phase(time).index)) || room?.round?.game === LETTERS_GAME && Boolean(localRound.run.claim) || room?.round?.phase === 'results' || room?.round?.game === PERM_GAME && localRound.run.phase(time).mode === 'watch' || room?.round?.game === MONKEY_GAME && localRound.run.phase(time).mode !== 'play' || room?.round?.game === MISTAKE_GAME && time < localRound.run.readyAt;
   for (const button of buttons) {
     const color = Number(button.dataset.color);
@@ -601,6 +623,7 @@ function animate() {
   if (room) view.animate(room, localRound, time, time + (clock.estimate(time)?.offset ?? Date.now() - time) - (room.round?.startAt || 0));
   view.updateFeedback(room, localRound, time);
   if (room) setView.animate(room, time + (clock.estimate(time)?.offset ?? Date.now() - time));
+  partyPicker.animate(time + (clock.estimate(time)?.offset ?? Date.now() - time));
   updateControls(time);
   requestAnimationFrame(animate);
 }
@@ -620,6 +643,7 @@ async function prepareInvite() {
 }
 
 function updateSound() {
+  updateArcadeSettings();
   $('sound').classList.toggle('sound-off', !audio.enabled);
   $('sound').setAttribute('aria-pressed', String(audio.enabled));
   $('sound').setAttribute('aria-label', audio.enabled ? 'Mute sound' : 'Enable sound');
@@ -638,6 +662,15 @@ function updateSound() {
   $('timing-offset').disabled = Boolean(active);
 }
 
+function updateArcadeSettings() {
+  const length = room?.arcadeLength ?? selectedArcadeLength;
+  $('arcade-length').max = String(Object.keys(GAMES).length);
+  $('arcade-length').value = String(length);
+  $('arcade-length-value').textContent = String(length);
+  $('arcade-length').disabled = Boolean(room && (room.hostId !== playerId || room.set || isRoundActive(room.round)));
+  $('arcade-description').textContent = `Battle with your friends for ${length} randomly selected games`;
+}
+
 function updateGameProfile() {
   const active = isRoundActive(room?.round);
   const inSet = room?.set && room.set.phase !== 'complete';
@@ -646,8 +679,9 @@ function updateGameProfile() {
   const game = profile.game;
   const perm = game === PERM_GAME;
   const slots = game === SLOT_GAME;
-  audio.selectGame(game);
-  const themed = room && room.set?.phase !== 'selecting';
+  const picking = room?.set?.phase === 'party-picking';
+  audio.selectGame(picking ? 'party' : game);
+  const themed = room && !picking && room.set?.phase !== 'selecting';
   document.body.classList.toggle('totem-theme', Boolean(themed && game === TOTEM_GAME));
   document.body.classList.toggle('perm-theme', Boolean(themed && perm));
   document.body.classList.toggle('slot-theme', Boolean(themed && slots));
@@ -662,17 +696,18 @@ function updateGameProfile() {
   document.body.classList.toggle('dynamite-theme', Boolean(themed && game === DYNAMITE_GAME));
   document.body.classList.toggle('letters-theme', Boolean(themed && game === LETTERS_GAME));
   buttons.forEach((button, index) => {
-    const action = game === MEALS_GAME ? ['Fries', 'Burger', 'Drink'][index] : [DICE_GAME, FACING_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
+    const action = picking ? ['Down', 'Select', 'Up'][index] : game === MEALS_GAME ? ['Fries', 'Burger', 'Drink'][index] : [DICE_GAME, FACING_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
     button.children[1].textContent = action;
     const label = ['Red circle', 'Green triangle', 'Blue diamond'][index];
-    button.setAttribute('aria-label', [MEALS_GAME, COIN_GAME, DODGE_GAME, LETTERS_GAME, DICE_GAME, FACING_GAME].includes(game) ? `${label}: ${action}` : label);
+    button.setAttribute('aria-label', picking || [MEALS_GAME, COIN_GAME, DODGE_GAME, LETTERS_GAME, DICE_GAME, FACING_GAME].includes(game) ? `${label}: ${action}` : label);
   });
   document.body.classList.toggle('coin-theme', Boolean(themed && game === COIN_GAME));
   document.body.classList.toggle('dodge-theme', Boolean(themed && game === DODGE_GAME));
   document.body.classList.toggle('in-set', Boolean(inSet));
   document.body.classList.toggle('is-playing', Boolean(active));
   document.body.classList.toggle('is-instructions', room?.set?.phase === 'instructions');
-  const title = !room ? 'Dokidoki Dash!' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'selecting' ? 'Pick our next game!' : room.set?.phase === 'intermission' ? 'Standings' : ['instructions', 'announcing'].includes(room.set?.phase) || active ? GAMES[game].title : room.gameChoosing ? 'Choose a game' : room.arcadePreview ? 'Arcade' : 'Choose your mode';
+  document.body.classList.toggle('party-picking', picking);
+  const title = !room ? 'Dokidoki Dash!' : picking ? 'Party picks' : room.set?.phase === 'complete' ? 'Set complete!' : room.set?.phase === 'selecting' ? 'Pick our next game!' : room.set?.phase === 'intermission' ? 'Standings' : ['instructions', 'announcing'].includes(room.set?.phase) || active ? GAMES[game].title : room.gameChoosing ? 'Choose a game' : room.arcadePreview ? 'Arcade' : 'Choose your mode';
   if (document.querySelector('.game-title').textContent !== title) document.querySelector('.game-title').textContent = title;
   document.title = `${room ? title : 'Party games'} · Dokidoki Dash!`;
   $('rules-open').setAttribute('aria-label', room ? 'How to play' : 'About Dokidoki Dash!');
@@ -745,6 +780,12 @@ document.addEventListener('click', event => {
 $('entry-form').addEventListener('submit', event => { event.preventDefault(); enter('join'); });
 $('ready').addEventListener('click', () => { notice(''); audio.unlock(); send({ type: 'ready', ready: !room.players.find(player => player.id === playerId)?.ready }); });
 $('start').addEventListener('click', () => { audio.unlock(); setView.carousel.confirmSelection(); send({ type: room?.mode === 'game-select' && !room.gameChoosing ? 'open-game-picker' : 'start' }); });
+$('party-continue').addEventListener('click', () => { audio.unlock(); send({ type: 'party-continue', setId: room.set.id, cycle: room.set.cycle }); });
+$('arcade-length').addEventListener('input', () => {
+  const value = Number($('arcade-length').value);
+  if (room) send({ type: 'arcade-length', value });
+  else { selectedArcadeLength = arcadeLength(value); localStorage.setItem('bb-arcade-length', String(selectedArcadeLength)); updateArcadeSettings(); }
+});
 $('leave').addEventListener('click', () => requestNavigation('leave'));
 $('back').addEventListener('click', () => requestNavigation('back-to-modes'));
 $('exit').addEventListener('click', () => {

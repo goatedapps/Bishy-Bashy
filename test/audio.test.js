@@ -1026,3 +1026,18 @@ test('Perm beat demonstrations and response taps use the supplied beat at every 
  assert.equal(audio.context.sources.length,count);
  audio.setEnabled(false);audio.permTap(createRun({id:'muted',game:'perm-mania',...roundSettings('perm-mania',123)},0),2000);assert.equal(audio.voices.size,0);
 });
+
+
+test('Party lock uses the cached Ding cue on the effects bus and respects mute', async () => {
+  const { audio, requests, context } = setup();
+  audio.selectGame('party'); await audio.unlock();
+  assert.equal(requests.filter(url => url.includes('/Ding.mp3?')).length, 1);
+  const before = context.sources.length;
+  audio.play('partyLock');
+  assert.equal(context.sources.length, before + 1);
+  assert.equal(context.sources.at(-1).buffer, audio.buffers.get('ding'));
+  await audio.load();
+  assert.equal(requests.filter(url => url.includes('/Ding.mp3?')).length, 1);
+  audio.setEnabled(false); audio.play('partyLock');
+  assert.equal(context.sources.length, before + 1);
+});

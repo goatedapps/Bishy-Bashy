@@ -5,7 +5,7 @@ The Vite frontend deploys independently to GitHub Pages; `server/` is a separate
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 16 adds shared character choices and overlapping Coins drops; deploy frontend and backend together.
+Protocol version 17 adds configurable Arcade length and timed Party selections; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -55,11 +55,11 @@ Both games keep completed progress after mistakes; `src/coins-dodge-view.js` ren
 `shared/letters.js` owns Type in Letters' 30-second shared-target race, wraparound alphabet/backspace input, bounded replay proofs, and 120 ms completion-time arbitration with 300 ms result feedback; the server owns scores and final results.
 `src/letters-view.js` and `src/letters.css` keep the alphabet in one compact phone row and typed player boxes in fixed columns, including solo play; local matches highlight immediately and button presses use `Diuup.mp3`.
 Type in Letters uses red/green/blue for left/enter/right and announces with supplied `type-in-letters-voice.mp3` plus applause; include it in both Arcade and Game Select.
-`shared/sets.js` defines five-game Arcade, three-round Game Select, shared placement points, and cumulative standings.
+`shared/sets.js` defines host-configured Arcade (3 to the full catalog, default 5), three-round Game Select, Party player-order playlists, shared placement points, and cumulative standings.
 `server/rooms.js` owns the fixed set roster, idempotent point awards, intermissions, and readiness gates.
 Selecting Arcade stays in the lobby; Start set begins the shared single reel, which spins for 4.7 seconds, holds the chosen game for two seconds, then opens instructions.
-The server owns the result, selection timestamps, and five-game plan without repeats; render only seven recycled reel rows.
-Include every registered game in the Arcade reel and selection pool immediately; Arcade still chooses five distinct games per set.
+The server owns the result, selection timestamps, and host-sized game plan without repeats; render only seven recycled reel rows.
+Include every registered game in the Arcade reel and selection pool immediately; Arcade chooses the configured number of distinct games per set.
 `shared/sets.js` owns the common complete `arcadeGameIds()` catalog for both server selection and reel artwork.
 After each Arcade podium's five seconds, show the next spin, then illustrated rules and an all-player Ready gate.
 Game Select opens a separate shared game picker after Start set; Play selected game confirms the centered poster and announces it with its supplied voice and applause once, then opens instructions after two seconds while the matching voice/applause tails finish naturally.
@@ -186,3 +186,10 @@ Shared Facing/Dice layouts explicitly place their heading, demonstration, option
 `src/characters.js` and `src/characters.css` own the character grid; use the chosen portraits in lobby seats and podiums, keeping minigame protagonist art unchanged.
 Coins requires 36 catches and resolves the earliest outstanding pair on a fixed spawn schedule with no recovery pause, renders up to three overlapping pairs, and derives launch times from round start plus index so remote snapshots cannot resize or restart the rain.
 Coins and Slots fill fixed-size player-panel containers; never let reel contents, completion state or cached previous-round sizes determine panel height, and reset slot portrait caches on round changes.
+
+Party mode gives every rostered player 30 seconds to lock one game; the server assigns random games at the deadline and plays all picks in player order, including duplicates.
+`src/party-picker.js` and `src/party-picker.css` own the independent player lists, GSAP scroll settling, shared three-button controls, reduced motion, and viewport fit.
+Party locks use `Ding.mp3` once per newly observed choice; skip stale reconnect cues and preserve the last lock cue across the transition to instructions.
+Party Continue requires all connected players and waits 15 seconds for disconnected friends; retain cumulative points, first-place win counts, and history across cycles, validating set ID and cycle on pick/continue commands.
+Arcade length is host-only and immutable during a set; the range maximum comes from the shared game registry.
+Keep small arena completion overlays explicitly dark on a solid light panel so themed arena colors cannot hide Cleared text.

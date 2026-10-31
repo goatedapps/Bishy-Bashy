@@ -56,15 +56,17 @@
       <section id="lobby-setup" aria-label="Party setup" hidden>
         <nav id="mode-picker" class="mode-picker" aria-label="Choose a mode">
           <button type="button" data-mode="arcade" class="mode-card arcade-card" aria-pressed="true">
-            <span class="mode-card-copy"><strong>Arcade</strong><small>Battle with your friends for 5 randomly selected games</small></span>
+            <span class="mode-card-copy"><strong>Arcade</strong><small id="arcade-description">Battle with your friends for 5 randomly selected games</small></span>
           </button>
           <button type="button" data-mode="game-select" class="mode-card select-card" aria-pressed="false">
             <span class="mode-card-copy"><strong>Game Select</strong><small>Play 3 rounds of your chosen game to determine the winner</small></span>
           </button>
+          <button type="button" data-mode="party" class="mode-card party-card" aria-pressed="false"><span class="mode-card-copy"><strong>Party</strong><small>Everyone picks a game. Play them together and keep the party going!</small></span></button>
         </nav>
         <section id="game-browser" aria-label="Game library" hidden><div class="game-browser-heading"><label for="game-search">Find a game<input id="game-search" type="search" placeholder="Search games" autocomplete="off" /></label></div><nav id="game-picker" class="game-picker" aria-label="Choose a game" tabindex="0"></nav><p id="game-empty" hidden>No games match your search.</p></section>
       </section>
       <div id="set-progress" class="set-progress" hidden></div>
+      <section id="party-picker" hidden aria-label="Party game selection"></section>
       <section id="arcade-wheel" class="arcade-reel" hidden aria-label="Arcade game selection">
         <div class="reel-marquee"><span aria-hidden="true">● ● ● ●</span><strong>Arcade</strong><span aria-hidden="true">● ● ● ●</span></div>
         <div class="reel-bezel"><div id="reel-window" class="reel-window" aria-hidden="true"><div id="reel-track" class="reel-track"></div><div class="reel-glass"></div><div class="reel-selection"></div></div></div>
@@ -90,7 +92,7 @@
         <span id="result-round" class="ribbon"></span><h2 id="result-title"></h2><div id="podium" class="podium"></div><div id="result-rows" class="result-rows"></div>
       </section>
       <section id="standings-panel" class="standings-panel" hidden aria-label="Set standings"><span id="standings-label" class="ribbon"></span><h2 id="standings-title">Set standings</h2><div id="set-podium" class="set-podium"></div><div class="standing-head"><span>Player</span><span>Last game</span><span>Total</span></div><div id="standings-rows"></div><p id="intermission-countdown" class="intermission-countdown"></p><div id="podium-ready-players" class="ready-players"></div><details id="set-history"><summary>Round-by-round points</summary><div id="history-table"></div></details></section>
-      <div id="ready-actions" class="ready-actions"><button id="ready" class="primary" disabled>Ready</button><button id="start" hidden disabled>Start round</button><button id="exit" class="primary" hidden>Exit</button></div>
+      <div id="ready-actions" class="ready-actions"><button id="ready" class="primary" disabled>Ready</button><button id="start" hidden disabled>Start round</button><button id="party-continue" class="primary" hidden>Continue</button><button id="exit" class="primary" hidden>Exit</button></div>
       <p id="lobby-status" class="status" role="status"></p><p id="submission-status" class="status" hidden role="status"></p>
     </section>
     <p id="notice" class="notice" hidden role="alert"></p>
@@ -106,6 +108,7 @@
   <dialog id="settings">
     <form method="dialog"><button class="close" aria-label="Close settings">×</button></form>
     <h2>Settings</h2>
+    <section class="audio-settings" aria-label="Arcade settings"><h3>Arcade</h3><label for="arcade-length" class="volume-label">Number of games <output id="arcade-length-value" for="arcade-length">5</output></label><input id="arcade-length" type="range" min="3" max="15" step="1" value="5" /><p id="arcade-length-note">The host can change this before starting a set.</p></section>
     <section class="audio-settings" aria-label="Sound settings">
       <h3>Sound</h3>
       <label for="music-mode">Music</label>

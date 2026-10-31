@@ -23,13 +23,14 @@ Game Select opens a separate **Choose a game** screen after **Start set**; **Pla
 The horizontal illustrated poster carousel loops in both directions with touch scrolling, mouse dragging, snapping, arrow and keyboard controls, and title search.
 The host's centered poster selects the game after scrolling settles; guests follow the shared selection and cannot move the carousel.
 The selected character dances inside its yellow frame, while neighboring posters stay smaller and tilted; reduced motion keeps the artwork still and makes centering immediate.
-Choose **Arcade** for five different games selected at random, played once each in a random order.
+Choose **Arcade** for different games selected at random, played once each in a random order.
+In Settings, the host can choose 3 to all 15 games with the Number of games slider; the default is 5.
 Selecting Arcade keeps everyone in the room lobby; once friends have joined, the host taps **Start set** to start the single reel.
 Before each Arcade game, the reel spins for 4.7 seconds and lands on the same server-chosen game on every device.
 With sound enabled, `roulette.mp3` loops during the spin; `Game-select.mp3`, the selected game's voice clip, and `applause.mp3` play together once on landing.
 `scripts/audio/arcade.js` maps the supplied voice filenames, including `me-find-mistake.mp3`, and the startup loader caches them before play.
 The selected game stays visible for two seconds before How to play; there is no separate Spin button.
-The five-game plan has no repeats, and repeated starts or reconnects do not reroll it.
+The configured game plan has no repeats, and repeated starts or reconnects do not reroll it.
 Choose **Game Select** for three rounds of one game, with difficulty increasing each round.
 Only the host can change the mode or chosen game after joining.
 The host can use **Back to modes** to keep everyone in the same room and choose again.
@@ -62,7 +63,7 @@ The server awards points once per round and retains earned points if a player le
 New guests can join only after the full set ends; original players can reconnect during it.
 The Arcade length and Game Select round count live in `shared/sets.js`, and new games join the shared catalog in `shared/games.js`.
 The catalog currently contains thirteen games, all available in Game Select.
-Arcade selects five distinct games from the complete registered catalog, and its roulette includes all 15 games.
+Arcade selects the host-configured number of distinct games from the complete registered catalog, and its roulette includes all 15 games.
 `arcadeGameIds()` in `shared/sets.js` supplies the same eligible pool to server selection and the reel, so a spin cannot land on an omitted game.
 
 ## Play Totem Shrinker
@@ -232,7 +233,7 @@ The original generated festival background remains in `public/assets/fireworks-f
 Its prompt is preserved in [Fireworks artwork notes](public/assets/fireworks-artwork.md).
 `src/firework-view.js` and `src/fireworks.css` draw the colored rocket arcs and burst particles.
 Each rocket reuses `Fireworks.mp3` at its scheduled local launch, skipping stale launches after interruptions.
-Frontend and room service must deploy together with protocol 16.
+Frontend and room service must deploy together with protocol 17.
 
 ## Play Mimicking Monkeys
 
@@ -264,7 +265,7 @@ Audio scheduling checks do not establish physical speaker latency or subjective 
 
 The original generated character lives in `public/assets/mimicking-monkey.png`, with its prompt preserved in [artwork notes](public/assets/monkeys-artwork.md).
 The leafy stage, shape cues, and response indicators live in `src/monkey-view.js` and `src/monkeys.css`.
-Deploy frontend and room service together to make the new catalog entry available; protocol 16 carries current scene snapshots and the announcement gate.
+Deploy frontend and room service together to make the new catalog entry available; protocol 17 carries current scene snapshots and the announcement gate.
 
 ## Play Jump for the Meat
 
@@ -371,7 +372,7 @@ The original matching reverse-side duck master and optimized delivery file are d
 Both shared choice games accept bounded clock-stamped answers with an 80 ms transport grace after each deadline and acknowledge retries privately.
 The server locks the first valid answer, keeps pending choices out of broadcasts, settles each set once, and owns final scores.
 Missing an answer never pauses the common schedule, and disconnecting does not discard an accepted answer.
-Deploy frontend and backend together with **protocol 16**, including `shared-choices` and `mistake-points` capabilities.
+Deploy frontend and backend together with **protocol 17**, including `shared-choices` and `mistake-points` capabilities.
 
 ## Play It's Raining Coins
 
@@ -436,7 +437,7 @@ Disconnection preserves accepted points; hiding or reloading still forfeits unde
 `src/letters-view.js` and `src/letters.css` render the shared arena, numbered player pointers, entered letters, scores, and result symbols.
 [Type in Letters artwork notes](public/assets/letters-artwork.md) retain the built-in image-generation prompt and optimized background provenance.
 The selection announcement plays the supplied `type-in-letters-voice.mp3` with the existing applause, using the shared preload and announcement lifecycle.
-Deploy frontend and room service together with **protocol 16** and the `shared-letters` capability.
+Deploy frontend and room service together with **protocol 17** and the `shared-letters` capability.
 The initial repeat interval, collection window, and feedback duration are provisional tuning values checked by deterministic tests and browser play, pending device playtests.
 
 ## Backgrounds, set feedback, and Game Select announcements
@@ -631,7 +632,7 @@ The final clear time includes the last item's landing and appears above CLEAR at
 The fastest completion wins, with a 45-second deadline.
 [Artwork notes](public/assets/meals-artwork.md) retain the original restaurant background prompt and master.
 Both new games are available in Game Select and Arcade.
-Deploy frontend and server together with protocol 16 and the `dynamite-meals` capability.
+Deploy frontend and server together with protocol 17 and the `dynamite-meals` capability.
 These initial input and animation timings remain provisional pending physical phone playtests.
 
 Both games use original generated food and dynamite sprites in gameplay, game posters, and the illustrated rules.
@@ -651,7 +652,7 @@ Arcade plays 15 Me Find Mistake boards with a 45-second deadline, eight Facing W
 Fireworks keeps its opening seven sets and adds three more five-rocket sets at the existing final-set speed.
 Game Select retains its existing counts and difficulty progression.
 Facing keeps the full three-second answer window in every added set, with all clients following the same extended schedule.
-Deploy frontend and server together with protocol 16 so every device follows the scheduled set count.
+Deploy frontend and server together with protocol 17 so every device follows the scheduled set count.
 These longer Arcade counts are initial tuning values pending play feedback.
 
 Meal input immediately reserves an available slot, including when several items are already falling in that column.
@@ -669,6 +670,21 @@ The selected character appears in lobby seats and podiums and stays attached to 
 The selection screen uses sixteen individually optimized transparent sprites extracted from the retained generated master.
 [Character artwork notes](public/assets/party-characters.md) preserve the prompt and delivery details.
 Coins and Facial Slot Machine use bounded player panels whose dimensions remain independent of the current round's contents; Slots also clears its cached portrait frames when a new round begins.
-Deploy frontend and backend together with protocol 16, including `character-picker` and `overlapping-coins` capabilities.
+Deploy frontend and backend together with protocol 17, including `character-picker` and `overlapping-coins` capabilities.
 
 The catch target is 36 coins so the overlapping launch schedule increases pressure without halving the race length.
+
+
+## Party mode
+
+Choose **Party**, then **Start set** to open one scrolling game list per player.
+Each player has 30 seconds to choose from the full catalog using touch/scroll, the list's arrow keys and Enter, or the shared red Down, green Select, and blue Up buttons.
+Only your own column can be controlled on your device.
+Each locked choice plays the supplied `Ding.mp3` and stays visible to everyone; missing choices are assigned randomly by the server at the deadline.
+The group plays one round of every selected game in player order, including repeated picks.
+Each game has illustrated instructions and an all-player Ready gate; between games, the podium holds for five seconds before the next instructions.
+After everyone's picks have been played, each connected player may choose **Continue**, or **Exit** returns the room to mode selection.
+Continue opens fresh 30-second choices once everyone agrees, retaining points, cumulative leadership, first-place game-win counts, and round history.
+Disconnected friends have a 15-second reconnect window before the remaining players can continue.
+Set IDs and cycle numbers prevent delayed pick or Continue messages from affecting a later selection.
+Frontend and server must deploy together for protocol 17 with `party-mode` and `arcade-length` capabilities.

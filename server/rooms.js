@@ -8,7 +8,7 @@ import { SLOT_GAME, validReelMask } from '../shared/slots.js';
 import { LETTERS_GAME, LettersMatch, LETTERS_PACKET_MS } from '../shared/letters.js';
 import { ChoiceMatch, isSharedChoice } from '../shared/choice-round.js';
 import { MISTAKE_GAME } from '../shared/mistake.js';
-import { MODES, INTERMISSION_MS, WHEEL_SPIN_MS, REEL_HOLD_MS, GAME_ANNOUNCEMENT_MS, createSetPlan, awardRound } from '../shared/sets.js';
+import { MODES, INTERMISSION_MS, WHEEL_SPIN_MS, REEL_HOLD_MS, GAME_ANNOUNCEMENT_MS, PARTY_PICK_MS, arcadeLength, createSetPlan, awardRound } from '../shared/sets.js';
 
 export const ROUND_MS = 10_000;
 export const GRACE_MS = 10_000;
@@ -29,7 +29,7 @@ export class RoomService {
 
   snapshot(room) {
     return {
-      code: room.code, hostId: room.hostId, testNumber: room.testNumber, selectedGame: room.selectedGame, mode: room.mode, arcadePreview: room.arcadePreview, gameChoosing: Boolean(room.gameChoosing), set: room.set,
+      code: room.code, hostId: room.hostId, testNumber: room.testNumber, selectedGame: room.selectedGame, mode: room.mode, arcadeLength: room.arcadeLength, arcadePreview: room.arcadePreview, gameChoosing: Boolean(room.gameChoosing), set: room.set,
       players: room.players.map(({ id, name, connected, ready, sync, result, progress, disconnectedAt, characterId }) => ({ id, name, characterId, connected, ready, sync, result, progress, disconnectedAt })),
       round: room.round ? { ...room.round } : null,
     };
@@ -48,7 +48,7 @@ export class RoomService {
     if (message.type === 'create') {
       let code;
       do { code = Array.from(randomBytes(6), byte => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[byte % 32]).join(''); } while (this.rooms.has(code));
-      room = { code, players: [], hostId: null, round: null, set: null, mode: MODES[message.mode] ? message.mode : 'arcade', testNumber: 0, selectedGame: GAMES[message.game] ? message.game : TOTEM_GAME, updatedAt: this.now() };
+      room = { code, players: [], hostId: null, round: null, set: null, mode: MODES[message.mode] ? message.mode : 'arcade', arcadeLength: arcadeLength(message.arcadeLength), testNumber: 0, selectedGame: GAMES[message.game] ? message.game : TOTEM_GAME, updatedAt: this.now() };
       this.rooms.set(code, room);
     } else {
       room = this.rooms.get(String(message.code).toUpperCase());
@@ -71,7 +71,7 @@ export class RoomService {
     if (!returning) { player.characterId = message.characterGate === true ? null : room.players.length % 16; room.players.push(player); }
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 16, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 17, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -85,6 +85,24 @@ export class RoomService {
     const room = this.roomFor(client);
     const player = this.playerFor(client);
     if (!room || !player) return this.error(client, 'Join a room first.');
+    if (message.type === 'arcade-length') {
+      if (player.id !== room.hostId || room.set || isRoundActive(room.round) || !Number.isInteger(message.value) || message.value < 3 || message.value > Object.keys(GAMES).length) return;
+      room.arcadeLength = message.value;
+      return this.broadcast(room);
+    }
+    if (message.type === 'party-lock') {
+      const set = room.set;
+      if (set?.phase !== 'party-picking' || message.setId !== set.id || message.cycle !== set.cycle || received >= set.pickEndAt || !GAMES[message.game] || !set.pickerIds.includes(player.id) || set.choices[player.id]) return;
+      set.choices[player.id] = message.game;
+      this.finishPartyPicking(room);
+      return this.broadcast(room);
+    }
+    if (message.type === 'party-continue') {
+      if (room.set?.mode !== 'party' || room.set.phase !== 'complete' || message.setId !== room.set.id || message.cycle !== room.set.cycle) return;
+      player.ready = true;
+      this.continueParty(room);
+      return this.broadcast(room);
+    }
     if (message.type === 'select-character') {
       if (!validCharacter(message.characterId)) return;
       if ((room.set && room.set.phase !== 'complete' || room.round && isRoundActive(room.round)) && (validCharacter(player.characterId) || room.round?.playerIds.includes(player.id))) return;
@@ -106,6 +124,7 @@ export class RoomService {
       return this.broadcast(room);
     }
     if (message.type === 'ready') {
+      if (room.set?.mode === 'party' && room.set.phase === 'complete') return;
       const gate = room.set?.phase === 'instructions' || room.set?.phase === 'intermission' && room.mode === 'game-select';
       if (!gate && (room.set && room.set.phase !== 'complete' || isRoundActive(room.round))) return;
       if (message.ready && !this.isSynced(player)) return this.error(client, 'Wait for at least three fresh clock samples before getting ready.');
@@ -146,11 +165,12 @@ export class RoomService {
       if (message.mode === 'sync') room.set = null;
       else room.set = {
         id: randomUUID(), mode: room.mode, phase: 'playing', roundIndex: 0,
-        plan: createSetPlan(room.mode, room.selectedGame, randomInt),
-        players: room.players.map(p => ({ id: p.id, name: p.name, characterId: p.characterId, points: 0 })),
+        plan: room.mode === 'party' ? [] : createSetPlan(room.mode, room.selectedGame, randomInt, undefined, room.arcadeLength),
+        players: room.players.map(p => ({ id: p.id, name: p.name, characterId: p.characterId, points: 0, wins: 0 })),
         history: [], nextStartAt: null, waitReason: null,
       };
       if (message.mode === 'sync') this.beginRound(room, true);
+      else if (room.mode === 'party') this.beginPartyPicking(room);
       else this.prepareRound(room);
       return this.broadcast(room);
     }
@@ -192,6 +212,40 @@ export class RoomService {
     return player.sync && player.sync.count >= 3 && player.sync.rtt <= 1500 && this.now() - player.sync.at < 20_000;
   }
 
+  beginPartyPicking(room) {
+    const set = room.set;
+    set.cycle = (set.cycle || 0) + 1;
+    set.phase = 'party-picking';
+    set.pickerIds = room.players.filter(player => player.connected).map(player => player.id);
+    for (const player of room.players) if (!set.players.some(member => member.id === player.id)) set.players.push({ id: player.id, name: player.name, characterId: player.characterId, points: 0, wins: 0 });
+    set.choices = {};
+    set.pickEndAt = this.now() + PARTY_PICK_MS;
+    set.cycleStart = set.plan.length;
+    set.roundIndex = set.plan.length;
+    room.round = null;
+    room.players.forEach(player => { player.ready = false; player.result = null; player.assetRound = null; player.progress = { cleared: 0, mistakes: 0 }; });
+  }
+
+  finishPartyPicking(room) {
+    const set = room.set;
+    if (set?.phase !== 'party-picking') return false;
+    const expired = this.now() >= set.pickEndAt;
+    if (!expired && !set.pickerIds.every(id => set.choices[id])) return false;
+    const games = Object.keys(GAMES);
+    for (const id of set.pickerIds) set.choices[id] ||= games[randomInt(games.length)];
+    set.plan.push(...set.pickerIds.map(id => set.choices[id]));
+    this.prepareRound(room);
+    return true;
+  }
+
+  continueParty(room) {
+    if (room.set?.mode !== 'party' || room.set.phase !== 'complete') return false;
+    const connected = room.players.filter(player => player.connected);
+    if (!connected.length || connected.some(player => !player.ready || !validCharacter(player.characterId)) || room.players.some(player => !player.connected && this.now() - player.disconnectedAt < RECONNECT_WAIT_MS)) return false;
+    this.beginPartyPicking(room);
+    return true;
+  }
+
   readyWait(room) {
     const connected = room.players.filter(player => player.connected);
     if (!connected.length) return 'players';
@@ -216,7 +270,7 @@ export class RoomService {
       set.spinStartAt = this.now();
       set.spinEndAt = set.spinStartAt + WHEEL_SPIN_MS;
       set.selectionEndAt = set.spinEndAt + REEL_HOLD_MS;
-    } else if (set.roundIndex === 0 && room.players.some(player => player.requiresAnnouncement)) {
+    } else if ((set.mode === 'party' || set.roundIndex === 0) && room.players.some(player => player.requiresAnnouncement)) {
       set.phase = room.round.phase = 'announcing';
       set.announcementAt = this.now();
       set.announcementEndAt = set.announcementAt + GAME_ANNOUNCEMENT_MS;
@@ -323,7 +377,11 @@ export class RoomService {
     if (!set || room.round.scored) return;
     room.round.scored = true;
     const rows = awardRound(set.players.map(member => ({ ...member, result: room.players.find(player => player.id === member.id)?.result || room.round.departedResults?.[member.id] })), room.round.game);
-    for (const row of rows) set.players.find(member => member.id === row.playerId).points += row.points;
+    for (const row of rows) {
+      const member = set.players.find(member => member.id === row.playerId);
+      member.points += row.points;
+      if (row.placement === 1) member.wins = (member.wins || 0) + 1;
+    }
     set.history.push({ roundId: room.round.id, game: room.round.game, difficulty: room.round.difficulty, blockCount: room.round.blockCount, bpm: room.round.bpm, rows });
     set.phase = set.roundIndex + 1 === set.plan.length ? 'complete' : 'intermission';
     set.nextStartAt = set.phase === 'intermission' ? this.now() + INTERMISSION_MS : null;
@@ -336,7 +394,7 @@ export class RoomService {
   advanceSet(room) {
     const set = room.set;
     if (set?.phase !== 'intermission') return false;
-    if (set.mode === 'arcade') {
+    if (set.mode === 'arcade' || set.mode === 'party') {
       if (this.now() < set.resumeAt) return false;
       set.roundIndex++;
       this.prepareRound(room);
@@ -439,6 +497,8 @@ export class RoomService {
     for (const [code, room] of this.rooms) {
       if (!room.players.some(p => p.connected) && now - room.updatedAt > 30 * 60_000) { this.rooms.delete(code); continue; }
       const round = room.round;
+      if (room.set?.phase === 'party-picking') { if (this.finishPartyPicking(room)) this.broadcast(room); continue; }
+      if (room.set?.mode === 'party' && room.set.phase === 'complete' && this.continueParty(room)) { this.broadcast(room); continue; }
       if (!round) continue;
       if (round.phase === 'announcing') { if (this.finishAnnouncement(room)) this.broadcast(room); continue; }
       if (round.phase === 'selecting') {

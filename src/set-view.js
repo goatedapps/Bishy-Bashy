@@ -63,7 +63,7 @@ export class SetView {
     if (!set) return;
     $('results').hidden = true;
     if (instructions || announcing || standingsVisible || set.phase === 'selecting') $('play-view').hidden = true;
-    $('set-progress').textContent = `${MODES[set.mode].title} · ${set.mode === 'arcade' ? 'Game' : 'Round'} ${set.roundIndex + 1} of ${set.plan.length}`;
+    $('set-progress').textContent = set.mode === 'party' ? `Party · Game ${set.roundIndex - set.cycleStart + 1} of ${set.pickerIds.length}` : `${MODES[set.mode].title} · ${set.mode === 'arcade' ? 'Game' : 'Round'} ${set.roundIndex + 1} of ${set.plan.length}`;
     if (instructions) {
       if (this.instructionSequence.key !== room.round.id) {
         $('instructions-visual').replaceChildren(ruleVisual(room.round.game));
@@ -75,7 +75,7 @@ export class SetView {
     }
     if (!standingsVisible || !set.history.length) return;
     this.renderReady(room, $('podium-ready-players'), playerId);
-    $('podium-ready-players').hidden = set.phase === 'complete' || set.mode === 'arcade';
+    $('podium-ready-players').hidden = set.phase === 'complete' && set.mode !== 'party' || set.mode === 'arcade' || set.mode === 'party' && set.phase !== 'complete';
     const final = set.phase === 'complete';
     if (final) { $('results').hidden = true; $('play-view').hidden = true; }
     $('standings-panel').classList.toggle('final-standings', final);
@@ -84,7 +84,7 @@ export class SetView {
     this.key = key;
     const standings = setStandings(set.players);
     const leaders = standings.filter(player => player.points > 0 && player.placement === 1);
-    $('standings-label').textContent = final ? 'Set complete!' : `${set.mode === 'arcade' ? 'Game' : 'Round'} ${set.history.length} complete!`;
+    $('standings-label').textContent = final ? set.mode === 'party' ? 'Keep the party going?' : 'Set complete!' : `${set.mode === 'game-select' ? 'Round' : 'Game'} ${set.history.length} complete!`;
     $('standings-title').textContent = !final ? 'Current standings' : leaders.length > 1 ? 'A shared victory!' : leaders.length ? `${leaders[0].name} takes the crown!` : 'No winner this time';
     const last = set.history.at(-1);
     $('set-podium').replaceChildren(...[standings[1], standings[0], standings[2]].map(player => {
@@ -113,6 +113,7 @@ export class SetView {
       const points = node('span', 'standing-points');
       points.append(node('strong', '', String(player.points)), node('small', '', 'pts'));
       row.append(points);
+      if (set.mode === 'party') name.append(node('small', 'party-wins', ` · ${player.wins || 0} ${player.wins === 1 ? 'win' : 'wins'}`));
       return row;
     }));
     const table = node('table', 'history-table');
@@ -151,7 +152,7 @@ export class SetView {
     if (set?.phase === 'instructions') this.instructionSequence.advance(performance.now(), !document.hidden);
     if (set?.phase !== 'intermission') return;
     const seconds = Math.max(0, Math.ceil((set.nextStartAt - serverNow) / 1000));
-    const text = set.mode === 'arcade' ? seconds ? `Continuing in ${seconds}s…` : 'Continuing…' : set.waitReason === 'sync' ? 'Synchronizing clocks…' : set.waitReason === 'assets' ? 'Waiting for sounds to load…' : set.waitReason === 'players' ? 'Waiting for a friend to reconnect…' : set.waitReason === 'ready' ? 'Ready for another round?' : seconds ? `Starting in ${seconds}s…` : 'Starting the next round…';
+    const text = set.mode === 'arcade' || set.mode === 'party' ? seconds ? `Continuing in ${seconds}s…` : 'Continuing…' : set.waitReason === 'sync' ? 'Synchronizing clocks…' : set.waitReason === 'assets' ? 'Waiting for sounds to load…' : set.waitReason === 'players' ? 'Waiting for a friend to reconnect…' : set.waitReason === 'ready' ? 'Ready for another round?' : seconds ? `Starting in ${seconds}s…` : 'Starting the next round…';
     if ($('intermission-countdown').textContent !== text) $('intermission-countdown').textContent = text;
   }
 }
