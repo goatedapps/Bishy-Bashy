@@ -188,7 +188,7 @@ Coins requires 36 catches and resolves the earliest outstanding pair on a fixed 
 Coins and Slots fill fixed-size player-panel containers; never let reel contents, completion state or cached previous-round sizes determine panel height, and reset slot portrait caches on round changes.
 
 Party mode gives every rostered player 30 seconds to lock one game; the server assigns random games at the deadline and plays all picks in player order, including duplicates.
-`src/party-picker.js` and `src/party-picker.css` own four fixed player columns, grey inactive seats, looping three-copy lists, fluorescent center frames, GSAP lock sparkles, shared three-button controls, reduced motion, and viewport fit.
+`src/party-picker.js` and `src/party-picker.css` own four fixed player columns, grey inactive seats, looping three-copy lists, GSAP lock sparkles, shared three-button controls, reduced motion, and viewport fit.
 Recenter Party list copies without changing the visible offset; retain a 900 ms server-owned all-locked hold so the final sparkle burst finishes before instructions.
 Party locks use `Ding.mp3` once per newly observed choice; skip stale reconnect cues and preserve the last lock cue across the transition to instructions.
 Party Continue requires all connected players and waits 15 seconds for disconnected friends; retain cumulative points, first-place win counts, and history across cycles, validating set ID and cycle on pick/continue commands.

@@ -679,7 +679,7 @@ The catch target is 36 coins so the overlapping launch schedule increases pressu
 
 Choose **Party** between Arcade and Game Select, then **Start set** to open four fixed player columns.
 Unused or offline columns are greyed out.
-Game lists loop in both directions through a fluorescent selection frame.
+Game lists loop in both directions, with the current choice highlighted.
 Each player has 30 seconds to choose from the full catalog using touch/scroll, the list's arrow keys and Enter, or the shared red Down, green Select, and blue Up buttons.
 Only your own column can be controlled on your device.
 Each locked choice plays the supplied `Ding.mp3` and bursts into sparkles; missing choices are assigned randomly by the server at the deadline.

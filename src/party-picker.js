@@ -63,9 +63,8 @@ export class PartyPicker {
         const list = node('div', 'party-game-list');
         list.setAttribute('role', 'listbox'); list.setAttribute('aria-label', player ? `${player.name}'s games` : 'No player');
         list.tabIndex = own ? 0 : -1;
-        const frame = node('div', 'party-selection-frame'); frame.setAttribute('aria-hidden', 'true');
         const status = node('strong', 'party-pick-status', occupied ? own ? 'Your pick' : 'Choosing…' : 'Waiting to join');
-        const lane = { id, own, occupied, panel, list, frame, status, index: 0, cursor: this.games.length, locked: false, rows: [] };
+        const lane = { id, own, occupied, panel, list, status, index: 0, cursor: this.games.length, locked: false, rows: [] };
         lane.rows = Array.from({ length: this.games.length * 3 }, (_, cursor) => {
           const gameIndex = cursor % this.games.length;
           const game = this.games[gameIndex];
@@ -92,7 +91,7 @@ export class PartyPicker {
           if (direction || event.key === 'Enter') { event.preventDefault(); direction ? this.go(lane, lane.cursor + direction) : this.lock(); }
         });
         if (!own) list.inert = true;
-        window.append(list, frame);
+        window.append(list);
         panel.append(header, window, status); columns.append(panel);
         return lane;
       });
@@ -101,7 +100,6 @@ export class PartyPicker {
     for (const lane of this.lanes) {
       const connected = lane.occupied && room.players.some(player => player.id === lane.id && player.connected);
       lane.panel.classList.toggle('is-empty', !connected);
-      lane.frame.hidden = !connected;
       if (!connected) lane.status.textContent = lane.occupied ? 'Offline' : 'Waiting to join';
       else if (!lane.locked) lane.status.textContent = lane.own ? 'Your pick' : 'Choosing…';
       else lane.status.textContent = '✓ Locked in';
@@ -170,7 +168,7 @@ export class PartyPicker {
     if (this.reduced.matches) return;
     lane.burst?.kill();
     const burst = node('div', 'party-lock-sparkles'); burst.setAttribute('aria-hidden', 'true');
-    const frame = lane.frame.getBoundingClientRect(), panel = lane.panel.getBoundingClientRect();
+    const frame = lane.list.getBoundingClientRect(), panel = lane.panel.getBoundingClientRect();
     burst.style.left = `${frame.left + frame.width / 2 - panel.left}px`;
     burst.style.top = `${frame.top + frame.height / 2 - panel.top}px`;
     const stars = Array.from({ length: 16 }, (_, index) => {
