@@ -20,7 +20,7 @@ test('extra Arcade Fireworks sets finish only after all ten sets, including 41 r
 });
 test('all eight shared Arcade Facing sets retain three-second windows and settle authoritative scores',()=>{
  const round={id:'f',game:'facing-which-way',playerIds:['a','b'],...roundSettings('facing-which-way',123,1,'arcade')},run=createRun(round,0),match=new ChoiceMatch(round,run.stages);
- assert.equal(run.stages.length,8);assert.equal(round.duration,58400);assert.equal(run.stages.at(-1).endsAt,round.duration);
+ assert.equal(run.stages.length,8);assert.equal(round.duration,71200);assert.equal(run.stages.at(-1).endsAt,round.duration);
  for(const stage of run.stages){assert.equal(stage.answerEnd-stage.answerAt,3000);match.choose('a',{index:stage.index,color:stage.puzzle.answer,elapsed:stage.answerAt+100},stage.answerAt+110);match.advance(stage.answerEnd+80);}
  assert.equal(match.state.scores.a,8);assert.equal(match.state.scores.b,0);assert.match(gameRules(round.game,round).at(-1),/8 wins/);assert.match(roundDetail(round),/8 sets/);
 });

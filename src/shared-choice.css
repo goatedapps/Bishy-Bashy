@@ -53,3 +53,12 @@
 .shared-revealed .shared-player-result { animation:shared-result-pop .14s ease-out both; }
 @keyframes shared-result-pop { from { transform:scale(.75); opacity:.4; } to { transform:scale(1); opacity:1; } }
 @media(prefers-reduced-motion:reduce) { .shared-revealed .shared-player-result { animation:none; } }
+
+.shared-demo { container-type:size; }
+.shared-duck-card { width:min(210px,70cqw,70cqh); height:min(210px,70cqw,70cqh); flex-shrink:0; }
+.shared-option { container-type:size; }
+.shared-option .direction-duck { width:min(90px,90cqw,90cqh); height:min(90px,90cqw,90cqh); max-height:none; flex-shrink:0; }
+#reconnect-countdown { color:#3b214d; background:#fff8df; border-radius:8px; padding:5px 8px; font-size:12px; font-weight:800; }
+
+.shared-facing .shared-demo,.shared-facing .shared-options { grid-row:2 / 4; }
+.shared-facing .shared-options { height:min(200px,100%); align-self:center; }

@@ -49,3 +49,35 @@ for(const game of ['dice-dice-more-dice','facing-which-way']) test(`${game}: com
     }
   }finally{globalThis.document=previous;}
 });
+
+
+test('Facing preserves covered-card geometry across mirror boundaries without an extra flip', () => {
+  const previous = globalThis.document;
+  globalThis.document = { createElement: () => new Element() };
+  try {
+    const round = { id: 'mirror', game: 'facing-which-way', playerIds: ['a'], ...roundSettings('facing-which-way', 123, 1, 'party') };
+    const run = createRun(round, 0);
+    round.choice = new ChoiceMatch(round, run.stages).state;
+    const room = { round, players: [{ id: 'a', name: 'Player', connected: true }] };
+    const view = new SharedChoiceStage();
+    const matrix = transform => {
+      const [, scale, angle] = transform.match(/scaleX\(([^)]+)\) rotate\(([^)]+)deg\)/);
+      const radians = Number(angle) * Math.PI / 180;
+      return [Number(scale) * Math.cos(radians), Math.sin(radians), -Number(scale) * Math.sin(radians), Math.cos(radians)];
+    };
+    for (const stage of run.stages) {
+      stage.puzzle.moves.forEach((move, index) => {
+        if (move.kind !== 'mirror') return;
+        const nextAt = stage.turnsAt + (index + 1) * stage.stepMs;
+        view.render(room, 'a', { run }, nextAt - .001);
+        const before = matrix(view.card.style.transform);
+        view.render(room, 'a', { run }, nextAt);
+        const after = matrix(view.card.style.transform);
+        before.forEach((value, axis) => assert.ok(Math.abs(value - after[axis]) < .00001));
+      });
+      view.render(room, 'a', { run }, stage.answerAt);
+      assert.equal(view.demo.hidden, true);
+      assert.equal(view.options.hidden, false);
+    }
+  } finally { globalThis.document = previous; }
+});

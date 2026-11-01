@@ -66,7 +66,7 @@ test('totem rejects incomplete finishes and preserves a faster result arriving a
   service.handle(clients[1], { ...result, cleared: 30, elapsed: 1900 });
   const token = room.players[0].token;
   service.disconnect(clients[0]);
-  setTime(round.endAt + 9000);
+  setTime(round.startAt + 20_000);
   const returning = {};
   service.handle(returning, { type: 'join', code: room.code, token, name: 'First' });
   service.handle(returning, { ...result, cleared: 30 });
@@ -222,4 +222,46 @@ test('Perm scores require a completed round, stay bound to the connection, and a
   service.handle(clients[0], { ...result, score: 0 });
   assert.equal(room.players[0].result.score, round.maxScore);
   assert.equal(sent.get(clients[0]).at(-1).type, 'result-ack');
+});
+
+
+test('disconnected seats expire at 30 seconds, retain accepted results, and allow a replacement in the next round', () => {
+  const { service, clients, room, start, setTime, sent } = setup(4);
+  start('totem-shrinker');
+  const round = room.round, departed = room.players[1];
+  setTime(round.startAt + 2000);
+  service.handle(clients[1], { type: 'result', roundId: round.id, status: 'finished', elapsed: 1800, cleared: 30, mistakes: 0 });
+  service.disconnect(clients[1]);
+  setTime(round.startAt + 31_999); service.tick();
+  assert.ok(room.players.includes(departed));
+  setTime(round.startAt + 32_000); service.tick();
+  assert.equal(room.players.includes(departed), false);
+  assert.equal(round.departedResults[departed.id].elapsed, 1800);
+  const old = {};
+  service.handle(old, { type: 'join', code: room.code, name: 'Old', token: departed.token });
+  assert.match(sent.get(old).at(-1).message, /expired/);
+  const replacement = {};
+  service.handle(replacement, { type: 'join', code: room.code, name: 'New', characterGate: true });
+  assert.equal(room.players.length, 4);
+  const newcomer = room.players.at(-1);
+  assert.equal(round.playerIds.includes(newcomer.id), false);
+  service.handle(replacement, { type: 'select-character', characterId: 2 });
+  assert.equal(newcomer.characterId, 2);
+  assert.ok(room.set.players.some(player => player.id === newcomer.id));
+});
+
+test('reconnecting before expiry cancels seat removal; unfinished expired players forfeit', () => {
+  const { service, clients, room, start, setTime } = setup(2);
+  start('totem-shrinker');
+  const player = room.players[1], token = player.token;
+  service.disconnect(clients[1]);
+  setTime(1_029_999);
+  const returning = {};
+  service.handle(returning, { type: 'join', code: room.code, name: 'Back', token });
+  setTime(1_030_000); service.tick();
+  assert.ok(room.players.includes(player));
+  service.disconnect(returning);
+  setTime(1_060_000); service.tick();
+  assert.equal(room.players.includes(player), false);
+  assert.equal(room.round.departedResults[player.id].status, 'forfeit');
 });

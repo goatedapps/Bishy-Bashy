@@ -3,7 +3,7 @@ import { COUNTDOWN_MS } from '../shared/games.js';
 import { ARCADE_AUDIO_FILES } from '../scripts/audio/arcade.js';
 
 const BASE_URL = import.meta.env?.BASE_URL || '/';
-const DEFAULTS = { musicMode: 'auto', musicVolume: .65, effectsVolume: .8 };
+const DEFAULTS = { musicMode: 'on', musicVolume: .65, effectsVolume: .8 };
 const MUSIC_MODES = ['auto', 'on', 'off'];
 const MENU_TRACKS = { menu: 'Background-ActionRock.mp3', instructions: 'game-instructions.mp3' };
 const MENU_TRACK_GAINS = { menu: 1, instructions: 2 };
@@ -44,7 +44,7 @@ export class GameAudio {
     this.now = now;
     this.fetchFile = fetchFile;
     this.onChange = onChange;
-    this.enabled = this.read('bb-sound') === 'on';
+    this.enabled = this.read('bb-sound') !== 'off';
     let saved;
     try { saved = JSON.parse(this.read('bb-audio') || '{}'); } catch { saved = {}; }
     this.preferences = {
@@ -70,6 +70,13 @@ export class GameAudio {
     this.buttonRequest = 0;
     this.launchKey = null;
     this.launchVoice = null;
+  }
+
+  applyEntryDefaults(role) {
+    if (this.read('bb-audio')) return;
+    this.preferences = { ...DEFAULTS, ...(role === 'join' ? { musicVolume: .2, effectsVolume: .7 } : {}) };
+    this.applyVolumes();
+    this.onChange();
   }
 
   read(key) { try { return this.storage?.getItem(key); } catch { return null; } }

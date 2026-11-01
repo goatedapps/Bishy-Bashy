@@ -75,7 +75,13 @@ export class LettersStage {
     this.targetLetters.forEach((letter, index) => { letter.textContent = started ? state.target[index] : '?'; });
     this.element.classList.toggle('letters-settled', Boolean(feedback));
     const winners = feedback?.winners.map(id => roster.find(player => player.id === id)?.name).filter(Boolean) || [];
-    const notice = !started ? 'Get ready!' : ended ? 'Time’s up!' : feedback ? `${winners.join(' & ')} +1` : run?.claim ? 'Matched!' : '';
+    let notice = '';
+    if (!started) notice = 'Get ready!';
+    else if (ended) notice = 'Time is up!';
+    else if (feedback) notice = winners.length ? `${winners.join(' & ')} +1` : 'Word missed';
+    else if (time >= local.start + state.closesAt) notice = 'Time is up';
+    else if (run?.claim) notice = 'Matched! Waiting for friends...';
+    else notice = `${Math.max(0, (local.start + state.closesAt - time) / 1000).toFixed(1)} s`;
     if (this.notice.textContent !== notice) this.notice.textContent = notice;
     this.keys.forEach(({ key: cell }, index) => cell.classList.toggle('is-your-key', started && run?.cursor === index && !run.done));
     roster.forEach((player, index) => {
@@ -102,7 +108,7 @@ export class LettersStage {
       row.card.classList.toggle('letter-matched', own && Boolean(run?.claim));
       row.outcome.hidden = !feedback;
       row.outcome.className = `letter-outcome ${won ? 'letter-win' : 'letter-loss'}`;
-      row.outcome.setAttribute('aria-label', won ? 'Won this set' : 'Lost this set');
+      row.outcome.setAttribute('aria-label', won ? 'Completed this word' : 'Word missed');
       row.outcome.textContent = won ? '○' : '×';
       row.status.textContent = !member ? 'Left' : member.result?.status === 'forfeit' ? 'Forfeited' : member.result?.status === 'finished' ? '✓ Finished' : !member.connected ? 'Reconnecting…' : '';
     });

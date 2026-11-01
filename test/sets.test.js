@@ -1,4 +1,4 @@
-import { LettersRun, LETTERS_SETTLE_MS, LETTERS_FEEDBACK_MS, LETTERS_PACKET_MS } from '../shared/letters.js';
+import { LettersRun, LETTERS_FEEDBACK_MS, LETTERS_PACKET_MS } from '../shared/letters.js';
 import { letterClaim } from './helpers/letters.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -34,7 +34,7 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
           const place = index === winner ? 0 : index === 0 ? 1 : index;
           if (place < clients.length - set) service.handle(clients[index], { type: 'letters-claim', roundId: round.id, ...claim });
         }
-        time += LETTERS_SETTLE_MS; service.tick();
+        time = round.startAt + round.letters.closesAt + LETTERS_PACKET_MS; service.tick();
         time += LETTERS_FEEDBACK_MS; service.tick();
       }
       time = round.endAt + LETTERS_PACKET_MS; service.tick(); return;

@@ -34,7 +34,7 @@ export function facingSequence(seed, count, turnCount) {
   });
 }
 
-export function facingDuration(stepMs = 1000, turnCount = 2, goal = FACING_GOAL) {
+export function facingDuration(stepMs = 1800, turnCount = 2, goal = FACING_GOAL) {
   return goal * (FACING_LOOK_MS + FACING_COVER_MS + FACING_COVER_HOLD_MS + turnCount * stepMs + FACING_HANDOFF_MS + FACING_ANSWER_MS + FACING_REVEAL_MS);
 }
 export const FACING_DURATION_MS = facingDuration();

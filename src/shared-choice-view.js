@@ -74,7 +74,7 @@ export class SharedChoiceStage {
     const revealed = phase.mode === 'reveal' || phase.mode === 'done';
     this.title.textContent = `Set ${phase.index + 1} / ${run.goal}`;
     this.clock.textContent = canAnswer ? `${Math.max(0, (run.start + stage.answerEnd - time) / 1000).toFixed(1)} s` : phase.mode === 'wait' ? 'Get ready' : revealed ? 'Answers' : phase.mode === 'turn' ? facingMoveLabel(puzzle.moves[phase.turn]) : phase.mode === 'look' ? 'Look!' : 'Track the card';
-    this.demo.hidden = !facing;
+    this.demo.hidden = !facing || canAnswer || revealed;
     this.options.hidden = facing && !canAnswer && !revealed;
     if (facing) {
       this.card.hidden = phase.mode === 'wait';
@@ -82,12 +82,14 @@ export class SharedChoiceStage {
       this.duck.hidden = !visible;
       const pose = revealed || canAnswer || phase.mode === 'handoff' ? puzzle.poses.at(-1) : phase.mode === 'turn' ? puzzle.poses[phase.turn] : puzzle.initial;
       setDuckPose(this.duck, { ...pose, angle: 0 });
-      let transform = `rotate(${pose.angle}deg)`;
+      const side = pose.back ? -1 : 1;
+      this.duck.style.transform = `scaleX(${side})`;
+      let transform = `scaleX(${side}) rotate(${side * pose.angle}deg)`;
       if (phase.mode === 'turn') {
         const move = puzzle.moves[phase.turn];
         const progress = this.motion?.matches ? 1 : Math.min(1, phase.progress / .75);
         const eased = 1 - (1 - progress) ** 3;
-        transform = move.kind === 'mirror' ? `rotate(${pose.angle}deg) scaleX(${Math.cos(Math.PI * eased)})` : `rotate(${pose.angle + move.degrees * eased}deg)`;
+        transform = move.kind === 'mirror' ? `scaleX(${side * Math.cos(Math.PI * eased)}) rotate(${side * pose.angle}deg)` : `scaleX(${side}) rotate(${side * (pose.angle + move.degrees * eased)}deg)`;
       }
       this.card.style.transform = transform;
       this.flap.hidden = visible && phase.mode !== 'cover';

@@ -14,6 +14,7 @@ export const ROUND_MS = 10_000;
 export const GRACE_MS = 10_000;
 export { COUNTDOWN_MS };
 export const RECONNECT_WAIT_MS = 15_000;
+export const DISCONNECT_REMOVE_MS = 30_000;
 const terminal = player => Boolean(player.result);
 
 export class RoomService {
@@ -54,9 +55,11 @@ export class RoomService {
       room = this.rooms.get(String(message.code).toUpperCase());
       if (!room) return this.error(client, 'That room could not be found. Check the code or create a new room.');
     }
+    this.expirePlayers(room, this.now());
     const returning = typeof message.token === 'string' && room.players.find(player => player.token === message.token);
-    if (!returning && room.set && room.set.phase !== 'complete') return this.error(client, 'A set is underway. Join after the full set finishes.');
-    if (!returning && room.round && room.round.phase !== 'results') return this.error(client, 'A round is underway. Join after it finishes.');
+    if (message.token && !returning) return this.error(client, 'Your reconnect window expired. Join the room again.');
+    if (!returning && !room.replacementSeats && room.set && room.set.phase !== 'complete') return this.error(client, 'A set is underway. Join after the full set finishes.');
+    if (!returning && !room.replacementSeats && room.round && room.round.phase !== 'results') return this.error(client, 'A round is underway. Join after it finishes.');
     if (!returning && room.players.length >= 4) return this.error(client, 'This room already has four players.');
     if (returning?.connected) return this.error(client, 'This player is already connected. Open a new tab to join as another player.');
     const player = returning || { id: randomUUID(), token: randomBytes(24).toString('hex'), name: message.name.trim().slice(0, 20), ready: false, sync: null, result: null, progress: { cleared: 0, mistakes: 0 } };
@@ -69,9 +72,11 @@ export class RoomService {
     player.requiresAnnouncement = message.announceGates === true;
     player.assetRound = null;
     if (!returning) { player.characterId = message.characterGate === true ? null : room.players.length % 16; room.players.push(player); }
+    if (!returning && room.replacementSeats) room.replacementSeats--;
+    if (!returning && room.set) room.set.players.push({ id: player.id, name: player.name, characterId: player.characterId, points: 0, wins: 0 });
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 17, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 18, capabilities: ['room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -495,10 +500,30 @@ export class RoomService {
     this.broadcast(room);
   }
 
+  expirePlayers(room, now) {
+    const expired = room.players.filter(player => !player.connected && now - player.disconnectedAt >= DISCONNECT_REMOVE_MS);
+    if (!expired.length) return false;
+    for (const player of expired) {
+      if (isRoundActive(room.round) && room.round.playerIds.includes(player.id)) {
+        room.round.departedResults ??= {};
+        room.round.departedResults[player.id] = player.result || { status: 'forfeit', elapsed: null, reason: 'Disconnected for 30 seconds', cleared: player.progress.cleared, mistakes: player.progress.mistakes };
+      }
+      if (player.client) player.client.room = null;
+    }
+    room.players = room.players.filter(player => !expired.includes(player));
+    room.replacementSeats = (room.replacementSeats || 0) + expired.length;
+    this.chooseHost(room);
+    if (isRoundActive(room.round)) this.finishIfComplete(room);
+    this.broadcast(room);
+    return true;
+  }
+
   tick() {
     const now = this.now();
     for (const [code, room] of this.rooms) {
       if (!room.players.some(p => p.connected) && now - room.updatedAt > 30 * 60_000) { this.rooms.delete(code); continue; }
+      this.expirePlayers(room, now);
+      if (!room.players.length) { this.rooms.delete(code); continue; }
       const round = room.round;
       if (room.set?.phase === 'party-picking') { if (this.finishPartyPicking(room)) this.broadcast(room); continue; }
       if (room.set?.mode === 'party' && room.set.phase === 'complete' && this.continueParty(room)) { this.broadcast(room); continue; }

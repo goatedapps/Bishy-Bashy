@@ -73,6 +73,6 @@ test('shared set feedback marks only winners with circles, marks other players l
     stage.render(room, 'a', local, 2700);
     assert.ok(stage.rows.every(row => row.outcome.hidden));
     stage.render(room, 'a', local, 30000);
-    assert.equal(stage.notice.textContent, 'Time’s up!');
+    assert.equal(stage.notice.textContent, 'Time is up!');
   } finally { globalThis.document = previous; }
 });

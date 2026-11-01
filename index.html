@@ -50,6 +50,7 @@
     </section>
     <section id="room-view" hidden>
       <div class="room-toolbar">
+        <span id="reconnect-countdown" role="status" hidden></span>
         <button id="share" class="room-pill" aria-label="Invite friends"><span class="online-dot"></span>Room <strong id="room-code"></strong><span id="occupancy"></span><span aria-hidden="true">↗</span></button>
         <div class="room-navigation"><button id="back" class="text-button" hidden>← Back to modes</button><button id="leave" class="text-button">Leave</button></div>
       </div>
@@ -113,7 +114,7 @@
       <h3>Sound</h3>
       <label for="music-mode">Music</label>
       <select id="music-mode"><option value="auto">One device per room</option><option value="on">This device</option><option value="off">Off</option></select>
-      <p>Room music plays on the first player's device. Choose This device for headphones.</p>
+      <p>Choose One device per room to share music, or This device for personal playback.</p>
       <label for="music-volume" class="volume-label">Music volume <output id="music-volume-value" for="music-volume">65%</output></label>
       <input id="music-volume" type="range" min="0" max="100" step="5" value="65" />
       <label for="effects-volume" class="volume-label">Effects volume <output id="effects-volume-value" for="effects-volume">80%</output></label>

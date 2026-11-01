@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { LETTERS_GAME, LETTERS_DURATION_MS, LETTERS_INPUT_MS, LETTERS_SETTLE_MS, LETTERS_PACKET_MS, LETTERS_FEEDBACK_MS, LETTERS_MAX_ACTIONS, LettersRun, LettersMatch, letterTarget, validateLetterClaim } from '../shared/letters.js';
+import { LETTERS_GAME, LETTERS_DURATION_MS, LETTERS_INPUT_MS, LETTERS_WORD_MS, LETTERS_PACKET_MS, LETTERS_FEEDBACK_MS, LETTERS_MAX_ACTIONS, LettersRun, LettersMatch, letterTarget, validateLetterClaim } from '../shared/letters.js';
 import { GAMES, createRun, roundSettings, comparePlayers } from '../shared/games.js';
 import { awardRound, arcadeGameIds } from '../shared/sets.js';
 import { RoomService } from '../server/rooms.js';
@@ -22,7 +22,7 @@ export function typeTarget(run, at = run.state.opensAt + 100) {
 
 test('letter targets are seeded three-letter sequences; Arcade and Game Select include the shared game', () => {
   assert.equal(GAMES[LETTERS_GAME].sharedArena, true);
-  assert.equal(round().duration, 30_000);
+  assert.equal(round().duration, LETTERS_DURATION_MS);
   assert.equal(arcadeGameIds().includes(LETTERS_GAME), true);
   assert.deepEqual(Array.from({ length: 100 }, (_, i) => letterTarget(123, i)), Array.from({ length: 100 }, (_, i) => letterTarget(123, i)));
   assert.notEqual(letterTarget(123, 0), letterTarget(124, 0));
@@ -50,7 +50,7 @@ test('left and right wrap across all 27 cells; enter types and backspace erases;
   assert.equal(run.typed, 'AA');
 });
 
-test('inputs remain local and obey countdown, repeat limits, feedback gates, and the exact 30-second deadline', () => {
+test('inputs remain local and obey countdown, repeat limits, feedback gates, and the exact word deadline', () => {
   const r = round(), run = new LettersRun(r, 5000);
   assert.equal(run.tap(0, 4999).type, 'ignored');
   assert.equal(run.tap(0, 5000).type, 'move');
@@ -85,41 +85,46 @@ test('claims replay bounded input proofs; fabricated strings, extra actions, imp
   assert.ok(Buffer.byteLength(JSON.stringify(largest)) < 8192);
 });
 
-test('earlier completion beats the first packet, claims are idempotent, equal timestamps share points, and targets wait for feedback', () => {
+test('everyone completing the fixed word window scores once, and each next word has less time', () => {
   const r = round(), match = new LettersMatch(r);
-  const slow = typeTarget(new LettersRun({ ...r, letters: match.state }, 0), 200);
-  const fast = typeTarget(new LettersRun({ ...r, letters: match.state }, 0), 100);
-  const received = slow.actions.at(-1)[1] + 50;
-  assert.ok(match.claim('a', slow, received));
-  assert.ok(match.claim('b', fast, received + 50));
-  assert.ok(match.claim('c', fast, received + 70));
-  assert.ok(match.claim('b', fast, received + 300));
-  const old = match.state.target;
-  assert.equal(match.advance(received + LETTERS_SETTLE_MS - 1), false);
-  assert.equal(match.advance(received + LETTERS_SETTLE_MS), true);
-  assert.deepEqual(match.state.scores, { a: 0, b: 1, c: 1 });
-  assert.equal(match.state.phase, 'feedback');
-  assert.equal(match.state.index, 0);
-  assert.equal(match.state.target, old);
-  assert.equal(match.claim('a', slow, received + LETTERS_SETTLE_MS), false);
-  match.advance(received + LETTERS_SETTLE_MS + LETTERS_FEEDBACK_MS);
-  assert.equal(match.state.index, 1);
-  assert.equal(match.state.phase, 'play');
-  assert.equal(match.claim('a', slow, received + LETTERS_SETTLE_MS + LETTERS_FEEDBACK_MS + 10), false);
+  for (let index = 0; index < LETTERS_WORD_MS.length; index++) {
+    assert.equal(match.state.closesAt - match.state.opensAt, LETTERS_WORD_MS[index]);
+    const fast = typeTarget(new LettersRun({ ...r, letters: match.state }, 0));
+    const slow = typeTarget(new LettersRun({ ...r, letters: match.state }, 0), match.state.opensAt + 500);
+    assert.ok(match.claim('a', fast, fast.actions.at(-1)[1] + 20));
+    assert.ok(match.claim('a', fast, fast.actions.at(-1)[1] + 30));
+    assert.equal(match.advance(match.state.closesAt - 1), false);
+    assert.ok(match.claim('b', slow, slow.actions.at(-1)[1] + 20));
+    assert.equal(match.advance(match.settleAt), true);
+    assert.deepEqual(match.state.scores, { a: index + 1, b: index + 1, c: 0 });
+    assert.equal(match.state.phase, 'feedback');
+    assert.equal(match.claim('c', slow, match.settleAt), false);
+    match.advance(match.nextAt);
+  }
+  assert.equal(match.nextAt, LETTERS_DURATION_MS);
 });
 
-test('a pre-deadline finish arriving just after zero still scores; inputs at zero cannot score', () => {
+test('a finish before the word deadline can arrive during transport grace; inputs at the deadline cannot score', () => {
   const r = round(), match = new LettersMatch(r);
   const probe = typeTarget(new LettersRun(r, 0), 100);
   const length = probe.actions.at(-1)[1] - 100;
-  const claim = typeTarget(new LettersRun(r, 0), r.duration - length - 1);
-  assert.equal(claim.actions.at(-1)[1], r.duration - 1);
-  assert.ok(match.claim('a', claim, r.duration + 200));
-  match.advance(r.duration + LETTERS_PACKET_MS);
+  const claim = typeTarget(new LettersRun(r, 0), match.state.closesAt - length - 1);
+  assert.equal(claim.actions.at(-1)[1], match.state.closesAt - 1);
+  assert.ok(match.claim('a', claim, match.state.closesAt + 200));
+  const late = structuredClone(claim); late.actions.at(-1)[1] = match.state.closesAt;
+  assert.equal(validateLetterClaim(r, match.state, late, match.state.closesAt + 100), null);
+  match.advance(match.settleAt);
   assert.equal(match.state.scores.a, 1);
   assert.equal(match.state.index, 0);
-  const late = structuredClone(claim); late.actions.at(-1)[1] = r.duration;
-  assert.equal(validateLetterClaim(r, match.state, late, r.duration + 100), null);
+});
+
+test('missed words still advance on schedule without any claims', () => {
+  const match = new LettersMatch(round());
+  match.advance(match.settleAt);
+  assert.deepEqual(match.state.feedback.winners, []);
+  match.advance(match.nextAt);
+  assert.equal(match.state.index, 1);
+  assert.equal(match.state.phase, 'play');
 });
 
 function roomFixture() {
@@ -151,7 +156,7 @@ test('server owns typing points and final results, keeps private proofs out of b
   assert.equal(messages.filter(item => item.message.type === 'letters-claim-ack').length, 2);
   service.handle(clients[0], { type: 'result', roundId: r.id, status: 'finished', cleared: 999, elapsed: 1, mistakes: 0 });
   assert.equal(room.players[0].result, null);
-  time(r.startAt + finished + 100 + LETTERS_SETTLE_MS); service.tick();
+  time(r.startAt + room.lettersMatch.settleAt); service.tick();
   assert.equal(r.letters.scores[winner.id], 1);
   assert.equal(JSON.stringify(service.snapshot(room)).includes('actions'), false);
   assert.equal(JSON.stringify(service.snapshot(room)).includes(winner.token), false);
@@ -188,10 +193,10 @@ test('cosmetic alphabet snapshots are bounded to 4 Hz and cannot award points; d
   assert.equal(room.players[0].result.status, 'finished');
 });
 
-test('three Game Select rounds keep 30-second races and readiness gates, reset typing scores, and exit normally', () => {
+test('three Game Select rounds keep timed words and readiness gates, reset typing scores, and exit normally', () => {
   const { service, room, clients, time, ready } = roomFixture();
   for (let index = 0; index < 3; index++) {
-    assert.equal(room.round.duration, 30_000);
+    assert.equal(room.round.duration, LETTERS_DURATION_MS);
     assert.ok(Object.values(room.round.letters.scores).every(score => score === 0));
     time(room.round.endAt + LETTERS_PACKET_MS); service.tick();
     if (index < 2) {
@@ -222,11 +227,20 @@ test('forfeiting or leaving does not stop the shared race, and forfeited players
   time(r.startAt + at);
   service.handle(clients[0], { type: 'letters-claim', roundId: r.id, ...claim });
   service.handle(clients[1], { type: 'letters-claim', roundId: r.id, ...claim });
-  time(r.startAt + at + LETTERS_SETTLE_MS); service.tick();
+  time(r.startAt + room.lettersMatch.settleAt); service.tick();
   assert.equal(r.letters.scores[room.players[0].id], 0);
   assert.equal(r.letters.scores[room.players[1].id], 1);
   time(r.endAt + LETTERS_PACKET_MS); service.tick();
   assert.equal(r.phase, 'results');
   assert.equal(room.set.history.length, 1);
   assert.deepEqual(room.set.history[0].rows.map(row => row.points), [0, 10, 0]);
+});
+
+
+test('a delayed server tick catches up through all missed words without changing their deadlines', () => {
+  const match = new LettersMatch(round());
+  assert.equal(match.advance(LETTERS_DURATION_MS), true);
+  assert.equal(match.state.index, LETTERS_WORD_MS.length - 1);
+  assert.equal(match.nextAt, LETTERS_DURATION_MS);
+  assert.deepEqual(match.state.scores, { a: 0, b: 0, c: 0 });
 });

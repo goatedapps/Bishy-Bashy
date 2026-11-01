@@ -5,7 +5,7 @@ The Vite frontend deploys independently to GitHub Pages; `server/` is a separate
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 17 adds configurable Arcade length and timed Party selections; deploy frontend and backend together.
+Protocol version 18 adds expiring disconnected seats and timed shared Letters words; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -52,7 +52,7 @@ Use `dice-roll.mp3` once per throw and `flip.mp3` once per duck turn with bounde
 `shared/coins.js` owns seeded gold/fake drops; red/green/blue select left/middle/right, and catches settle at the scheduled local landing time.
 `shared/dodge.js` owns alternating tall walls and low hurdles; red/blue step left/right, green jumps, and collisions use the jump height at the scheduled impact.
 Both games keep completed progress after mistakes; `src/coins-dodge-view.js` renders local and published remote challenges using the same seeded models.
-`shared/letters.js` owns Type in Letters' 30-second shared-target race, wraparound alphabet/backspace input, bounded replay proofs, and 120 ms completion-time arbitration with 300 ms result feedback; the server owns scores and final results.
+`shared/letters.js` owns five shared word windows of 10, 8, 6, 5, and 4 seconds, wraparound alphabet/backspace input, bounded replay proofs, 800 ms transport grace, and 300 ms result feedback; every player completing a word earns one point; the server owns scores and final results.
 `src/letters-view.js` and `src/letters.css` keep the alphabet in one compact phone row and typed player boxes in fixed columns, including solo play; local matches highlight immediately and button presses use `Diuup.mp3`.
 Type in Letters uses red/green/blue for left/enter/right and announces with supplied `type-in-letters-voice.mp3` plus applause; include it in both Arcade and Game Select.
 `shared/sets.js` defines host-configured Arcade (3 to the full catalog, default 5), three-round Game Select, Party player-order playlists, shared placement points, and cumulative standings.
@@ -74,7 +74,7 @@ Keep the arena overlay above all character and effect layers, and show an explic
 `src/viewport.js` and `src/viewport.css` fit the active arena and shared controls inside the visual viewport, with controls outside the arena and instructions keeping Ready visible.
 Final standings hide setup and restart controls and show Exit to every connected player.
 `exit-set` accepts only the current completed set ID and returns the whole room to mode selection; active-set Back to modes remains host-only.
-Facing turns take 1000–700 ms across five available difficulties; Arcade coin pairs launch every 400 ms and fall for 750 ms; Game Select starts with 500 ms launches and 900 ms falls, accelerating independently each round.
+Facing turns take 1800–1400 ms across five available difficulties; Arcade coin pairs launch every 400 ms and fall for 750 ms; Game Select starts with 500 ms launches and 900 ms falls, accelerating independently each round.
 Shared styles live in `src/style.css`; the pink disco stage lives in `src/games.css`.
 The landing page and set standings use `src/sets.css` and `src/set-view.js`.
 The illustrated landing screen only creates or joins rooms; `src/home.css` scopes its landscape, central title, and form to outside rooms, and its help button introduces multiplayer room-code setup.
@@ -119,7 +119,7 @@ Facial Slot Machine's original carousel-funk score and match cues live in `scrip
 Decode audio banks per game and schedule Perm Mania demonstrations from the same frozen clock mapping as its visual guide.
 Scale Perm music playback, demonstrations, visual beats, and judgment windows together with the round tempo; preserve musical phase when resuming audio.
 Freeze any per-device rhythm timing adjustment when scheduling the round; muted play must remain possible with the visual guide.
-Keep background music on one fixed participant by default, allow personal overrides, and preserve its phase across mute and interruption.
+Sound and music start enabled on every device after a user gesture; fresh guests default to 20% music and 70% effects, preserving saved personal overrides and playback phase.
 Results may stop music and countdown cues, but must not truncate an accepted local finish cue.
 
 `shared/dynamite.js` owns 13 seeded colour groups of four sections, a 40 ms input guard, 250 ms wrong-colour recovery, and a 45-second elapsed-time race.
@@ -136,7 +136,9 @@ The handshake requires `dynamite-meals` alongside existing capabilities.
 - Cosmetic progress is throttled to at most 4 Hz per player and must never block local inputs.
 - Treat result submissions as idempotent, acknowledge them, and persist pending submissions across reconnects.
 - Keep reconnect tokens private; exclude them from broadcasts, invitations, and reports.
-- Disconnection does not forfeit; hiding or reloading the active game does.
+- Disconnection reserves the seat for 30 seconds with a visible countdown, then removes the player and preserves accepted results while forfeiting unfinished play.
+A replacement can join an expired seat during a set, choose a character, and enter the next round with separate scores.
+Hiding or reloading the active game still forfeits.
 - Wait up to 15 seconds for disconnected players at a Ready gate, then allow ready connected players to continue; never skip a connected unready player.
 - Clock uncertainty and GO render delay do not prove physical display synchronization.
 
@@ -172,7 +174,7 @@ Use one full sentence per line when substantially editing Markdown, and comment 
 Perm demonstrations and all response taps use the supplied `perm-beat.mp3`; preserve the shared rhythm clock, phase and timing offset, and never layer Punch or the removed piano files.
 Dice result circles remain visible in each player’s score box for 650 ms alongside one Ding per correct set, even when the next fast throw has begun.
 
-Arcade uses 15 Me Find Mistake boards with a 45-second deadline, eight Facing Which Way sets with a derived 58.4-second schedule, and ten Fireworks sets with a 60-second deadline.
+Arcade uses 15 Me Find Mistake boards with a 45-second deadline, eight Facing Which Way sets with a derived 71.2-second schedule, and ten Fireworks sets with a 60-second deadline.
 Game Select retains its existing board/set counts and timing; extra Arcade Fireworks sets reuse the final five-rocket pattern, and run models must honor `round.goal`.
 Facing instructions and the match HUD derive their set counts from the scheduled round.
 
@@ -194,3 +196,6 @@ Party locks use `Ding.mp3` once per newly observed choice; skip stale reconnect 
 Party Continue requires all connected players and waits 15 seconds for disconnected friends; retain cumulative points, first-place win counts, and history across cycles, validating set ID and cycle on pick/continue commands.
 Arcade length is host-only and immutable during a set; the range maximum comes from the shared game registry.
 Keep small arena completion overlays explicitly dark on a solid light panel so themed arena colors cannot hide Cleared text.
+
+Invitation URLs with a valid room code disable Create room and permit joining only.
+Facing cards and options stay square within available arena space, and covered-card mirror parity persists between turns and through reveal.

@@ -31,7 +31,7 @@ export const GAMES = Object.assign(Object.create(null), {
   [FACING_GAME]: { id: FACING_GAME, title: 'Facing Which Way', subtitle: 'Follow the turns and flips', sharedArena: true, scoring: 'points', duration: FACING_DURATION_MS, goal: FACING_GOAL },
   [COIN_GAME]: { id: COIN_GAME, title: "It's Raining Coins", subtitle: 'Catch the gold, dodge the fakes', duration: COIN_DURATION_MS, goal: COIN_GOAL },
   [DODGE_GAME]: { id: DODGE_GAME, title: 'Dodge or Die!!', subtitle: 'Switch lanes and leap the hurdles', duration: DODGE_DURATION_MS, goal: DODGE_GOAL },
-  [LETTERS_GAME]: { id: LETTERS_GAME, title: 'Type in Letters', subtitle: 'Race to type three letters first', sharedArena: true, scoring: 'points', duration: LETTERS_DURATION_MS, goal: 0 },
+  [LETTERS_GAME]: { id: LETTERS_GAME, title: 'Type in Letters', subtitle: 'Complete each word before time runs out', sharedArena: true, scoring: 'points', duration: LETTERS_DURATION_MS, goal: 0 },
   [DYNAMITE_GAME]: { id: DYNAMITE_GAME, title: 'Dynamite Spark', subtitle: 'Race the spark down the wire', duration: DYNAMITE_DURATION_MS, goal: DYNAMITE_GOAL },
   [MEALS_GAME]: { id: MEALS_GAME, title: 'Get Those Burgers Out!', subtitle: 'Fill every slot and serve six meals', goal: MEALS_GOAL, duration: MEALS_DURATION_MS },
 });
@@ -44,7 +44,7 @@ export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') 
   if (game === COIN_GAME) return { seed, difficulty: level, goal: COIN_GOAL, duration: COIN_DURATION_MS, fallMs: mode === 'arcade' ? 750 : 900 - (level - 1) * 100, spawnMs: mode === 'arcade' ? 400 : 500 - (level - 1) * 70 };
   if (game === DODGE_GAME) return { seed, difficulty: level, goal: DODGE_GOAL + level - 1, duration: DODGE_DURATION_MS, approachMs: 1350 - (level - 1) * 100 };
   if (game === DICE_GAME) return { seed, difficulty: level, goal: DICE_GOAL, duration: DICE_DURATION_MS };
-  if (game === FACING_GAME) return { seed, difficulty: level, goal: mode === 'arcade' ? 8 : FACING_GOAL, duration: facingDuration(1000 - (level - 1) * 75, level + 1, mode === 'arcade' ? 8 : FACING_GOAL), turnCount: level + 1, stepMs: 1000 - (level - 1) * 75 };
+  if (game === FACING_GAME) return { seed, difficulty: level, goal: mode === 'arcade' ? 8 : FACING_GOAL, duration: facingDuration(1800 - (level - 1) * 100, level + 1, mode === 'arcade' ? 8 : FACING_GOAL), turnCount: level + 1, stepMs: 1800 - (level - 1) * 100 };
   if (game === BURGER_GAME) return { seed, difficulty: level, goal: BURGER_GOAL, duration: BURGER_DURATION_MS, fallMs: 1100 - (level - 1) * 110 };
   if (game === MISTAKE_GAME) return { seed, difficulty: level, goal: mode === 'arcade' ? 15 : MISTAKE_GOAL + level - 1, duration: mode === 'arcade' ? 45000 : MISTAKE_DURATION_MS };
   if (game === JUMP_GAME) return { seed, difficulty: level, goal: JUMP_GOAL, duration: JUMP_DURATION_MS, periodMs: 1200 - (level - 1) * 50, windowMs: 150 - (level - 1) * 15, perfectMs: Math.round((150 - (level - 1) * 15) * .3) };
@@ -82,7 +82,7 @@ export const isRoundActive = round => Boolean(round && ['countdown', 'running', 
 export function gameRules(game, round = {}) {
   if (game === MEALS_GAME) return ['Fill the empty slots to complete each meal', 'Red = fries, green = burger, blue = drink', 'Serve all six meals as fast as you can'];
   if (game === DYNAMITE_GAME) return ['Match the wire colour with the same button', 'Tap four sections per colour; clear all 13 groups', 'Reach the dynamite first; wrong colours briefly pause the spark'];
-  if (game === LETTERS_GAME) return ['Red moves left, blue moves right, green enters a letter', 'Type the three letters first to win a point; choose ⌫ to erase', 'Most points in 30 seconds wins'];
+  if (game === LETTERS_GAME) return ['Red moves left, blue moves right, green enters a letter', 'Finish the three letters before time runs out to earn a point; choose ⌫ to erase', 'Everyone who finishes scores; each new word has less time'];
   if (game === COIN_GAME) return ['Catch gold coins and avoid cracked purple coins', 'Red = left, green = middle, blue = right'];
   if (game === DODGE_GAME) return ['Move around tall walls and jump over low hurdles', 'Red moves left, blue moves right, green jumps'];
   if (game === DICE_GAME) return ['Pick the highest of the three shared dice', 'Red = left, green = middle, blue = right', '21 throws get faster; most correct wins'];

@@ -86,11 +86,14 @@ Ready gates wait up to 15 seconds for a disconnected player to return, then may 
 Skipped disconnected players earn zero for that round and may return for the next one.
 Connected players are never skipped because they have not clicked Ready or their clock measurements need refreshing.
 If no connected players remain, the set waits for one to return.
-The disconnected player's slot remains reserved, and they can play the next round after returning.
+A disconnected seat remains reserved for **30 seconds**, with a countdown visible to everyone still connected.
+After expiry, the player is removed, accepted results remain, and unfinished play forfeits.
+A new player can take that seat during a set, choose a character, and join the next round with their own scores.
 Hosting moves to a connected player if the host disconnects.
 
-Sound is optional and off by default.
-Use the music-note button to enable music and effects, and the gear button for separate volume controls and a sound preview.
+Sound and music are enabled by default on every device after a user gesture.
+Fresh guests default to **20% music** and **70% effects**; saved personal choices take precedence.
+Use the music-note button to mute or enable music and effects, and the gear button for separate volume controls and a sound preview.
 All essential cues also appear visually.
 Enabled menu buttons play the user-supplied `public/audio/Button-Press.mp3` once per activation through the existing effects volume and mute controls.
 The three gameplay buttons and their keyboard shortcuts play `public/audio/Punch-button.mp3` once per enabled press (Jump uses the supplied `public/audio/bounce.mp3` instead), alongside the game's success and mistake cues.
@@ -106,7 +109,7 @@ Menus, game selection, intermissions, and standings loop the user-supplied `publ
 The illustrated instructions screen uses `public/audio/game-instructions.mp3` instead, with each track retaining its playback position when paused.
 The instructions track has a +6 dB playback boost through the existing music volume control to compensate for its softer recording.
 Both tracks play after a user gesture and pause for the round countdown and gameplay, with Action Rock returning on transition screens after the podium cue.
-The same one-device-per-room policy and personal music overrides apply; hiding the page or previewing gameplay sounds pauses menu music.
+The same personal music settings apply; hiding the page or previewing gameplay sounds pauses menu music.
 Each post-game podium plays `public/audio/podium-winner.mp3` once through the effects controls before background music resumes, including the final set podium.
 Repeated score updates do not restart the podium cue, and leaving the podium or muting cancels it without replaying it later.
 
@@ -116,8 +119,8 @@ Correct taps have three wooden pop tones corresponding to the block colors; a wr
 Countdown, GO, finish, and timeout each have a distinct cue.
 The countdown plays the user-supplied `public/audio/countdown.mp3` once across the three-second countdown, preserving its final beat and decay after GO without layering the old GO cue; rejoining audio mid-countdown skips to the current position rather than replaying it.
 
-Music defaults to **One device per room**, using the first participant in that round's fixed player list.
-Other players can enable effects without duplicating the room music.
+Music defaults to **This device** for every player.
+The optional **One device per room** setting still selects the first participant in the round's fixed player list.
 Choose **This device** for personal music playback, such as headphones, or **Off** to keep effects only.
 The music continues while that player waits after finishing, then stops when the room reaches results or the round deadline.
 Network disconnection does not stop local audio; hiding the game, muting it, leaving, and forfeiting cancel scheduled playback.
@@ -233,7 +236,7 @@ The original generated festival background remains in `public/assets/fireworks-f
 Its prompt is preserved in [Fireworks artwork notes](public/assets/fireworks-artwork.md).
 `src/firework-view.js` and `src/fireworks.css` draw the colored rocket arcs and burst particles.
 Each rocket reuses `Fireworks.mp3` at its scheduled local launch, skipping stale launches after interruptions.
-Frontend and room service must deploy together with protocol 17.
+Frontend and room service must deploy together with protocol 18.
 
 ## Play Mimicking Monkeys
 
@@ -265,7 +268,7 @@ Audio scheduling checks do not establish physical speaker latency or subjective 
 
 The original generated character lives in `public/assets/mimicking-monkey.png`, with its prompt preserved in [artwork notes](public/assets/monkeys-artwork.md).
 The leafy stage, shape cues, and response indicators live in `src/monkey-view.js` and `src/monkeys.css`.
-Deploy frontend and room service together to make the new catalog entry available; protocol 17 carries current scene snapshots and the announcement gate.
+Deploy frontend and room service together to make the new catalog entry available; protocol 18 carries current scene snapshots and the announcement gate.
 
 ## Play Jump for the Meat
 
@@ -372,7 +375,7 @@ The original matching reverse-side duck master and optimized delivery file are d
 Both shared choice games accept bounded clock-stamped answers with an 80 ms transport grace after each deadline and acknowledge retries privately.
 The server locks the first valid answer, keeps pending choices out of broadcasts, settles each set once, and owns final scores.
 Missing an answer never pauses the common schedule, and disconnecting does not discard an accepted answer.
-Deploy frontend and backend together with **protocol 17**, including `shared-choices` and `mistake-points` capabilities.
+Deploy frontend and backend together with **protocol 18**, including `shared-choices` and `mistake-points` capabilities.
 
 ## Play It's Raining Coins
 
@@ -405,7 +408,7 @@ Both games enter Game Select and Arcade immediately, together with Dice and Faci
 ## Play Type in Letters
 
 Choose **Game Select → Start set → Type in Letters → Play selected game**.
-Everyone shares one alphabet and the same random three-letter target, with a **30-second countdown** above the arena.
+Everyone shares one alphabet and the same random three-letter target, with a shared game timer above the arena and a countdown for each word.
 The game supports the room's existing one-to-four-player roster, including three-player matches.
 **Red moves left, blue moves right, and green enters the selected letter**.
 Hold either movement button to keep moving, or use **1 / 2 / 3**, **J / K / L**, or **Left / Enter / Right** on a keyboard.
@@ -414,20 +417,20 @@ Incorrect entries stay visible so you can correct them.
 Every target resets all pointers to **N** and clears the entered letters, giving everyone the same starting position.
 The alphabet uses a single row on wide screens and three readable rows on phones.
 
-The first player to type all three target letters wins **one typing point**.
-The winner gets a yellow circle and `Ding.mp3`; everyone else gets a red cross and the existing `wrong.mp3` cue.
-After **650 ms** of result feedback, a new shared target appears and the race continues until the timer reaches zero.
-Most typing points wins the round; exact ties share placement, and players with zero typing points receive no placement points.
-Game Select plays three 30-second rounds with the usual cumulative placement points and between-round Ready gates.
-Type in Letters is available in both Game Select and Arcade.
+Each game has five shared words, with **10, 8, 6, 5, and 4 seconds** to finish each successive word.
+Every player who completes the word before its deadline earns **one typing point**; completing early never closes another player's window.
+A per-word countdown shows the time remaining, and matched players wait for their friends until the same shared deadline.
+Completed words receive a yellow circle and `Ding.mp3`; missed words receive a red cross and `wrong.mp3`.
+After an **800 ms** transport grace and **300 ms** of feedback, the next target starts on the fixed shared schedule, even if nobody finishes.
+The full game lasts **38.5 seconds**, with the usual Game Select readiness gates and cumulative placement points.
+Most typing points wins; exact ties share placement, and players with zero typing points receive no placement points.
+Type in Letters is available in Game Select, Party, and Arcade.
 
-`shared/letters.js` owns seeded targets, local input, bounded replay proofs, and shared race settlement.
-Each completed target sends a bounded input proof measured from the frozen local round clock; the server replays it before accepting a claim.
-A **120 ms** collection window compares completion timestamps rather than awarding the first received packet.
+`shared/letters.js` owns seeded targets, local input, bounded replay proofs, and shared word settlement.
+Each completed word sends a bounded input proof measured from the frozen local round clock; the server replays it before awarding one point per successful player.
+Inputs at or after the word deadline are rejected; pre-deadline claims can arrive within the 800 ms transport grace.
 This is bounded client-reported timing fairness, not proof of physical device synchronization or protection against a modified client.
-Exact millisecond ties share one typing point.
-Inputs at or after 30 seconds are rejected, but a valid pre-deadline claim can arrive within an 800 ms final transport grace.
-Correct text highlights immediately on the local device, and the authoritative result follows the short collection window with 300 ms of feedback.
+Correct text highlights immediately on the local device, and the authoritative result follows the shared deadline.
 Button presses use the supplied `Diuup.mp3` for both touch and keyboard input.
 The alphabet stays in one compact row on phones, and typed text occupies the corresponding fixed player column, including solo play.
 The server owns typing points and final results; cosmetic pointer snapshots at **4 Hz** cannot award points or block local input.
@@ -437,8 +440,8 @@ Disconnection preserves accepted points; hiding or reloading still forfeits unde
 `src/letters-view.js` and `src/letters.css` render the shared arena, numbered player pointers, entered letters, scores, and result symbols.
 [Type in Letters artwork notes](public/assets/letters-artwork.md) retain the built-in image-generation prompt and optimized background provenance.
 The selection announcement plays the supplied `type-in-letters-voice.mp3` with the existing applause, using the shared preload and announcement lifecycle.
-Deploy frontend and room service together with **protocol 17** and the `shared-letters` capability.
-The initial repeat interval, collection window, and feedback duration are provisional tuning values checked by deterministic tests and browser play, pending device playtests.
+Deploy frontend and room service together with **protocol 18** and the `shared-letters` capability.
+The word deadlines, initial repeat interval, transport grace, and feedback duration are provisional tuning values checked by deterministic tests and browser play, pending device playtests.
 
 ## Backgrounds, set feedback, and Game Select announcements
 
@@ -552,7 +555,7 @@ Physical phone/tablet playtesting remains necessary.
 
 `npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
 `npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
-The health endpoint reports protocol version 16 for the shared Type in Letters race, Game Select picker, and existing gameplay and readiness gates.
+The health endpoint reports protocol version 18 for the shared Type in Letters race, Game Select picker, and existing gameplay and readiness gates.
 Deploy the frontend and backend together when changing the multiplayer protocol.
 
 The Pages workflow tests, builds, and deploys `main`.
@@ -600,7 +603,7 @@ Refresh every device after deploying the paired frontend and server update; the 
 
 Active gameplay uses the visual viewport height and a flex layout, with the shared control bar outside the arena so tablet browser chrome cannot push it below the screen.
 The Ready action remains visible while short screens can scroll the instructions card internally.
-Facing turns now take 1000/925/850/775/700 ms across available difficulty levels, and Game Select plays only levels 1–3.
+Facing turns now take 1800/1700/1600/1500/1400 ms across available difficulty levels, and Game Select plays only levels 1–3.
 Arcade Coins uses 750 ms falls with new pairs every 400 ms; every Game Select round also has overlapping drops.
 
 Menu and instructions music share one gesture-authorized media element with separate remembered positions, following [WebKit's media-element reuse guidance](https://webkit.org/blog/7734/auto-play-policy-changes-for-macos/).
@@ -632,7 +635,7 @@ The final clear time includes the last item's landing and appears above CLEAR at
 The fastest completion wins, with a 45-second deadline.
 [Artwork notes](public/assets/meals-artwork.md) retain the original restaurant background prompt and master.
 Both new games are available in Game Select and Arcade.
-Deploy frontend and server together with protocol 17 and the `dynamite-meals` capability.
+Deploy frontend and server together with protocol 18 and the `dynamite-meals` capability.
 These initial input and animation timings remain provisional pending physical phone playtests.
 
 Both games use original generated food and dynamite sprites in gameplay, game posters, and the illustrated rules.
@@ -648,11 +651,11 @@ Arcade includes every registered game immediately; games without a supplied anno
 
 ## Longer Arcade rounds
 
-Arcade plays 15 Me Find Mistake boards with a 45-second deadline, eight Facing Which Way sets over 58.4 seconds, and ten Fireworks sets with a 60-second deadline.
+Arcade plays 15 Me Find Mistake boards with a 45-second deadline, eight Facing Which Way sets over 71.2 seconds, and ten Fireworks sets with a 60-second deadline.
 Fireworks keeps its opening seven sets and adds three more five-rocket sets at the existing final-set speed.
 Game Select retains its existing counts and difficulty progression.
 Facing keeps the full three-second answer window in every added set, with all clients following the same extended schedule.
-Deploy frontend and server together with protocol 17 so every device follows the scheduled set count.
+Deploy frontend and server together with protocol 18 so every device follows the scheduled set count.
 These longer Arcade counts are initial tuning values pending play feedback.
 
 Meal input immediately reserves an available slot, including when several items are already falling in that column.
@@ -670,7 +673,7 @@ The selected character appears in lobby seats and podiums and stays attached to 
 The selection screen uses sixteen individually optimized transparent sprites extracted from the retained generated master.
 [Character artwork notes](public/assets/party-characters.md) preserve the prompt and delivery details.
 Coins and Facial Slot Machine use bounded player panels whose dimensions remain independent of the current round's contents; Slots also clears its cached portrait frames when a new round begins.
-Deploy frontend and backend together with protocol 17, including `character-picker` and `overlapping-coins` capabilities.
+Deploy frontend and backend together with protocol 18, including `character-picker` and `overlapping-coins` capabilities.
 
 The catch target is 36 coins so the overlapping launch schedule increases pressure without halving the race length.
 
@@ -690,4 +693,8 @@ After everyone's picks have been played, each connected player may choose **Cont
 Continue opens fresh 30-second choices once everyone agrees, retaining points, cumulative leadership, first-place game-win counts, and round history.
 Disconnected friends have a 15-second reconnect window before the remaining players can continue.
 Set IDs and cycle numbers prevent delayed pick or Continue messages from affecting a later selection.
-Frontend and server must deploy together for protocol 17 with `party-mode` and `arcade-length` capabilities.
+Frontend and server must deploy together for protocol 18 with `party-mode` and `arcade-length` capabilities.
+
+Invitation links and QR codes containing a valid room code disable Create room so invited guests join the intended room.
+Protocol 18 requires `timed-letters` and `expiring-seats`; deploy the frontend and room service together.
+Facing keeps covered-card mirror parity across every turn and reveal, and sizes its square card and options from their available containers in every mode.

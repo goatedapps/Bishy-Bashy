@@ -616,6 +616,7 @@ test('menu track streams after unlock, survives menu changes, and yields to roun
 test('menu music honors room ownership, personal overrides, mute, volume, interruption, and previews', async () => {
   const media = new MenuMedia();
   const { audio, context } = setup({ createMedia: () => media });
+  audio.setPreferences({ musicMode: 'auto' });
   audio.setMenuScreen(true, false);
   await audio.unlock();
   assert.equal(media.plays, 0);
@@ -771,6 +772,7 @@ test('a late or resumed three-second countdown seeks forward, preserves its tail
 
 test('one-device music policy can be overridden without losing the round position', async () => {
   const { audio, setTime, context } = setup();
+  audio.setPreferences({ musicMode: 'auto' });
   await audio.unlock();
   setTime(12_000);
   audio.scheduleRound('round', 0, 45_000, false);
@@ -1040,4 +1042,21 @@ test('Party lock uses the cached Ding cue on the effects bus and respects mute',
   assert.equal(requests.filter(url => url.includes('/Ding.mp3?')).length, 1);
   audio.setEnabled(false); audio.play('partyLock');
   assert.equal(context.sources.length, before + 1);
+});
+
+
+test('fresh players start with sound and music on, guests use 20 percent music and 70 percent effects, and saved choices survive', () => {
+  const saved = new Map();
+  const storage = { getItem: key => saved.get(key), setItem: (key, value) => saved.set(key, value) };
+  const audio = new GameAudio({ storage });
+  assert.equal(audio.enabled, true);
+  assert.equal(audio.preferences.musicMode, 'on');
+  audio.applyEntryDefaults('join');
+  assert.equal(audio.preferences.musicVolume, .2);
+  assert.equal(audio.preferences.effectsVolume, .7);
+  audio.setPreferences({ musicVolume: .4 });
+  audio.applyEntryDefaults('create');
+  assert.equal(audio.preferences.musicVolume, .4);
+  audio.setEnabled(false);
+  assert.equal(new GameAudio({ storage }).enabled, false);
 });

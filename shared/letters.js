@@ -1,10 +1,10 @@
 export const LETTERS_GAME = 'type-in-letters';
-export const LETTERS_DURATION_MS = 30_000;
+export const LETTERS_WORD_MS = [10_000, 8_000, 6_000, 5_000, 4_000];
 export const LETTERS_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 export const LETTERS_INPUT_MS = 40;
-export const LETTERS_SETTLE_MS = 120;
 export const LETTERS_FEEDBACK_MS = 300;
 export const LETTERS_PACKET_MS = 800;
+export const LETTERS_DURATION_MS = LETTERS_WORD_MS.reduce((sum, ms) => sum + ms + LETTERS_PACKET_MS + LETTERS_FEEDBACK_MS, 0);
 export const LETTERS_MAX_ACTIONS = 768;
 
 export function letterTarget(seed, index) {
@@ -27,7 +27,7 @@ export class LettersRun {
     this.done = false;
     this.elapsed = null;
     this.blockedUntil = localStart;
-    this.sync(round.letters || { index: 0, opensAt: 0, phase: 'play', target: letterTarget(round.seed, 0), scores: {} });
+    this.sync(round.letters || { index: 0, opensAt: 0, closesAt: LETTERS_WORD_MS[0], phase: 'play', target: letterTarget(round.seed, 0), scores: {} });
   }
 
   sync(state, playerId) {
@@ -48,7 +48,7 @@ export class LettersRun {
   }
 
   tap(color, time) {
-    if (this.done || this.claim || this.state.phase !== 'play' || !Number.isInteger(color) || color < 0 || color > 2 || !Number.isFinite(time) || time < this.blockedUntil || time >= this.end || time - this.lastInput < LETTERS_INPUT_MS || this.trace.length >= LETTERS_MAX_ACTIONS) return { type: 'ignored' };
+    if (this.done || this.claim || this.state.phase !== 'play' || !Number.isInteger(color) || color < 0 || color > 2 || !Number.isFinite(time) || time < this.blockedUntil || time >= Math.min(this.end, this.start + (this.state.closesAt ?? (this.end - this.start))) || time - this.lastInput < LETTERS_INPUT_MS || this.trace.length >= LETTERS_MAX_ACTIONS) return { type: 'ignored' };
     this.lastInput = time;
     // Packed millisecond inputs keep a full round's proof inside the 8 KB message limit.
     this.trace.push([color, Math.floor(time - this.start)]);
@@ -82,7 +82,7 @@ export function validateLetterClaim(round, state, claim, receivedElapsed) {
   for (const action of claim.actions) {
     if (!Array.isArray(action) || action.length !== 2) return null;
     const [color, at] = action;
-    if (!Number.isInteger(at) || at < state.opensAt || at < last + LETTERS_INPUT_MS || at >= round.duration || at > receivedElapsed + 250) return null;
+    if (!Number.isInteger(at) || at < state.opensAt || at < last + LETTERS_INPUT_MS || at >= Math.min(round.duration, state.closesAt ?? round.duration) || at > receivedElapsed + 250) return null;
     if (run.tap(color, at).type === 'ignored') return null;
     last = at;
   }
@@ -93,43 +93,43 @@ export function validateLetterClaim(round, state, claim, receivedElapsed) {
 export class LettersMatch {
   constructor(round) {
     this.round = round;
-    this.state = { index: 0, target: letterTarget(round.seed, 0), opensAt: 0, phase: 'play', scores: Object.fromEntries(round.playerIds.map(id => [id, 0])), feedback: null };
+    this.state = { index: 0, target: letterTarget(round.seed, 0), opensAt: 0, closesAt: LETTERS_WORD_MS[0], phase: 'play', scores: Object.fromEntries(round.playerIds.map(id => [id, 0])), feedback: null };
     this.candidates = new Map();
-    this.settleAt = null;
+    this.settleAt = this.state.closesAt + LETTERS_PACKET_MS;
     this.nextAt = null;
   }
 
   claim(playerId, message, elapsed) {
-    if (!Object.hasOwn(this.state.scores, playerId) || message.index !== this.state.index || this.state.phase !== 'play' || elapsed < this.state.opensAt || elapsed >= this.round.duration + LETTERS_PACKET_MS) return false;
+    if (!Object.hasOwn(this.state.scores, playerId) || message.index !== this.state.index || this.state.phase !== 'play' || elapsed < this.state.opensAt || elapsed >= this.settleAt) return false;
     if (this.candidates.has(playerId)) return true;
-    if (this.settleAt !== null && elapsed >= this.settleAt) return false;
     const candidate = validateLetterClaim(this.round, this.state, message, elapsed);
     if (!candidate) return false;
     this.candidates.set(playerId, candidate);
-    this.settleAt ??= Math.min(this.round.duration + LETTERS_PACKET_MS, elapsed + LETTERS_SETTLE_MS);
     return true;
   }
 
   advance(elapsed) {
     let changed = false;
-    if (this.state.phase === 'play' && this.settleAt !== null && elapsed >= this.settleAt) {
-      const first = Math.min(...[...this.candidates.values()].map(candidate => candidate.elapsed));
-      const winners = [...this.candidates].filter(([, candidate]) => candidate.elapsed === first).map(([id]) => id);
-      winners.forEach(id => { this.state.scores[id]++; });
-      this.state.feedback = { index: this.state.index, at: this.settleAt, winners, target: this.state.target };
-      this.state.phase = 'feedback';
-      this.nextAt = this.settleAt + LETTERS_FEEDBACK_MS;
-      changed = true;
-    }
-    if (this.state.phase === 'feedback' && elapsed >= this.nextAt && this.nextAt < this.round.duration) {
-      this.state.index++;
-      this.state.target = letterTarget(this.round.seed, this.state.index);
-      this.state.opensAt = this.nextAt;
-      this.state.phase = 'play';
-      this.candidates.clear();
-      this.settleAt = null;
-      changed = true;
-    }
+    do {
+      if (this.state.phase === 'play' && this.settleAt !== null && elapsed >= this.settleAt) {
+        const winners = [...this.candidates.keys()];
+        winners.forEach(id => { this.state.scores[id]++; });
+        this.state.feedback = { index: this.state.index, at: this.settleAt, winners, target: this.state.target };
+        this.state.phase = 'feedback';
+        this.nextAt = this.settleAt + LETTERS_FEEDBACK_MS;
+        changed = true;
+      }
+      if (this.state.phase === 'feedback' && elapsed >= this.nextAt && this.state.index + 1 < LETTERS_WORD_MS.length) {
+        this.state.index++;
+        this.state.target = letterTarget(this.round.seed, this.state.index);
+        this.state.opensAt = this.nextAt;
+        this.state.closesAt = this.nextAt + LETTERS_WORD_MS[this.state.index];
+        this.state.phase = 'play';
+        this.candidates.clear();
+        this.settleAt = this.state.closesAt + LETTERS_PACKET_MS;
+        changed = true;
+      }
+    } while (this.state.phase === 'play' && elapsed >= this.settleAt);
     return changed;
   }
 }
