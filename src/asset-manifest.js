@@ -236,6 +236,11 @@ export const ASSETS = [
     "hash": "7c716ea11d452501"
   },
   {
+    "path": "assets/optimized/tutorial-pointing-hand-e80659e785ea.webp",
+    "bytes": 8814,
+    "hash": "e80659e785eae095"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",

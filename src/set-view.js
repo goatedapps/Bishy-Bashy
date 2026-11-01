@@ -5,6 +5,7 @@ import { gameArt, ruleVisual } from './game-art.js';
 import { InstructionSequence } from './instruction-sequence.js';
 import { ArcadeReel } from './arcade-reel.js';
 import { GameCarousel } from './game-carousel.js';
+import { TotemDemo } from './totem-demo.js';
 
 const $ = id => document.getElementById(id);
 const node = (tag, className, text) => {
@@ -58,7 +59,7 @@ export class SetView {
     }
     const standingsVisible = set && ['intermission', 'complete'].includes(set.phase);
     $('game-instructions').hidden = !instructions;
-    if (!instructions) this.instructionSequence.cancel();
+    if (!instructions) { this.instructionSequence.cancel(); this.totemDemo = null; }
     $('standings-panel').hidden = !standingsVisible;
     if (!set) return;
     $('results').hidden = true;
@@ -66,11 +67,13 @@ export class SetView {
     $('set-progress').textContent = set.mode === 'party' ? `Party · Game ${set.roundIndex - set.cycleStart + 1} of ${set.pickerIds.length}` : `${MODES[set.mode].title} · ${set.mode === 'arcade' ? 'Game' : 'Round'} ${set.roundIndex + 1} of ${set.plan.length}`;
     if (instructions) {
       if (this.instructionSequence.key !== room.round.id) {
-        $('instructions-visual').replaceChildren(ruleVisual(room.round.game));
-        $('instructions-list').replaceChildren(...gameRules(room.round.game, room.round).map(text => node('li', '', text)));
-        this.instructionSequence.start(room.round.id, [$('instructions-title'), $('instructions-visual'), ...$('instructions-list').children], performance.now());
+        this.totemDemo = room.round.game === 'totem-shrinker' ? new TotemDemo() : null;
+        $('instructions-visual').replaceChildren(this.totemDemo?.element || ruleVisual(room.round.game));
+        $('instructions-list').hidden = Boolean(this.totemDemo);
+        $('instructions-list').replaceChildren(...(this.totemDemo ? [] : gameRules(room.round.game, room.round).map(text => node('li', '', text))));
+        this.instructionSequence.start(room.round.id, [$('instructions-title'), $('instructions-visual'), ...(this.totemDemo?.lines || $('instructions-list').children)], performance.now());
       }
-      this.instructionSequence.advance(performance.now(), !document.hidden);
+      this.advanceInstructions(performance.now());
       this.renderReady(room, $('ready-players'), playerId);
     }
     if (!standingsVisible || !set.history.length) return;
@@ -139,6 +142,12 @@ export class SetView {
     return this.instructionSequence.key === roundId && this.instructionSequence.complete;
   }
 
+  advanceInstructions(time) {
+    const visible = !document.hidden && !document.querySelector('dialog[open]');
+    this.instructionSequence.advance(time, visible);
+    this.totemDemo?.advance(time, visible && this.instructionSequence.complete);
+  }
+
   renderReady(room, container, playerId) {
     const key = JSON.stringify(room.players.map(player => [player.id, player.ready, player.connected]));
     if (container.dataset.state === key) return;
@@ -149,7 +158,9 @@ export class SetView {
   animate(room, serverNow) {
     const set = room.set;
     this.wheel.render(room, serverNow);
-    if (set?.phase === 'instructions') this.instructionSequence.advance(performance.now(), !document.hidden);
+    if (set?.phase === 'instructions') {
+      this.advanceInstructions(performance.now());
+    }
     if (set?.phase !== 'intermission') return;
     const seconds = Math.max(0, Math.ceil((set.nextStartAt - serverNow) / 1000));
     const text = set.mode === 'arcade' || set.mode === 'party' ? seconds ? `Continuing in ${seconds}s…` : 'Continuing…' : set.waitReason === 'sync' ? 'Synchronizing clocks…' : set.waitReason === 'assets' ? 'Waiting for sounds to load…' : set.waitReason === 'players' ? 'Waiting for a friend to reconnect…' : set.waitReason === 'ready' ? 'Ready for another round?' : seconds ? `Starting in ${seconds}s…` : 'Starting the next round…';

@@ -37,6 +37,8 @@ import { ruleVisual } from './game-art.js';
 import { AssetLoader } from './asset-loader.js';
 import { HomeMotion } from './home-motion.js';
 import { LobbyMotion } from './lobby-motion.js';
+import { TotemDemo } from './totem-demo.js';
+import './totem-demo.css';
 
 const $ = id => document.getElementById(id);
 const readStored = key => { try { return JSON.parse(sessionStorage.getItem(key)); } catch { return null; } };
@@ -58,6 +60,7 @@ let lastPong = 0, lastSyncSent = 0, lastPendingSent = -Infinity, lastProgressSen
 let inviteUrl = '', lanUrls = [], events = [];
 let hiddenSince = document.hidden ? performance.now() : null;
 let partyAudioBaseline = true;
+let rulesDemo = null;
 let selectedGame = GAMES[localStorage.getItem('bb-game')] ? localStorage.getItem('bb-game') : TOTEM_GAME;
 let selectedMode = MODES[localStorage.getItem('bb-mode')] ? localStorage.getItem('bb-mode') : 'arcade';
 let selectedArcadeLength = arcadeLength(Number(localStorage.getItem('bb-arcade-length')) || 5);
@@ -603,6 +606,7 @@ function updateControls(time) {
 
 function animate() {
   const time = performance.now();
+  rulesDemo?.advance(time, !document.hidden && $('rules').open);
   enforceLifecycle(time);
   const round = room?.round;
   let overlay = '', small = false;
@@ -763,11 +767,13 @@ function showRules() {
   const activeSet = room?.set && room.set.phase !== 'complete';
   const gameHelp = activeSet || room?.mode === 'game-select';
   $('rules-title').textContent = introduction ? 'Welcome to Dokidoki Dash!' : gameHelp ? GAMES[game].title : 'How to play a set';
-  $('rules-visual').replaceChildren(...(introduction ? [] : [ruleVisual(gameHelp ? game : null)]));
+  rulesDemo = !introduction && gameHelp && game === TOTEM_GAME ? new TotemDemo() : null;
+  $('rules-visual').replaceChildren(...(introduction ? [] : [rulesDemo?.element || ruleVisual(gameHelp ? game : null)]));
   $('rules-visual').hidden = introduction;
-  $('rules').querySelector('.shape-legend').hidden = introduction;
+  $('rules').querySelector('.shape-legend').hidden = introduction || Boolean(rulesDemo);
   const rules = introduction ? ['Dokidoki Dash! is a multiplayer party game packed with quick, playful mini-games for up to four players.', 'One player creates a room and shares the room code with friends.', 'Everyone else opens Dokidoki Dash! on their own device and enters that code to join the same game.'] : !gameHelp ? ['Arcade plays five different random games. Game Select plays three rounds of one game.', 'Read the rules and tap Ready. Every connected player must be ready before the countdown.', 'Each round awards 10 / 7 / 4 / 1 points by place. Most total points wins.'] : gameRules(game, profile);
   $('rules-list').replaceChildren(...rules.map(text => { const item = document.createElement('li'); item.textContent = text; return item; }));
+  $('rules-list').hidden = Boolean(rulesDemo);
   $('rules-note').textContent = introduction ? 'Pick your mini-games in the room, then get ready to play together!' : 'Stay on this screen during the round; switching apps or reloading forfeits it.';
   $('rules').showModal();
 }
@@ -810,6 +816,7 @@ $('navigation-confirm-action').addEventListener('click', () => {
 $('navigation-confirm').addEventListener('close', () => { navigationAction = null; });
 $('game-search').addEventListener('input', event => setView.filterGames(event.target.value));
 $('rules-open').addEventListener('click', showRules);
+$('rules').addEventListener('close', () => { rulesDemo = null; });
 $('settings-open').addEventListener('click', () => { updateSound(); $('settings').showModal(); });
 $('sound').addEventListener('click', async () => {
   audio.toggle(); updateSound();
@@ -884,6 +891,8 @@ $('export').addEventListener('click', () => {
 document.addEventListener('visibilitychange', () => {
   const time = performance.now();
   if (document.hidden) {
+    rulesDemo?.advance(time, false);
+    setView.totemDemo?.advance(time, false);
     hiddenSince = time; audio.cancel();
     setView.instructionSequence.advance(time, false);
     view.feedback.clear();

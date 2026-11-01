@@ -698,3 +698,14 @@ Frontend and server must deploy together for protocol 18 with `party-mode` and `
 Invitation links and QR codes containing a valid room code disable Create room so invited guests join the intended room.
 Protocol 18 requires `timed-letters` and `expiring-seats`; deploy the frontend and room service together.
 Facing keeps covered-card mirror parity across every turn and reveal, and sizes its square card and options from their available containers in every mode.
+
+## Totem Shrinker demonstration
+
+Totem Shrinker replaces its static How to play artwork with a looping mini-demo on the instructions screen and in its rules dialog.
+The left side shows the actual temple backdrop and five visible Totem blocks; the right side shows two rules and the same red, green, and blue button styling as gameplay.
+An illustrated finger presses green, blue, then red, clearing each matching bottom block at the press and letting the stack drop into place.
+After three clears, the demo holds briefly and resets.
+The demo stays silent, pauses when hidden or covered by a dialog, and substitutes discrete changes for sliding motion when reduced motion is enabled.
+The existing instruction reveal and Ready/audio gates remain in place, and other games retain their current instructions.
+`src/totem-demo.js` owns the bounded demonstration timeline; it never sends inputs or changes real gameplay state.
+The original hand master and imagegen prompt are retained in [hand artwork notes](public/assets/tutorial-pointing-hand-artwork.md), with the optimized WebP included in startup asset readiness.
