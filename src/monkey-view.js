@@ -1,6 +1,4 @@
-const SHAPES = ['●', '▲', '◆'];
-const NAMES = ['Red circle', 'Green triangle', 'Blue diamond'];
-const COLORS = ['#ed526b', '#209668', '#398ce4'];
+const NAMES = ['Red apple', 'Green pear', 'Blue ball'];
 const node = (tag, className, text) => {
   const element = document.createElement(tag);
   element.className = className;
@@ -22,8 +20,7 @@ export class MonkeyStage {
     this.heading = node('div', 'monkey-phase');
     this.scene = node('div', 'monkey-scene');
     this.portrait = monkeyPortrait();
-    this.cue = node('span', 'monkey-cue');
-    this.scene.append(this.portrait, this.cue);
+    this.scene.append(this.portrait);
     this.track = node('div', 'monkey-track');
     this.element.append(this.heading, this.scene, this.track);
     this.element.setAttribute('role', 'group');
@@ -41,10 +38,8 @@ export class MonkeyStage {
     this.element.dataset.mode = phase.mode;
     this.element.classList.toggle('showing-cue', color !== null);
     this.portrait.hidden = !present;
-    this.cue.hidden = !present || color === null && phase.mode !== 'play' && phase.mode !== 'retry';
-    this.cue.textContent = color !== null ? SHAPES[color] : phase.mode === 'retry' ? '×' : '?';
-    this.element.style.setProperty('--monkey-cue-color', color === null ? '#7a5c35' : COLORS[color]);
-    this.element.style.setProperty('--monkey-lean', color === 0 ? '-8deg' : color === 2 ? '8deg' : '0deg');
+    this.portrait.dataset.item = color === null ? 'none' : String(color);
+    this.portrait.setAttribute('aria-label', color === null ? 'Monkey waiting for the next item' : `Monkey holding ${NAMES[color].toLowerCase()}`);
     if (length !== this.dots.length) {
       this.dots = Array.from({ length }, () => node('span', 'monkey-dot'));
       this.track.replaceChildren(...this.dots);

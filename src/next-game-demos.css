@@ -9,7 +9,6 @@
 .fireworks-demo .firework-stage { height:100%; }
 .monkeys-demo .instruction-demo-scene { background-image:var(--image-bg-monkey-jungle,url('/assets/optimized/bg-monkey-jungle-9acb59defa5b.webp')); padding:12px 8px; }
 .monkeys-demo .monkey-phase { font:clamp(18px,2.8vw,27px)/1.2 'Lilita One',system-ui; height:32px; }
-.monkeys-demo .monkey-cue { top:10%; right:4%; }
 .monkeys-demo .monkey-track { height:12px; gap:7px; margin-bottom:6px; }
 .monkeys-demo .monkey-dot { width:11px; height:11px; }
 @media(max-width:620px) {
@@ -17,5 +16,4 @@
   .demo-slot-target { flex-direction:column; gap:4px; }
   .demo-slot-target .face-portrait { width:min(42px,16cqh); }
   .slots-demo .slot-cabinet { --face-size:min(45px,50cqw,calc((100cqh - 125px) / 3 - 16px)); }
-  .monkeys-demo .monkey-cue { width:30px; height:30px; font-size:22px; }
 }

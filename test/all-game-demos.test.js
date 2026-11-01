@@ -1,0 +1,60 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { GAMES, roundSettings } from '../shared/games.js';
+import { remainingDemoPlan, REMAINING_DEMO_GAMES } from '../src/remaining-demos.js';
+import { ScriptedDemo } from '../src/scripted-demo.js';
+import { createGameDemo } from '../src/game-demo.js';
+
+for (const game of REMAINING_DEMO_GAMES) test(`${game}: demo inputs complete the intended example without mistakes and reset cleanly`, () => {
+  for (let level = 1; level <= 3; level++) {
+    const plan = remainingDemoPlan(game, roundSettings(game, 123, level));
+    const demo = Object.create(ScriptedDemo.prototype);
+    Object.assign(demo, { plan, createRun: plan.createRun, elapsed: 0, previousTime: null, callbacks: {}, paint() {}, paintControls() {} });
+    demo.resetRun(0);
+    demo.advance(0, true);
+    for (const cue of plan.cues) demo.advance(cue.at, true);
+    demo.advance(plan.completeAt + 500, true);
+    assert.equal(demo.run.mistakes, 0, game);
+    assert.ok(demo.run.cleared > 0, game);
+    if (!plan.sampleComplete) assert.equal(demo.run.done, true, game);
+    demo.advance(plan.duration, true);
+    assert.equal(demo.run.cleared, 0);
+  }
+});
+
+class Element {
+  constructor() {
+    this.children = []; this.dataset = {}; this.attributes = new Map(); this.style = { setProperty() {} }; this.className = '';
+    this.classList = { add: (...names) => { names.forEach(name => assert.ok(!/\s/.test(name))); this.className += ' ' + names.join(' '); }, toggle: (name, enabled) => {
+      const names = new Set(this.className.split(' ').filter(Boolean));
+      if (enabled) names.add(name); else names.delete(name); this.className = [...names].join(' ');
+    } };
+  }
+  append(...children) { for (const child of children) { child.remove?.(); child.parentNode = this; this.children.push(child); } }
+  replaceChildren(...children) { this.children = []; this.append(...children); }
+  remove() { if (this.parentNode) this.parentNode.children = this.parentNode.children.filter(child => child !== this); this.parentNode = null; }
+  setAttribute(key, value) { this.attributes.set(key, value); }
+  getAttribute(key) { return this.attributes.get(key); }
+  getAnimations() { return []; }
+}
+
+test('every registered game has an isolated animated tutorial that renders its watch, press, and result states', () => {
+  const previous = globalThis.document;
+  globalThis.document = { hidden: false, createElement: () => new Element(), createElementNS: () => new Element() };
+  try {
+    for (const game of Object.keys(GAMES)) {
+      const demo = createGameDemo(game, { round: roundSettings(game, 123) });
+      assert.ok(demo, game);
+      assert.equal(demo.buttons.length, 3, game);
+      assert.ok(demo.lines.length >= 2, game);
+      demo.advance(0, true);
+      const cues = demo.plan?.cues || [];
+      for (const cue of cues) {
+        demo.advance(cue.at, true);
+        demo.advance(cue.at + 16, true);
+      }
+      demo.advance(10000, false);
+      demo.dispose?.();
+    }
+  } finally { globalThis.document = previous; }
+});

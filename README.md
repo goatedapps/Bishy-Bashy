@@ -645,7 +645,7 @@ Dynamite Spark has no section counter; a locally clocked GSAP tween scrolls the 
 The final explosion uses a protected finish sound, reduces backing music while it plays, and finishes before podium audio begins.
 
 Dice keeps each result circle or cross visible in the player's bottom score box for 650 ms, including across fast throw transitions, with Ding on each correct answer.
-Perm Mania uses the supplied `perm-beat.mp3` for demonstration notes and response taps instead of the piano, Punch or previous Perm input sounds.
+Perm Mania uses `perm-beat.mp3` for Watch demonstration notes, and the matching `hit-red.wav`, `hit-green.wav`, or `hit-blue.wav` for live response taps, without layering Punch or piano sounds.
 The beat follows the same seeded rhythm sequence and timing adjustment at every tempo, while music, successful phrase Ding, and settled phrase results retain their existing behavior.
 Arcade includes every registered game immediately; games without a supplied announcement voice still play the selection cue and applause.
 
@@ -703,21 +703,21 @@ Facing keeps covered-card mirror parity across every turn and reveal, and sizes 
 
 Totem Shrinker replaces its static How to play artwork with a looping mini-demo on the instructions screen and in its rules dialog.
 The left side shows the actual temple backdrop and five visible Totem blocks; the right side shows two rules and the same red, green, and blue button styling as gameplay.
-An illustrated finger presses green, blue, then red, clearing each matching bottom block at the press and letting the stack drop into place.
+An illustrated cat paw presses green, blue, then red, clearing each matching bottom block at the press and letting the stack drop into place.
 After three clears, the demo holds briefly and resets.
 Each demo press plays its matching `hit-green.wav`, `hit-blue.wav`, or `hit-red.wav` through the existing mute and effects-volume controls.
 The demo skips stale hit cues, pauses when hidden or covered by a dialog, and substitutes discrete changes for sliding motion when reduced motion is enabled.
-The existing instruction reveal and Ready/audio gates remain in place, and games awaiting their demo retain their current instructions.
+The existing instruction reveal and Ready/audio gates remain in place, and every registered game now uses the animated format.
 `src/totem-demo.js` owns the bounded demonstration timeline; it never sends inputs or changes real gameplay state.
-The original hand master and imagegen prompt are retained in [hand artwork notes](public/assets/tutorial-pointing-hand-artwork.md), with the optimized WebP included in startup asset readiness.
+The original cat-paw and monkey item masters and imagegen prompts are retained in [artwork notes](public/assets/cat-paw-monkey-items-artwork.md), with the optimized WebP included in startup asset readiness.
 
 ## Perm Mania demonstration
 
 Perm Mania hides the bottom growth counter and progress bar during gameplay.
 Its How to play screen and rules dialog show one Watch-and-copy phrase using the real Perm run model, dancer, hair growth, rhythm dots, and disco backdrop.
-The tutorial follows the scheduled round tempo and uses the existing pointing hand to press green for every beat, while explaining that any button can copy the rhythm.
+The tutorial follows the scheduled round tempo and uses the existing cat paw to press green for every beat, while explaining that any button can copy the rhythm.
 Watch cues use `perm-beat.mp3`; tutorial response presses use the requested `hit-red.wav`, `hit-green.wav`, and `hit-blue.wav`, and a successful phrase plays Ding before the loop resets.
-Live gameplay continues to use the existing Perm beat cues.
+Live Watch cues use `perm-beat.mp3`, while player button presses use the matching colored hit WAV.
 The shared mini-demo layout lives in `src/instruction-demo.js` and `src/instruction-demo.css`; `src/perm-demo.js` owns the isolated one-set simulation and bounded audio cues.
 Hidden screens and covering dialogs pause the tutorial, stale sounds are skipped, and reduced motion preserves the rhythm and feedback without dancer motion or hair tweening.
 New and revised How to play screens use this gameplay-left, instructions-and-buttons-right format going forward.
@@ -728,6 +728,18 @@ Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys now use the same gam
 Slots shows the model face and actual scrolling rows, then presses each row’s matching color when the model reaches the center.
 Fireworks launches the first three-rocket pattern with three distinct colors and bursts each rocket with its matching button before landing.
 Monkeys watches one two-color demonstration and repeats the same buttons in order.
-Each successful example pauses briefly and loops, reusing the existing backgrounds, sprites, finger, hit sounds, and Ding success cue; fireworks also retains the supplied launch sound and Monkeys its colored demonstration tones.
+Each successful example pauses briefly and loops, reusing the existing backgrounds, sprites, cat paw, hit sounds, and Ding success cue; fireworks also retains the supplied launch sound and Monkeys its colored demonstration tones.
 `src/scripted-demo.js` keeps their real gameplay models isolated from multiplayer state, applies inputs at their scheduled times, and skips stale sound cues.
 The tutorials respect mute, effects volume, hidden-screen and dialog pauses, and reduced motion; reduced-motion slot rows advance discretely while retaining the same stop judgments.
+
+## Complete animated tutorial catalog and item-based Monkeys
+
+All fifteen minigames have looping gameplay-left, instructions-and-controls-right tutorials using the shared generated cat paw.
+The human-finger master and delivery image have been removed.
+The final ten examples demonstrate three precise jumps, one four-layer burger, one odd-picture board, one dice throw, one covered-card puzzle, three coin catches, a wall and hurdle, one timed typing target, two wire color groups, and one meal order.
+They reuse actual local game models and scene renderers, isolated from multiplayer state; jump and wire examples show progress rather than an artificial full-game clear.
+Tutorial input, correct-answer reveal, success effects, sounds, pause/resume, and reduced motion share the same bounded timeline.
+Mimicking Monkeys now displays the monkey holding a large red apple, green pear, or blue ball instead of a small corner symbol, in both gameplay and its tutorial.
+The character occupies less of the lane, leaving room around the item cue; neutral gaps never reveal upcoming items.
+Perm Mania retains `perm-beat.mp3` for Watch cues and uses the actual pressed button’s `hit-red.wav`, `hit-green.wav`, or `hit-blue.wav` for live inputs.
+Original new artwork and prompts are retained in `public/assets/`; named image optimization can update only selected assets.

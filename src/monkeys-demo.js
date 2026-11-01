@@ -17,8 +17,8 @@ export function monkeysDemoPlan(round = {}) {
 export class MonkeysDemo extends ScriptedDemo {
   constructor(options = {}) {
     super({ ...options, className: 'monkeys-demo', plan: monkeysDemoPlan(options.round), createRun: (round, start) => new MonkeyRun(round, start),
-      label: 'Mimicking Monkeys demonstration: watch the monkey’s two colors, then a finger presses the same buttons in the same order. The completed sequence is celebrated, then the demonstration repeats.',
-      instructions: ['Watch the order of colors.', 'Press the same buttons in the same order.'],
+      label: 'Mimicking Monkeys demonstration: watch the monkey’s two colors, then a cat paw presses the same buttons in the same order. The completed sequence is celebrated, then the demonstration repeats.',
+      instructions: ['Watch the items the monkey holds.', 'Press their colors in the same order.'],
     });
     this.stage = new MonkeyStage();
     this.stage.element.hidden = false;

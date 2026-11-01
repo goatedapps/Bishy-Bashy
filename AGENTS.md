@@ -171,7 +171,8 @@ Keep the static frontend independently deployable with a configurable secure Web
 Keep the canonical gameplay and hosting notes in README.md current.
 Use one full sentence per line when substantially editing Markdown, and comment only on non-obvious constraints.
 
-Live Perm demonstrations and all gameplay response taps use the supplied `perm-beat.mp3`; preserve the shared rhythm clock, phase and timing offset, and never layer Punch or the removed piano files.
+Live Perm Watch cues use `perm-beat.mp3`; player presses use `hit-red.wav`, `hit-green.wav`, or `hit-blue.wav` for the actual button color.
+Preserve the shared rhythm clock, phase and timing offset, and never layer Punch or the removed piano files.
 Dice result circles remain visible in each player’s score box for 650 ms alongside one Ding per correct set, even when the next fast throw has begun.
 
 Arcade uses 15 Me Find Mistake boards with a 45-second deadline, eight Facing Which Way sets with a derived 71.2-second schedule, and ten Fireworks sets with a 60-second deadline.
@@ -201,15 +202,20 @@ Invitation URLs with a valid room code disable Create room and permit joining on
 Facing cards and options stay square within available arena space, and covered-card mirror parity persists between turns and through reveal.
 
 Totem Shrinker instructions use `src/totem-demo.js` and the shared `src/instruction-demo.css`: a real-art five-block lane beside two rules and the shared three-color controls.
-The demo clears green, blue, then red in a loop, synchronizes the illustrated finger and matching `hit-green.wav` / `hit-blue.wav` / `hit-red.wav` cue with each press, pauses while hidden or in a dialog, and uses discrete state changes under reduced motion.
+The demo clears green, blue, then red in a loop, synchronizes the illustrated cat paw and matching `hit-green.wav` / `hit-blue.wav` / `hit-red.wav` cue with each press, pauses while hidden or in a dialog, and uses discrete state changes under reduced motion.
 Reuse each implemented demo in its rules dialog; games awaiting conversion retain their illustrated instructions.
 
-All new or revised How to play screens use a looping mini-demo: actual gameplay artwork on the left, concise action instructions and the shared three buttons on the right, with the existing illustrated finger and synchronized feedback.
+All new or revised How to play screens use a looping mini-demo: actual gameplay artwork on the left, concise action instructions and the shared three buttons on the right, with the existing illustrated cat paw and synchronized feedback.
 `src/instruction-demo.js` and `src/instruction-demo.css` own the shared layout; `src/game-demo.js` selects each game’s demo.
 Perm Mania hides its bottom growth counter and progress bar; its tutorial uses one real seeded phrase at the scheduled tempo, copies it with colored hit sounds, grows hair once, then loops.
-Perm tutorial Watch cues reuse `perm-beat.mp3`, response presses use `hit-red.wav` / `hit-green.wav` / `hit-blue.wav`, and the completed set uses Ding; live gameplay keeps its existing Perm beat audio.
+Perm tutorial Watch cues reuse `perm-beat.mp3`, response presses use `hit-red.wav` / `hit-green.wav` / `hit-blue.wav`, and the completed set uses Ding; live Watch cues keep the Perm beat while player presses use their matching colored hit.
 
 Perm Mania’s tutorial presses green for every response beat; the instructions still explain that any button works.
 Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys use the common looping tutorial layout with their real run models and scene renderers.
 `src/scripted-demo.js` owns their bounded input/cue timelines and hidden-screen pause; keep tutorial simulations isolated from real rounds and skip stale sounds.
 Slots demonstrates all three row locks, Fireworks demonstrates the first three-rocket set with one rocket of each color, and Monkeys watches and copies one two-color sequence.
+
+All 15 registered games now have animated How to play demos; keep the shared cat-paw artwork and delete obsolete human-finger assets rather than carrying both.
+`src/remaining-demos.js` owns the remaining ten isolated examples and their real scene renderers; short jump/wire examples demonstrate progress without pretending to finish the full game.
+Monkeys shows generated red-apple, green-pear, and blue-ball holding poses for the current cue, with a smaller centered character and no corner symbols; neutral poses during gaps must not reveal a future item.
+Optimize only selected new image names when appropriate with `python scripts/optimize-images.py NAME...`, retaining new masters and prompts while avoiding unrelated asset changes.

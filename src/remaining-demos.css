@@ -1,0 +1,46 @@
+.remaining-demo .instruction-demo-scene > :not(.demo-completion) { width:100%; height:100%; min-height:0; }
+.remaining-demo .instruction-demo-scene { --tower-height:100cqh; }
+.demo-jump-for-the-meat .instruction-demo-scene { background-image:var(--image-bg-jump-valley,url('/assets/optimized/bg-jump-valley-72b21872fd52.webp')); }
+.demo-burger-girl .instruction-demo-scene { background-image:var(--image-bg-burger-kitchen,url('/assets/optimized/bg-burger-kitchen-db8f7ae7c8b9.webp')); }
+.demo-me-find-mistake .instruction-demo-scene { background-image:var(--image-bg-mistake-gallery,url('/assets/optimized/bg-mistake-gallery-385278818805.webp')); }
+.demo-dice-dice-more-dice .instruction-demo-scene { background-image:var(--image-bg-dice-carnival,url('/assets/optimized/bg-dice-carnival-fb4753414621.webp')); }
+.demo-facing-which-way .instruction-demo-scene { background-image:var(--image-bg-facing-airfield,url('/assets/optimized/bg-facing-airfield-ec123db36068.webp')); }
+.demo-its-raining-coins .instruction-demo-scene { background-image:var(--image-bg-coins-garden,url('/assets/optimized/bg-coins-garden-cfa07b53f3c8.webp')); }
+.demo-dodge-or-die .instruction-demo-scene { background-image:var(--image-bg-dodge-track,url('/assets/optimized/bg-dodge-track-82e7b7b554a6.webp')); }
+.demo-type-in-letters .instruction-demo-scene { background-image:var(--image-bg-letters-workshop,url('/assets/optimized/bg-letters-workshop-21fcae531114.webp')); }
+.demo-dynamite-spark .instruction-demo-scene { background-image:var(--image-bg-dynamite-workshop,url('/assets/optimized/bg-dynamite-workshop-01ed95b6cbf9.webp')); }
+.demo-get-those-burgers-out .instruction-demo-scene { background-image:var(--image-bg-meals-counter,url('/assets/optimized/bg-meals-counter-aae8b332c421.webp')); }
+.remaining-demo .jump-stage { --tower-height:100cqh; }
+.remaining-demo .catch-stage,.remaining-demo .lane-stage { --tower-height:100cqh; }
+.remaining-demo .mistake-stage { padding:10px 7px; }
+.remaining-demo .mistake-card > .odd-picture { width:min(90px,72cqw,calc((100cqh - 48px) / 3)); }
+.remaining-demo .catch-stage { --chef-size:110px; --catch-floor:55px; }
+.remaining-demo .catch-toast,.remaining-demo .lane-toast { font-size:15px; }
+.remaining-demo .shared-choice-stage { padding:10px 7px; gap:6px; grid-template-rows:26px minmax(0,1fr) 64px 0; }
+.remaining-demo .shared-choice-players { display:none; }
+.remaining-demo .shared-choice-heading > strong:first-child { visibility:hidden; }
+.remaining-demo .shared-option { padding:9px 3px 14px; border-width:2px; }
+.remaining-demo .shared-option .die-portrait { width:min(60px,80cqw,80cqh); padding:12%; }
+.remaining-demo .shared-option-shape { left:3px; font-size:12px; }
+.remaining-demo .letters-stage { padding:10px 7px; display:flex; flex-direction:column; justify-content:center; gap:10px; }
+.remaining-demo .letters-target { margin:0; max-width:100%; padding:8px; gap:8px; }
+.remaining-demo .letters-target strong { font-size:24px; width:32px; min-width:0; height:38px; }
+.remaining-demo .letters-alphabet { display:grid; grid-template-columns:repeat(9,minmax(0,1fr)); gap:3px; width:100%; }
+.remaining-demo .letter-key { min-height:27px; padding:3px 0 13px; font-size:13px; }
+.remaining-demo .letter-pointer { font-size:8px; width:12px; height:12px; }
+.remaining-demo .letters-notice { font-size:12px; min-height:18px; }
+.remaining-demo .letters-players { display:grid; grid-template-columns:1fr; width:100%; height:76px; }
+.remaining-demo .letter-player { padding:5px; }
+.remaining-demo .letter-typed { gap:3px; }
+.remaining-demo .letter-typed span { font-size:17px; min-width:23px; height:25px; }
+.remaining-demo .letter-score { font-size:19px; }
+.remaining-demo .meals-stage { padding:12px 5px; }
+.remaining-demo .meals-toast { font-size:20px; }
+.remaining-demo .dynamite-stage { height:100%; }
+@media(max-width:620px) {
+  .remaining-demo .shared-choice-stage { padding:7px 3px; }
+  .remaining-demo .shared-option-shape { font-size:9px; }
+  .remaining-demo .letters-stage { padding:8px 3px; gap:7px; }
+  .remaining-demo .letter-key { font-size:10px; }
+  .remaining-demo .letters-target strong { font-size:20px; width:27px; height:31px; }
+}

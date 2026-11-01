@@ -236,9 +236,24 @@ export const ASSETS = [
     "hash": "7c716ea11d452501"
   },
   {
-    "path": "assets/optimized/tutorial-pointing-hand-e80659e785ea.webp",
-    "bytes": 8814,
-    "hash": "e80659e785eae095"
+    "path": "assets/optimized/tutorial-cat-paw-e79482ce7b3e.webp",
+    "bytes": 10306,
+    "hash": "e79482ce7b3e8a62"
+  },
+  {
+    "path": "assets/optimized/monkey-item-red-5484bb2bfef0.webp",
+    "bytes": 45376,
+    "hash": "5484bb2bfef05edb"
+  },
+  {
+    "path": "assets/optimized/monkey-item-green-57bd042c26fe.webp",
+    "bytes": 47828,
+    "hash": "57bd042c26fec925"
+  },
+  {
+    "path": "assets/optimized/monkey-item-blue-8ba2641ce09d.webp",
+    "bytes": 43486,
+    "hash": "8ba2641ce09d214d"
   },
   {
     "path": "audio/hit-red.wav",

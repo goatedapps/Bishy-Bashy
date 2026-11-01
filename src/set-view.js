@@ -16,9 +16,9 @@ const node = (tag, className, text) => {
 };
 
 export class SetView {
-  constructor({ onInstructionStep = () => {}, onGameChoose = () => {}, onDemoPress = () => {}, onDemoWatch = () => {}, onDemoComplete = () => {}, onDemoLaunch = () => {} } = {}) {
+  constructor({ onInstructionStep = () => {}, onGameChoose = () => {}, onDemoPress = () => {}, onDemoWatch = () => {}, onDemoComplete = () => {}, onDemoLaunch = () => {}, onDemoEffect = () => {} } = {}) {
     this.key = '';
-    this.demoCallbacks = { onPress: onDemoPress, onWatch: onDemoWatch, onComplete: onDemoComplete, onLaunch: onDemoLaunch };
+    this.demoCallbacks = { onPress: onDemoPress, onWatch: onDemoWatch, onComplete: onDemoComplete, onLaunch: onDemoLaunch, onEffect: onDemoEffect };
     this.wheel = new ArcadeReel();
     this.instructionSequence = new InstructionSequence({ onReveal: onInstructionStep });
     for (const game of Object.values(GAMES)) {
@@ -60,7 +60,7 @@ export class SetView {
     }
     const standingsVisible = set && ['intermission', 'complete'].includes(set.phase);
     $('game-instructions').hidden = !instructions;
-    if (!instructions) { this.instructionSequence.cancel(); this.instructionDemo = null; }
+    if (!instructions) { this.instructionSequence.cancel(); this.instructionDemo?.dispose?.(); this.instructionDemo = null; }
     $('standings-panel').hidden = !standingsVisible;
     if (!set) return;
     $('results').hidden = true;
@@ -68,6 +68,7 @@ export class SetView {
     $('set-progress').textContent = set.mode === 'party' ? `Party · Game ${set.roundIndex - set.cycleStart + 1} of ${set.pickerIds.length}` : `${MODES[set.mode].title} · ${set.mode === 'arcade' ? 'Game' : 'Round'} ${set.roundIndex + 1} of ${set.plan.length}`;
     if (instructions) {
       if (this.instructionSequence.key !== room.round.id) {
+        this.instructionDemo?.dispose?.();
         this.instructionDemo = createGameDemo(room.round.game, { ...this.demoCallbacks, round: room.round });
         $('instructions-visual').replaceChildren(this.instructionDemo?.element || ruleVisual(room.round.game));
         $('instructions-list').hidden = Boolean(this.instructionDemo);

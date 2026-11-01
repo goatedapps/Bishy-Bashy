@@ -20,7 +20,7 @@ export function permDemoPlan(round = {}) {
 export class PermDemo {
   constructor({ round, onPress = () => {}, onWatch = () => {}, onComplete = () => {} } = {}) {
     Object.assign(this, createDemoLayout(
-      'Perm Mania demonstration: watch one rhythm, then a finger copies every beat with the green button. Any button works. A correct set grows the dancer’s hair. The demonstration repeats.',
+      'Perm Mania demonstration: watch one rhythm, then a cat paw copies every beat with the green button. Any button works. A correct set grows the dancer’s hair. The demonstration repeats.',
       ['Watch and listen to the rhythm.', 'Copy the rhythm with any button to grow your hair.'],
     ));
     this.element.classList.add('perm-demo');

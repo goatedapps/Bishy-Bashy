@@ -25,7 +25,7 @@ export function fireworksDemoPlan(round = {}) {
 export class FireworksDemo extends ScriptedDemo {
   constructor(options = {}) {
     super({ ...options, className: 'fireworks-demo', plan: fireworksDemoPlan(options.round), createRun: createFireworksDemoRun,
-      label: 'Fireworks Craze demonstration: three rockets launch with visible colors. A finger presses matching buttons to burst them in the air, then the demonstration repeats.',
+      label: 'Fireworks Craze demonstration: three rockets launch with visible colors. A cat paw presses matching buttons to burst them in the air, then the demonstration repeats.',
       instructions: ['Watch the rocket colors.', 'Press matching buttons before the rockets land.'],
     });
     this.stage = new FireworkStage();

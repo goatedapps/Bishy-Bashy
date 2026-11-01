@@ -90,7 +90,7 @@ export function gameRules(game, round = {}) {
   if (game === BURGER_GAME) return ['Move the plate to catch the falling food', 'Red = left, green = middle, blue = right'];
   if (game === MISTAKE_GAME) return ['Pick the picture that is different', 'Red = top, green = middle, blue = bottom', 'Every answer moves on; most correct wins'];
   if (game === JUMP_GAME) return ['Press any button as the dinosaur lands on the trampoline', 'Perfect landings climb twice as high as Good landings'];
-  if (game === MONKEY_GAME) return ['Watch the monkey\'s color sequence', 'Copy the order with the matching buttons'];
+  if (game === MONKEY_GAME) return ['Watch the colors of the items the monkey holds', 'Copy the order with the matching buttons'];
   if (game === FIREWORK_GAME) return ['Press matching colors before the fireworks land', 'Clear every firework in any order', 'Each set gets harder'];
   if (game === SLOT_GAME) return ['Match all three rows to the model face', 'Red stops the red row, green the green row, and blue the blue row'];
   if (game === PERM_GAME) return ['Watch the rhythm', 'Copy it with any of the three buttons'];

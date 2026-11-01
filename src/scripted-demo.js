@@ -1,12 +1,12 @@
 import { createDemoLayout, demoNode } from './instruction-demo.js';
 
 export class ScriptedDemo {
-  constructor({ label, instructions, className, plan, createRun, onPress = () => {}, onWatch = () => {}, onComplete = () => {}, onLaunch = () => {} }) {
+  constructor({ label, instructions, className, plan, createRun, onPress = () => {}, onWatch = () => {}, onComplete = () => {}, onLaunch = () => {}, onEffect = () => {} }) {
     Object.assign(this, createDemoLayout(label, instructions));
-    this.element.classList.add(className);
+    this.element.classList.add(...className.split(/\s+/));
     this.plan = plan;
     this.createRun = createRun;
-    this.callbacks = { press: onPress, watch: onWatch, complete: onComplete, launch: onLaunch };
+    this.callbacks = { press: onPress, watch: onWatch, complete: onComplete, launch: onLaunch, effect: onEffect };
     this.completion = demoNode('strong', 'demo-completion', '○');
     this.completion.hidden = true;
     this.scene.append(this.completion);
@@ -34,12 +34,13 @@ export class ScriptedDemo {
       const cue = this.plan.presses[this.applied++];
       this.run.tap(cue.color, cue.at);
     }
-    this.run.advance?.(within);
-    this.paint(within);
+    const sceneTime = Math.min(within, this.plan.freezeAt ?? Infinity);
+    this.run.advance?.(sceneTime);
+    this.paint(sceneTime);
     this.paintControls(within);
     for (const cue of this.plan.cues) {
       const at = cycle * this.plan.duration + cue.at;
-      if (previousElapsed < at && at <= this.elapsed && this.elapsed - at < 100) this.callbacks[cue.type]?.(cue.color);
+      if (previousElapsed < at && at <= this.elapsed && this.elapsed - at < 100) this.callbacks[cue.type]?.(cue.sound ?? cue.color);
     }
   }
 
@@ -52,9 +53,15 @@ export class ScriptedDemo {
     this.hand.style.opacity = time >= cue.at - 300 && age < 350 ? '1' : '0';
     const handY = age < 0 ? 20 * Math.min(1, -age / 300) ** 3 : age < 180 ? 4 : 20;
     this.hand.style.transform = `translateY(${this.motion?.matches ? 0 : handY}px)`;
-    const copying = this.run.phase ? this.run.phase(time).mode === 'play' || this.run.done : time >= presses[0].at - 300;
+    const phase = this.run.phase?.(time);
+    const copying = phase && typeof phase === 'object' ? phase.mode === 'play' || this.run.done : time >= presses[0].at - 300;
     this.lines.forEach((line, index) => line.classList.toggle('demo-active', index === Number(copying)));
     const completeAt = this.plan.completeAt + (this.plan.celebrateDelay || 0);
-    this.completion.hidden = !this.run.done || time < completeAt || time >= completeAt + 650;
+    this.completion.hidden = !(this.run.done || this.plan.sampleComplete && time >= completeAt) || time < completeAt || time >= completeAt + 650;
+  }
+
+  dispose() {
+    this.stage?.tween?.kill();
+    this.element.getAnimations?.({ subtree: true }).forEach(animation => animation.cancel());
   }
 }

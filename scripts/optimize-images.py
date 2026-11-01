@@ -1,5 +1,6 @@
 """Derive delivery images from the retained PNG masters. Requires Pillow."""
 from pathlib import Path
+import argparse
 import hashlib
 import json
 import re
@@ -8,7 +9,7 @@ from PIL import Image
 root = Path(__file__).resolve().parents[1]
 destination = root / 'public/assets/optimized'
 destination.mkdir(exist_ok=True)
-sizes = {**{f'party-character-{i:02d}': 256 for i in range(16)}, 'tutorial-pointing-hand': 256, 'dynamite-meals-sprites': 1024, 'totem-blocks': 768, 'perm-disco-sprites': 1152, 'facial-slot-faces': 1152,
+sizes = {**{f'party-character-{i:02d}': 256 for i in range(16)}, 'tutorial-cat-paw': 256, **{f'monkey-item-{color}': 480 for color in ['red', 'green', 'blue']}, 'dynamite-meals-sprites': 1024, 'totem-blocks': 768, 'perm-disco-sprites': 1152, 'facial-slot-faces': 1152,
          'fireworks-festival': 1280, 'mimicking-monkey': 512, 'jump-dino': 512,
          'jump-meat': 256, 'burger-chef-chibi': 512, 'burger-ingredients': 768, 'odd-pictures': 1024,
          'dice-jester': 512, 'facing-duck': 512, 'facing-duck-back': 512, 'coin-raccoon': 512, 'dodge-fox': 512,
@@ -17,9 +18,16 @@ sizes = {**{f'party-character-{i:02d}': 256 for i in range(16)}, 'tutorial-point
              'totem-temple', 'perm-stage', 'slots-studio', 'monkey-jungle', 'jump-valley',
              'burger-kitchen', 'mistake-gallery', 'dice-carnival', 'facing-airfield',
              'coins-garden', 'dodge-track', 'letters-workshop', 'dynamite-workshop', 'meals-counter']}}
-mapping = {}
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('names', nargs='*', choices=list(sizes))
+selected = parser.parse_args().names or list(sizes)
+manifest = root / 'scripts/image-assets.json'
+existing = json.loads(manifest.read_text(encoding='utf-8')) if manifest.exists() else []
+mapping = {re.sub(r'-[0-9a-f]{12}$', '', Path(asset).stem): asset for asset in existing}
+mapping = {name: asset for name, asset in mapping.items() if name in sizes}
 before = after = 0
-for name, size in sizes.items():
+for name in selected:
+    size = sizes[name]
     source = root / f'public/assets/{name}.png'
     with Image.open(source) as image:
         image.thumbnail((size, size), Image.Resampling.LANCZOS)

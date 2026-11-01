@@ -1005,7 +1005,7 @@ test('meal buttons use cached Plop and respect mute', async()=>{
  audio.setEnabled(false);audio.pressButton('meals');assert.equal(audio.voices.size,0);
 });
 
-test('Perm beat demonstrations and response taps use the supplied beat at every tempo without Punch',async()=>{
+test('Perm demonstrations keep the supplied beat while response taps use their matching colored hit at every tempo',async()=>{
  const {audio,setTime,requests}=setup();audio.selectGame('perm-mania');await audio.unlock();
  for(const bpm of [128,144]){
   const round={id:`beat-${bpm}`,game:'perm-mania',...roundSettings('perm-mania',123,bpm===128?1:3)};
@@ -1015,8 +1015,8 @@ test('Perm beat demonstrations and response taps use the supplied beat at every 
   assert.equal(guide.length,run.notes.length);
   for(let index=0;index<run.notes.length;index++){
    const at=run.start+run.notes[index].at+run.offset;setTime(at);
-   audio.permTap(run,at);const voice=[...audio.voices].at(-1);
-   assert.equal(voice.id,guide[index].id);assert.equal(voice.id,'permBeat');
+   audio.permTap(run,at,index % 3);const voice=[...audio.voices].at(-1);
+   assert.equal(guide[index].id,'permBeat');assert.equal(voice.id,['red','green','blue'][index % 3]);
   }
   audio.stopRound();assert.ok(![...audio.voices].some(v=>v.group==='round'));
  }

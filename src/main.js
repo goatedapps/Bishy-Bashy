@@ -41,6 +41,7 @@ import { createGameDemo } from './game-demo.js';
 import './perm-demo.css';
 import './instruction-demo.css';
 import './next-game-demos.css';
+import './remaining-demos.css';
 
 const $ = id => document.getElementById(id);
 const readStored = key => { try { return JSON.parse(sessionStorage.getItem(key)); } catch { return null; } };
@@ -78,6 +79,7 @@ const setView = new SetView({
   onDemoWatch: color => audio.play(Number.isInteger(color) ? ['red', 'green', 'blue'][color] : 'permDemo'),
   onDemoComplete: () => audio.play('stageComplete'),
   onDemoLaunch: () => audio.play('fireworkLaunch'),
+  onDemoEffect: sound => audio.play(sound),
   onInstructionStep: step => audio.pressButton(step === 0 ? 'instructions' : 'gameplay'),
   onGameChoose: game => { if (room) send({ type: 'configure', mode: room.mode, game }); },
 });
@@ -428,7 +430,7 @@ function tap(color) {
   const time = performance.now();
   enforceLifecycle(time, true);
   if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
-  if (!buttons[color]?.disabled && room.round.game === PERM_GAME) audio.permTap(localRound.run, time);
+  if (!buttons[color]?.disabled && room.round.game === PERM_GAME) audio.permTap(localRound.run, time, color);
   else if (!buttons[color]?.disabled) audio.pressButton(room.round.game === MEALS_GAME ? 'meals' : room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay');
   const clearedBefore = localRound.run.cleared;
   const action = localRound.run.tap(color, time);
@@ -822,7 +824,7 @@ $('navigation-confirm-action').addEventListener('click', () => {
 $('navigation-confirm').addEventListener('close', () => { navigationAction = null; });
 $('game-search').addEventListener('input', event => setView.filterGames(event.target.value));
 $('rules-open').addEventListener('click', showRules);
-$('rules').addEventListener('close', () => { rulesDemo = null; });
+$('rules').addEventListener('close', () => { rulesDemo?.dispose?.(); rulesDemo = null; });
 $('settings-open').addEventListener('click', () => { updateSound(); $('settings').showModal(); });
 $('sound').addEventListener('click', async () => {
   audio.toggle(); updateSound();

@@ -29,7 +29,7 @@ export class TotemDemo {
   constructor({ onPress = () => {} } = {}) {
     this.onPress = onPress;
     Object.assign(this, createDemoLayout(
-      'Totem Shrinker demonstration: a finger presses green, blue, then red to clear the matching bottom blocks. The demonstration repeats.',
+      'Totem Shrinker demonstration: a cat paw presses green, blue, then red to clear the matching bottom blocks. The demonstration repeats.',
       ["Look at the bottom block's color.", 'Press the color button to clear it.'],
     ));
     this.element.classList.add('totem-demo');
