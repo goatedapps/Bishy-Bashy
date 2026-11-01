@@ -1,0 +1,59 @@
+.is-playing:is(.stationery-theme,.clock-theme) #player-lanes { display:none; }
+.stationery-theme .arena { background:#e9c99e; }
+.clock-theme .arena { background:#d8e6de var(--image-bg-clock-workshop,url('/assets/optimized/bg-clock-workshop-da292cf680b4.webp')) center / cover; }
+.shared-set-stage { display:grid; grid-template-rows:30px minmax(0,1fr) 115px; gap:10px; padding:12px; width:100%; min-height:0; flex:1; color:#39283f; }
+.shared-set-heading { display:flex; align-items:center; justify-content:space-between; min-width:0; gap:8px; font:clamp(14px,2vw,23px)/1.1 'Lilita One',system-ui; padding:3px 8px; border-radius:10px; background:#fff9e9eb; }
+.stationery-desk { position:relative; min-width:0; min-height:0; overflow:hidden; border:2px solid #775844; border-radius:16px; background:#f9dfb7 var(--image-bg-stationery-desk,url('/assets/optimized/bg-stationery-desk-4ef2ee049a32.webp')) center / cover; container-type:size; }
+.stationery-sprite { display:block; width:100%; height:100%; background-image:var(--image-stationery-sprites,url('/assets/optimized/stationery-sprites-5eeaa3167a57.webp')); background-size:200% 200%; background-repeat:no-repeat; }
+.stationery-kind-0 { background-position:0 0; }.stationery-kind-1 { background-position:100% 0; }.stationery-kind-2 { background-position:0 100%; }
+.desk-item { position:absolute; width:min(12cqw,22cqh,82px); height:min(12cqw,22cqh,82px); }
+.shared-set-players { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); min-height:0; gap:9px; }
+.shared-set-player { position:relative; display:flex; flex-direction:column; min-width:0; min-height:0; padding:7px; background:#fff9e8ed; border:3px solid #be3153; border-radius:13px; overflow:hidden; }
+.shared-set-player.set-player-1 { border-color:#167498; }.shared-set-player.set-player-2 { border-color:#257943; }.shared-set-player.set-player-3 { border-color:#7347a5; }
+.shared-set-player.you { outline:3px solid #ffe260; outline-offset:1px; }
+.set-player-heading { display:flex; justify-content:space-between; align-items:center; gap:5px; }
+.set-player-name { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font:900 12px/1.1 Nunito,system-ui; }
+.set-player-score { font:23px/1 'Lilita One',system-ui; }
+.desk-counters { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; flex:1; min-height:0; }
+.desk-counter { display:grid; grid-template-columns:1fr auto; grid-template-rows:minmax(0,1fr) 13px; align-items:center; min-width:0; color:#b83152; border-bottom:2px solid currentColor; }
+.desk-counter.desk-color-1 { color:#1f8051; }.desk-counter.desk-color-2 { color:#2172bb; }
+.desk-counter>.stationery-sprite { width:26px; height:26px; min-width:0; max-width:100%; }
+.desk-counter>strong { color:#39283f; font:26px/1 'Lilita One',system-ui; }
+.desk-counter>small { grid-column:1/-1; font:900 11px/1 Nunito,system-ui; text-align:center; }
+.count-correct { background:#d3efc5; }.count-wrong { background:#f9d3d8; }
+.set-player-result { position:absolute; inset:0; display:grid; place-items:center; pointer-events:none; font:90px/1 'Lilita One',system-ui; text-shadow:1px 1px #432b41,-1px -1px #432b41; }
+.set-correct { color:#ffe260; }.set-wrong { color:#df4260; }
+.clock-shared { grid-template-rows:30px minmax(0,1fr); }
+.clock-shared .shared-set-players { grid-row:2; }
+.clock-space { display:grid; place-items:center; flex:1; min-height:0; container-type:size; }
+.stopper-clock { position:relative; display:block; width:min(96cqw,92cqh,250px); height:min(96cqw,92cqh,250px); container-type:size; }
+.stopper-dial { position:absolute; inset:0; background:var(--image-clock-dial,url('/assets/optimized/clock-dial-c3a615c9559a.webp')) center / contain no-repeat; }
+.clock-number { position:absolute; transform:translate(-50%,-50%); font:clamp(7px,7cqw,21px)/1 'Lilita One',system-ui; color:#39283f; }
+.clock-twelve { color:#a33352; text-shadow:0 0 3px #ffe480; }
+.stopper-hour,.stopper-minute { position:absolute; left:48%; top:29%; width:4%; height:21%; border-radius:5px; background:#39283f; transform-origin:50% 100%; }
+.stopper-minute { left:49%; top:19%; width:2%; height:31%; background:#d33c5c; }
+.stopper-hub { position:absolute; left:47%; top:47%; width:6%; height:6%; border-radius:50%; background:#39283f; }
+.clock-stopped .stopper-dial { filter:drop-shadow(0 0 4px #ffe57b); }
+.clock-timing,.clock-award { display:block; min-height:20px; font:clamp(10px,1.4vw,16px)/1.1 'Lilita One',system-ui; text-align:center; }
+.clock-award { color:#20714d; }
+.art-stationery-master { background:#ffe7c6; }.art-clock-stopper { background:#cfebe7; }
+.game-art>.stationery-sprite { position:absolute; inset:0; }
+.game-art>.stopper-clock { position:absolute; inset:0; width:100%; height:100%; }
+.demo-stationery-master .shared-set-stage { grid-template-rows:25px minmax(0,1fr) 86px; padding:7px; gap:6px; }
+.demo-clock-stopper .instruction-demo-scene { background:#d8e6de var(--image-bg-clock-workshop,url('/assets/optimized/bg-clock-workshop-da292cf680b4.webp')) center / cover; }
+.demo-clock-stopper .shared-set-stage { grid-template-rows:30px minmax(0,1fr); padding:7px; gap:6px; }
+.demo-stationery-master .shared-set-players,.demo-clock-stopper .shared-set-players { grid-template-columns:1fr; gap:0; }
+.demo-stationery-master .shared-set-heading,.demo-clock-stopper .shared-set-heading { font-size:12px; padding-inline:3px; }
+.demo-clock-stopper .shared-set-player { background:#fff9e899; }
+.demo-clock-stopper .set-player-heading { display:none; }
+@media(max-width:620px) {
+ .shared-set-stage { padding:7px; gap:7px; grid-template-rows:26px minmax(0,1fr) 105px; }
+ .shared-set-players { gap:4px; }.shared-set-player { padding:5px 2px; border-width:2px; }
+ .set-player-name { font-size:9px; }.set-player-score { font-size:18px; }
+ .desk-counters { gap:2px; }.desk-counter { grid-template-columns:1fr; grid-template-rows:24px 25px 12px; justify-items:center; }
+ .desk-counter>.stationery-sprite { width:20px; height:20px; }.desk-counter>strong { font-size:22px; }
+ .clock-shared { grid-template-rows:26px minmax(0,1fr); }.clock-timing { min-height:30px; }
+ .set-player-result { font-size:65px; }
+}
+
+.demo-stationery-master .instruction-demo-scene { background:#e9c99e; }

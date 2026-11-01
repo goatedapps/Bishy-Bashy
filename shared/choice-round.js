@@ -1,6 +1,6 @@
 export const CHOICE_GRACE_MS = 80;
 export const CHOICE_PACKET_MS = 800;
-export const isSharedChoice = game => game === 'dice-dice-more-dice' || game === 'facing-which-way' || game === 'wheres-kaya';
+export const isSharedChoice = game => game === 'dice-dice-more-dice' || game === 'facing-which-way' || game === 'wheres-kaya' || game === 'stationery-master' || game === 'clock-stopper';
 
 export class ChoiceRun {
   constructor(round, localStart, stages) {
@@ -51,6 +51,12 @@ export class ChoiceRun {
     this.selections.set(this.index, selection);
     this.pending.set(this.index, selection);
     return { type: 'choice' };
+  }
+
+  acknowledge(index, revision) {
+    const pending = this.pending.get(index);
+    if (pending?.actions && (!Number.isInteger(revision) || revision < pending.actions.length)) return false;
+    return this.pending.delete(index);
   }
 
   sync(state, playerId) {

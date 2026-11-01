@@ -1,11 +1,11 @@
 # Dokidoki Dash!
 
-This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, Get Those Burgers Out!, Where’s Kaya, and Happy Days.
+This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, Get Those Burgers Out!, Where’s Kaya, Happy Days, Stationery Master, and Clock Stopper.
 The Vite frontend deploys independently to GitHub Pages; `server/` is a separate Node WebSocket room service on Render.
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 20 adds Happy Days and held-button rhythm inputs; deploy frontend and backend together.
+Protocol version 21 adds shared Stationery Master counters and Clock Stopper timing sets; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -68,7 +68,7 @@ Readiness never carries across a round or instructions screen, and countdowns re
 `shared/games.js` defines the three-second countdown for both room scheduling and the single `countdown.mp3` cue; resume at the current offset, preserve its tail past GO, and avoid layering the old GO cue.
 The host may configure modes and games only outside an active set, resetting readiness; new guests must wait until the set finishes.
 Game Select increases Totem blocks from 30 to 50 and Perm tempo from 128 to 144 BPM across three rounds.
-Every device displays all four lanes, except shared Letters, Dice, Facing, and Kaya arenas; each device controls its own player only.
+Every device displays all four lanes, except shared Letters, Dice, Facing, Kaya, Stationery, and Clock arenas; each device controls its own player only.
 Keep the arena overlay above all character and effect layers, and show an explicit completion badge on every finished player lane.
 `shared/visual-state.js` publishes bounded scene snapshots at 4 Hz and maps round-relative timestamps to each viewer's clock; projections never advance gameplay or award results.
 `src/viewport.js` and `src/viewport.css` fit the active arena and shared controls inside the visual viewport, with controls outside the arena and instructions keeping Ready visible.
@@ -128,7 +128,7 @@ Results may stop music and countdown cues, but must not truncate an accepted loc
 `src/dynamite-view.js` uses a paused, locally clocked GSAP tween to smoothly scroll the continuous segmented wire while the spark descends; loop `electrical-buzz.mp3` only for the active local spark, stop it on finish/interruption, and preserve `dynamite-explode.mp3` in a dedicated finish group through results, defer podium audio until it ends, and duck music during the explosion.
 `shared/meals.js` owns eight seeded fries/burger/drink orders; independent 300 ms drops fill required slots, taps on a full column play Wrong without altering the meal, each completed meal plays Ding once, and final elapsed time includes the last landing.
 `src/meals-view.js` shows empty slots and falling items; presses use `plop.mp3`, and both new games show accepted clear times at the top of each player's column.
-All 17 registered games are available in both Arcade and Game Select.
+All 19 registered games are available in both Arcade and Game Select.
 The handshake requires `dynamite-meals` alongside existing capabilities.
 
 ## Timing invariants
@@ -217,7 +217,7 @@ Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys use the common loopi
 `src/scripted-demo.js` owns their bounded input/cue timelines and hidden-screen pause; keep tutorial simulations isolated from real rounds and skip stale sounds.
 Slots demonstrates all three row locks, Fireworks demonstrates the first three-rocket set with one rocket of each color, and Monkeys watches and copies one two-color sequence.
 
-All 17 registered games now have animated How to play demos; keep the shared cat-paw artwork and delete obsolete human-finger assets rather than carrying both.
+All 19 registered games now have animated How to play demos; keep the shared cat-paw artwork and delete obsolete human-finger assets rather than carrying both.
 `src/remaining-demos.js` owns the remaining ten isolated examples and their real scene renderers; short jump/wire examples demonstrate progress without pretending to finish the full game.
 Monkeys shows generated red-apple, green-pear, and blue-ball holding poses for the current cue, with a smaller centered character and no corner symbols; neutral poses during gaps must not reveal a future item.
 Optimize only selected new image names when appropriate with `python scripts/optimize-images.py NAME...`, retaining new masters and prompts while avoiding unrelated asset changes.
@@ -232,11 +232,11 @@ Dodge instructions say “Move into gaps between walls. Red - Move left. Blue - 
 Keep the Type in Letters tutorial alphabet in the same single 27-key row as gameplay.
 Dynamite wire previews must use the shared seeded sequence even without a player run or remote snapshot; never substitute alternating placeholder colors.
 
-`shared/kaya.js` owns Where’s Kaya’s six seeded shared sets with 2–7 swaps, 950–450 ms initial-difficulty shuffle times, and three-second private answer windows.
+`shared/kaya.js` owns Where’s Kaya’s six seeded shared sets with 2–7 swaps, 900–220 ms initial-difficulty shuffle times, and 1.5-second private answer windows.
 `src/kaya-view.js` renders one dog, two copies of the same kitten, and three copies of the same opaque blanket; animate swaps from the shared round clock and never expose the dog during covered phases.
 Use supplied `card-move.mp3` once per shuffle with the common bounded cue scheduler; score and reveal through `ChoiceMatch`, with one Ding and the common large result circle for each correct player.
 Kaya is in Arcade, Game Select, Party, and the animated cat-paw tutorial catalog; reduced motion removes the crossing arcs while preserving the essential horizontal tracking movement.
-The handshake and health endpoint report protocol 20 with `kaya-shuffle` and `happy-days`; deploy frontend and backend together.
+The handshake and health endpoint report protocol 21 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
 
 `shared/happy.js` owns Happy Days’ fixed 57-note arrangement on the supplied recording’s 145 BPM grid, 17 hold notes, and 30-second duration.
 Judge both press and release edges at ±55 ms for Perfect (1000 points) and ±140 ms for Good (500 points); a failed edge scores zero for that note, and holding early never collects future notes.
@@ -247,3 +247,11 @@ Accuracy points determine placement independently of elapsed time or hit count; 
 The Happy Days cat-paw tutorial includes release events and keeps the paw down through a hold; preserve existing tap-only tutorials when extending the shared demo runner.
 
 Happy Days must render the same chart on the frozen round clock before GO and before a peer’s first snapshot, preserving negative countdown elapsed time instead of drawing time-zero placeholders.
+
+`shared/stationery.js` owns six seeded shared desks with 1–9 of each item and 14/12/10/9/8/7-second count windows.
+Red/green/blue increment pencil/eraser/sharpener counters up to nine; all three exact counts earn one point at settlement.
+Validate monotonic bounded action proofs and acknowledge their revision so stale acknowledgements cannot discard newer counter updates; allow 500 ms transport grace and reveal targets only after settlement.
+`shared/clock.js` owns ten shared clock sets, targeting hours 1–10 with constant per-set revolutions decreasing from 1200 to 500 ms.
+Accept any button between half and one-and-a-half revolutions; rank absolute local stop error, sharing ties and awarding 10/7/4/1 points independently of packet arrival order.
+`shared/shared-match.js` selects the authoritative match model; `src/desk-clock-view.js` renders the common desk, fixed four player counters, and individually stopped clocks using the same scene in cat-paw tutorials.
+Both new games use supplied Punch/Ding/Wrong cues, original optimized art, and the common three controls; Clock results display points rather than correct-set counts.

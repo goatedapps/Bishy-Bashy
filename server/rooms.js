@@ -1,3 +1,4 @@
+import { createSharedMatch } from '../shared/shared-match.js';
 import { HAPPY_GAME, validHappyScore } from '../shared/happy.js';
 import { validCharacter } from '../shared/characters.js';
 import { sanitizeVisual } from '../shared/visual-state.js';
@@ -7,7 +8,7 @@ import { COUNTDOWN_MS, GAMES, roundSettings, isRoundActive, createRun } from '..
 import { PERM_GAME } from '../shared/perm.js';
 import { SLOT_GAME, validReelMask } from '../shared/slots.js';
 import { LETTERS_GAME, LettersMatch, LETTERS_PACKET_MS } from '../shared/letters.js';
-import { ChoiceMatch, isSharedChoice } from '../shared/choice-round.js';
+import { isSharedChoice } from '../shared/choice-round.js';
 import { MISTAKE_GAME } from '../shared/mistake.js';
 import { MODES, INTERMISSION_MS, WHEEL_SPIN_MS, REEL_HOLD_MS, GAME_ANNOUNCEMENT_MS, PARTY_PICK_MS, PARTY_LOCK_HOLD_MS, arcadeLength, createSetPlan, awardRound } from '../shared/sets.js';
 
@@ -77,7 +78,7 @@ export class RoomService {
     if (!returning && room.set) room.set.players.push({ id: player.id, name: player.name, characterId: player.characterId, points: 0, wins: 0 });
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 20, capabilities: ['happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 21, capabilities: ['desk-clock', 'happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -327,7 +328,7 @@ export class RoomService {
     if (set) { set.phase = 'playing'; set.nextStartAt = null; set.waitReason = null; }
     room.lettersMatch = game === LETTERS_GAME ? new LettersMatch(room.round) : null;
     if (room.lettersMatch) room.round.letters = room.lettersMatch.state;
-    room.choiceMatch = isSharedChoice(game) ? new ChoiceMatch(room.round, createRun(room.round, 0).stages) : null;
+    room.choiceMatch = isSharedChoice(game) ? createSharedMatch(room.round, createRun(room.round, 0).stages) : null;
     if (room.choiceMatch) room.round.choice = room.choiceMatch.state;
   }
 
@@ -340,7 +341,11 @@ export class RoomService {
   sharedChoice(client, room, player, message, received) {
     const round = room.round;
     if (!isSharedChoice(round?.game) || !isRoundActive(round) || message.roundId !== round.id || player.result || !round.playerIds.includes(player.id)) return;
-    if (room.choiceMatch.choose(player.id, message, received - round.startAt)) this.send(client, { type: 'shared-choice-ack', roundId: round.id, index: message.index });
+    const key = `${player.id}/${message.index}`, previous = room.choiceMatch.choices.get(key);
+    if (room.choiceMatch.choose(player.id, message, received - round.startAt)) {
+      this.send(client, { type: 'shared-choice-ack', roundId: round.id, index: message.index, ...(message.actions ? { revision: message.actions.length } : {}) });
+      if (['stationery-master', 'clock-stopper'].includes(round.game) && room.choiceMatch.choices.get(key) !== previous) this.broadcast(room);
+    }
   }
 
   advanceChoices(room, now) {

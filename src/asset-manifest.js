@@ -276,6 +276,26 @@ export const ASSETS = [
     "hash": "e3affd59de9b18e5"
   },
   {
+    "path": "assets/optimized/stationery-sprites-5eeaa3167a57.webp",
+    "bytes": 78876,
+    "hash": "5eeaa3167a573e64"
+  },
+  {
+    "path": "assets/optimized/clock-dial-c3a615c9559a.webp",
+    "bytes": 31704,
+    "hash": "c3a615c9559a8656"
+  },
+  {
+    "path": "assets/optimized/bg-stationery-desk-4ef2ee049a32.webp",
+    "bytes": 47380,
+    "hash": "4ef2ee049a322ad3"
+  },
+  {
+    "path": "assets/optimized/bg-clock-workshop-da292cf680b4.webp",
+    "bytes": 114704,
+    "hash": "da292cf680b4d1a1"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",

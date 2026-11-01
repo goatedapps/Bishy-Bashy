@@ -1,3 +1,5 @@
+import { STATIONERY_GAME, StationeryRun, STATIONERY_GOAL, STATIONERY_DURATION_MS } from './stationery.js';
+import { CLOCK_GAME, ClockRun, CLOCK_GOAL, CLOCK_DURATION_MS } from './clock.js';
 import { HAPPY_GAME, HappyRun, HAPPY_GOAL, HAPPY_DURATION_MS, HAPPY_MAX_SCORE } from './happy.js';
 import { KAYA_GAME, KayaRun, KAYA_GOAL, KAYA_DURATION_MS, kayaDuration } from './kaya.js';
 import { COIN_GAME, CoinRun, COIN_GOAL, COIN_DURATION_MS } from './coins.js';
@@ -21,6 +23,8 @@ import { MEALS_GAME, MealsRun, MEALS_GOAL, MEALS_DURATION_MS } from './meals.js'
 export const COUNTDOWN_MS = 3_000;
 
 export const GAMES = Object.assign(Object.create(null), {
+  [STATIONERY_GAME]: { id: STATIONERY_GAME, title: 'Stationery Master', subtitle: 'Count the desk, tap the totals', sharedArena: true, scoring: 'points', duration: STATIONERY_DURATION_MS, goal: STATIONERY_GOAL },
+  [CLOCK_GAME]: { id: CLOCK_GAME, title: 'Clock Stopper', subtitle: 'Stop exactly on the hour', sharedArena: true, scoring: 'points', scoreNoun: 'pts', duration: CLOCK_DURATION_MS, goal: CLOCK_GOAL },
   [HAPPY_GAME]: { id: HAPPY_GAME, title: 'Happy Days', subtitle: 'Tap the beat, hold the melody', scoring: 'accuracy', duration: HAPPY_DURATION_MS, goal: HAPPY_GOAL },
   [KAYA_GAME]: { id: KAYA_GAME, title: "Where's Kaya", subtitle: 'Follow Kaya beneath the blankets', sharedArena: true, scoring: 'points', duration: KAYA_DURATION_MS, goal: KAYA_GOAL },
   [TOTEM_GAME]: { id: TOTEM_GAME, title: 'Totem Shrinker', subtitle: 'A taller tower each round', duration: GAME_DURATION_MS, goal: BLOCK_COUNT },
@@ -42,6 +46,8 @@ export const GAMES = Object.assign(Object.create(null), {
 
 export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') {
   const level = Math.max(1, Math.min(5, Math.trunc(difficulty) || 1));
+  if (game === STATIONERY_GAME) return { seed, difficulty: level, goal: STATIONERY_GOAL, duration: STATIONERY_DURATION_MS };
+  if (game === CLOCK_GAME) return { seed, difficulty: level, goal: CLOCK_GOAL, duration: CLOCK_DURATION_MS };
   if (game === HAPPY_GAME) return { seed, difficulty: level, goal: HAPPY_GOAL, duration: HAPPY_DURATION_MS, maxScore: HAPPY_MAX_SCORE };
   if (game === KAYA_GAME) return { seed, difficulty: level, goal: KAYA_GOAL, duration: kayaDuration(level) };
   if (game === MEALS_GAME) return { seed, difficulty: level, goal: MEALS_GOAL, duration: MEALS_DURATION_MS };
@@ -67,6 +73,8 @@ export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') 
 }
 
 export function createRun(round, localStart, timingOffset = 0) {
+  if (round.game === STATIONERY_GAME) return new StationeryRun(round, localStart);
+  if (round.game === CLOCK_GAME) return new ClockRun(round, localStart);
   if (round.game === HAPPY_GAME) return new HappyRun(round, localStart, timingOffset);
   if (round.game === KAYA_GAME) return new KayaRun(round, localStart);
   if (round.game === MEALS_GAME) return new MealsRun(round, localStart);
@@ -88,6 +96,8 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game, round = {}) {
+  if (game === STATIONERY_GAME) return ['Count the pencils, erasers and sharpeners on the desk', 'Red = pencil, green = eraser, blue = sharpener; tap each total', 'Match all three counts before time runs out'];
+  if (game === CLOCK_GAME) return ['Watch the minute hand make its first full turn', 'Press any button when it returns to 12', 'Closest stops earn 10, 7, 4 or 1 points; ties share points'];
   if (game === HAPPY_GAME) return ['Press the matching color when a bar touches the line', 'Hold long bars; release when the tail reaches the line', 'Perfect = 1000 points, Good = 500, Missed = 0'];
   if (game === KAYA_GAME) return ['Remember Kaya, then follow the blankets', 'Choose Kaya: red = left, green = middle, blue = right', 'Six sets get faster; each correct answer earns a point'];
   if (game === MEALS_GAME) return ['Fill the empty slots to complete each meal', 'Red = fries, green = burger, blue = drink', 'Serve all eight meals as fast as you can'];

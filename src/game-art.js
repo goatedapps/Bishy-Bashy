@@ -1,3 +1,4 @@
+import { stationeryPortrait, clockPortrait } from './desk-clock-view.js';
 import { happyPortrait } from './happy-view.js';
 import { kayaPortrait } from './kaya-view.js';
 import { raccoonPortrait, runnerPortrait, coinPortrait } from './coins-dodge-view.js';
@@ -22,7 +23,9 @@ const node = (tag, className, text) => {
 export function gameArt(game) {
   const art = node('span', `game-art art-${game}`);
   art.setAttribute('aria-hidden', 'true');
-  if (game === 'happy-days') art.append(happyPortrait());
+  if (game === 'stationery-master') art.append(stationeryPortrait(0));
+  else if (game === 'clock-stopper') art.append(clockPortrait());
+  else if (game === 'happy-days') art.append(happyPortrait());
   else if (game === 'wheres-kaya') art.append(kayaPortrait());
   else if (game === 'get-those-burgers-out') art.append(mealPortrait(1));
   else if (game === 'dynamite-spark') art.append(dynamitePortrait());
@@ -56,7 +59,15 @@ export function ruleVisual(game) {
   const first = node('div', 'rule-example');
   const second = node('div', 'rule-example');
   let label;
-  if (game === 'happy-days') {
+  if (game === 'stationery-master') {
+    first.append(gameArt(game), node('strong', '', 'Count the desk'));
+    second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Pencil · Eraser · Sharpener'));
+    label = 'Count each item on the desk, then tap its button that many times before the timer ends.';
+  } else if (game === 'clock-stopper') {
+    first.append(gameArt(game), node('strong', '', 'Watch the first full turn'));
+    second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Any button stops your clock'));
+    label = 'Press any button when the minute hand first returns to 12. Closest stops earn the most points.';
+  } else if (game === 'happy-days') {
     first.append(gameArt(game), node('strong', '', 'Match bars at the line'));
     second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Hold long bars through their tails'));
     label = 'Match the note color at the hit line. Hold long bars and release on the tail. Timing earns Perfect, Good or Missed.';

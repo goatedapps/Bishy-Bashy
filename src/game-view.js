@@ -1,3 +1,6 @@
+import { STATIONERY_GAME } from '../shared/stationery.js';
+import { CLOCK_GAME } from '../shared/clock.js';
+import { DeskClockStage } from './desk-clock-view.js';
 import { HAPPY_GAME } from '../shared/happy.js';
 import { HappyStage } from './happy-view.js';
 import { characterPortrait } from './characters.js';
@@ -44,7 +47,7 @@ const node = (tag, className, text) => {
   if (text !== undefined) element.textContent = text;
   return element;
 };
-const resultLabel = (result, perm = false, letters = false, points = false) => result?.status === 'finished' ? result.score !== undefined && !perm ? `${result.score.toLocaleString()} pts` : points ? `${result.cleared} correct` : letters ? `${result.cleared} typing points` : perm ? `${result.cleared} growth · ${result.score.toLocaleString()} pts` : `${(result.elapsed / 1000).toFixed(3)} s` : ({ forfeit: 'Forfeited', timeout: 'Time expired', missing: 'No result' }[result?.status] || 'Waiting…');
+const resultLabel = (result, perm = false, letters = false, points = false) => result?.status === 'finished' ? result.score !== undefined && !perm ? `${result.score.toLocaleString()} pts` : points ? `${result.cleared} ${points === 'pts' ? 'pts' : 'correct'}` : letters ? `${result.cleared} typing points` : perm ? `${result.cleared} growth · ${result.score.toLocaleString()} pts` : `${(result.elapsed / 1000).toFixed(3)} s` : ({ forfeit: 'Forfeited', timeout: 'Time expired', missing: 'No result' }[result?.status] || 'Waiting…');
 
 function block(color, surprised = false) {
   const element = node('div', `block ${COLORS[color]}${surprised ? ' surprised' : ''}`);
@@ -66,6 +69,8 @@ function dancer(index, growth = 0) {
 
 export class GameView {
   constructor() {
+    this.sharedSets = new DeskClockStage();
+    $('arena').append(this.sharedSets.element);
     this.choice = new SharedChoiceStage();
     $('arena').append(this.choice.element);
     this.letters = new LettersStage();
@@ -127,8 +132,15 @@ export class GameView {
     const active = isRoundActive(round);
     const game = active ? round.game : room.selectedGame;
     $('arena').classList.toggle('lobby', !active);
-    this.choice.element.hidden = !active || !isSharedChoice(game);
+    const sharedSets = [STATIONERY_GAME, CLOCK_GAME].includes(game);
+    this.sharedSets.element.hidden = !active || !sharedSets;
+    this.choice.element.hidden = !active || !isSharedChoice(game) || sharedSets;
     this.letters.element.hidden = !active || game !== LETTERS_GAME;
+    if (active && sharedSets) {
+      this.sharedSets.render(room, playerId, local, time);
+      $('play-view').hidden = false; $('results').hidden = true;
+      return;
+    }
     if (active && isSharedChoice(game)) {
       this.choice.render(room, playerId, local, time);
       $('play-view').hidden = false;
@@ -242,6 +254,7 @@ export class GameView {
   }
 
   animate(room, local, time, elapsed) {
+    if ([STATIONERY_GAME, CLOCK_GAME].includes(room.round?.game) && isRoundActive(room.round)) { this.sharedSets.render(room, this.playerId, local, time); return; }
     if (isSharedChoice(room.round?.game) && isRoundActive(room.round)) { this.choice.render(room, this.playerId, local, time); return; }
     if (room.round?.game === LETTERS_GAME && isRoundActive(room.round)) {
       this.letters.render(room, this.playerId, local, time);
@@ -323,14 +336,14 @@ export class GameView {
     $('podium').replaceChildren(...finishers.slice(0, 3).map((player, index) => {
       const seat = node('div', 'podium-seat');
       const step = node('div', 'podium-step');
-      step.append(node('strong', '', String(rank(player))), document.createTextNode(perm ? `${player.result.cleared} / 8` : resultLabel(player.result, false, game === LETTERS_GAME, GAMES[game]?.scoring === 'points' && game !== LETTERS_GAME)));
+      step.append(node('strong', '', String(rank(player))), document.createTextNode(perm ? `${player.result.cleared} / 8` : resultLabel(player.result, false, game === LETTERS_GAME, GAMES[game]?.scoreNoun || (GAMES[game]?.scoring === 'points' && game !== LETTERS_GAME))));
       seat.append(characterPortrait(player.characterId), node('div', 'podium-name', player.name), step);
       return seat;
     }));
     $('result-rows').replaceChildren(...sorted.map(player => {
       const result = player.result;
       const row = node('div', `result-row${player.id === playerId ? ' you' : ''}`);
-      const timing = node('div', 'result-time', resultLabel(result, perm, game === LETTERS_GAME, GAMES[game]?.scoring === 'points' && game !== LETTERS_GAME));
+      const timing = node('div', 'result-time', resultLabel(result, perm, game === LETTERS_GAME, GAMES[game]?.scoreNoun || (GAMES[game]?.scoring === 'points' && game !== LETTERS_GAME)));
       if (result?.status === 'finished') timing.append(node('small', '', game === HAPPY_GAME ? `${result.score / 500 - result.cleared} Perfect · ${2 * result.cleared - result.score / 500} Good · ${result.mistakes} Missed` : `${result.mistakes || 0} mistakes`));
       row.append(node('span', 'rank', result?.status === 'finished' ? String(rank(player)) : '—'), node('span', 'result-name', player.name + (player.id === playerId ? ' · You' : '')), timing);
       return row;

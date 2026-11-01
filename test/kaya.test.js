@@ -8,6 +8,7 @@ test('Kaya has six seeded sets with more swaps and faster movement, and each fin
   for (let difficulty = 1; difficulty <= 5; difficulty++) {
     const round = { id: 'kaya', game: KAYA_GAME, ...roundSettings(KAYA_GAME, 123, difficulty) };
     const stages = kayaStages(round);
+    if (difficulty === 1) assert.deepEqual(stages.map(stage => stage.stepMs), [900, 720, 560, 420, 300, 220]);
     assert.equal(round.goal, KAYA_GOAL);
     assert.equal(GAMES[KAYA_GAME].sharedArena, true);
     assert.equal(stages.length, 6);
@@ -16,7 +17,7 @@ test('Kaya has six seeded sets with more swaps and faster movement, and each fin
     for (const stage of stages) {
       assert.equal(stage.puzzle.moves.length, stage.index + 2);
       assert.equal(stage.cues.length, stage.puzzle.moves.length);
-      assert.equal(stage.answerEnd - stage.answerAt, 3000);
+      assert.equal(stage.answerEnd - stage.answerAt, 1500);
       if (stage.index) assert.ok(stage.stepMs < stages[stage.index - 1].stepMs);
       let order = [...stage.puzzle.initial];
       stage.puzzle.moves.forEach(({ left, right }, index) => {

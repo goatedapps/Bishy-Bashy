@@ -48,6 +48,24 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
       }
       return;
     }
+    if (['stationery-master', 'clock-stopper'].includes(round.game)) {
+      const run = createRun(round, 0);
+      for (const stage of run.stages) {
+        time = round.startAt + (round.game === 'clock-stopper' ? stage.targetAt + 100 : stage.answerAt + 3000);
+        for (const index of order) {
+          const place = index === winner ? 0 : index === 0 ? 1 : index;
+          if (round.game === 'clock-stopper') service.handle(clients[index], { type: 'shared-choice', roundId: round.id, index: stage.index, color: 1, elapsed: stage.targetAt + place * 5 });
+          else {
+            const counts = [...stage.puzzle.counts]; if (stage.index < place) counts[0] += counts[0] === 9 ? -1 : 1;
+            const actions = []; let at = stage.answerAt + 200;
+            counts.forEach((count, color) => { for (let tap = 0; tap < count; tap++) { actions.push([color, at]); at += 80; } });
+            service.handle(clients[index], { type: 'shared-choice', roundId: round.id, index: stage.index, actions });
+          }
+        }
+        time = round.startAt + (stage.revealAt ?? stage.answerEnd + 80); service.tick();
+      }
+      time = round.endAt; service.tick(); return;
+    }
     if (isSharedChoice(round.game)) {
       const run = createRun(round, 0);
       for (const stage of run.stages) {

@@ -1,3 +1,6 @@
+import { STATIONERY_GAME, STATIONERY_NAMES } from '../shared/stationery.js';
+import { CLOCK_GAME } from '../shared/clock.js';
+import './desk-clock.css';
 import { HAPPY_GAME, HAPPY_TONES } from '../shared/happy.js';
 import { HeldInputs } from './held-input.js';
 import './happy.css';
@@ -171,7 +174,7 @@ function connect() {
     }
     if (message.type === 'joined') {
       partyAudioBaseline = true;
-      if (message.protocol !== 20 || !message.capabilities?.includes('happy-days') || !message.capabilities?.includes('kaya-shuffle') || !message.capabilities?.includes('timed-letters') || !message.capabilities?.includes('expiring-seats') || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals') || !message.capabilities?.includes('character-picker') || !message.capabilities?.includes('overlapping-coins') || !message.capabilities?.includes('party-mode') || !message.capabilities?.includes('arcade-length')) {
+      if (message.protocol !== 21 || !message.capabilities?.includes('desk-clock') || !message.capabilities?.includes('happy-days') || !message.capabilities?.includes('kaya-shuffle') || !message.capabilities?.includes('timed-letters') || !message.capabilities?.includes('expiring-seats') || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals') || !message.capabilities?.includes('character-picker') || !message.capabilities?.includes('overlapping-coins') || !message.capabilities?.includes('party-mode') || !message.capabilities?.includes('arcade-length')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -215,7 +218,9 @@ function connect() {
       renderRoom();
       for (let index = 0; index < locked; index++) audio.play('partyLock');
     }
-    if (message.type === 'shared-choice-ack' && localRound?.id === message.roundId && isSharedChoice(room?.round?.game)) localRound.run.pending.delete(message.index);
+    if (message.type === 'shared-choice-ack' && localRound?.id === message.roundId && isSharedChoice(room?.round?.game)) {
+      localRound.run.acknowledge(message.index, message.revision);
+    }
     if (message.type === 'letters-claim-ack' && localRound?.id === message.roundId && localRound.run.index === message.index) localRound.run.claimAck = true;
     if (message.type === 'result-ack' && pending?.message.roundId === message.roundId) confirmResult();
     if (message.type === 'error') {
@@ -393,7 +398,7 @@ function synchronizeChoices() {
 }
 
 function flushSharedChoices(time) {
-  if (!isSharedChoice(room?.round?.game) || !joined || !localRound || localRound.done || time - (localRound.lastChoiceSent ?? -Infinity) < 100) return;
+  if (!isSharedChoice(room?.round?.game) || !joined || !localRound || localRound.done || !localRound.run.pending.size || time - (localRound.lastChoiceSent ?? -Infinity) < (room.round.game === STATIONERY_GAME ? 250 : 100)) return;
   for (const choice of localRound.run.pending.values()) send({ type: 'shared-choice', roundId: localRound.id, ...choice });
   localRound.lastChoiceSent = time;
 }
@@ -747,6 +752,8 @@ function updateGameProfile() {
   document.body.classList.toggle('jump-theme', Boolean(themed && game === JUMP_GAME));
   document.body.classList.toggle('burger-theme', Boolean(themed && game === BURGER_GAME));
   document.body.classList.toggle('mistake-theme', Boolean(themed && game === MISTAKE_GAME));
+  document.body.classList.toggle('stationery-theme', Boolean(themed && game === STATIONERY_GAME));
+  document.body.classList.toggle('clock-theme', Boolean(themed && game === CLOCK_GAME));
   document.body.classList.toggle('happy-theme', Boolean(themed && game === HAPPY_GAME));
   document.body.classList.toggle('kaya-theme', Boolean(themed && game === KAYA_GAME));
   document.body.classList.toggle('dice-theme', Boolean(themed && game === DICE_GAME));
@@ -755,10 +762,10 @@ function updateGameProfile() {
   document.body.classList.toggle('dynamite-theme', Boolean(themed && game === DYNAMITE_GAME));
   document.body.classList.toggle('letters-theme', Boolean(themed && game === LETTERS_GAME));
   buttons.forEach((button, index) => {
-    const action = game === HAPPY_GAME && !picking ? HAPPY_TONES[index] : picking ? ['Down', 'Select', 'Up'][index] : game === MEALS_GAME ? ['Fries', 'Burger', 'Drink'][index] : [DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
+    const action = !picking && game === STATIONERY_GAME ? STATIONERY_NAMES[index] : !picking && game === CLOCK_GAME ? 'Stop' : game === HAPPY_GAME && !picking ? HAPPY_TONES[index] : picking ? ['Down', 'Select', 'Up'][index] : game === MEALS_GAME ? ['Fries', 'Burger', 'Drink'][index] : [DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
     button.children[1].textContent = action;
     const label = ['Red circle', 'Green triangle', 'Blue diamond'][index];
-    button.setAttribute('aria-label', picking || [HAPPY_GAME, MEALS_GAME, COIN_GAME, DODGE_GAME, LETTERS_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? `${label}: ${action}` : label);
+    button.setAttribute('aria-label', picking || [STATIONERY_GAME, CLOCK_GAME, HAPPY_GAME, MEALS_GAME, COIN_GAME, DODGE_GAME, LETTERS_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? `${label}: ${action}` : label);
   });
   document.body.classList.toggle('coin-theme', Boolean(themed && game === COIN_GAME));
   document.body.classList.toggle('dodge-theme', Boolean(themed && game === DODGE_GAME));

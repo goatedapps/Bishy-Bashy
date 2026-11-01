@@ -4,8 +4,8 @@ import { seededIndex } from './seeded-index.js';
 export const KAYA_GAME = 'wheres-kaya';
 export const KAYA_GOAL = 6;
 const PAIRS = [[0, 1], [1, 2], [0, 2]];
-const LOOK_MS = 1600, COVER_MS = 450, HOLD_MS = 250, HANDOFF_MS = 250, ANSWER_MS = 3000, REVEAL_MS = 900;
-export const kayaStepMs = (index, difficulty = 1) => Math.max(380, 950 - index * 100 - (difficulty - 1) * 25);
+const LOOK_MS = 1600, COVER_MS = 450, HOLD_MS = 250, HANDOFF_MS = 250, ANSWER_MS = 1500, REVEAL_MS = 900;
+export const kayaStepMs = (index, difficulty = 1) => Math.max(180, [900, 720, 560, 420, 300, 220][index] - (difficulty - 1) * 15);
 export const kayaDuration = (difficulty = 1, goal = KAYA_GOAL) => Array.from({ length: goal }, (_, index) =>
   LOOK_MS + COVER_MS + HOLD_MS + (index + 2) * kayaStepMs(index, difficulty) + HANDOFF_MS + ANSWER_MS + REVEAL_MS).reduce((sum, duration) => sum + duration, 0);
 export const KAYA_DURATION_MS = kayaDuration();

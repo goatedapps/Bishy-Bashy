@@ -1,3 +1,7 @@
+import { StationeryRun } from '../shared/stationery.js';
+import { ClockRun } from '../shared/clock.js';
+import { createSharedMatch } from '../shared/shared-match.js';
+import { DeskClockStage } from './desk-clock-view.js';
 import { HappyRun, happyChart } from '../shared/happy.js';
 import { HappyStage } from './happy-view.js';
 import { KayaRun } from '../shared/kaya.js';
@@ -11,7 +15,6 @@ import { DynamiteRun } from '../shared/dynamite.js';
 import { MealsRun, MEALS_DROP_MS } from '../shared/meals.js';
 import { DiceRun } from '../shared/dice.js';
 import { FacingRun, facingDuration } from '../shared/facing.js';
-import { ChoiceMatch } from '../shared/choice-round.js';
 import { LettersRun, LettersMatch, LETTERS_PACKET_MS } from '../shared/letters.js';
 import { JumpStage } from './jump-view.js';
 import { BurgerStage, MistakeStage } from './catch-spot-view.js';
@@ -27,17 +30,17 @@ const make = Type => (round, start) => new Type(round, start);
 
 class ChoiceDemoRun {
   constructor(round, start) {
-    const Type = round.game === 'wheres-kaya' ? KayaRun : round.game === 'facing-which-way' ? FacingRun : DiceRun;
+    const Type = round.game === 'stationery-master' ? StationeryRun : round.game === 'clock-stopper' ? ClockRun : round.game === 'wheres-kaya' ? KayaRun : round.game === 'facing-which-way' ? FacingRun : DiceRun;
     const run = new Type(round, start);
     run.stages = run.stages.slice(0, 1);
     run.goal = 1;
     run.end = start + run.stages[0].endsAt;
-    const match = new ChoiceMatch({ ...round, playerIds: ['demo'] }, run.stages);
+    const match = createSharedMatch({ ...round, playerIds: ['demo'] }, run.stages);
     const tap = run.tap.bind(run), advance = run.advance.bind(run);
     run.match = match;
     run.tap = (color, time) => {
       const result = tap(color, time);
-      if (result.type === 'choice') match.choose('demo', run.selections.get(0), time - start);
+      if (result.type === 'choice') match.choose('demo', run.pending.get(0) || run.selections.get(0), time - start);
       return result;
     };
     run.advance = time => {
@@ -71,6 +74,7 @@ class LettersDemoRun extends LettersRun {
 }
 
 const RUNS = {
+  'stationery-master': make(ChoiceDemoRun), 'clock-stopper': make(ChoiceDemoRun),
   'happy-days': (round, start) => new HappyRun(round, start, 0, happyChart().slice(0, 4)),
   'jump-for-the-meat': make(JumpRun), 'burger-girl': make(BurgerRun), 'me-find-mistake': make(MistakeRun),
   'its-raining-coins': make(CoinRun), 'dodge-or-die': make(DodgeRun), 'dynamite-spark': make(DynamiteRun),
@@ -80,6 +84,8 @@ const RUNS = {
 export const REMAINING_DEMO_GAMES = Object.keys(RUNS);
 
 const INSTRUCTIONS = {
+  'stationery-master': ['Count the pencils, erasers and sharpeners.', 'Red = pencil, green = eraser, blue = sharpener. Tap each total.'],
+  'clock-stopper': ['Watch the minute hand make its first full turn.', 'Press any button when it returns to 12.'],
   'happy-days': ['Press the matching color as a bar reaches the line.', 'Hold long bars. Release when the tail reaches the line.'],
   'wheres-kaya': ['Remember Kaya. Follow the blankets as they shuffle.', 'Choose Kaya: red = left, green = middle, blue = right.'],
   'jump-for-the-meat': ['Press any button as the dinosaur lands.', 'Perfect landings jump twice as high.'],
@@ -113,7 +119,20 @@ export function remainingDemoPlan(game, round = {}) {
     probe.tap(color, at);
   };
   let completeAt, freezeAt, sampleComplete = false;
-  if (game === 'happy-days') {
+  if (game === 'stationery-master') {
+    const stage = probe.stages[0];
+    let at = START + 800;
+    stage.puzzle.counts.forEach((count, color) => { for (let tap = 0; tap < count; tap++) { press(color, at); at += 300; } });
+    completeAt = START + stage.revealAt;
+    sampleComplete = true;
+    probe.advance(completeAt);
+  } else if (game === 'clock-stopper') {
+    const stage = probe.stages[0];
+    press(1, START + stage.targetAt);
+    completeAt = START + stage.answerEnd + 80;
+    sampleComplete = true;
+    probe.advance(START + stage.endsAt);
+  } else if (game === 'happy-days') {
     for (const note of probe.notes) {
       const at = START + note.at, end = at + note.duration;
       presses.push({ type: 'press', color: note.color, at, holdUntil: note.duration ? end : undefined });
@@ -193,6 +212,7 @@ export function remainingDemoPlan(game, round = {}) {
 }
 
 const STAGES = {
+  'stationery-master': DeskClockStage, 'clock-stopper': DeskClockStage,
   'happy-days': HappyStage,
   'jump-for-the-meat': JumpStage, 'burger-girl': BurgerStage, 'me-find-mistake': MistakeStage,
   'its-raining-coins': CoinStage, 'dodge-or-die': DodgeStage, 'dynamite-spark': DynamiteStage,

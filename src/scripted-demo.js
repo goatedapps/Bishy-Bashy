@@ -48,7 +48,8 @@ export class ScriptedDemo {
   paintControls(time) {
     const presses = this.plan.presses.filter(cue => cue.type !== 'release');
     const holding = presses.find(cue => cue.holdUntil !== undefined && time >= cue.at && time < cue.holdUntil);
-    const cue = holding || [...presses].reverse().find(cue => time >= cue.at - 300) || presses[0];
+    const active = [...presses].reverse().find(cue => time >= cue.at && time < cue.at + 180);
+    const cue = holding || active || [...presses].reverse().find(cue => time >= cue.at - 300) || presses[0];
     const age = time - cue.at;
     const heldFor = cue.holdUntil === undefined ? 180 : cue.holdUntil - cue.at;
     this.buttons.forEach((button, index) => button.classList.toggle('pressed', index === cue.color && age >= 0 && age < heldFor));
