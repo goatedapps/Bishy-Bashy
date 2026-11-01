@@ -636,7 +636,7 @@ The supplied `dynamite-spark-voice.mp3` announces selection.
 ## Play Get Those Burgers Out!
 
 Fill every empty slot with fries, burgers, and drinks using red, green, and blue respectively.
-Six seeded meals each require one to three items of every kind.
+Eight seeded meals each require one to three items of every kind.
 Button presses use `plop.mp3`; each item falls for 300 ms into its matching slot.
 Repeated presses launch multiple items in the same column while earlier items are still falling, with one independent drop per required slot.
 Taps on full columns play Wrong without changing the meal, and every completed meal plays Ding once before a 300 ms serving hold.
@@ -752,3 +752,6 @@ Mimicking Monkeys now displays the monkey holding a large red apple, green pear,
 The character occupies less of the lane, leaving room around the item cue; neutral gaps never reveal upcoming items.
 Perm Mania retains `perm-beat.mp3` for Watch cues and uses the actual pressed button’s `hit-red.wav`, `hit-green.wav`, or `hit-blue.wav` for live inputs.
 Original new artwork and prompts are retained in `public/assets/`; named image optimization can update only selected assets.
+
+Type in Letters keeps all 26 letters and backspace in one row in both gameplay and the animated tutorial.
+Dynamite Spark derives wire colors from the scheduled round seed for every lane before gameplay and before any peer snapshot arrives, including open spots.

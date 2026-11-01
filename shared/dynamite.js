@@ -2,12 +2,16 @@ import { createSequence } from './totem.js';
 export const DYNAMITE_GAME = 'dynamite-spark';
 export const DYNAMITE_GOAL = 52;
 export const DYNAMITE_DURATION_MS = 45000;
+export function dynamiteSequence(seed) {
+  const groups = createSequence(seed, 13);
+  for (let i = 1; i < groups.length; i++) if (groups[i] === groups[i - 1]) groups[i] = (groups[i] + 1) % 3;
+  return groups.flatMap(color => Array(4).fill(color));
+}
+
 export class DynamiteRun {
   constructor(round, start) {
     this.id = round.id; this.start = start; this.end = start + round.duration;
-    const groups = createSequence(round.seed, 13);
-    for (let i = 1; i < groups.length; i++) if (groups[i] === groups[i - 1]) groups[i] = (groups[i] + 1) % 3;
-    this.sequence = groups.flatMap(color => Array(4).fill(color));
+    this.sequence = dynamiteSequence(round.seed);
     this.goal = 52; this.cleared = 0; this.mistakes = 0; this.blockedUntil = start;
     this.done = false; this.elapsed = null; this.feedback = null; this.lastTap = -Infinity;
   }

@@ -126,7 +126,7 @@ Results may stop music and countdown cues, but must not truncate an accepted loc
 
 `shared/dynamite.js` owns 13 seeded colour groups of four sections, a 40 ms input guard, 250 ms wrong-colour recovery, and a 45-second elapsed-time race.
 `src/dynamite-view.js` uses a paused, locally clocked GSAP tween to smoothly scroll the continuous segmented wire while the spark descends; loop `electrical-buzz.mp3` only for the active local spark, stop it on finish/interruption, and preserve `dynamite-explode.mp3` in a dedicated finish group through results, defer podium audio until it ends, and duck music during the explosion.
-`shared/meals.js` owns six seeded fries/burger/drink orders; independent 300 ms drops fill required slots, taps on a full column play Wrong without altering the meal, each completed meal plays Ding once, and final elapsed time includes the last landing.
+`shared/meals.js` owns eight seeded fries/burger/drink orders; independent 300 ms drops fill required slots, taps on a full column play Wrong without altering the meal, each completed meal plays Ding once, and final elapsed time includes the last landing.
 `src/meals-view.js` shows empty slots and falling items; presses use `plop.mp3`, and both new games show accepted clear times at the top of each player's column.
 All 15 registered games are available in both Arcade and Game Select.
 The handshake requires `dynamite-meals` alongside existing capabilities.
@@ -228,3 +228,6 @@ Each served burger emits one stage-completion Ding and the common large yellow c
 Shared Dice throws use the round clock for a 260 ms aerial tumble and 120 ms landing bounce with a shadow; preserve answer windows and show settled dice under reduced motion.
 
 Dodge instructions say “Move into gaps between walls. Red - Move left. Blue - Move right” and separately explain green jumping; omit lane symbols beneath the fox in both gameplay and its shared tutorial scene.
+
+Keep the Type in Letters tutorial alphabet in the same single 27-key row as gameplay.
+Dynamite wire previews must use the shared seeded sequence even without a player run or remote snapshot; never substitute alternating placeholder colors.

@@ -1,4 +1,5 @@
 import { gsap } from 'gsap';
+import { dynamiteSequence } from '../shared/dynamite.js';
 const ns = 'http://www.w3.org/2000/svg';
 const svgNode = (tag, attributes = {}) => { const n = document.createElementNS(ns, tag); for (const [key, value] of Object.entries(attributes)) n.setAttribute(key, value); return n; };
 export function dynamitePortrait() {
@@ -17,7 +18,12 @@ export class DynamiteStage {
   }
   render(round, run, time, elapsed, active, occupied, cleared, terminal) {
     const started = active && run && time >= run.start;
-    const count = run?.sequence?.length || 52;
+    if (this.seed !== round.seed || !this.sequence) {
+      this.seed = round.seed;
+      this.sequence = dynamiteSequence(round.seed ?? 0);
+    }
+    const sequence = run?.sequence || this.sequence;
+    const count = sequence.length;
     const progress = started ? cleared : 0;
     const finish = terminal && run?.done && cleared === count;
     this.element.classList.toggle('dynamite-cleared', Boolean(finish));
@@ -37,9 +43,9 @@ export class DynamiteStage {
       const a = point(i), b = point(i + 1);
       part.style.opacity = i < progress ? '.12' : '1';
       part.setAttribute('d', `M ${a.map((v,k)=>v+(b[k]-v)*.04)} L ${b.map((v,k)=>v+(a[k]-v)*.04)}`);
-      part.setAttribute('stroke', ['#fa5366','#5cdb8d','#51bff5'][run?.sequence[i] ?? i % 3]);
+      part.setAttribute('stroke', ['#fa5366','#5cdb8d','#51bff5'][sequence[i]]);
     });
-    const color = run?.sequence[progress] ?? 0;
+    const color = sequence[progress] ?? 0;
     const sparkPoint = point(visual);
     this.spark.setAttribute('x', sparkPoint[0]); this.spark.setAttribute('y', sparkPoint[1]); this.spark.setAttribute('fill', ['#ff5365','#62ef92','#65d8ff'][color]);
     this.spark.style.display = occupied && !terminal ? '' : 'none';

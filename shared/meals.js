@@ -1,7 +1,7 @@
 import { createSequence } from './totem.js';
 
 export const MEALS_GAME = 'get-those-burgers-out';
-export const MEALS_GOAL = 6;
+export const MEALS_GOAL = 8;
 export const MEALS_DURATION_MS = 45_000;
 export const MEALS_DROP_MS = 300;
 export const MEALS_SERVE_MS = 300;

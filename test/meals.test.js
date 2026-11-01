@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import { MealsRun, mealSequence, MEALS_GAME, MEALS_GOAL, MEALS_DURATION_MS, MEALS_DROP_MS, MEALS_SERVE_MS } from '../shared/meals.js';
 const round = { id:'meals', game:MEALS_GAME, seed:123, goal:MEALS_GOAL, duration:MEALS_DURATION_MS };
 
-test('meal orders are deterministic six-set requirements with one to three slots of every item', () => {
+test('meal orders are deterministic eight-set requirements with one to three slots of every item', () => {
   assert.deepEqual(mealSequence(123), mealSequence(123));
   assert.notDeepEqual(mealSequence(123), mealSequence(124));
-  assert.equal(mealSequence(123).length, 6);
+  assert.equal(mealSequence(123).length, 8);
   assert.ok(mealSequence(123).every(set => set.length === 3 && set.every(n => n >= 1 && n <= 3)));
 });
 
@@ -21,10 +21,10 @@ test('meal inputs allow simultaneous colours and settle on scheduled landings', 
   assert.equal(run.feedback.at,1300);
 });
 
-test('six completed meals emit one success each and final elapsed includes the last scheduled landing on a delayed frame', () => {
+test('eight completed meals emit one success each and final elapsed includes the last scheduled landing on a delayed frame', () => {
   const run = new MealsRun(round,5000);
   let time=5000,lastAt=0;
-  for(let set=0;set<6;set++){
+  for(let set=0;set<MEALS_GOAL;set++){
     const required=[...run.requirements];
     for(let row=0;row<Math.max(...required);row++){
       required.forEach((count,color)=>{if(row<count) assert.equal(run.tap(color,time).type,'drop');});
@@ -35,7 +35,7 @@ test('six completed meals emit one success each and final elapsed includes the l
     assert.equal(run.cleared,set+1);
     assert.equal(run.events.length,set+1);
     assert.equal(run.events.at(-1).at,lastAt);
-    if(set<5){
+    if(set<MEALS_GOAL-1){
       assert.equal(run.tap(0,lastAt+MEALS_SERVE_MS-1).type,'ignored');
       time=lastAt+MEALS_SERVE_MS;
       run.advance(time);
@@ -69,9 +69,9 @@ test('rapid repeated presses reserve separate slots, reject overflow, and land i
  run.advance(1340);assert.deepEqual(run.filled,[3,0,0]);assert.equal(run.cleared,0);
 });
 
-test('six rapid-fire meals finish once at the last scheduled landing even with delayed frames',()=>{
+test('eight rapid-fire meals finish once at the last scheduled landing even with delayed frames',()=>{
  const run=new MealsRun(round,5000);let at=5000,lastLanding;
- for(let meal=0;meal<6;meal++){
+ for(let meal=0;meal<MEALS_GOAL;meal++){
   const wanted=[...run.requirements];let lastPress=at;
   for(let item=0;item<Math.max(...wanted);item++)for(let color=0;color<3;color++)if(item<wanted[color]){
    const pressedAt=at+item*20;assert.equal(run.tap(color,pressedAt).type,'drop');lastPress=Math.max(lastPress,pressedAt);
@@ -81,6 +81,6 @@ test('six rapid-fire meals finish once at the last scheduled landing even with d
   at=lastLanding+MEALS_SERVE_MS;run.advance(at);
  }
  assert.equal(run.elapsed,lastLanding-run.start);assert.equal(run.done,true);
- assert.equal(run.events.filter(event=>event.type==='stageComplete').length,6);
+ assert.equal(run.events.filter(event=>event.type==='stageComplete').length,8);
  assert.equal(run.mistakes,0);
 });

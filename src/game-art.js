@@ -57,7 +57,7 @@ export function ruleVisual(game) {
     items.append(mealPortrait(0), mealPortrait(1), mealPortrait(2));
     first.append(items);
     second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Fries · Burger · Drink'));
-    label = 'Fill each empty slot with fries, a burger or a drink using red, green or blue. Serve six meals to finish.';
+    label = 'Fill each empty slot with fries, a burger or a drink using red, green or blue. Serve eight meals to finish.';
   } else if (game === 'dynamite-spark') {
     first.append(gameArt(game), node('strong', '', 'Follow the coloured wire'));
     second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Four taps per colour'));

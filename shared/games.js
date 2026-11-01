@@ -33,7 +33,7 @@ export const GAMES = Object.assign(Object.create(null), {
   [DODGE_GAME]: { id: DODGE_GAME, title: 'Dodge or Die!!', subtitle: 'Switch lanes and leap the hurdles', duration: DODGE_DURATION_MS, goal: DODGE_GOAL },
   [LETTERS_GAME]: { id: LETTERS_GAME, title: 'Type in Letters', subtitle: 'Complete each word before time runs out', sharedArena: true, scoring: 'points', duration: LETTERS_DURATION_MS, goal: 0 },
   [DYNAMITE_GAME]: { id: DYNAMITE_GAME, title: 'Dynamite Spark', subtitle: 'Race the spark down the wire', duration: DYNAMITE_DURATION_MS, goal: DYNAMITE_GOAL },
-  [MEALS_GAME]: { id: MEALS_GAME, title: 'Get Those Burgers Out!', subtitle: 'Fill every slot and serve six meals', goal: MEALS_GOAL, duration: MEALS_DURATION_MS },
+  [MEALS_GAME]: { id: MEALS_GAME, title: 'Get Those Burgers Out!', subtitle: 'Fill every slot and serve eight meals', goal: MEALS_GOAL, duration: MEALS_DURATION_MS },
 });
 
 export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') {
@@ -80,7 +80,7 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game, round = {}) {
-  if (game === MEALS_GAME) return ['Fill the empty slots to complete each meal', 'Red = fries, green = burger, blue = drink', 'Serve all six meals as fast as you can'];
+  if (game === MEALS_GAME) return ['Fill the empty slots to complete each meal', 'Red = fries, green = burger, blue = drink', 'Serve all eight meals as fast as you can'];
   if (game === DYNAMITE_GAME) return ['Match the wire colour with the same button', 'Tap four sections per colour; clear all 13 groups', 'Reach the dynamite first; wrong colours briefly pause the spark'];
   if (game === LETTERS_GAME) return ['Red moves left, blue moves right, green enters a letter', 'Finish the three letters before time runs out to earn a point; choose ⌫ to erase', 'Everyone who finishes scores; each new word has less time'];
   if (game === COIN_GAME) return ['Catch gold coins and avoid cracked purple coins', 'Red = left, green = middle, blue = right'];
