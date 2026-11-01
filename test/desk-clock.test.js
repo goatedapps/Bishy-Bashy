@@ -12,7 +12,7 @@ function counterActions(stage, counts = stage.puzzle.counts) {
   return counts.flatMap((count, color) => Array.from({ length: count }, () => { const action = [color, at]; at += 80; return action; }));
 }
 
-test('Stationery has six shrinking seeded desks, exact 1–9 object counts, and distinct bounded scatter positions', () => {
+test('Stationery has six shrinking seeded desks, exact 1–6 object counts, and distinct bounded scatter positions', () => {
   const round = settings(STATIONERY_GAME), stages = stationeryStages(round);
   assert.equal(stages.length, 6);
   assert.deepEqual(STATIONERY_WINDOWS_MS, [10000, 9200, 8400, 7600, 6800, 6000]);
@@ -21,32 +21,31 @@ test('Stationery has six shrinking seeded desks, exact 1–9 object counts, and 
   assert.deepEqual(stages, stationeryStages(round));
   assert.notDeepEqual(stages, stationeryStages({ ...round, seed: 456 }));
   for (const stage of stages) {
-    assert.ok(stage.puzzle.counts.every(count => Number.isInteger(count) && count >= 1 && count <= 9));
+    assert.ok(stage.puzzle.counts.every(count => Number.isInteger(count) && count >= 1 && count <= 6));
     assert.deepEqual([0, 1, 2].map(color => stage.puzzle.items.filter(item => item.color === color).length), stage.puzzle.counts);
     assert.equal(new Set(stage.puzzle.items.map(item => `${item.x}/${item.y}`)).size, stage.puzzle.items.length);
     assert.ok(stage.puzzle.items.every(item => item.x >= 6 && item.x <= 94 && item.y >= 10 && item.y <= 90));
   }
 });
 
-test('Stationery counters respond locally, wrap after nine, reject bounce and boundary taps, and retain newer proofs after stale acknowledgements', () => {
-  const run = new StationeryRun(settings(STATIONERY_GAME), 1000);
-  assert.equal(run.tap(0, 999).type, 'ignored');
+test('Stationery counters open after the throw, wrap after six, reject bounce, and retain newer proofs after stale acknowledgements', () => {
+  const run = new StationeryRun(settings(STATIONERY_GAME), 1000), stage = run.stages[0], play = run.start + stage.answerAt;
+  assert.equal(run.tap(0, play - 1).type, 'ignored');
   assert.equal(run.tap(0, NaN).type, 'ignored');
-  assert.equal(run.tap(3, 1000).type, 'ignored');
-  assert.equal(run.tap(0, 1000).type, 'choice');
-  assert.equal(run.tap(0, 1039).type, 'ignored');
-  assert.equal(run.tap(1, 1000).type, 'choice');
+  assert.equal(run.tap(3, play).type, 'ignored');
+  assert.equal(run.tap(0, play).type, 'choice');
+  assert.equal(run.tap(0, play + 39).type, 'ignored');
+  assert.equal(run.tap(1, play).type, 'choice');
   assert.deepEqual(run.counts, [1, 1, 0]);
   assert.equal(run.acknowledge(0, 1), false);
   assert.equal(run.pending.get(0).actions.length, 2);
   assert.equal(run.acknowledge(0, 2), true);
-  for (let count = 1; count < 9; count++) run.tap(0, 1000 + count * 40);
-  assert.equal(run.counts[0], 9);
-  assert.equal(run.tap(0, 2000).type, 'choice');
+  for (let count = 1; count < 6; count++) run.tap(0, play + count * 40);
+  assert.equal(run.counts[0], 6);
+  assert.equal(run.tap(0, play + 1000).type, 'choice');
   assert.equal(run.counts[0], 0);
-  run.tap(0, 2040);
+  run.tap(0, play + 1040);
   assert.equal(run.counts[0], 1);
-  const stage = run.stages[0];
   assert.equal(run.tap(2, run.start + stage.answerEnd).type, 'ignored');
   run.advance(run.start + stage.endsAt);
   assert.deepEqual(run.counts, [0, 0, 0]);
@@ -140,7 +139,7 @@ for (const game of [STATIONERY_GAME, CLOCK_GAME]) test(`${game}: server owns sco
 });
 
 class Element {
-  constructor() { this.children = []; this.attributes = new Map(); this.style = {}; this.classes = new Set(); this.classList = { add: name => this.classes.add(name), toggle: (name, on) => on ? this.classes.add(name) : this.classes.delete(name) }; }
+  constructor() { this.children = []; this.dataset = {}; this.attributes = new Map(); this.style = {}; this.classes = new Set(); this.classList = { add: name => this.classes.add(name), toggle: (name, on) => on ? this.classes.add(name) : this.classes.delete(name) }; }
   append(...nodes) { this.children.push(...nodes); }
   replaceChildren(...nodes) { this.children = [...nodes]; }
   setAttribute(key, value) { this.attributes.set(key, value); }
@@ -155,7 +154,7 @@ test('the shared desk hides countdown items and future answers, while clocks fre
     const room = { round, players };
     view.render(room, 'a', { run }, 999);
     assert.ok(view.items.every(item => item.hidden));
-    run.tap(0, 1000); view.render(room, 'a', { run }, 1000);
+    run.tap(0, 1000 + run.stages[0].answerAt); view.render(room, 'a', { run }, 1000 + run.stages[0].answerAt);
     assert.ok(view.items.every(item => !item.hidden));
     assert.equal(view.rows[0].counts[0].value.textContent, '1');
     assert.ok(view.rows[0].counts.every(counter => counter.target.hidden));
@@ -175,12 +174,12 @@ test('the shared desk hides countdown items and future answers, while clocks fre
 
 test('Stationery accepts corrections beyond 27 taps, wraps counters on the server, and keeps all four seats visible', () => {
   const round = settings(STATIONERY_GAME), stages = stationeryStages(round), match = new StationeryMatch(round, stages), stage = stages[0];
-  const counts = [...stage.puzzle.counts]; counts[0] += 20;
+  const counts = [...stage.puzzle.counts]; counts[0] += 28;
   const actions = counterActions(stage, counts);
   assert.ok(actions.length > 27);
-  assert.equal(match.choose('a', { index: 0, actions: actions.slice(0, 10) }, 4000), true);
+  assert.equal(match.choose('a', { index: 0, actions: actions.slice(0, 7) }, 4000), true);
   assert.equal(match.state.counters.a.counts[0], 0);
-  assert.equal(match.choose('a', { index: 0, actions }, 5000), true);
+  assert.equal(match.choose('a', { index: 0, actions }, 7000), true);
   assert.deepEqual(match.state.counters.a.counts, stage.puzzle.counts);
   match.advance(stage.revealAt);
   assert.equal(match.state.scores.a, 1);
@@ -199,5 +198,42 @@ test('Stationery accepts corrections beyond 27 taps, wraps counters on the serve
       const preview = new DeskClockStage({ preview: true }); preview.render(room, 'a', { run }, 1000);
       assert.equal(preview.rows.length, 2);
     }
+  } finally { globalThis.document = previous; }
+});
+
+
+test('Stationery throws seek on the shared clock, finish before counting, and player footers retain identities', () => {
+  const previous = globalThis.document; globalThis.document = { createElement: () => new Element() };
+  try {
+    const round = settings(STATIONERY_GAME), run = new StationeryRun(round, 1000);
+    round.choice = { scores: { a: 0, b: 0 }, results: [], counters: {} };
+    const room = { round, players: [{ id: 'a', name: 'Host', characterId: 4 }, { id: 'b', name: 'Friend', characterId: 7 }] };
+    const view = new DeskClockStage();
+    view.render(room, 'a', { run }, 999);
+    assert.ok(view.items.every(item => item.hidden));
+    view.render(room, 'a', { run }, 1100);
+    assert.ok(view.items.some(item => item.hidden));
+    assert.ok(view.poses.some(pose => pose.y !== 0));
+    assert.equal(run.phase(1100).mode, 'throw');
+    const targetTime = run.start + run.stages[0].answerAt;
+    view.render(room, 'a', { run }, targetTime);
+    assert.ok(view.items.every(item => !item.hidden));
+    assert.ok(view.poses.every(pose => pose.y === 0 && pose.x === 0 && pose.scale === 1));
+    assert.equal(run.phase(targetTime).mode, 'play');
+    const footer = view.rows[1].card.children.at(-1);
+    assert.equal(footer.children[0].dataset.character, '7');
+    assert.equal(footer.children[1].textContent, 'Friend');
+    view.render(room, 'a', { run }, 1100);
+    const rewind = view.poses.map(pose => [pose.x, pose.y]);
+    const other = new DeskClockStage(); other.render(room, 'b', { run }, 1100);
+    other.poses.forEach((pose, index) => { assert.ok(Math.abs(pose.x - rewind[index][0]) < 0.0001); assert.ok(Math.abs(pose.y - rewind[index][1]) < 0.0001); });
+    const reduced = new DeskClockStage(); reduced.motion = { matches: true };
+    reduced.render(room, 'a', { run }, 1100);
+    assert.ok(reduced.items.every(item => item.hidden));
+    reduced.render(room, 'a', { run }, targetTime);
+    assert.ok(reduced.items.every(item => !item.hidden));
+    assert.ok(reduced.poses.every(pose => pose.y === 0 && pose.x === 0));
+    view.dispose(); other.dispose(); reduced.dispose();
+    assert.equal(view.tween, null);
   } finally { globalThis.document = previous; }
 });

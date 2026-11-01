@@ -1,5 +1,7 @@
+import { gsap } from 'gsap';
+import { PlayerFooter } from './player-footer.js';
 import { CHOICE_GRACE_MS } from '../shared/choice-round.js';
-import { STATIONERY_GAME, STATIONERY_NAMES } from '../shared/stationery.js';
+import { STATIONERY_GAME, STATIONERY_NAMES, STATIONERY_THROW_MS, STATIONERY_THROW_STAGGER_MS, STATIONERY_INTRO_MS } from '../shared/stationery.js';
 
 const node = (tag, className, text) => {
   const element = document.createElement(tag); element.className = className;
@@ -40,7 +42,10 @@ export class DeskClockStage {
     this.players = node('div', 'shared-set-players');
     this.element.append(this.header, this.desk, this.players);
     this.rows = []; this.items = [];
+    this.motion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
   }
+
+  dispose() { this.tween?.kill(); this.tween = null; this.boardKey = null; }
 
   render(room, playerId, local, time) {
     const round = room.round, run = local?.run;
@@ -68,7 +73,8 @@ export class DeskClockStage {
         const clockSpace = node('div', 'clock-space'), clock = clockPortrait(); clockSpace.append(clock);
         const timing = node('strong', 'clock-timing'), award = node('strong', 'clock-award');
         const result = node('span', 'set-player-result'); result.hidden = true;
-        card.append(heading, counters, clockSpace, timing, award, result);
+        const footer = new PlayerFooter(player, player?.id === playerId);
+        card.append(heading, counters, clockSpace, timing, award, result, footer.element);
         this.players.append(card);
         return { card, score, counters, counts, clockSpace, clock, timing, award, result };
       });
@@ -77,20 +83,33 @@ export class DeskClockStage {
     const result = elapsed >= (stationery ? stage.revealAt : stage.answerEnd + CHOICE_GRACE_MS) ? round.choice.results.find(result => result.index === phase.index) : null;
     const age = result ? elapsed - result.at : Infinity;
     this.title.textContent = stationery ? 'Count the items on the desk' : phase.mode === 'look' || phase.mode === 'spin' ? `Watch · stop at ${stage.puzzle.hour}:00` : `Stop at ${stage.puzzle.hour}:00`;
-    this.timer.textContent = phase.mode === 'wait' ? 'Get ready' : stationery && phase.mode === 'play' ? `${Math.max(0, (stage.answerEnd - elapsed) / 1000).toFixed(1)} s` : phase.mode === 'settling' ? 'Checking…' : '';
+    this.timer.textContent = phase.mode === 'wait' ? 'Get ready' : stationery && phase.mode === 'play' ? `${Math.max(0, (stage.answerEnd - elapsed) / 1000).toFixed(1)} s` : phase.mode === 'throw' ? 'Look closely…' : phase.mode === 'settling' ? 'Checking…' : '';
     if (stationery) {
       const key = `${round.id}/${phase.index}`;
       if (this.boardKey !== key) {
+        this.tween?.kill();
         this.boardKey = key;
+        this.tween = gsap.timeline({ paused: true });
+        this.poses = [];
         this.items = stage.puzzle.items.map(item => {
           const image = stationeryPortrait(item.color); image.classList.add('desk-item');
           image.style.left = `${item.x}%`; image.style.top = `${item.y}%`;
-          image.style.transform = `translate(-50%,-50%) rotate(${item.angle}deg)`;
+          const pose = { x: item.color === 1 ? 120 - item.x : -item.x - 20, y: -item.y - 25, rotation: item.angle + (item.color === 1 ? -130 : 130), scale: 1.2 };
+          const at = this.poses.length * STATIONERY_THROW_STAGGER_MS / 1000;
+          this.poses.push(pose);
+          this.tween.to(pose, { x: 0, rotation: item.angle, scale: 1, duration: STATIONERY_THROW_MS / 1000, ease: 'power2.out' }, at);
+          this.tween.to(pose, { y: 0, duration: STATIONERY_THROW_MS / 1000, ease: 'bounce.out' }, at);
           return image;
         });
         this.desk.replaceChildren(...this.items);
       }
-      this.items.forEach(item => { item.hidden = phase.mode === 'wait'; });
+      const introElapsed = elapsed - stage.startsAt;
+      this.tween.totalTime(Math.max(0, Math.min(STATIONERY_INTRO_MS, this.motion?.matches ? STATIONERY_INTRO_MS : introElapsed)) / 1000, true);
+      this.items.forEach((item, index) => {
+        const pose = this.poses[index];
+        item.hidden = phase.mode === 'wait' || introElapsed < index * STATIONERY_THROW_STAGGER_MS + (this.motion?.matches ? STATIONERY_THROW_MS : 0);
+        item.style.transform = `translate(-50%,-50%) translate(${pose.x}cqw,${pose.y}cqh) rotate(${pose.rotation}deg) scale(${pose.scale})`;
+      });
       this.desk.setAttribute('aria-label', phase.mode === 'wait' ? 'Desk hidden until GO' : result ? `Pencils ${result.answer[0]}, erasers ${result.answer[1]}, sharpeners ${result.answer[2]}` : 'Count the scattered pencils, erasers and sharpeners');
     }
     seats.forEach((player, index) => {

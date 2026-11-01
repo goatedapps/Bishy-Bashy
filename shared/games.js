@@ -96,7 +96,7 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game, round = {}) {
-  if (game === STATIONERY_GAME) return ['Count the pencils, erasers and sharpeners on the desk', 'Red = pencil, green = eraser, blue = sharpener; tap each total', 'Match all three counts before time runs out; 9 loops back to 0'];
+  if (game === STATIONERY_GAME) return ['Count the pencils, erasers and sharpeners on the desk', 'Red = pencil, green = eraser, blue = sharpener; tap each total', 'Match all three counts before time runs out; 6 loops back to 0'];
   if (game === CLOCK_GAME) return ['Watch the minute hand make its first full turn', 'Press any button when it returns to 12', 'Closest stops earn 10, 7, 4 or 1 points; ties share points'];
   if (game === HAPPY_GAME) return ['Press the matching color when a bar touches the line', 'Hold long bars; release when the tail reaches the line', 'Perfect = 1000 points, Good = 500, Missed = 0'];
   if (game === KAYA_GAME) return ['Remember Kaya, then follow the blankets', 'Choose Kaya: red = left, green = middle, blue = right', 'Six sets get faster; each correct answer earns a point'];

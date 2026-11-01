@@ -978,3 +978,21 @@ summary {
   box-shadow:0 2px 0 #26784c44;
   font:clamp(9px,1.3vw,15px) 'Lilita One',system-ui,sans-serif;
 }
+
+.player-footer { display:flex; align-items:center; justify-content:center; gap:4px; flex:0 0 24px; min-height:24px; width:100%; min-width:0; margin-top:auto; padding:1px 3px; border-radius:7px; background:#fff9e9ee; color:#39283f; font:900 11px/1.1 Nunito,system-ui; grid-column:1/-1; }
+.player-footer>.character-portrait { width:22px; height:22px; }
+.player-footer>span:last-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.is-playing .lane h3,.is-playing .shared-player-name,.is-playing .letter-player-name,.is-playing .set-player-name { display:none; }
+.is-playing .lane>.player-footer { margin-top:3px; }
+.is-playing .set-player-heading { justify-content:flex-end; }
+.instruction-demo .player-footer { display:none; }
+@media(max-width:620px) {
+ .player-footer { flex-basis:22px; min-height:22px; gap:2px; padding-inline:1px; font-size:9px; }
+ .player-footer>.character-portrait { width:18px; height:18px; }
+ .is-playing .desk-counter { grid-template-rows:18px 20px 10px; }
+ .is-playing .desk-counter>.stationery-sprite { width:18px; height:18px; }
+ .is-playing .desk-counter>strong { font-size:20px; }
+}
+
+.is-playing .lane.empty h3,.is-playing .shared-set-player.empty .set-player-name { display:block; }
+.is-playing .letter-score { grid-column:1/-1; }

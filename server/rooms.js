@@ -78,7 +78,7 @@ export class RoomService {
     if (!returning && room.set) room.set.players.push({ id: player.id, name: player.name, characterId: player.characterId, points: 0, wins: 0 });
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 22, capabilities: ['desk-clock', 'happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 23, capabilities: ['desk-clock', 'happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 

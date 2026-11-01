@@ -4,16 +4,20 @@ import { seededIndex } from './seeded-index.js';
 export const STATIONERY_GAME = 'stationery-master';
 export const STATIONERY_WINDOWS_MS = [10000, 9200, 8400, 7600, 6800, 6000];
 export const STATIONERY_GOAL = 6;
+export const STATIONERY_MAX_COUNT = 6;
+export const STATIONERY_THROW_MS = 500;
+export const STATIONERY_THROW_STAGGER_MS = 80;
+export const STATIONERY_INTRO_MS = 2000;
 export const STATIONERY_GRACE_MS = 500;
 export const STATIONERY_REVEAL_MS = 900;
-export const STATIONERY_DURATION_MS = STATIONERY_WINDOWS_MS.reduce((sum, window) => sum + window + STATIONERY_GRACE_MS + STATIONERY_REVEAL_MS, 0);
+export const STATIONERY_DURATION_MS = STATIONERY_WINDOWS_MS.reduce((sum, window) => sum + STATIONERY_INTRO_MS + window + STATIONERY_GRACE_MS + STATIONERY_REVEAL_MS, 0);
 export const STATIONERY_NAMES = ['Pencil', 'Eraser', 'Sharpener'];
 
 export function stationeryStages(round) {
   const choose = seededIndex(round.seed);
   let startsAt = 0;
   return STATIONERY_WINDOWS_MS.slice(0, round.goal || STATIONERY_GOAL).map((window, index) => {
-    const counts = [1 + choose(9), 1 + choose(9), 1 + choose(9)];
+    const counts = [1 + choose(STATIONERY_MAX_COUNT), 1 + choose(STATIONERY_MAX_COUNT), 1 + choose(STATIONERY_MAX_COUNT)];
     const cells = Array.from({ length: 28 }, (_, cell) => cell);
     for (let cell = 27; cell > 0; cell--) {
       const other = choose(cell + 1); [cells[cell], cells[other]] = [cells[other], cells[cell]];
@@ -23,9 +27,9 @@ export function stationeryStages(round) {
       return { color, x: 8 + cell % 7 * 14 + (choose(21) - 10) / 10,
         y: 14 + Math.floor(cell / 7) * 24 + (choose(41) - 20) / 10, angle: choose(37) - 18 };
     });
-    const answerEnd = startsAt + window, revealAt = answerEnd + STATIONERY_GRACE_MS;
+    const answerAt = startsAt + STATIONERY_INTRO_MS, answerEnd = answerAt + window, revealAt = answerEnd + STATIONERY_GRACE_MS;
     const endsAt = revealAt + STATIONERY_REVEAL_MS;
-    const stage = { index, startsAt, answerAt: startsAt, answerEnd, revealAt, endsAt, puzzle: { counts, items } };
+    const stage = { index, startsAt, answerAt, answerEnd, revealAt, endsAt, puzzle: { counts, items } };
     startsAt = endsAt;
     return stage;
   });
@@ -42,7 +46,7 @@ export class StationeryRun extends ChoiceRun {
     const index = this.stages.findIndex(stage => elapsed < stage.endsAt);
     if (index < 0) return { mode: 'done', index: this.stages.length - 1, stage: this.stages.at(-1) };
     const stage = this.stages[index];
-    return { mode: elapsed < stage.answerEnd ? 'play' : elapsed < stage.revealAt ? 'settling' : 'reveal', index, stage };
+    return { mode: elapsed < stage.answerAt ? 'throw' : elapsed < stage.answerEnd ? 'play' : elapsed < stage.revealAt ? 'settling' : 'reveal', index, stage };
   }
   get counts() { return this.counters.get(this.index) || [0, 0, 0]; }
   tap(color, time) {
@@ -51,7 +55,7 @@ export class StationeryRun extends ChoiceRun {
     this.index = phase.index;
     const counts = [...this.counts];
     this.lastInputs[color] = time;
-    counts[color] = (counts[color] + 1) % 10;
+    counts[color] = (counts[color] + 1) % (STATIONERY_MAX_COUNT + 1);
     this.counters.set(this.index, counts);
     const actions = [...(this.traces.get(this.index) || []), [color, Math.floor(time - this.start)]];
     this.traces.set(this.index, actions);
@@ -79,7 +83,7 @@ export class StationeryMatch {
       const [color, at] = action;
       if (!Number.isInteger(color) || color < 0 || color > 2 || !Number.isInteger(at) || at < stage.answerAt || at >= stage.answerEnd || at < previousAt || at < last[color] + 40 || at > receivedElapsed + 250) return false;
       if (prior && position < prior.actions.length && (color !== prior.actions[position][0] || at !== prior.actions[position][1])) return false;
-      counts[color] = (counts[color] + 1) % 10;
+      counts[color] = (counts[color] + 1) % (STATIONERY_MAX_COUNT + 1);
       previousAt = last[color] = at;
     }
     const entry = { actions: actions.map(action => [...action]), counts };

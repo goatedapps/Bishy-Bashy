@@ -1,3 +1,4 @@
+import { PlayerFooter } from './player-footer.js';
 import { KAYA_GAME } from '../shared/kaya.js';
 import { KayaScene } from './kaya-view.js';
 import { diePortrait, setDie, duckPortrait, facingMoveLabel } from './dice-facing-view.js';
@@ -86,7 +87,8 @@ export class SharedChoiceStage {
         const selection = node('span', 'shared-player-selection');
         const result = node('span', 'shared-player-result');
         result.hidden = true;
-        card.append(name, score, selection, result);
+        const footer = new PlayerFooter(player, player.id === playerId);
+        card.append(name, score, selection, result, footer.element);
         return { card, score, selection, result };
       });
       this.players.replaceChildren(...this.rows.map(row => row.card));

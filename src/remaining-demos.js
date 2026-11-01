@@ -84,7 +84,7 @@ const RUNS = {
 export const REMAINING_DEMO_GAMES = Object.keys(RUNS);
 
 const INSTRUCTIONS = {
-  'stationery-master': ['Count each item and tap its button that many times.', 'Red: pencil. Green: eraser. Blue: sharpener. Counts loop 9 → 0.'],
+  'stationery-master': ['Count each item and tap its button that many times.', 'Red: pencil. Green: eraser. Blue: sharpener. Counts loop 6 → 0.'],
   'clock-stopper': ['Watch the minute hand make its first full turn.', 'Press any button when it returns to 12.'],
   'happy-days': ['Press the matching color as a bar reaches the line.', 'Hold long bars. Release when the tail reaches the line.'],
   'wheres-kaya': ['Remember Kaya. Follow the blankets as they shuffle.', 'Choose Kaya: red = left, green = middle, blue = right.'],
@@ -121,7 +121,7 @@ export function remainingDemoPlan(game, round = {}) {
   let completeAt, freezeAt, sampleComplete = false;
   if (game === 'stationery-master') {
     const stage = probe.stages[0];
-    let at = START + 800;
+    let at = START + stage.answerAt + 500;
     stage.puzzle.counts.forEach((count, color) => { for (let tap = 0; tap < count; tap++) { press(color, at); at += 300; } });
     completeAt = START + stage.revealAt;
     sampleComplete = true;

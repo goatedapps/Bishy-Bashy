@@ -1,3 +1,4 @@
+import { PlayerFooter } from './player-footer.js';
 import { LETTERS_ALPHABET } from '../shared/letters.js';
 
 const node = (tag, className, text) => {
@@ -66,7 +67,8 @@ export class LettersStage {
         const status = node('small', 'letter-player-status');
         const pointer = node('span', `letter-pointer letter-pointer-${index}`, String(index + 1));
         pointer.setAttribute('aria-label', player.name);
-        card.append(name, score, typed, status, outcome);
+        const footer = new PlayerFooter(player, player.id === playerId);
+        card.append(name, score, typed, status, outcome, footer.element);
         return { card, score, slots, outcome, status, pointer };
       });
       this.pointers = this.rows.map(row => row.pointer);

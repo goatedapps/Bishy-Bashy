@@ -1,3 +1,4 @@
+import { PlayerFooter } from './player-footer.js';
 import { STATIONERY_GAME } from '../shared/stationery.js';
 import { CLOCK_GAME } from '../shared/clock.js';
 import { DeskClockStage } from './desk-clock-view.js';
@@ -113,9 +114,10 @@ export class GameView {
       const stageResult = node('span', 'stage-result');
       stageResult.hidden = true;
       stageResult.setAttribute('role', 'img');
-      lane.append(name, finishBadge, zone, node('div', 'base'), remaining, progress, status, stageResult);
+      const footer = new PlayerFooter();
+      lane.append(name, finishBadge, zone, node('div', 'base'), remaining, progress, status, stageResult, footer.element);
       $('player-lanes').append(lane);
-      return { happy, meals, dynamite, lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, coins, dodge, remaining, progress, fill, status, effects, ring, particles, towerKey: '' };
+      return { footer, happy, meals, dynamite, lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, coins, dodge, remaining, progress, fill, status, effects, ring, particles, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -134,6 +136,7 @@ export class GameView {
     $('arena').classList.toggle('lobby', !active);
     const sharedSets = [STATIONERY_GAME, CLOCK_GAME].includes(game);
     this.sharedSets.element.hidden = !active || !sharedSets;
+    if (this.sharedSets.element.hidden) this.sharedSets.dispose();
     this.choice.element.hidden = !active || !isSharedChoice(game) || sharedSets;
     this.letters.element.hidden = !active || game !== LETTERS_GAME;
     if (active && sharedSets) {
@@ -169,6 +172,7 @@ export class GameView {
     this.lanes.forEach((elements, index) => {
       const player = room.players[index];
       const own = player?.id === playerId;
+      elements.footer.update(active ? player : null, own);
       const ownRun = active && own && local?.id === round?.id ? local : null;
       const shownRun = active ? this.projectPlayer(round, player, local, own)?.run : null;
       const cleared = ownRun ? ownRun.run.cleared : player?.progress?.cleared || 0;

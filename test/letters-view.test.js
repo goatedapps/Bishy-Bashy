@@ -6,7 +6,7 @@ import { roundSettings } from '../shared/games.js';
 
 class Element {
   constructor() {
-    this.children = []; this.style = { setProperty() {} };
+    this.children = []; this.dataset = {}; this.style = { setProperty() {} };
     this.textContent = '';
     this.className = '';
     this.attributes = new Map();
@@ -17,7 +17,7 @@ class Element {
     } };
   }
   append(...children) { children.forEach(child => { child.remove(); this.children.push(child); child.parentNode = this; }); }
-  replaceChildren(...children) { this.children.forEach(child => { child.parentNode = null; }); this.children = []; this.append(...children); }
+  replaceChildren(...children) { this.children.forEach(child => { child.parentNode = null; }); this.children = []; this.dataset = {}; this.append(...children); }
   remove() { if (this.parentNode) this.parentNode.children = this.parentNode.children.filter(child => child !== this); this.parentNode = null; }
   setAttribute(name, value) { this.attributes.set(name, value); }
 }
