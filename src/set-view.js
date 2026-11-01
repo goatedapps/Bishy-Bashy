@@ -16,9 +16,9 @@ const node = (tag, className, text) => {
 };
 
 export class SetView {
-  constructor({ onInstructionStep = () => {}, onGameChoose = () => {}, onDemoPress = () => {}, onDemoWatch = () => {}, onDemoComplete = () => {} } = {}) {
+  constructor({ onInstructionStep = () => {}, onGameChoose = () => {}, onDemoPress = () => {}, onDemoWatch = () => {}, onDemoComplete = () => {}, onDemoLaunch = () => {} } = {}) {
     this.key = '';
-    this.demoCallbacks = { onPress: onDemoPress, onWatch: onDemoWatch, onComplete: onDemoComplete };
+    this.demoCallbacks = { onPress: onDemoPress, onWatch: onDemoWatch, onComplete: onDemoComplete, onLaunch: onDemoLaunch };
     this.wheel = new ArcadeReel();
     this.instructionSequence = new InstructionSequence({ onReveal: onInstructionStep });
     for (const game of Object.values(GAMES)) {

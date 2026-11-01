@@ -33,6 +33,6 @@ export function audioAssetIds(game = 'totem-shrinker') {
   const shared = ['finish', 'timeout'];
   if (game === 'facing-which-way') return [...shared, 'red', 'green', 'blue', 'mistake', 'go', 'music', 'urgency'];
   if (game === 'jump-for-the-meat') return [...shared, 'red', 'green', 'blue', 'mistake', 'go', 'music', 'urgency', 'permGrow'];
-  if (game === 'facial-slot-machine') return [...shared, 'slotMusic', 'slotUrgency', 'slotLock', 'slotMiss', 'slotWin', 'slotGo'];
+  if (game === 'facial-slot-machine') return [...shared, 'slotMusic', 'slotUrgency', 'slotLock', 'slotMiss', 'slotWin', 'slotGo', 'red', 'green', 'blue'];
   return [...shared, ...(game === 'perm-mania' ? ['permMusic', 'permUrgency', 'permGrow', 'permGo', 'red', 'green', 'blue'] : ['red', 'green', 'blue', 'mistake', 'go', 'music', 'urgency'])];
 }

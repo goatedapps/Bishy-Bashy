@@ -11,7 +11,7 @@ export function permDemoPlan(round = {}) {
   const notes = run.notes.filter(note => note.phrase === 0);
   const cues = [
     ...demoCues(settings.seed, bpm).slice(0, notes.length).map(at => ({ type: 'watch', at: INTRO_MS + at })),
-    ...notes.map((note, index) => ({ type: 'press', at: INTRO_MS + note.at, color: index % 3 })),
+    ...notes.map(note => ({ type: 'press', at: INTRO_MS + note.at, color: 1 })),
     { type: 'complete', at: run.end },
   ];
   return { settings, cues, duration: run.end + HOLD_MS };
@@ -20,7 +20,7 @@ export function permDemoPlan(round = {}) {
 export class PermDemo {
   constructor({ round, onPress = () => {}, onWatch = () => {}, onComplete = () => {} } = {}) {
     Object.assign(this, createDemoLayout(
-      'Perm Mania demonstration: watch one rhythm, then a finger copies its timing using the three buttons. A correct set grows the dancer’s hair. The demonstration repeats.',
+      'Perm Mania demonstration: watch one rhythm, then a finger copies every beat with the green button. Any button works. A correct set grows the dancer’s hair. The demonstration repeats.',
       ['Watch and listen to the rhythm.', 'Copy the rhythm with any button to grow your hair.'],
     ));
     this.element.classList.add('perm-demo');

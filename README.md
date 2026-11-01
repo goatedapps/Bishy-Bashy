@@ -715,9 +715,19 @@ The original hand master and imagegen prompt are retained in [hand artwork notes
 
 Perm Mania hides the bottom growth counter and progress bar during gameplay.
 Its How to play screen and rules dialog show one Watch-and-copy phrase using the real Perm run model, dancer, hair growth, rhythm dots, and disco backdrop.
-The tutorial follows the scheduled round tempo, uses the existing pointing hand, and demonstrates that any button can copy the rhythm.
+The tutorial follows the scheduled round tempo and uses the existing pointing hand to press green for every beat, while explaining that any button can copy the rhythm.
 Watch cues use `perm-beat.mp3`; tutorial response presses use the requested `hit-red.wav`, `hit-green.wav`, and `hit-blue.wav`, and a successful phrase plays Ding before the loop resets.
 Live gameplay continues to use the existing Perm beat cues.
 The shared mini-demo layout lives in `src/instruction-demo.js` and `src/instruction-demo.css`; `src/perm-demo.js` owns the isolated one-set simulation and bounded audio cues.
 Hidden screens and covering dialogs pause the tutorial, stale sounds are skipped, and reduced motion preserves the rhythm and feedback without dancer motion or hair tweening.
 New and revised How to play screens use this gameplay-left, instructions-and-buttons-right format going forward.
+
+## Slot, fireworks, and monkey tutorials
+
+Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys now use the same gameplay-left, instructions-and-buttons-right mini-demo format on their instructions screens and in their rules dialogs.
+Slots shows the model face and actual scrolling rows, then presses each row’s matching color when the model reaches the center.
+Fireworks launches the first three-rocket pattern with three distinct colors and bursts each rocket with its matching button before landing.
+Monkeys watches one two-color demonstration and repeats the same buttons in order.
+Each successful example pauses briefly and loops, reusing the existing backgrounds, sprites, finger, hit sounds, and Ding success cue; fireworks also retains the supplied launch sound and Monkeys its colored demonstration tones.
+`src/scripted-demo.js` keeps their real gameplay models isolated from multiplayer state, applies inputs at their scheduled times, and skips stale sound cues.
+The tutorials respect mute, effects volume, hidden-screen and dialog pauses, and reduced motion; reduced-motion slot rows advance discretely while retaining the same stop judgments.

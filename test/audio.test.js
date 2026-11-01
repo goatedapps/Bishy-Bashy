@@ -931,7 +931,7 @@ test('Facial Slot Machine uses its own bank, bounded match feedback, and a finis
   const { audio, requests } = setup();
   audio.selectGame('facial-slot-machine');
   await audio.unlock();
-  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 8 + Object.keys(ARCADE_AUDIO_FILES).length);
+  assert.equal(requests.length, audioAssetIds('facial-slot-machine').length + 9 + Object.keys(ARCADE_AUDIO_FILES).length);
   assert.equal(audio.buffers.has('music'), false);
   assert.equal(audio.buffers.has('permMusic'), false);
   audio.scheduleRound('slots', 5000, 35_000, true, false, { game: 'facial-slot-machine' });

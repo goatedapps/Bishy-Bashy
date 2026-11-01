@@ -40,6 +40,7 @@ import { LobbyMotion } from './lobby-motion.js';
 import { createGameDemo } from './game-demo.js';
 import './perm-demo.css';
 import './instruction-demo.css';
+import './next-game-demos.css';
 
 const $ = id => document.getElementById(id);
 const readStored = key => { try { return JSON.parse(sessionStorage.getItem(key)); } catch { return null; } };
@@ -74,8 +75,9 @@ let startupReady = false, preparingAssets = null;
 const audio = new GameAudio({ fetchFile: (url, options) => assets.fetchAudio(url, options), mediaUrl: file => assets.mediaUrl(file), onChange: () => updateSound() });
 const setView = new SetView({
   onDemoPress: color => audio.play('hit', { color, game: TOTEM_GAME }),
-  onDemoWatch: () => audio.play('permDemo'),
+  onDemoWatch: color => audio.play(Number.isInteger(color) ? ['red', 'green', 'blue'][color] : 'permDemo'),
   onDemoComplete: () => audio.play('stageComplete'),
+  onDemoLaunch: () => audio.play('fireworkLaunch'),
   onInstructionStep: step => audio.pressButton(step === 0 ? 'instructions' : 'gameplay'),
   onGameChoose: game => { if (room) send({ type: 'configure', mode: room.mode, game }); },
 });
@@ -771,7 +773,7 @@ function showRules() {
   const activeSet = room?.set && room.set.phase !== 'complete';
   const gameHelp = activeSet || room?.mode === 'game-select';
   $('rules-title').textContent = introduction ? 'Welcome to Dokidoki Dash!' : gameHelp ? GAMES[game].title : 'How to play a set';
-  rulesDemo = !introduction && gameHelp ? createGameDemo(game, { round: profile, onPress: color => audio.play('hit', { color, game: TOTEM_GAME }), onWatch: () => audio.play('permDemo'), onComplete: () => audio.play('stageComplete') }) : null;
+  rulesDemo = !introduction && gameHelp ? createGameDemo(game, { round: profile, ...setView.demoCallbacks }) : null;
   $('rules-visual').replaceChildren(...(introduction ? [] : [rulesDemo?.element || ruleVisual(gameHelp ? game : null)]));
   $('rules-visual').hidden = introduction;
   $('rules').querySelector('.shape-legend').hidden = introduction || Boolean(rulesDemo);

@@ -1,0 +1,21 @@
+.demo-completion { position:absolute; inset:10% 5%; z-index:5; display:grid; place-items:center; pointer-events:none; color:#ffe260; font:clamp(100px,60cqw,220px)/1 'Lilita One',system-ui; text-shadow:1px 1px #432b41,-1px -1px #432b41; }
+.slots-demo .instruction-demo-scene { background-image:var(--image-bg-slots-studio,url('/assets/optimized/bg-slots-studio-acf7c2b4dde4.webp')); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:12px 8px; }
+.demo-slot-target { display:flex; align-items:center; justify-content:center; gap:10px; width:100%; padding:5px; border:2px solid var(--ink); border-radius:12px; background:#fff4d8; }
+.demo-slot-target strong { font:clamp(13px,2vw,21px)/1.1 'Lilita One',system-ui; }
+.demo-slot-target .face-portrait { width:min(55px,18cqh); border:2px solid var(--ink); }
+.slots-demo .slot-cabinet { --face-size:min(60px,50cqw,calc((100cqh - 110px) / 3 - 14px)); grid-template-rows:repeat(3,minmax(0,1fr)); flex-shrink:0; }
+.fireworks-demo .instruction-demo-scene { background-image:var(--image-fireworks-festival,url('/assets/optimized/fireworks-festival-60a7d6733b66.webp')); }
+.fireworks-demo .firework-set-count { display:none; }
+.fireworks-demo .firework-stage { height:100%; }
+.monkeys-demo .instruction-demo-scene { background-image:var(--image-bg-monkey-jungle,url('/assets/optimized/bg-monkey-jungle-9acb59defa5b.webp')); padding:12px 8px; }
+.monkeys-demo .monkey-phase { font:clamp(18px,2.8vw,27px)/1.2 'Lilita One',system-ui; height:32px; }
+.monkeys-demo .monkey-cue { top:10%; right:4%; }
+.monkeys-demo .monkey-track { height:12px; gap:7px; margin-bottom:6px; }
+.monkeys-demo .monkey-dot { width:11px; height:11px; }
+@media(max-width:620px) {
+  .slots-demo .instruction-demo-scene { padding:8px 4px; gap:7px; }
+  .demo-slot-target { flex-direction:column; gap:4px; }
+  .demo-slot-target .face-portrait { width:min(42px,16cqh); }
+  .slots-demo .slot-cabinet { --face-size:min(45px,50cqw,calc((100cqh - 125px) / 3 - 16px)); }
+  .monkeys-demo .monkey-cue { width:30px; height:30px; font-size:22px; }
+}

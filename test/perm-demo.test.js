@@ -43,7 +43,7 @@ test('Perm tutorial plays one real watch-and-response phrase, grows hair, and re
       assert.equal(demo.run.cleared, 0);
       assert.equal(demo.run.done, false);
     }
-    assert.deepEqual(sounds.filter(cue => cue.type === 'press').map(cue => cue.color), [0, 1, 2, 0, 0, 1, 2, 0]);
+    assert.deepEqual(sounds.filter(cue => cue.type === 'press').map(cue => cue.color), Array(8).fill(1));
     assert.equal(sounds.filter(cue => cue.type === 'watch').length, 8);
     assert.equal(sounds.filter(cue => cue.type === 'complete').length, 2);
   }

@@ -208,3 +208,8 @@ All new or revised How to play screens use a looping mini-demo: actual gameplay 
 `src/instruction-demo.js` and `src/instruction-demo.css` own the shared layout; `src/game-demo.js` selects each game’s demo.
 Perm Mania hides its bottom growth counter and progress bar; its tutorial uses one real seeded phrase at the scheduled tempo, copies it with colored hit sounds, grows hair once, then loops.
 Perm tutorial Watch cues reuse `perm-beat.mp3`, response presses use `hit-red.wav` / `hit-green.wav` / `hit-blue.wav`, and the completed set uses Ding; live gameplay keeps its existing Perm beat audio.
+
+Perm Mania’s tutorial presses green for every response beat; the instructions still explain that any button works.
+Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys use the common looping tutorial layout with their real run models and scene renderers.
+`src/scripted-demo.js` owns their bounded input/cue timelines and hidden-screen pause; keep tutorial simulations isolated from real rounds and skip stale sounds.
+Slots demonstrates all three row locks, Fireworks demonstrates the first three-rocket set with one rocket of each color, and Monkeys watches and copies one two-color sequence.
