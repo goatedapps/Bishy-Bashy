@@ -171,7 +171,7 @@ Keep the static frontend independently deployable with a configurable secure Web
 Keep the canonical gameplay and hosting notes in README.md current.
 Use one full sentence per line when substantially editing Markdown, and comment only on non-obvious constraints.
 
-Perm demonstrations and all response taps use the supplied `perm-beat.mp3`; preserve the shared rhythm clock, phase and timing offset, and never layer Punch or the removed piano files.
+Live Perm demonstrations and all gameplay response taps use the supplied `perm-beat.mp3`; preserve the shared rhythm clock, phase and timing offset, and never layer Punch or the removed piano files.
 Dice result circles remain visible in each player’s score box for 650 ms alongside one Ding per correct set, even when the next fast throw has begun.
 
 Arcade uses 15 Me Find Mistake boards with a 45-second deadline, eight Facing Which Way sets with a derived 71.2-second schedule, and ten Fireworks sets with a 60-second deadline.
@@ -200,6 +200,11 @@ Keep small arena completion overlays explicitly dark on a solid light panel so t
 Invitation URLs with a valid room code disable Create room and permit joining only.
 Facing cards and options stay square within available arena space, and covered-card mirror parity persists between turns and through reveal.
 
-Totem Shrinker instructions use `src/totem-demo.js` and `src/totem-demo.css`: a real-art five-block lane beside two rules and the shared three-color controls.
+Totem Shrinker instructions use `src/totem-demo.js` and the shared `src/instruction-demo.css`: a real-art five-block lane beside two rules and the shared three-color controls.
 The demo clears green, blue, then red in a loop, synchronizes the illustrated finger and matching `hit-green.wav` / `hit-blue.wav` / `hit-red.wav` cue with each press, pauses while hidden or in a dialog, and uses discrete state changes under reduced motion.
-Reuse it in the Totem rules dialog; other games retain their illustrated instructions.
+Reuse each implemented demo in its rules dialog; games awaiting conversion retain their illustrated instructions.
+
+All new or revised How to play screens use a looping mini-demo: actual gameplay artwork on the left, concise action instructions and the shared three buttons on the right, with the existing illustrated finger and synchronized feedback.
+`src/instruction-demo.js` and `src/instruction-demo.css` own the shared layout; `src/game-demo.js` selects each game’s demo.
+Perm Mania hides its bottom growth counter and progress bar; its tutorial uses one real seeded phrase at the scheduled tempo, copies it with colored hit sounds, grows hair once, then loops.
+Perm tutorial Watch cues reuse `perm-beat.mp3`, response presses use `hit-red.wav` / `hit-green.wav` / `hit-blue.wav`, and the completed set uses Ding; live gameplay keeps its existing Perm beat audio.

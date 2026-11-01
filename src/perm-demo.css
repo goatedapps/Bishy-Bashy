@@ -1,0 +1,13 @@
+.perm-demo .instruction-demo-scene { background-image:var(--image-bg-perm-stage,url('/assets/optimized/bg-perm-stage-3f6ecd9fbdda.webp')); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px; }
+.perm-demo .rhythm-guide { position:absolute; inset:0 0 auto; padding:14px 9px 16px; width:100%; }
+.perm-demo-heading { display:block; text-align:center; font:clamp(18px,3vw,27px)/1.15 'Lilita One',system-ui; }
+.perm-demo .rhythm-track { gap:4px; }
+.perm-demo .beat-dot { width:clamp(10px,2.6vw,23px); height:clamp(10px,2.6vw,23px); flex-shrink:0; font-size:10px; }
+.perm-demo .rhythm-track:before { top:50%; }
+.perm-demo .beat-dot.is-current { outline-width:2px; outline-offset:1px; }
+.perm-demo .perm-character { position:absolute; bottom:14%; width:min(160px,90cqw,48cqh); }
+.perm-demo-feedback { position:absolute; bottom:5%; color:#3b214d; padding:3px 12px; background:#fffdf5dd; border-radius:12px; font:22px/1.1 'Lilita One',system-ui; }
+.perm-demo-feedback:empty { display:none; }
+.perm-demo-success { inset:20% 5% 10%; display:grid; place-items:center; padding:0; background:none; color:#ffe260; font:clamp(100px,26cqw,180px)/1 'Lilita One',system-ui; text-shadow:1px 1px #432b41,-1px -1px #432b41; pointer-events:none; }
+@media(max-width:620px) { .perm-demo .rhythm-guide { padding:10px 5px 13px; } .perm-demo-heading { font-size:18px; } .perm-demo .beat-dot { font-size:7px; border-width:1px; } .perm-demo-feedback { font-size:17px; } }
+@media(prefers-reduced-motion:reduce) { .perm-demo .perm-hair { transition:none; } .perm-demo .beat-dot.is-current { transform:none; } }

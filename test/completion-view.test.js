@@ -84,7 +84,7 @@ test('Jump hides progress counters and shows each accepted local or remote finis
   } finally { globalThis.document = previous; }
 });
 
-for (const game of ['totem-shrinker','dodge-or-die','mimicking-monkeys']) test(`${game} hides bottom counters and progress without affecting the active scene`,()=>{
+for (const game of ['totem-shrinker','perm-mania','dodge-or-die','mimicking-monkeys']) test(`${game} hides bottom counters and progress without affecting the active scene`,()=>{
  const previous=globalThis.document,nodes=new Map();
  globalThis.document={hidden:false,createElement:()=>new Element(),createElementNS:()=>new Element(),createTextNode:text=>text,getElementById:id=>{if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(id);}};
  try{

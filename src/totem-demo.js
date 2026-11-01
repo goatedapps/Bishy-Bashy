@@ -1,4 +1,5 @@
 import { COLORS } from '../shared/totem.js';
+import { createDemoLayout, demoNode as node } from './instruction-demo.js';
 
 const SHAPES = ['●', '▲', '◆'];
 const BLOCKS = [1, 2, 0, 1, 0, 2, 1, 2];
@@ -6,12 +7,6 @@ export const TOTEM_DEMO_STEP_MS = 2400;
 export const TOTEM_DEMO_TAP_MS = 1450;
 export const TOTEM_DEMO_LOOP_MS = TOTEM_DEMO_STEP_MS * 3 + 1200;
 const clamp = value => Math.max(0, Math.min(1, value));
-const node = (tag, className, text) => {
-  const element = document.createElement(tag);
-  element.className = className;
-  if (text !== undefined) element.textContent = text;
-  return element;
-};
 
 export function totemDemoFrame(elapsed, reducedMotion = false) {
   const cycle = Math.max(0, elapsed) % TOTEM_DEMO_LOOP_MS;
@@ -33,10 +28,11 @@ export function totemDemoFrame(elapsed, reducedMotion = false) {
 export class TotemDemo {
   constructor({ onPress = () => {} } = {}) {
     this.onPress = onPress;
-    this.element = node('section', 'totem-demo');
-    this.element.setAttribute('aria-label', 'Totem Shrinker demonstration: a finger presses green, blue, then red to clear the matching bottom blocks. The demonstration repeats.');
-    this.scene = node('div', 'totem-demo-scene');
-    this.scene.setAttribute('aria-hidden', 'true');
+    Object.assign(this, createDemoLayout(
+      'Totem Shrinker demonstration: a finger presses green, blue, then red to clear the matching bottom blocks. The demonstration repeats.',
+      ["Look at the bottom block's color.", 'Press the color button to clear it.'],
+    ));
+    this.element.classList.add('totem-demo');
     this.scene.append(node('strong', 'totem-demo-player', 'You'));
     this.blocks = Array.from({ length: 6 }, () => {
       const block = node('div', 'block totem-demo-block');
@@ -44,25 +40,6 @@ export class TotemDemo {
       this.scene.append(block);
       return block;
     });
-    const guide = node('div', 'totem-demo-guide');
-    const list = node('ol', 'totem-demo-instructions');
-    this.lines = [
-      node('li', '', "Look at the bottom block's color."),
-      node('li', '', 'Press the color button to clear it.'),
-    ];
-    list.append(...this.lines);
-    const controls = node('div', 'totem-demo-controls');
-    controls.setAttribute('aria-hidden', 'true');
-    this.buttons = COLORS.map((color, index) => {
-      const button = node('div', `hit-button ${color}`);
-      button.append(node('span', 'shape', SHAPES[index]), node('span', 'totem-demo-button-label', color[0].toUpperCase() + color.slice(1)));
-      controls.append(button);
-      return button;
-    });
-    this.hand = node('span', 'totem-demo-hand');
-    controls.append(this.hand);
-    guide.append(list, controls);
-    this.element.append(this.scene, guide);
     this.motion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
     this.elapsed = 0;
     this.previousTime = null;

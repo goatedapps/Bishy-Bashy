@@ -5,7 +5,7 @@ import { gameArt, ruleVisual } from './game-art.js';
 import { InstructionSequence } from './instruction-sequence.js';
 import { ArcadeReel } from './arcade-reel.js';
 import { GameCarousel } from './game-carousel.js';
-import { TotemDemo } from './totem-demo.js';
+import { createGameDemo } from './game-demo.js';
 
 const $ = id => document.getElementById(id);
 const node = (tag, className, text) => {
@@ -16,9 +16,9 @@ const node = (tag, className, text) => {
 };
 
 export class SetView {
-  constructor({ onInstructionStep = () => {}, onGameChoose = () => {}, onDemoPress = () => {} } = {}) {
+  constructor({ onInstructionStep = () => {}, onGameChoose = () => {}, onDemoPress = () => {}, onDemoWatch = () => {}, onDemoComplete = () => {} } = {}) {
     this.key = '';
-    this.onDemoPress = onDemoPress;
+    this.demoCallbacks = { onPress: onDemoPress, onWatch: onDemoWatch, onComplete: onDemoComplete };
     this.wheel = new ArcadeReel();
     this.instructionSequence = new InstructionSequence({ onReveal: onInstructionStep });
     for (const game of Object.values(GAMES)) {
@@ -60,7 +60,7 @@ export class SetView {
     }
     const standingsVisible = set && ['intermission', 'complete'].includes(set.phase);
     $('game-instructions').hidden = !instructions;
-    if (!instructions) { this.instructionSequence.cancel(); this.totemDemo = null; }
+    if (!instructions) { this.instructionSequence.cancel(); this.instructionDemo = null; }
     $('standings-panel').hidden = !standingsVisible;
     if (!set) return;
     $('results').hidden = true;
@@ -68,11 +68,11 @@ export class SetView {
     $('set-progress').textContent = set.mode === 'party' ? `Party · Game ${set.roundIndex - set.cycleStart + 1} of ${set.pickerIds.length}` : `${MODES[set.mode].title} · ${set.mode === 'arcade' ? 'Game' : 'Round'} ${set.roundIndex + 1} of ${set.plan.length}`;
     if (instructions) {
       if (this.instructionSequence.key !== room.round.id) {
-        this.totemDemo = room.round.game === 'totem-shrinker' ? new TotemDemo({ onPress: this.onDemoPress }) : null;
-        $('instructions-visual').replaceChildren(this.totemDemo?.element || ruleVisual(room.round.game));
-        $('instructions-list').hidden = Boolean(this.totemDemo);
-        $('instructions-list').replaceChildren(...(this.totemDemo ? [] : gameRules(room.round.game, room.round).map(text => node('li', '', text))));
-        this.instructionSequence.start(room.round.id, [$('instructions-title'), $('instructions-visual'), ...(this.totemDemo?.lines || $('instructions-list').children)], performance.now());
+        this.instructionDemo = createGameDemo(room.round.game, { ...this.demoCallbacks, round: room.round });
+        $('instructions-visual').replaceChildren(this.instructionDemo?.element || ruleVisual(room.round.game));
+        $('instructions-list').hidden = Boolean(this.instructionDemo);
+        $('instructions-list').replaceChildren(...(this.instructionDemo ? [] : gameRules(room.round.game, room.round).map(text => node('li', '', text))));
+        this.instructionSequence.start(room.round.id, [$('instructions-title'), $('instructions-visual'), ...(this.instructionDemo?.lines || $('instructions-list').children)], performance.now());
       }
       this.advanceInstructions(performance.now());
       this.renderReady(room, $('ready-players'), playerId);
@@ -146,7 +146,7 @@ export class SetView {
   advanceInstructions(time) {
     const visible = !document.hidden && !document.querySelector('dialog[open]');
     this.instructionSequence.advance(time, visible);
-    this.totemDemo?.advance(time, visible && this.instructionSequence.complete);
+    this.instructionDemo?.advance(time, visible && this.instructionSequence.complete);
   }
 
   renderReady(room, container, playerId) {

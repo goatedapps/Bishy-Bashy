@@ -707,6 +707,17 @@ An illustrated finger presses green, blue, then red, clearing each matching bott
 After three clears, the demo holds briefly and resets.
 Each demo press plays its matching `hit-green.wav`, `hit-blue.wav`, or `hit-red.wav` through the existing mute and effects-volume controls.
 The demo skips stale hit cues, pauses when hidden or covered by a dialog, and substitutes discrete changes for sliding motion when reduced motion is enabled.
-The existing instruction reveal and Ready/audio gates remain in place, and other games retain their current instructions.
+The existing instruction reveal and Ready/audio gates remain in place, and games awaiting their demo retain their current instructions.
 `src/totem-demo.js` owns the bounded demonstration timeline; it never sends inputs or changes real gameplay state.
 The original hand master and imagegen prompt are retained in [hand artwork notes](public/assets/tutorial-pointing-hand-artwork.md), with the optimized WebP included in startup asset readiness.
+
+## Perm Mania demonstration
+
+Perm Mania hides the bottom growth counter and progress bar during gameplay.
+Its How to play screen and rules dialog show one Watch-and-copy phrase using the real Perm run model, dancer, hair growth, rhythm dots, and disco backdrop.
+The tutorial follows the scheduled round tempo, uses the existing pointing hand, and demonstrates that any button can copy the rhythm.
+Watch cues use `perm-beat.mp3`; tutorial response presses use the requested `hit-red.wav`, `hit-green.wav`, and `hit-blue.wav`, and a successful phrase plays Ding before the loop resets.
+Live gameplay continues to use the existing Perm beat cues.
+The shared mini-demo layout lives in `src/instruction-demo.js` and `src/instruction-demo.css`; `src/perm-demo.js` owns the isolated one-set simulation and bounded audio cues.
+Hidden screens and covering dialogs pause the tutorial, stale sounds are skipped, and reduced motion preserves the rhythm and feedback without dancer motion or hair tweening.
+New and revised How to play screens use this gameplay-left, instructions-and-buttons-right format going forward.
