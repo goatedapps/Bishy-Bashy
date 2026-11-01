@@ -16,8 +16,9 @@ const node = (tag, className, text) => {
 };
 
 export class SetView {
-  constructor({ onInstructionStep = () => {}, onGameChoose = () => {} } = {}) {
+  constructor({ onInstructionStep = () => {}, onGameChoose = () => {}, onDemoPress = () => {} } = {}) {
     this.key = '';
+    this.onDemoPress = onDemoPress;
     this.wheel = new ArcadeReel();
     this.instructionSequence = new InstructionSequence({ onReveal: onInstructionStep });
     for (const game of Object.values(GAMES)) {
@@ -67,7 +68,7 @@ export class SetView {
     $('set-progress').textContent = set.mode === 'party' ? `Party · Game ${set.roundIndex - set.cycleStart + 1} of ${set.pickerIds.length}` : `${MODES[set.mode].title} · ${set.mode === 'arcade' ? 'Game' : 'Round'} ${set.roundIndex + 1} of ${set.plan.length}`;
     if (instructions) {
       if (this.instructionSequence.key !== room.round.id) {
-        this.totemDemo = room.round.game === 'totem-shrinker' ? new TotemDemo() : null;
+        this.totemDemo = room.round.game === 'totem-shrinker' ? new TotemDemo({ onPress: this.onDemoPress }) : null;
         $('instructions-visual').replaceChildren(this.totemDemo?.element || ruleVisual(room.round.game));
         $('instructions-list').hidden = Boolean(this.totemDemo);
         $('instructions-list').replaceChildren(...(this.totemDemo ? [] : gameRules(room.round.game, room.round).map(text => node('li', '', text))));

@@ -72,6 +72,7 @@ const lobbyMotion = new LobbyMotion();
 let startupReady = false, preparingAssets = null;
 const audio = new GameAudio({ fetchFile: (url, options) => assets.fetchAudio(url, options), mediaUrl: file => assets.mediaUrl(file), onChange: () => updateSound() });
 const setView = new SetView({
+  onDemoPress: color => audio.play('hit', { color, game: TOTEM_GAME }),
   onInstructionStep: step => audio.pressButton(step === 0 ? 'instructions' : 'gameplay'),
   onGameChoose: game => { if (room) send({ type: 'configure', mode: room.mode, game }); },
 });
@@ -767,7 +768,7 @@ function showRules() {
   const activeSet = room?.set && room.set.phase !== 'complete';
   const gameHelp = activeSet || room?.mode === 'game-select';
   $('rules-title').textContent = introduction ? 'Welcome to Dokidoki Dash!' : gameHelp ? GAMES[game].title : 'How to play a set';
-  rulesDemo = !introduction && gameHelp && game === TOTEM_GAME ? new TotemDemo() : null;
+  rulesDemo = !introduction && gameHelp && game === TOTEM_GAME ? new TotemDemo({ onPress: color => audio.play('hit', { color, game: TOTEM_GAME }) }) : null;
   $('rules-visual').replaceChildren(...(introduction ? [] : [rulesDemo?.element || ruleVisual(gameHelp ? game : null)]));
   $('rules-visual').hidden = introduction;
   $('rules').querySelector('.shape-legend').hidden = introduction || Boolean(rulesDemo);

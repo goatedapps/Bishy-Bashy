@@ -705,7 +705,8 @@ Totem Shrinker replaces its static How to play artwork with a looping mini-demo 
 The left side shows the actual temple backdrop and five visible Totem blocks; the right side shows two rules and the same red, green, and blue button styling as gameplay.
 An illustrated finger presses green, blue, then red, clearing each matching bottom block at the press and letting the stack drop into place.
 After three clears, the demo holds briefly and resets.
-The demo stays silent, pauses when hidden or covered by a dialog, and substitutes discrete changes for sliding motion when reduced motion is enabled.
+Each demo press plays its matching `hit-green.wav`, `hit-blue.wav`, or `hit-red.wav` through the existing mute and effects-volume controls.
+The demo skips stale hit cues, pauses when hidden or covered by a dialog, and substitutes discrete changes for sliding motion when reduced motion is enabled.
 The existing instruction reveal and Ready/audio gates remain in place, and other games retain their current instructions.
 `src/totem-demo.js` owns the bounded demonstration timeline; it never sends inputs or changes real gameplay state.
 The original hand master and imagegen prompt are retained in [hand artwork notes](public/assets/tutorial-pointing-hand-artwork.md), with the optimized WebP included in startup asset readiness.

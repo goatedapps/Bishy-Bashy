@@ -31,7 +31,8 @@ export function totemDemoFrame(elapsed, reducedMotion = false) {
 }
 
 export class TotemDemo {
-  constructor() {
+  constructor({ onPress = () => {} } = {}) {
+    this.onPress = onPress;
     this.element = node('section', 'totem-demo');
     this.element.setAttribute('aria-label', 'Totem Shrinker demonstration: a finger presses green, blue, then red to clear the matching bottom blocks. The demonstration repeats.');
     this.scene = node('div', 'totem-demo-scene');
@@ -70,9 +71,13 @@ export class TotemDemo {
 
   advance(time, visible) {
     if (!visible) { this.previousTime = null; return; }
+    const previousElapsed = this.elapsed;
     if (this.previousTime !== null) this.elapsed += Math.max(0, time - this.previousTime);
     this.previousTime = time;
-    this.paint(totemDemoFrame(this.elapsed, this.motion?.matches));
+    const frame = totemDemoFrame(this.elapsed, this.motion?.matches);
+    this.paint(frame);
+    const pressedAt = this.elapsed - frame.age + TOTEM_DEMO_TAP_MS;
+    if (previousElapsed < pressedAt && pressedAt <= this.elapsed && this.elapsed - pressedAt < 100) this.onPress?.(frame.color);
   }
 
   paint(frame) {

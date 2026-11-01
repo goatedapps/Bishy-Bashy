@@ -201,5 +201,5 @@ Invitation URLs with a valid room code disable Create room and permit joining on
 Facing cards and options stay square within available arena space, and covered-card mirror parity persists between turns and through reveal.
 
 Totem Shrinker instructions use `src/totem-demo.js` and `src/totem-demo.css`: a real-art five-block lane beside two rules and the shared three-color controls.
-The silent demo clears green, blue, then red in a loop, synchronizes the illustrated finger with each press, pauses while hidden or in a dialog, and uses discrete state changes under reduced motion.
+The demo clears green, blue, then red in a loop, synchronizes the illustrated finger and matching `hit-green.wav` / `hit-blue.wav` / `hit-red.wav` cue with each press, pauses while hidden or in a dialog, and uses discrete state changes under reduced motion.
 Reuse it in the Totem rules dialog; other games retain their illustrated instructions.

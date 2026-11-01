@@ -41,3 +41,28 @@ test('hidden demonstrations freeze their clock and resume without catching up', 
   demo.advance(30_100, true);
   assert.equal(demo.elapsed, 1100);
 });
+
+test('demo hit cues match each press once per loop and skip stale frames and hidden time', () => {
+  const demo = Object.create(TotemDemo.prototype);
+  demo.elapsed = 0;
+  demo.previousTime = null;
+  demo.paint = () => {};
+  const colors = [];
+  demo.onPress = color => colors.push(color);
+  demo.advance(0, true);
+  for (let loop = 0; loop < 2; loop++) {
+    for (let step = 0; step < 3; step++) {
+      const at = loop * TOTEM_DEMO_LOOP_MS + step * TOTEM_DEMO_STEP_MS + TOTEM_DEMO_TAP_MS;
+      demo.advance(at - 1, true);
+      demo.advance(at, true);
+      demo.advance(at + 16, true);
+    }
+  }
+  assert.deepEqual(colors, [1, 2, 0, 1, 2, 0]);
+  const staleAt = 2 * TOTEM_DEMO_LOOP_MS + TOTEM_DEMO_TAP_MS + 150;
+  demo.advance(staleAt, true);
+  assert.equal(colors.length, 6);
+  demo.advance(staleAt + 1, false);
+  demo.advance(staleAt + 30_000, true);
+  assert.equal(colors.length, 6);
+});
