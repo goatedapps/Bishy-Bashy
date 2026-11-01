@@ -86,7 +86,8 @@ test('played states reconstruct feedback and active phases for every lane-based 
   for (const game of Object.keys(GAMES).filter(id => !GAMES[id].sharedArena)) {
     const round={id:game,game,...roundSettings(game,123)},run=createRun(round,500000);
     let time=run.start+100;
-    if(game==='get-those-burgers-out'){run.tap(0,time);time+=300;run.advance(time);}
+    if(game==='happy-days'){time=run.start+run.notes[0].at;run.tap(run.notes[0].color,time);}
+    else if(game==='get-those-burgers-out'){run.tap(0,time);time+=300;run.advance(time);}
     else if(game==='dynamite-spark')run.tap(run.sequence[0],time);
     else if(game==='totem-shrinker')run.tap(run.sequence[0],time);
     else if(game==='perm-mania'){time=run.start+run.notes[0].at;run.tap(0,time);}

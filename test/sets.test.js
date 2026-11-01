@@ -40,6 +40,14 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
       }
       time = round.endAt + LETTERS_PACKET_MS; service.tick(); return;
     }
+    if (round.game === 'happy-days') {
+      time = round.endAt + 100;
+      for (const index of order) {
+        const place = index === winner ? 0 : index === 0 ? 1 : index;
+        service.handle(clients[index], { type: 'result', roundId: round.id, status: 'finished', elapsed: round.duration, cleared: round.goal, mistakes: 0, score: round.maxScore - place * 500 });
+      }
+      return;
+    }
     if (isSharedChoice(round.game)) {
       const run = createRun(round, 0);
       for (const stage of run.stages) {

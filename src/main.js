@@ -1,3 +1,6 @@
+import { HAPPY_GAME, HAPPY_TONES } from '../shared/happy.js';
+import { HeldInputs } from './held-input.js';
+import './happy.css';
 import { KAYA_GAME } from '../shared/kaya.js';
 import './kaya.css';
 import './characters.css';
@@ -168,7 +171,7 @@ function connect() {
     }
     if (message.type === 'joined') {
       partyAudioBaseline = true;
-      if (message.protocol !== 19 || !message.capabilities?.includes('kaya-shuffle') || !message.capabilities?.includes('timed-letters') || !message.capabilities?.includes('expiring-seats') || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals') || !message.capabilities?.includes('character-picker') || !message.capabilities?.includes('overlapping-coins') || !message.capabilities?.includes('party-mode') || !message.capabilities?.includes('arcade-length')) {
+      if (message.protocol !== 20 || !message.capabilities?.includes('happy-days') || !message.capabilities?.includes('kaya-shuffle') || !message.capabilities?.includes('timed-letters') || !message.capabilities?.includes('expiring-seats') || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals') || !message.capabilities?.includes('character-picker') || !message.capabilities?.includes('overlapping-coins') || !message.capabilities?.includes('party-mode') || !message.capabilities?.includes('arcade-length')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -281,6 +284,7 @@ function setupLocalRound() {
   if (!isRoundActive(round) || !GAMES[round.game] || localRound || !estimate || estimate.count < 3 || !round.playerIds.includes(playerId)) return;
   const start = round.startAt - estimate.offset;
   const savedResult = pending?.message.roundId === round.id ? pending.message : room.players.find(player => player.id === playerId)?.result;
+  happyInputs.clear();
   localRound = {
     id: round.id, start, end: round.endAt - estimate.offset, offset: estimate.offset, uncertainty: estimate.uncertainty,
     run: createRun(round, start, timingOffset), goDelay: null, done: Boolean(savedResult), status: savedResult?.status,
@@ -290,7 +294,7 @@ function setupLocalRound() {
     localRound.run.cleared = savedResult.cleared || 0;
     localRound.run.mistakes = savedResult.mistakes || 0;
     localRound.run.elapsed = savedResult.elapsed;
-    if (round.game === PERM_GAME) localRound.run.score = savedResult.score || 0;
+    if ([PERM_GAME, HAPPY_GAME].includes(round.game)) localRound.run.score = savedResult.score || 0;
     if (round.game === SLOT_GAME) localRound.run.reelMask = savedResult.reelMask || 0;
     localRound.run.done = true;
   }
@@ -325,7 +329,7 @@ function complete(status, elapsed = null) {
   pending = { roomCode: room.code, playerId, dueAt: Date.now() + delay, message: {
     type: 'result', roundId: localRound.id, status, elapsed, cleared: localRound.run.cleared,
     mistakes: localRound.run.mistakes, visual: captureVisual(room.round.game, localRound.run, performance.now()), goDelay: localRound.goDelay,
-    ...(room.round.game === PERM_GAME ? { score: localRound.run.score } : {}),
+    ...([PERM_GAME, HAPPY_GAME].includes(room.round.game) ? { score: localRound.run.score } : {}),
     ...(room.round.game === SLOT_GAME ? { reelMask: localRound.run.reelMask } : {}),
     ...(room.round.game === MISTAKE_GAME ? { attempted: localRound.run.index } : {}),
   } };
@@ -408,6 +412,11 @@ function enforceLifecycle(time, beforeInput = false) {
     if (isSharedChoice(room.round.game)) localRound.run.advance(time);
     if (time >= localRound.end && !localRound.clockEnded) { localRound.clockEnded = true; audio.endPlayer(); }
   }
+  else if (room.round.game === HAPPY_GAME) {
+    localRound.run.advance(time);
+    flushHappyEvents(time);
+    if (localRound.run.done) complete('finished', localRound.run.elapsed);
+  }
   else if (room.round.game === PERM_GAME) {
     localRound.run.advance(time);
     const events = localRound.run.events.splice(0);
@@ -427,17 +436,40 @@ function enforceLifecycle(time, beforeInput = false) {
   }
 }
 
+function flushHappyEvents(time) {
+  const events = localRound.run.events.splice(0);
+  for (const event of events) if (time - event.at <= 150) audio.play(event.type, { game: HAPPY_GAME, group: event.final ? 'finish' : 'effects' });
+}
+
+function releaseHappy(color) {
+  if (room?.round?.game !== HAPPY_GAME || !localRound || localRound.id !== room.round.id || localRound.done) return;
+  const time = performance.now();
+  localRound.run.release(color, time);
+  flushHappyEvents(time);
+  if (localRound.run.done) complete('finished', localRound.run.elapsed);
+  else { view.render(room, playerId, localRound, time); updateControls(time); }
+}
+
+const happyInputs = new HeldInputs(tap, releaseHappy);
+
 function tap(color) {
   if (room?.set?.phase === 'party-picking') { if (!document.hidden && !document.querySelector('dialog[open]')) partyPicker.input(color); return; }
   const time = performance.now();
   enforceLifecycle(time, true);
   if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
   if (!buttons[color]?.disabled && room.round.game === PERM_GAME) audio.permTap(localRound.run, time, color);
-  else if (!buttons[color]?.disabled) audio.pressButton(room.round.game === MEALS_GAME ? 'meals' : room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay');
+  else if (!buttons[color]?.disabled && room.round.game !== HAPPY_GAME) audio.pressButton(room.round.game === MEALS_GAME ? 'meals' : room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay');
   const clearedBefore = localRound.run.cleared;
   const action = localRound.run.tap(color, time);
   if ([MEALS_GAME, BURGER_GAME, COIN_GAME, DODGE_GAME, FIREWORK_GAME].includes(room.round.game)) flushLaneEvents(time);
   if (action.type === 'ignored') return;
+  if (room.round.game === HAPPY_GAME) {
+    if (action.type === 'note') audio.play('hit', { color, game: HAPPY_GAME });
+    flushHappyEvents(time);
+    view.render(room, playerId, localRound, time);
+    updateControls(time);
+    return;
+  }
   if (isSharedChoice(room.round.game)) {
     flushSharedChoices(time);
     view.render(room, playerId, localRound, time);
@@ -602,6 +634,8 @@ function prepareRoundAssets() {
 }
 
 function updateControls(time) {
+  if (room?.round?.game !== HAPPY_GAME || localRound?.done || document.hidden || document.querySelector('dialog[open]')) happyInputs.clear();
+  buttons.forEach((button, color) => button.classList.toggle('is-held', room?.round?.game === HAPPY_GAME && Boolean(localRound?.run.pressedMask & (1 << color))));
   if (room?.set?.phase === 'party-picking') {
     const mine = room.set.choices[playerId];
     for (const button of buttons) button.disabled = Boolean(mine) || !joined || socket?.readyState !== WebSocket.OPEN || document.hidden || !room.set.pickerIds.includes(playerId);
@@ -631,11 +665,11 @@ function animate() {
     else if (time < localRound.start) overlay = String(Math.ceil((localRound.start - time) / 1000));
     else {
       if (localRound.goDelay === null && !localRound.done) localRound.goDelay = time - localRound.start;
-      if (localRound.done) { overlay = localRound.status === 'finished' ? round.game === JUMP_GAME ? '' : round.game === PERM_GAME ? 'Fabulous!' : 'Cleared!' : localRound.status === 'forfeit' ? 'Forfeited' : 'Time’s up!'; small = true; }
+      if (localRound.done) { overlay = localRound.status === 'finished' ? round.game === JUMP_GAME ? '' : [PERM_GAME, HAPPY_GAME].includes(round.game) ? 'Fabulous!' : 'Cleared!' : localRound.status === 'forfeit' ? 'Forfeited' : 'Time’s up!'; small = true; }
       else if (time - localRound.start < 450) overlay = 'GO!';
     }
     const elapsed = localRound ? localRound.run.elapsed ?? Math.max(0, Math.min(time, localRound.end) - localRound.start) : 0;
-    $('timer').textContent = ((GAMES[round.game]?.scoring === 'points' ? Math.max(0, round.duration - elapsed) : elapsed) / 1000).toFixed(2);
+    $('timer').textContent = ((['points', 'accuracy'].includes(GAMES[round.game]?.scoring) ? Math.max(0, round.duration - elapsed) : elapsed) / 1000).toFixed(2);
   } else $('timer').textContent = '00.00';
   if ($('round-overlay').textContent !== overlay) $('round-overlay').textContent = overlay;
   $('round-overlay').hidden = !overlay;
@@ -713,6 +747,7 @@ function updateGameProfile() {
   document.body.classList.toggle('jump-theme', Boolean(themed && game === JUMP_GAME));
   document.body.classList.toggle('burger-theme', Boolean(themed && game === BURGER_GAME));
   document.body.classList.toggle('mistake-theme', Boolean(themed && game === MISTAKE_GAME));
+  document.body.classList.toggle('happy-theme', Boolean(themed && game === HAPPY_GAME));
   document.body.classList.toggle('kaya-theme', Boolean(themed && game === KAYA_GAME));
   document.body.classList.toggle('dice-theme', Boolean(themed && game === DICE_GAME));
   document.body.classList.toggle('facing-theme', Boolean(themed && game === FACING_GAME));
@@ -720,10 +755,10 @@ function updateGameProfile() {
   document.body.classList.toggle('dynamite-theme', Boolean(themed && game === DYNAMITE_GAME));
   document.body.classList.toggle('letters-theme', Boolean(themed && game === LETTERS_GAME));
   buttons.forEach((button, index) => {
-    const action = picking ? ['Down', 'Select', 'Up'][index] : game === MEALS_GAME ? ['Fries', 'Burger', 'Drink'][index] : [DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
+    const action = game === HAPPY_GAME && !picking ? HAPPY_TONES[index] : picking ? ['Down', 'Select', 'Up'][index] : game === MEALS_GAME ? ['Fries', 'Burger', 'Drink'][index] : [DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
     button.children[1].textContent = action;
     const label = ['Red circle', 'Green triangle', 'Blue diamond'][index];
-    button.setAttribute('aria-label', picking || [MEALS_GAME, COIN_GAME, DODGE_GAME, LETTERS_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? `${label}: ${action}` : label);
+    button.setAttribute('aria-label', picking || [HAPPY_GAME, MEALS_GAME, COIN_GAME, DODGE_GAME, LETTERS_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? `${label}: ${action}` : label);
   });
   document.body.classList.toggle('coin-theme', Boolean(themed && game === COIN_GAME));
   document.body.classList.toggle('dodge-theme', Boolean(themed && game === DODGE_GAME));
@@ -864,6 +899,10 @@ for (const button of buttons) {
     event.preventDefault();
     stopLetterHold();
     const color = Number(button.dataset.color);
+    if (room?.round?.game === HAPPY_GAME) {
+      if (!button.disabled) { button.setPointerCapture(event.pointerId); happyInputs.press(`pointer:${event.pointerId}`, color); }
+      return;
+    }
     tap(color);
     if (room?.round?.game !== LETTERS_GAME || color === 1) return;
     const repeat = () => {
@@ -873,20 +912,24 @@ for (const button of buttons) {
     };
     letterHoldTimer = setTimeout(repeat, 260);
   });
-  button.addEventListener('click', event => { if (event.detail === 0) tap(Number(button.dataset.color)); });
+  button.addEventListener('lostpointercapture', event => happyInputs.release(`pointer:${event.pointerId}`));
+  button.addEventListener('click', event => { if (event.detail === 0) { const color = Number(button.dataset.color); tap(color); if (room?.round?.game === HAPPY_GAME) releaseHappy(color); } });
 }
-document.addEventListener('pointerup', stopLetterHold);
-document.addEventListener('pointercancel', stopLetterHold);
-window.addEventListener('blur', stopLetterHold);
-document.addEventListener('visibilitychange', stopLetterHold);
+document.addEventListener('pointerup', event => { stopLetterHold(); happyInputs.release(`pointer:${event.pointerId}`); });
+document.addEventListener('pointercancel', event => { stopLetterHold(); happyInputs.release(`pointer:${event.pointerId}`); });
+window.addEventListener('blur', () => { stopLetterHold(); happyInputs.clear(); });
+document.addEventListener('visibilitychange', () => { stopLetterHold(); happyInputs.clear(); });
 const keys = { '1': 0, j: 0, '2': 1, k: 1, '3': 2, l: 2 };
 document.addEventListener('keydown', event => {
   if (event.repeat && !(room?.round?.game === LETTERS_GAME && ['1', '3', 'j', 'l', 'ArrowLeft', 'ArrowRight'].includes(event.key)) || event.ctrlKey || event.metaKey || event.altKey || document.querySelector('dialog[open]') || ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return;
   const letterKey = room?.round?.game === LETTERS_GAME ? { ArrowLeft: 0, Enter: 1, ArrowRight: 2 }[event.key] : undefined;
   const color = letterKey ?? keys[event.key.toLowerCase()];
   if (color === undefined) return;
-  event.preventDefault(); tap(color);
+  event.preventDefault();
+  if (room?.round?.game === HAPPY_GAME) { if (!buttons[color].disabled) happyInputs.press(`key:${event.code || event.key.toLowerCase()}`, color); }
+  else tap(color);
 });
+document.addEventListener('keyup', event => happyInputs.release(`key:${event.code || event.key.toLowerCase()}`));
 $('disconnect').addEventListener('click', () => {
   reconnectAt = performance.now() + 5000;
   socket?.close();

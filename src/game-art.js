@@ -1,3 +1,4 @@
+import { happyPortrait } from './happy-view.js';
 import { kayaPortrait } from './kaya-view.js';
 import { raccoonPortrait, runnerPortrait, coinPortrait } from './coins-dodge-view.js';
 import { facePortrait } from './slot-view.js';
@@ -21,7 +22,8 @@ const node = (tag, className, text) => {
 export function gameArt(game) {
   const art = node('span', `game-art art-${game}`);
   art.setAttribute('aria-hidden', 'true');
-  if (game === 'wheres-kaya') art.append(kayaPortrait());
+  if (game === 'happy-days') art.append(happyPortrait());
+  else if (game === 'wheres-kaya') art.append(kayaPortrait());
   else if (game === 'get-those-burgers-out') art.append(mealPortrait(1));
   else if (game === 'dynamite-spark') art.append(dynamitePortrait());
   else if (game === 'type-in-letters') art.append(lettersPortrait());
@@ -54,7 +56,11 @@ export function ruleVisual(game) {
   const first = node('div', 'rule-example');
   const second = node('div', 'rule-example');
   let label;
-  if (game === 'wheres-kaya') {
+  if (game === 'happy-days') {
+    first.append(gameArt(game), node('strong', '', 'Match bars at the line'));
+    second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Hold long bars through their tails'));
+    label = 'Match the note color at the hit line. Hold long bars and release on the tail. Timing earns Perfect, Good or Missed.';
+  } else if (game === 'wheres-kaya') {
     first.append(gameArt(game), node('strong', '', 'Remember Kaya'));
     second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Follow the blankets'));
     label = 'Remember Kaya, follow the covered animals as they shuffle, then choose red for left, green for middle, or blue for right.';

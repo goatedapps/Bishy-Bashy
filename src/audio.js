@@ -8,8 +8,9 @@ const MUSIC_MODES = ['auto', 'on', 'off'];
 const MENU_TRACKS = { menu: 'Background-ActionRock.mp3', instructions: 'game-instructions.mp3' };
 const MENU_TRACK_GAINS = { menu: 1, instructions: 2 };
 const EXTRA_AUDIO_FILES = { wrong: 'wrong.mp3', buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.mp3', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3', wheelSpin: 'roulette.mp3', gameSelect: 'Game-select.mp3' };
-const GAME_AUDIO_FILES = { 'wheres-kaya': { ding: 'Ding.mp3', kayaShuffle: 'card-move.mp3' }, 'facial-slot-machine': { ding: 'Ding.mp3' }, party: { ding: 'Ding.mp3' }, 'get-those-burgers-out': { mealPlop: 'plop.mp3', ding: 'Ding.mp3' }, 'dynamite-spark': { dynamiteBuzz: 'electrical-buzz.mp3', dynamiteExplosion: 'dynamite-explode.mp3', ding: 'Ding.mp3' }, 'jump-for-the-meat': { jumpBounce: 'bounce.mp3', ding: 'Ding.mp3' }, 'type-in-letters': { ding: 'Ding.mp3', lettersPress: 'Diuup.mp3' }, 'perm-mania': { ding: 'Ding.mp3', permBeat: 'perm-beat.mp3' }, 'mimicking-monkeys': { ding: 'Ding.mp3' }, 'its-raining-coins': { ding: 'Ding.mp3' }, 'dodge-or-die': { ding: 'Ding.mp3' }, 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3', ding: 'Ding.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3', diceRoll: 'dice-roll.mp3' }, 'facing-which-way': { ding: 'Ding.mp3', facingFlip: 'flip.mp3' } };
+const GAME_AUDIO_FILES = { 'happy-days': { happyMusic: 'happy-days-music.mp3', ding: 'Ding.mp3' }, 'wheres-kaya': { ding: 'Ding.mp3', kayaShuffle: 'card-move.mp3' }, 'facial-slot-machine': { ding: 'Ding.mp3' }, party: { ding: 'Ding.mp3' }, 'get-those-burgers-out': { mealPlop: 'plop.mp3', ding: 'Ding.mp3' }, 'dynamite-spark': { dynamiteBuzz: 'electrical-buzz.mp3', dynamiteExplosion: 'dynamite-explode.mp3', ding: 'Ding.mp3' }, 'jump-for-the-meat': { jumpBounce: 'bounce.mp3', ding: 'Ding.mp3' }, 'type-in-letters': { ding: 'Ding.mp3', lettersPress: 'Diuup.mp3' }, 'perm-mania': { ding: 'Ding.mp3', permBeat: 'perm-beat.mp3' }, 'mimicking-monkeys': { ding: 'Ding.mp3' }, 'its-raining-coins': { ding: 'Ding.mp3' }, 'dodge-or-die': { ding: 'Ding.mp3' }, 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3', ding: 'Ding.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3', diceRoll: 'dice-roll.mp3' }, 'facing-which-way': { ding: 'Ding.mp3', facingFlip: 'flip.mp3' } };
 const PROFILES = {
+  'happy-days': { music: 'happyMusic', go: 'go' },
   'dice-dice-more-dice': { music: 'music', urgency: 'urgency', go: 'go' },
   'facing-which-way': { music: 'music', urgency: 'urgency', go: 'go' },
   'burger-girl': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -199,7 +200,7 @@ export class GameAudio {
     this.musicBus.gain.setTargetAtTime(this.preferences.musicVolume * .5, at, .025);
   }
 
-  source(id, { at = this.context?.currentTime, group = 'effects', offset = 0, loop = false, end = null, rate = 1 } = {}) {
+  source(id, { at = this.context?.currentTime, group = 'effects', offset = 0, loop = false, end = null, rate = 1, level = 1 } = {}) {
     const buffer = this.buffers.get(id);
     if (!this.enabled || this.context?.state !== 'running' || !buffer) return null;
     if (group === 'effects') {
@@ -213,10 +214,10 @@ export class GameAudio {
     source.loop = loop;
     if (loop) { source.loopStart = 0; source.loopEnd = buffer.duration; }
     const start = Math.max(this.context.currentTime, at);
-    gain.gain.setValueAtTime(loop ? 0 : 1, start);
-    if (loop) gain.gain.linearRampToValueAtTime(1, start + .08);
+    gain.gain.setValueAtTime(loop ? 0 : level, start);
+    if (loop) gain.gain.linearRampToValueAtTime(level, start + .08);
     if (end !== null) {
-      gain.gain.setValueAtTime(1, Math.max(start, end - .1));
+      gain.gain.setValueAtTime(level, Math.max(start, end - .1));
       gain.gain.linearRampToValueAtTime(0, end);
     }
     source.connect(gain).connect(group === 'music' || group === 'preview-music' ? this.musicBus : this.effectsBus);
@@ -249,8 +250,9 @@ export class GameAudio {
     if (id === 'jumpPerfect') id = 'permGrow';
     if (id === 'hit') id = ['burger-girl', 'me-find-mistake', 'dice-dice-more-dice', 'facing-which-way', 'its-raining-coins', 'dodge-or-die'].includes(game) ? 'ding' : game === 'perm-mania' ? 'permBeat' : ['red', 'green', 'blue'][color] || 'red';
     if (id === 'mistake' && game === 'perm-mania') id = 'permBeat';
-    const voice = this.source(id, { at, group, rate: ['red', 'green', 'blue'].includes(id) ? 1 + clamp(progress) * .04 : 1 });
-    if (voice && group === 'effects') {
+    const happyTone = game === 'happy-days' && ['red', 'green', 'blue'].includes(id);
+    const voice = this.source(id, { at, group, level: happyTone ? .35 : 1, rate: !happyTone && ['red', 'green', 'blue'].includes(id) ? 1 + clamp(progress) * .04 : 1 });
+    if (voice && group === 'effects' && !happyTone) {
       const time = Math.max(this.context.currentTime, at);
       this.duck.gain.cancelScheduledValues(time);
       this.duck.gain.setValueAtTime(this.duck.gain.value, time);
@@ -466,7 +468,7 @@ export class GameAudio {
     const at = audioNow + Math.max(0, (start - now) / 1000);
     const audioEnd = audioNow + (end - now) / 1000;
     const base = this.buffers.get(baseId);
-    this.source(baseId, { at, group: 'music', loop: true, offset: elapsed * rate % base.duration, end: audioEnd, rate });
+    this.source(baseId, { at, group: 'music', loop: game !== 'happy-days', offset: elapsed * rate % base.duration, end: audioEnd, rate });
     const beat = BEAT / rate;
     const urgencyBeat = Math.ceil(Math.max(0, (end - start - 10_000) / 1000) / beat) * beat;
     const urgentAt = Math.max(now, start + urgencyBeat * 1000);

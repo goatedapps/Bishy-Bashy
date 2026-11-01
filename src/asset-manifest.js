@@ -266,6 +266,16 @@ export const ASSETS = [
     "hash": "c59bae0737a8058c"
   },
   {
+    "path": "assets/optimized/happy-bird-51e32d16d873.webp",
+    "bytes": 58992,
+    "hash": "51e32d16d873f48b"
+  },
+  {
+    "path": "assets/optimized/bg-happy-stage-e3affd59de9b.webp",
+    "bytes": 94526,
+    "hash": "e3affd59de9b18e5"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",
@@ -423,6 +433,16 @@ export const ASSETS = [
     "hash": "bb08279f242e5be1"
   },
   {
+    "path": "audio/happy-days-voice.mp3",
+    "bytes": 37834,
+    "hash": "c61e1150ec1e3113"
+  },
+  {
+    "path": "audio/wheres-kaya-voice.mp3",
+    "bytes": 37834,
+    "hash": "4523e3d8e85ac4cf"
+  },
+  {
     "path": "audio/get-the-burgers-out-voice.mp3",
     "bytes": 47030,
     "hash": "d40f775d3dd9f2ba"
@@ -496,6 +516,11 @@ export const ASSETS = [
     "path": "audio/type-in-letters-voice.mp3",
     "bytes": 44522,
     "hash": "1c62e4a15bd52171"
+  },
+  {
+    "path": "audio/happy-days-music.mp3",
+    "bytes": 791615,
+    "hash": "d27a7cc22708a18c"
   },
   {
     "path": "audio/card-move.mp3",

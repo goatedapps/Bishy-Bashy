@@ -1,3 +1,5 @@
+import { HappyRun, happyChart } from '../shared/happy.js';
+import { HappyStage } from './happy-view.js';
 import { KayaRun } from '../shared/kaya.js';
 import { roundSettings } from '../shared/games.js';
 import { JumpRun } from '../shared/jump.js';
@@ -69,6 +71,7 @@ class LettersDemoRun extends LettersRun {
 }
 
 const RUNS = {
+  'happy-days': (round, start) => new HappyRun(round, start, 0, happyChart().slice(0, 4)),
   'jump-for-the-meat': make(JumpRun), 'burger-girl': make(BurgerRun), 'me-find-mistake': make(MistakeRun),
   'its-raining-coins': make(CoinRun), 'dodge-or-die': make(DodgeRun), 'dynamite-spark': make(DynamiteRun),
   'get-those-burgers-out': make(MealsRun), 'dice-dice-more-dice': make(ChoiceDemoRun),
@@ -77,6 +80,7 @@ const RUNS = {
 export const REMAINING_DEMO_GAMES = Object.keys(RUNS);
 
 const INSTRUCTIONS = {
+  'happy-days': ['Press the matching color as a bar reaches the line.', 'Hold long bars. Release when the tail reaches the line.'],
   'wheres-kaya': ['Remember Kaya. Follow the blankets as they shuffle.', 'Choose Kaya: red = left, green = middle, blue = right.'],
   'jump-for-the-meat': ['Press any button as the dinosaur lands.', 'Perfect landings jump twice as high.'],
   'burger-girl': ['Move the plate under the falling food.', 'Red = left, green = middle, blue = right.'],
@@ -109,7 +113,18 @@ export function remainingDemoPlan(game, round = {}) {
     probe.tap(color, at);
   };
   let completeAt, freezeAt, sampleComplete = false;
-  if (game === 'jump-for-the-meat') {
+  if (game === 'happy-days') {
+    for (const note of probe.notes) {
+      const at = START + note.at, end = at + note.duration;
+      presses.push({ type: 'press', color: note.color, at, holdUntil: note.duration ? end : undefined });
+      presses.push({ type: 'release', color: note.color, at: end + (note.duration ? 0 : 50) });
+    }
+    presses.sort((a, b) => a.at - b.at);
+    for (const cue of presses) { if (cue.type === 'release') probe.release(cue.color, cue.at); else probe.tap(cue.color, cue.at); }
+    completeAt = presses.at(-1).at + 100;
+    freezeAt = completeAt;
+    sampleComplete = true;
+  } else if (game === 'jump-for-the-meat') {
     for (let index = 0; index < 3; index++) press(1, probe.landAt, 'jumpBounce');
     completeAt = presses.at(-1).at;
     freezeAt = completeAt + probe.arcMs / 2;
@@ -178,6 +193,7 @@ export function remainingDemoPlan(game, round = {}) {
 }
 
 const STAGES = {
+  'happy-days': HappyStage,
   'jump-for-the-meat': JumpStage, 'burger-girl': BurgerStage, 'me-find-mistake': MistakeStage,
   'its-raining-coins': CoinStage, 'dodge-or-die': DodgeStage, 'dynamite-spark': DynamiteStage,
   'get-those-burgers-out': MealsStage, 'dice-dice-more-dice': SharedChoiceStage,

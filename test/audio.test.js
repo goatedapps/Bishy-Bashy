@@ -1082,3 +1082,28 @@ test('Kaya schedules one supplied shuffle sound per swap and cancels without sta
   audio.stopRound();
   assert.equal([...audio.voices].filter(voice => voice.id === 'kayaShuffle').length, 0);
 });
+
+test('Happy Days plays the supplied 30-second music excerpt once, restores song position, and keeps note pitches fixed', async () => {
+  const { audio, context, setTime, requests } = setup();
+  audio.selectGame('happy-days'); await audio.unlock();
+  assert.ok(requests.some(url => url.includes('happy-days-music.mp3')));
+  audio.buffers.set('happyMusic', { duration: 32.616 });
+  audio.scheduleRound('happy', 5000, 35000, true, false, { game: 'happy-days' });
+  const song = [...audio.voices].find(voice => voice.id === 'happyMusic');
+  assert.equal(song.source.loop, false);
+  assert.equal(song.source.started.offset, 0);
+  assert.equal(song.source.stoppedAt, context.currentTime + 35.01);
+  assert.equal([...audio.voices].filter(voice => ['music', 'urgency'].includes(voice.id)).length, 0);
+  const ducks = JSON.stringify(audio.duck.gain.events);
+  audio.play('hit', { game: 'happy-days', color: 1, progress: 1 });
+  const note = [...audio.voices].at(-1);
+  assert.equal(note.id, 'green'); assert.equal(note.source.playbackRate.value, 1);
+  assert.equal(note.gain.gain.events[0].value, .35);
+  assert.equal(JSON.stringify(audio.duck.gain.events), ducks);
+  audio.setEnabled(false); setTime(17000);
+  audio.setEnabled(true); await audio.unlock();
+  const resumed = [...audio.voices].find(voice => voice.id === 'happyMusic');
+  assert.equal(resumed.source.started.offset, 12);
+  audio.stopRound();
+  assert.equal([...audio.voices].filter(voice => voice.id === 'happyMusic').length, 0);
+});

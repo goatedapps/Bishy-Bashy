@@ -40,7 +40,7 @@ export function createSetPlan(mode, game, chooseIndex = max => Math.floor(Math.r
 }
 
 export function awardRound(players, game) {
-  const ranked = players.filter(player => player.result?.status === 'finished' && (game !== PERM_GAME || player.result.score > 0) && (GAMES[game]?.scoring !== 'points' || player.result.cleared > 0)).sort((a, b) => comparePlayers(a, b, game));
+  const ranked = players.filter(player => player.result?.status === 'finished' && (game !== PERM_GAME || player.result.score > 0) && (GAMES[game]?.scoring !== 'accuracy' || player.result.score > 0) && (GAMES[game]?.scoring !== 'points' || player.result.cleared > 0)).sort((a, b) => comparePlayers(a, b, game));
   return players.map(player => {
     const placement = ranked.includes(player) ? ranked.findIndex(other => comparePlayers(other, player, game) === 0) + 1 : null;
     return { playerId: player.id, name: player.name, result: player.result || { status: 'missing' }, placement, points: placement ? PLACE_POINTS[placement - 1] || 0 : 0 };
@@ -53,6 +53,7 @@ export function setStandings(players) {
 }
 
 export function roundDetail(round) {
+  if (round.game === 'happy-days') return '30 seconds · Best accuracy score wins';
   if (round.game === 'wheres-kaya') return 'Find Kaya · Most correct wins';
   if (round.game === 'dynamite-spark') return 'Reach the dynamite · Fastest wins';
   if (round.game === 'get-those-burgers-out') return 'Serve the meals · Fastest wins';

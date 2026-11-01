@@ -58,3 +58,20 @@ test('every registered game has an isolated animated tutorial that renders its w
     }
   } finally { globalThis.document = previous; }
 });
+
+test('the Happy Days tutorial keeps its cat paw down through a hold and releases on the tail', () => {
+  const previous = globalThis.document;
+  globalThis.document = { hidden: false, createElement: () => new Element(), createElementNS: () => new Element() };
+  try {
+    const demo = createGameDemo('happy-days', {});
+    const hold = demo.plan.presses.find(cue => cue.holdUntil !== undefined);
+    demo.advance(0, true);
+    demo.advance((hold.at + hold.holdUntil) / 2, true);
+    assert.equal(demo.run.judgments[0], 1);
+    assert.match(demo.buttons[hold.color].className, /pressed/);
+    assert.equal(demo.hand.style.opacity, '1');
+    demo.advance(hold.holdUntil, true);
+    assert.equal(demo.run.judgments[0], 2);
+    assert.ok(demo.plan.presses.some(cue => cue.type === 'release' && cue.at === hold.holdUntil));
+  } finally { globalThis.document = previous; }
+});

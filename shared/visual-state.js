@@ -1,6 +1,7 @@
 import { createRun } from './games.js';
 
 const SCHEMAS = {
+  'happy-days': { judgments: 'rhythmStates', pressedMask: 'mask', offset: 'offset' },
   'get-those-burgers-out': { filledMask: 'index', pendingAt: 'mealTimes', setAt: 'time', blockedUntil: 'time' },
   'dynamite-spark': { blockedUntil: 'time' },
   'totem-shrinker': { blockedUntil: 'time' },
@@ -40,6 +41,16 @@ export function sanitizeVisual(round, visual, receivedElapsed) {
   const number = (value, low, high, integer = false) => Number.isFinite(value) && value >= low && value <= high && (!integer || Number.isInteger(value));
   for (const [key, type] of Object.entries(schema)) {
     const value = visual.fields[key];
+    if (type === 'rhythmStates') {
+      if (!Array.isArray(value) || value.length !== round.goal || !value.every(item => Number.isInteger(item) && item >= 0 && item <= 4)) return null;
+      fields[key] = [...value];
+      continue;
+    }
+    if (type === 'offset') {
+      if (!number(value, -150, 150)) return null;
+      fields[key] = value;
+      continue;
+    }
     if (type === 'rocketTimes') {
       if (!Array.isArray(value) || value.length !== 5 || !value.every(item => number(item, -10000, round.duration + 10000))) return null;
       fields[key] = [...value];
@@ -93,7 +104,7 @@ export class RemoteRuns {
     }
     if (entry.visual !== visual) {
       const run = entry.run;
-      Object.assign(run, { cleared: progress.cleared, mistakes: progress.mistakes, done: visual.done, elapsed: visual.elapsed });
+      Object.assign(run, { ...(progress.score !== undefined ? { score: progress.score } : {}), cleared: progress.cleared, mistakes: progress.mistakes, done: visual.done, elapsed: visual.elapsed });
       for (const [name, type] of Object.entries(SCHEMAS[round.game])) {
         const value = visual.fields[name];
         run[name] = type === 'time' ? start + value : type === 'nullableTime' ? value === null ? null : start + value : ['times', 'rocketTimes', 'mealTimes'].includes(type) ? value.map(item => start + item) : Array.isArray(value) ? [...value] : value;

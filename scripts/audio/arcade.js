@@ -1,4 +1,6 @@
 export const ARCADE_VOICE_FILES = {
+  'happy-days': 'happy-days-voice.mp3',
+  'wheres-kaya': 'wheres-kaya-voice.mp3',
   'get-those-burgers-out': 'get-the-burgers-out-voice.mp3',
   'dynamite-spark': 'dynamite-spark-voice.mp3',
   'totem-shrinker': 'totem-shrinker-voice.mp3',

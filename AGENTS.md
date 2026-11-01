@@ -1,11 +1,11 @@
 # Dokidoki Dash!
 
-This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, Get Those Burgers Out!, and Where’s Kaya.
+This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, Get Those Burgers Out!, Where’s Kaya, and Happy Days.
 The Vite frontend deploys independently to GitHub Pages; `server/` is a separate Node WebSocket room service on Render.
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 19 adds the shared Where’s Kaya game; deploy frontend and backend together.
+Protocol version 20 adds Happy Days and held-button rhythm inputs; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -128,7 +128,7 @@ Results may stop music and countdown cues, but must not truncate an accepted loc
 `src/dynamite-view.js` uses a paused, locally clocked GSAP tween to smoothly scroll the continuous segmented wire while the spark descends; loop `electrical-buzz.mp3` only for the active local spark, stop it on finish/interruption, and preserve `dynamite-explode.mp3` in a dedicated finish group through results, defer podium audio until it ends, and duck music during the explosion.
 `shared/meals.js` owns eight seeded fries/burger/drink orders; independent 300 ms drops fill required slots, taps on a full column play Wrong without altering the meal, each completed meal plays Ding once, and final elapsed time includes the last landing.
 `src/meals-view.js` shows empty slots and falling items; presses use `plop.mp3`, and both new games show accepted clear times at the top of each player's column.
-All 16 registered games are available in both Arcade and Game Select.
+All 17 registered games are available in both Arcade and Game Select.
 The handshake requires `dynamite-meals` alongside existing capabilities.
 
 ## Timing invariants
@@ -217,7 +217,7 @@ Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys use the common loopi
 `src/scripted-demo.js` owns their bounded input/cue timelines and hidden-screen pause; keep tutorial simulations isolated from real rounds and skip stale sounds.
 Slots demonstrates all three row locks, Fireworks demonstrates the first three-rocket set with one rocket of each color, and Monkeys watches and copies one two-color sequence.
 
-All 16 registered games now have animated How to play demos; keep the shared cat-paw artwork and delete obsolete human-finger assets rather than carrying both.
+All 17 registered games now have animated How to play demos; keep the shared cat-paw artwork and delete obsolete human-finger assets rather than carrying both.
 `src/remaining-demos.js` owns the remaining ten isolated examples and their real scene renderers; short jump/wire examples demonstrate progress without pretending to finish the full game.
 Monkeys shows generated red-apple, green-pear, and blue-ball holding poses for the current cue, with a smaller centered character and no corner symbols; neutral poses during gaps must not reveal a future item.
 Optimize only selected new image names when appropriate with `python scripts/optimize-images.py NAME...`, retaining new masters and prompts while avoiding unrelated asset changes.
@@ -236,4 +236,14 @@ Dynamite wire previews must use the shared seeded sequence even without a player
 `src/kaya-view.js` renders one dog, two copies of the same kitten, and three copies of the same opaque blanket; animate swaps from the shared round clock and never expose the dog during covered phases.
 Use supplied `card-move.mp3` once per shuffle with the common bounded cue scheduler; score and reveal through `ChoiceMatch`, with one Ding and the common large result circle for each correct player.
 Kaya is in Arcade, Game Select, Party, and the animated cat-paw tutorial catalog; reduced motion removes the crossing arcs while preserving the essential horizontal tracking movement.
-The handshake and health endpoint report protocol 19 with `kaya-shuffle`; deploy frontend and backend together.
+The handshake and health endpoint report protocol 20 with `kaya-shuffle` and `happy-days`; deploy frontend and backend together.
+
+`shared/happy.js` owns Happy Days’ fixed 57-note arrangement on the supplied recording’s 145 BPM grid, 17 hold notes, and 30-second duration.
+Judge both press and release edges at ±55 ms for Perfect (1000 points) and ±140 ms for Good (500 points); a failed edge scores zero for that note, and holding early never collects future notes.
+`src/held-input.js` merges independent pointer and keyboard sources per color; clear them on cancellation, focus loss, dialogs, and round changes without auto-repeating rhythm inputs.
+`src/happy-view.js` renders three falling-note columns per player, glowing accepted notes and shrinking held tails; peer snapshots carry bounded note judgments, pressed masks, timing offsets, and scores without advancing gameplay.
+Happy Days plays the first 30 seconds of supplied `happy-days-music.mp3` once, preserving its song position across mute without an urgency layer; reuse the three fixed-pitch colored hit samples at reduced level without ducking the song on each note.
+Accuracy points determine placement independently of elapsed time or hit count; the server accepts only a full-duration result with consistent note totals and bounded 500-point score steps.
+The Happy Days cat-paw tutorial includes release events and keeps the paw down through a hold; preserve existing tap-only tutorials when extending the shared demo runner.
+
+Happy Days must render the same chart on the frozen round clock before GO and before a peer’s first snapshot, preserving negative countdown elapsed time instead of drawing time-zero placeholders.

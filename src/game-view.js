@@ -1,3 +1,5 @@
+import { HAPPY_GAME } from '../shared/happy.js';
+import { HappyStage } from './happy-view.js';
 import { characterPortrait } from './characters.js';
 import { RemoteRuns } from '../shared/visual-state.js';
 import { COIN_GAME } from '../shared/coins.js';
@@ -32,7 +34,7 @@ import { DynamiteStage, dynamitePortrait } from './dynamite-view.js';
 import { MEALS_GAME } from '../shared/meals.js';
 import { MealsStage, mealPortrait } from './meals-view.js';
 
-const STAGES = { [MEALS_GAME]: 'meals', [DYNAMITE_GAME]: 'dynamite', [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake' };
+const STAGES = { [HAPPY_GAME]: 'happy', [MEALS_GAME]: 'meals', [DYNAMITE_GAME]: 'dynamite', [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake' };
 
 const SHAPES = ['●', '▲', '◆'];
 const $ = id => document.getElementById(id);
@@ -42,7 +44,7 @@ const node = (tag, className, text) => {
   if (text !== undefined) element.textContent = text;
   return element;
 };
-const resultLabel = (result, perm = false, letters = false, points = false) => result?.status === 'finished' ? points ? `${result.cleared} correct` : letters ? `${result.cleared} typing points` : perm ? `${result.cleared} growth · ${result.score.toLocaleString()} pts` : `${(result.elapsed / 1000).toFixed(3)} s` : ({ forfeit: 'Forfeited', timeout: 'Time expired', missing: 'No result' }[result?.status] || 'Waiting…');
+const resultLabel = (result, perm = false, letters = false, points = false) => result?.status === 'finished' ? result.score !== undefined && !perm ? `${result.score.toLocaleString()} pts` : points ? `${result.cleared} correct` : letters ? `${result.cleared} typing points` : perm ? `${result.cleared} growth · ${result.score.toLocaleString()} pts` : `${(result.elapsed / 1000).toFixed(3)} s` : ({ forfeit: 'Forfeited', timeout: 'Time expired', missing: 'No result' }[result?.status] || 'Waiting…');
 
 function block(color, surprised = false) {
   const element = node('div', `block ${COLORS[color]}${surprised ? ' surprised' : ''}`);
@@ -84,13 +86,14 @@ export class GameView {
       const fireworks = new FireworkStage();
       const monkeys = new MonkeyStage();
       const jump = new JumpStage();
+      const happy = new HappyStage();
       const dynamite = new DynamiteStage();
       const meals = new MealsStage();
       const burger = new BurgerStage();
       const mistake = new MistakeStage();
       const coins = new CoinStage();
       const dodge = new DodgeStage();
-      zone.append(meals.element, dynamite.element, tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element, burger.element, mistake.element, coins.element, dodge.element);
+      zone.append(happy.element, meals.element, dynamite.element, tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element, burger.element, mistake.element, coins.element, dodge.element);
       const effects = node('div', 'game-feedback');
       effects.setAttribute('aria-hidden', 'true');
       const ring = node('span', 'feedback-ring');
@@ -107,7 +110,7 @@ export class GameView {
       stageResult.setAttribute('role', 'img');
       lane.append(name, finishBadge, zone, node('div', 'base'), remaining, progress, status, stageResult);
       $('player-lanes').append(lane);
-      return { meals, dynamite, lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, coins, dodge, remaining, progress, fill, status, effects, ring, particles, towerKey: '' };
+      return { happy, meals, dynamite, lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, coins, dodge, remaining, progress, fill, status, effects, ring, particles, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -138,7 +141,7 @@ export class GameView {
       $('results').hidden = true;
       return;
     }
-    const hideCounters = ['totem-shrinker', PERM_GAME, DODGE_GAME, MONKEY_GAME, JUMP_GAME, MEALS_GAME, DYNAMITE_GAME].includes(game);
+    const hideCounters = [HAPPY_GAME, 'totem-shrinker', PERM_GAME, DODGE_GAME, MONKEY_GAME, JUMP_GAME, MEALS_GAME, DYNAMITE_GAME].includes(game);
     const perm = game === PERM_GAME;
     const slots = game === SLOT_GAME;
     const fireworks = game === FIREWORK_GAME;
@@ -166,16 +169,17 @@ export class GameView {
       elements.stageResult.setAttribute('aria-label', stageFeedback?.correct ? 'Correct set' : 'Wrong set');
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.finishBadge.hidden = !active || status?.status !== 'finished';
-      const finishLabel = jump || game === DYNAMITE_GAME || game === MEALS_GAME ? `${((status?.elapsed || 0) / 1000).toFixed(2)} s\nCLEAR!` : perm || mistake ? '✓ Finished' : '✓ Cleared!';
+      const finishLabel = jump || game === DYNAMITE_GAME || game === MEALS_GAME ? `${((status?.elapsed || 0) / 1000).toFixed(2)} s\nCLEAR!` : perm || mistake || game === HAPPY_GAME ? '✓ Finished' : '✓ Cleared!';
       if (elements.finishBadge.textContent !== finishLabel) elements.finishBadge.textContent = finishLabel;
       elements.finishBadge.setAttribute('aria-live', own ? 'off' : 'polite');
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';
-      elements.tower.hidden = game === MEALS_GAME || game === DYNAMITE_GAME || perm || slots || fireworks || monkeys || jump || burger || mistake || dice || facing || game === COIN_GAME || game === DODGE_GAME;
+      elements.tower.hidden = game === HAPPY_GAME || game === MEALS_GAME || game === DYNAMITE_GAME || perm || slots || fireworks || monkeys || jump || burger || mistake || dice || facing || game === COIN_GAME || game === DODGE_GAME;
       elements.avatar.hidden = !perm;
       elements.slots.cabinet.hidden = !slots;
       elements.fireworks.element.hidden = !fireworks;
       elements.monkeys.element.hidden = !monkeys;
       elements.jump.element.hidden = !jump;
+      elements.happy.element.hidden = game !== HAPPY_GAME;
       elements.dynamite.element.hidden = game !== DYNAMITE_GAME;
       elements.meals.element.hidden = game !== MEALS_GAME;
       elements.burger.element.hidden = !burger;
@@ -183,7 +187,7 @@ export class GameView {
       elements.coins.element.hidden = game !== COIN_GAME;
       elements.dodge.element.hidden = game !== DODGE_GAME;
       if (STAGES[game]) {
-        elements[STAGES[game]].render(round || {}, shownRun, time, 0, active, Boolean(player), cleared, Boolean(status));
+        elements[STAGES[game]].render(round || {}, shownRun, time, game === HAPPY_GAME && local?.id === round?.id ? time - local.start : 0, active, Boolean(player), cleared, Boolean(status));
       } else if (jump) {
         elements.jump.render(round || {}, shownRun, time, 0, active, Boolean(player), cleared, Boolean(status), status?.status === 'finished');
       } else if (monkeys) {
@@ -248,7 +252,7 @@ export class GameView {
       this.lanes.forEach((elements, index) => {
         const player = room.players[index];
         const own = this.projectPlayer(room.round, player, local, elements.lane.classList.contains('you'));
-        elements[stage].render(room.round, own?.run, time, elapsed, true, Boolean(player), own?.run.cleared ?? player?.progress?.cleared ?? 0, Boolean(own?.done || player?.result));
+        elements[stage].render(room.round, own?.run, time, room.round.game === HAPPY_GAME && local?.id === room.round.id ? time - local.start : elapsed, true, Boolean(player), own?.run.cleared ?? player?.progress?.cleared ?? 0, Boolean(own?.done || player?.result));
       });
       return;
     }
@@ -311,7 +315,7 @@ export class GameView {
     const perm = game === PERM_GAME;
     $('results').classList.toggle('perm-results', perm);
     const sorted = room.players.filter(player => room.round.playerIds.includes(player.id)).sort((a, b) => comparePlayers(a, b, game));
-    const finishers = sorted.filter(player => player.result?.status === 'finished' && (!perm || player.result.score > 0) && (GAMES[game]?.scoring !== 'points' || player.result.cleared > 0));
+    const finishers = sorted.filter(player => player.result?.status === 'finished' && (!perm || player.result.score > 0) && (GAMES[game]?.scoring !== 'points' || player.result.cleared > 0) && (game !== HAPPY_GAME || player.result.score > 0));
     const rank = player => finishers.findIndex(other => comparePlayers(other, player, game) === 0) + 1;
     const winners = finishers.filter(player => comparePlayers(player, finishers[0], game) === 0);
     $('result-round').textContent = `${GAMES[game]?.title || 'Round'} · Round ${room.round.setRound || room.testNumber}`;
@@ -327,7 +331,7 @@ export class GameView {
       const result = player.result;
       const row = node('div', `result-row${player.id === playerId ? ' you' : ''}`);
       const timing = node('div', 'result-time', resultLabel(result, perm, game === LETTERS_GAME, GAMES[game]?.scoring === 'points' && game !== LETTERS_GAME));
-      if (result?.status === 'finished') timing.append(node('small', '', `${result.mistakes || 0} mistakes`));
+      if (result?.status === 'finished') timing.append(node('small', '', game === HAPPY_GAME ? `${result.score / 500 - result.cleared} Perfect · ${2 * result.cleared - result.score / 500} Good · ${result.mistakes} Missed` : `${result.mistakes || 0} mistakes`));
       row.append(node('span', 'rank', result?.status === 'finished' ? String(rank(player)) : '—'), node('span', 'result-name', player.name + (player.id === playerId ? ' · You' : '')), timing);
       return row;
     }));

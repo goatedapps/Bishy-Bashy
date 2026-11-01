@@ -1,3 +1,4 @@
+import { HAPPY_GAME, validHappyScore } from '../shared/happy.js';
 import { validCharacter } from '../shared/characters.js';
 import { sanitizeVisual } from '../shared/visual-state.js';
 import { randomBytes, randomUUID, randomInt } from 'node:crypto';
@@ -76,7 +77,7 @@ export class RoomService {
     if (!returning && room.set) room.set.players.push({ id: player.id, name: player.name, characterId: player.characterId, points: 0, wins: 0 });
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 19, capabilities: ['kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 20, capabilities: ['happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -423,11 +424,12 @@ export class RoomService {
     if (!isRoundActive(round) || !GAMES[round.game] || round.id !== message.roundId || !round.playerIds.includes(player.id) || player.result || received < round.startAt || received > round.endAt) return;
     const { cleared, mistakes } = message;
     if (!Number.isInteger(cleared) || cleared < player.progress.cleared || cleared > round.goal || !Number.isInteger(mistakes) || mistakes < player.progress.mistakes || mistakes > 1000 || received - player.lastProgressAt < 150) return;
+    if (round.game === HAPPY_GAME && !validHappyScore(round, message)) return;
     if (round.game === PERM_GAME && (!Number.isInteger(message.score) || message.score < 0 || message.score > round.maxScore)) return;
     if (round.game === SLOT_GAME && (!validReelMask(message.reelMask, cleared) || (message.reelMask & player.progress.reelMask) !== player.progress.reelMask)) return;
     const visual = sanitizeVisual(round, message.visual, received - round.startAt);
     if (visual && visual.sample < (player.progress.visual?.sample ?? -1)) return;
-    player.progress = { cleared, mistakes, ...(visual ? { visual } : player.progress.visual ? { visual: player.progress.visual } : {}), ...(round.game === SLOT_GAME ? { reelMask: message.reelMask } : {}), ...(round.game === PERM_GAME ? { score: message.score } : {}) };
+    player.progress = { cleared, mistakes, ...(visual ? { visual } : player.progress.visual ? { visual: player.progress.visual } : {}), ...(round.game === SLOT_GAME ? { reelMask: message.reelMask } : {}), ...([PERM_GAME, HAPPY_GAME].includes(round.game) ? { score: message.score } : {}) };
     player.lastProgressAt = received;
     this.broadcast(room);
   }
@@ -444,9 +446,10 @@ export class RoomService {
     if (isSharedChoice(round.game) && message.status !== 'forfeit') return;
     if (round.game === SLOT_GAME && (!validReelMask(message.reelMask, message.cleared) || (message.reelMask & player.progress.reelMask) !== player.progress.reelMask || message.status === 'finished' && message.reelMask !== 7)) return this.error(client, 'Report the matched color rows before submitting a result.');
     if (message.status === 'finished' && (!Number.isFinite(message.elapsed) || message.elapsed < 0 || message.elapsed > round.duration || message.elapsed > received - round.startAt + 250)) return this.error(client, 'The reported finish time is outside this test.');
-    const elapsedRace = GAMES[round.game] && round.game !== PERM_GAME && GAMES[round.game].scoring !== 'points';
+    const elapsedRace = GAMES[round.game] && round.game !== PERM_GAME && !['points', 'accuracy'].includes(GAMES[round.game].scoring);
     if (elapsedRace && message.status === 'finished' && (message.cleared !== round.goal || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || message.mistakes > 1000)) return this.error(client, 'Complete every match before submitting a result.');
     if (round.game === MISTAKE_GAME && message.status === 'finished' && (!Number.isInteger(message.cleared) || message.cleared < player.progress.cleared || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || !Number.isInteger(message.attempted) || message.attempted !== message.cleared + message.mistakes || message.attempted > round.goal || message.attempted < 0 || message.elapsed < round.duration && message.attempted !== round.goal || message.elapsed === round.duration && received < round.endAt - 250)) return this.error(client, 'Report the completed picture boards and correct answers.');
+    if (round.game === HAPPY_GAME && message.status === 'finished' && (received < round.endAt - 250 || message.elapsed !== round.duration || message.cleared < player.progress.cleared || message.mistakes < player.progress.mistakes || !validHappyScore(round, message, true))) return this.error(client, 'Wait for the music to finish and report the judged notes and accuracy score.');
     if (round.game === PERM_GAME && message.status === 'finished' && (received < round.endAt - 250 || message.elapsed !== round.duration || !Number.isInteger(message.cleared) || message.cleared < player.progress.cleared || message.cleared > round.goal || !Number.isInteger(message.score) || message.score < 0 || message.score > round.maxScore || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || message.mistakes > 1000)) return this.error(client, 'Wait for the rhythm round to finish before submitting a valid score.');
     if (message.status === 'timeout' && received < round.endAt) return this.error(client, 'The test has not timed out yet.');
     let cleared = null;
@@ -464,13 +467,13 @@ export class RoomService {
       cleared,
       mistakes: Number.isInteger(message.mistakes) ? message.mistakes : null,
       ...(round.game === SLOT_GAME ? { reelMask: message.reelMask } : {}),
-      ...(round.game === PERM_GAME ? { score: message.status === 'finished' ? message.score : 0 } : {}),
+      ...([PERM_GAME, HAPPY_GAME].includes(round.game) ? { score: message.status === 'finished' ? message.score : 0 } : {}),
     };
     if (round.game === LETTERS_GAME) player.result.cleared = round.letters.scores[player.id] || 0;
     if (isSharedChoice(round.game)) player.result.cleared = round.choice.scores[player.id] || 0;
     if (elapsedRace && message.status === 'finished') player.progress = { cleared: round.goal, mistakes: message.mistakes, ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}) };
     if (round.game === MISTAKE_GAME && message.status === 'finished') player.progress = { ...player.progress, cleared, mistakes: message.mistakes };
-    if (round.game === PERM_GAME && message.status === 'finished') player.progress = { cleared, mistakes: message.mistakes, score: message.score };
+    if ([PERM_GAME, HAPPY_GAME].includes(round.game) && message.status === 'finished') player.progress = { cleared, mistakes: message.mistakes, score: message.score };
     const visual = sanitizeVisual(round, message.visual, received - round.startAt);
     if (visual && visual.sample >= (player.progress.visual?.sample ?? -1)) player.progress = { ...player.progress, cleared, mistakes: player.result.mistakes ?? player.progress.mistakes, visual };
     this.send(client, { type: 'result-ack', roundId: round.id, status: player.result.status });

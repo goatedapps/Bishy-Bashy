@@ -1,3 +1,4 @@
+import { HAPPY_GAME, HappyRun, HAPPY_GOAL, HAPPY_DURATION_MS, HAPPY_MAX_SCORE } from './happy.js';
 import { KAYA_GAME, KayaRun, KAYA_GOAL, KAYA_DURATION_MS, kayaDuration } from './kaya.js';
 import { COIN_GAME, CoinRun, COIN_GOAL, COIN_DURATION_MS } from './coins.js';
 import { DODGE_GAME, DodgeRun, DODGE_GOAL, DODGE_DURATION_MS } from './dodge.js';
@@ -20,6 +21,7 @@ import { MEALS_GAME, MealsRun, MEALS_GOAL, MEALS_DURATION_MS } from './meals.js'
 export const COUNTDOWN_MS = 3_000;
 
 export const GAMES = Object.assign(Object.create(null), {
+  [HAPPY_GAME]: { id: HAPPY_GAME, title: 'Happy Days', subtitle: 'Tap the beat, hold the melody', scoring: 'accuracy', duration: HAPPY_DURATION_MS, goal: HAPPY_GOAL },
   [KAYA_GAME]: { id: KAYA_GAME, title: "Where's Kaya", subtitle: 'Follow Kaya beneath the blankets', sharedArena: true, scoring: 'points', duration: KAYA_DURATION_MS, goal: KAYA_GOAL },
   [TOTEM_GAME]: { id: TOTEM_GAME, title: 'Totem Shrinker', subtitle: 'A taller tower each round', duration: GAME_DURATION_MS, goal: BLOCK_COUNT },
   [PERM_GAME]: { id: PERM_GAME, title: 'Perm Mania', subtitle: 'A faster groove each round', duration: PERM_DURATION_MS, goal: PHRASE_COUNT },
@@ -40,6 +42,7 @@ export const GAMES = Object.assign(Object.create(null), {
 
 export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') {
   const level = Math.max(1, Math.min(5, Math.trunc(difficulty) || 1));
+  if (game === HAPPY_GAME) return { seed, difficulty: level, goal: HAPPY_GOAL, duration: HAPPY_DURATION_MS, maxScore: HAPPY_MAX_SCORE };
   if (game === KAYA_GAME) return { seed, difficulty: level, goal: KAYA_GOAL, duration: kayaDuration(level) };
   if (game === MEALS_GAME) return { seed, difficulty: level, goal: MEALS_GOAL, duration: MEALS_DURATION_MS };
   if (game === DYNAMITE_GAME) return { seed, difficulty: level, goal: DYNAMITE_GOAL, duration: DYNAMITE_DURATION_MS };
@@ -64,6 +67,7 @@ export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') 
 }
 
 export function createRun(round, localStart, timingOffset = 0) {
+  if (round.game === HAPPY_GAME) return new HappyRun(round, localStart, timingOffset);
   if (round.game === KAYA_GAME) return new KayaRun(round, localStart);
   if (round.game === MEALS_GAME) return new MealsRun(round, localStart);
   if (round.game === DYNAMITE_GAME) return new DynamiteRun(round, localStart);
@@ -84,6 +88,7 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game, round = {}) {
+  if (game === HAPPY_GAME) return ['Press the matching color when a bar touches the line', 'Hold long bars; release when the tail reaches the line', 'Perfect = 1000 points, Good = 500, Missed = 0'];
   if (game === KAYA_GAME) return ['Remember Kaya, then follow the blankets', 'Choose Kaya: red = left, green = middle, blue = right', 'Six sets get faster; each correct answer earns a point'];
   if (game === MEALS_GAME) return ['Fill the empty slots to complete each meal', 'Red = fries, green = burger, blue = drink', 'Serve all eight meals as fast as you can'];
   if (game === DYNAMITE_GAME) return ['Match the wire colour with the same button', 'Tap four sections per colour; clear all 13 groups', 'Reach the dynamite first; wrong colours briefly pause the spark'];
@@ -107,6 +112,7 @@ export function comparePlayers(a, b, game) {
   const finishedB = b.result?.status === 'finished';
   if (finishedA !== finishedB) return finishedA ? -1 : 1;
   if (!finishedA) return 0;
+  if (GAMES[game]?.scoring === 'accuracy') return b.result.score - a.result.score;
   if (GAMES[game]?.scoring === 'points') return b.result.cleared - a.result.cleared;
   if (game === PERM_GAME) return b.result.cleared - a.result.cleared || b.result.score - a.result.score;
   return a.result.elapsed - b.result.elapsed;

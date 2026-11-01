@@ -32,7 +32,8 @@ export class ScriptedDemo {
     const within = this.elapsed - cycle * this.plan.duration;
     while (this.applied < this.plan.presses.length && cycle * this.plan.duration + this.plan.presses[this.applied].at <= this.elapsed) {
       const cue = this.plan.presses[this.applied++];
-      this.run.tap(cue.color, cue.at);
+      if (cue.type === 'release') this.run.release?.(cue.color, cue.at);
+      else this.run.tap(cue.color, cue.at);
     }
     const sceneTime = Math.min(within, this.plan.freezeAt ?? Infinity);
     this.run.advance?.(sceneTime);
@@ -45,13 +46,15 @@ export class ScriptedDemo {
   }
 
   paintControls(time) {
-    const presses = this.plan.presses;
-    const cue = [...presses].reverse().find(cue => time >= cue.at - 300) || presses[0];
+    const presses = this.plan.presses.filter(cue => cue.type !== 'release');
+    const holding = presses.find(cue => cue.holdUntil !== undefined && time >= cue.at && time < cue.holdUntil);
+    const cue = holding || [...presses].reverse().find(cue => time >= cue.at - 300) || presses[0];
     const age = time - cue.at;
-    this.buttons.forEach((button, index) => button.classList.toggle('pressed', index === cue.color && age >= 0 && age < 180));
+    const heldFor = cue.holdUntil === undefined ? 180 : cue.holdUntil - cue.at;
+    this.buttons.forEach((button, index) => button.classList.toggle('pressed', index === cue.color && age >= 0 && age < heldFor));
     this.hand.style.left = `calc(${(cue.color + .5) * 100 / 3}% - 36px)`;
-    this.hand.style.opacity = time >= cue.at - 300 && age < 350 ? '1' : '0';
-    const handY = age < 0 ? 20 * Math.min(1, -age / 300) ** 3 : age < 180 ? 4 : 20;
+    this.hand.style.opacity = time >= cue.at - 300 && age < heldFor + 170 ? '1' : '0';
+    const handY = age < 0 ? 20 * Math.min(1, -age / 300) ** 3 : age < heldFor ? 4 : 20;
     this.hand.style.transform = `translateY(${this.motion?.matches ? 0 : handY}px)`;
     const phase = this.run.phase?.(time);
     const copying = phase && typeof phase === 'object' ? phase.mode === 'play' || this.run.done : time >= presses[0].at - 300;
