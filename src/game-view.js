@@ -1,3 +1,5 @@
+import { LADDER_GAME } from '../shared/ladder.js';
+import { LadderStage } from './ladder-view.js';
 import { PlayerFooter } from './player-footer.js';
 import { STATIONERY_GAME } from '../shared/stationery.js';
 import { CLOCK_GAME } from '../shared/clock.js';
@@ -38,7 +40,7 @@ import { DynamiteStage, dynamitePortrait } from './dynamite-view.js';
 import { MEALS_GAME } from '../shared/meals.js';
 import { MealsStage, mealPortrait } from './meals-view.js';
 
-const STAGES = { [HAPPY_GAME]: 'happy', [MEALS_GAME]: 'meals', [DYNAMITE_GAME]: 'dynamite', [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake' };
+const STAGES = { 'ladder-climber': 'ladder', [HAPPY_GAME]: 'happy', [MEALS_GAME]: 'meals', [DYNAMITE_GAME]: 'dynamite', [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake' };
 
 const SHAPES = ['●', '▲', '◆'];
 const $ = id => document.getElementById(id);
@@ -92,6 +94,7 @@ export class GameView {
       const fireworks = new FireworkStage();
       const monkeys = new MonkeyStage();
       const jump = new JumpStage();
+      const ladder = new LadderStage();
       const happy = new HappyStage();
       const dynamite = new DynamiteStage();
       const meals = new MealsStage();
@@ -99,7 +102,7 @@ export class GameView {
       const mistake = new MistakeStage();
       const coins = new CoinStage();
       const dodge = new DodgeStage();
-      zone.append(happy.element, meals.element, dynamite.element, tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element, burger.element, mistake.element, coins.element, dodge.element);
+      zone.append(ladder.element, happy.element, meals.element, dynamite.element, tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element, burger.element, mistake.element, coins.element, dodge.element);
       const effects = node('div', 'game-feedback');
       effects.setAttribute('aria-hidden', 'true');
       const ring = node('span', 'feedback-ring');
@@ -117,7 +120,7 @@ export class GameView {
       const footer = new PlayerFooter();
       lane.append(name, finishBadge, zone, node('div', 'base'), remaining, progress, status, stageResult, footer.element);
       $('player-lanes').append(lane);
-      return { footer, happy, meals, dynamite, lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, coins, dodge, remaining, progress, fill, status, effects, ring, particles, towerKey: '' };
+      return { ladder, footer, happy, meals, dynamite, lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, coins, dodge, remaining, progress, fill, status, effects, ring, particles, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -156,7 +159,7 @@ export class GameView {
       $('results').hidden = true;
       return;
     }
-    const hideCounters = [HAPPY_GAME, 'totem-shrinker', PERM_GAME, DODGE_GAME, MONKEY_GAME, JUMP_GAME, MEALS_GAME, DYNAMITE_GAME].includes(game);
+    const hideCounters = [LADDER_GAME, HAPPY_GAME, 'totem-shrinker', PERM_GAME, DODGE_GAME, MONKEY_GAME, JUMP_GAME, MEALS_GAME, DYNAMITE_GAME].includes(game);
     const perm = game === PERM_GAME;
     const slots = game === SLOT_GAME;
     const fireworks = game === FIREWORK_GAME;
@@ -189,12 +192,13 @@ export class GameView {
       if (elements.finishBadge.textContent !== finishLabel) elements.finishBadge.textContent = finishLabel;
       elements.finishBadge.setAttribute('aria-live', own ? 'off' : 'polite');
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';
-      elements.tower.hidden = game === HAPPY_GAME || game === MEALS_GAME || game === DYNAMITE_GAME || perm || slots || fireworks || monkeys || jump || burger || mistake || dice || facing || game === COIN_GAME || game === DODGE_GAME;
+      elements.tower.hidden = game === LADDER_GAME || game === HAPPY_GAME || game === MEALS_GAME || game === DYNAMITE_GAME || perm || slots || fireworks || monkeys || jump || burger || mistake || dice || facing || game === COIN_GAME || game === DODGE_GAME;
       elements.avatar.hidden = !perm;
       elements.slots.cabinet.hidden = !slots;
       elements.fireworks.element.hidden = !fireworks;
       elements.monkeys.element.hidden = !monkeys;
       elements.jump.element.hidden = !jump;
+      elements.ladder.element.hidden = game !== LADDER_GAME;
       elements.happy.element.hidden = game !== HAPPY_GAME;
       elements.dynamite.element.hidden = game !== DYNAMITE_GAME;
       elements.meals.element.hidden = game !== MEALS_GAME;

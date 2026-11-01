@@ -23,15 +23,15 @@ test('the reel lands exactly on the shared winner and has bounded travel for gro
 });
 
 test('Arcade roulette and selection include the complete catalog at every catalog size', () => {
-  for (let count = 8; count <= 19; count++) {
+  for (let count = 8; count <= 20; count++) {
     const catalog = Array.from({ length: count }, (_, index) => `game-${index}`);
     const eligible = arcadeGameIds(catalog);
     assert.deepEqual(eligible, catalog);
     assert.ok(createSetPlan('arcade', null, () => 0, catalog).every(id => eligible.includes(id)));
     assert.deepEqual(createSetPlan('game-select', catalog.at(-1)), Array(3).fill(catalog.at(-1)));
   }
-  assert.equal(Object.keys(GAMES).length, 19);
-  assert.equal(arcadeGameIds().length, 19);
+  assert.equal(Object.keys(GAMES).length, 20);
+  assert.equal(arcadeGameIds().length, 20);
   assert.deepEqual(arcadeGameIds(), Object.keys(GAMES));
   assert.ok(arcadeGameIds().includes('type-in-letters'));
   assert.ok(arcadeGameIds().includes('dynamite-spark'));

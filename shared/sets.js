@@ -53,6 +53,7 @@ export function setStandings(players) {
 }
 
 export function roundDetail(round) {
+  if (round.game === 'ladder-climber') return 'Climb to the trophy · Fastest wins';
   if (round.game === 'stationery-master') return 'Count the desk · Match all three totals';
   if (round.game === 'clock-stopper') return 'Closest stops earn the most points';
   if (round.game === 'happy-days') return '30 seconds · Best accuracy score wins';

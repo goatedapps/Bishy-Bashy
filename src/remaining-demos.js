@@ -1,3 +1,5 @@
+import { LadderRun } from '../shared/ladder.js';
+import { LadderStage } from './ladder-view.js';
 import { StationeryRun } from '../shared/stationery.js';
 import { ClockRun } from '../shared/clock.js';
 import { createSharedMatch } from '../shared/shared-match.js';
@@ -74,6 +76,7 @@ class LettersDemoRun extends LettersRun {
 }
 
 const RUNS = {
+  'ladder-climber': make(LadderRun),
   'stationery-master': make(ChoiceDemoRun), 'clock-stopper': make(ChoiceDemoRun),
   'happy-days': (round, start) => new HappyRun(round, start, 0, happyChart().slice(0, 4)),
   'jump-for-the-meat': make(JumpRun), 'burger-girl': make(BurgerRun), 'me-find-mistake': make(MistakeRun),
@@ -84,6 +87,7 @@ const RUNS = {
 export const REMAINING_DEMO_GAMES = Object.keys(RUNS);
 
 const INSTRUCTIONS = {
+  'ladder-climber': ['Follow the ladder: red = left, green = middle, blue = right.', 'Press once per rung. Climb to the trophy.'],
   'stationery-master': ['Count each item and tap its button that many times.', 'Red: pencil. Green: eraser. Blue: sharpener. Counts loop 6 → 0.'],
   'clock-stopper': ['Watch the minute hand make its first full turn.', 'Press any button when it returns to 12.'],
   'happy-days': ['Press the matching color as a bar reaches the line.', 'Hold long bars. Release when the tail reaches the line.'],
@@ -119,7 +123,14 @@ export function remainingDemoPlan(game, round = {}) {
     probe.tap(color, at);
   };
   let completeAt, freezeAt, sampleComplete = false;
-  if (game === 'stationery-master') {
+  if (game === 'ladder-climber') {
+    let at = START + 800;
+    for (const ladder of probe.course.slice(0, 2)) {
+      for (let step = 0; step < ladder.steps; step++) { press(ladder.column, at, 'ladderStep'); at += 400; }
+      effects.push({ type: 'complete', at: presses.at(-1).at });
+    }
+    completeAt = presses.at(-1).at; sampleComplete = true;
+  } else if (game === 'stationery-master') {
     const stage = probe.stages[0];
     let at = START + stage.answerAt + 500;
     stage.puzzle.counts.forEach((count, color) => { for (let tap = 0; tap < count; tap++) { press(color, at); at += 300; } });
@@ -212,6 +223,7 @@ export function remainingDemoPlan(game, round = {}) {
 }
 
 const STAGES = {
+  'ladder-climber': LadderStage,
   'stationery-master': DeskClockStage, 'clock-stopper': DeskClockStage,
   'happy-days': HappyStage,
   'jump-for-the-meat': JumpStage, 'burger-girl': BurgerStage, 'me-find-mistake': MistakeStage,

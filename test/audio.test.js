@@ -1107,3 +1107,13 @@ test('Happy Days plays the supplied 30-second music excerpt once, restores song 
   audio.stopRound();
   assert.equal([...audio.voices].filter(voice => voice.id === 'happyMusic').length, 0);
 });
+
+
+test('Ladder reuses Diuup for steps and keeps trophy applause in the finish group', async () => {
+  const { audio, requests } = setup(); audio.selectGame('ladder-climber'); await audio.unlock();
+  assert.ok(requests.some(url => url.includes('Diuup.mp3')));
+  audio.play('ladderStep'); assert.equal([...audio.voices].at(-1).id, 'ladderStep');
+  audio.play('stageComplete'); assert.equal([...audio.voices].at(-1).id, 'ding');
+  audio.play('applause', { group: 'finish' }); const voice = [...audio.voices].at(-1);
+  audio.endPlayer(); assert.equal(voice.group, 'finish'); assert.equal(Boolean(voice.stopped), false);
+});

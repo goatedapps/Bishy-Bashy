@@ -1,3 +1,5 @@
+import { LADDER_GAME } from '../shared/ladder.js';
+import './ladder.css';
 import { STATIONERY_GAME, STATIONERY_NAMES } from '../shared/stationery.js';
 import { CLOCK_GAME } from '../shared/clock.js';
 import './desk-clock.css';
@@ -174,7 +176,7 @@ function connect() {
     }
     if (message.type === 'joined') {
       partyAudioBaseline = true;
-      if (message.protocol !== 23 || !message.capabilities?.includes('desk-clock') || !message.capabilities?.includes('happy-days') || !message.capabilities?.includes('kaya-shuffle') || !message.capabilities?.includes('timed-letters') || !message.capabilities?.includes('expiring-seats') || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals') || !message.capabilities?.includes('character-picker') || !message.capabilities?.includes('overlapping-coins') || !message.capabilities?.includes('party-mode') || !message.capabilities?.includes('arcade-length')) {
+      if (message.protocol !== 24 || !message.capabilities?.includes('desk-clock') || !message.capabilities?.includes('happy-days') || !message.capabilities?.includes('kaya-shuffle') || !message.capabilities?.includes('timed-letters') || !message.capabilities?.includes('expiring-seats') || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals') || !message.capabilities?.includes('character-picker') || !message.capabilities?.includes('overlapping-coins') || !message.capabilities?.includes('party-mode') || !message.capabilities?.includes('arcade-length')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -346,6 +348,7 @@ function complete(status, elapsed = null) {
   if (status === 'finished') {
     audio.endPlayer();
     if (room.round.game === DYNAMITE_GAME) audio.finishDynamite(localRound.id);
+    else if (room.round.game === LADDER_GAME) audio.play('applause', { group: 'finish' });
     else audio.play(room.round.game === SLOT_GAME ? 'slotWin' : 'finish');
   } else {
     audio.stopRound();
@@ -362,7 +365,7 @@ function flushPending() {
 
 function flushLaneEvents(time) {
   const events = localRound.run.events.splice(0);
-  for (const event of events) if (time - event.at <= 150) audio.play(event.type, { color: event.color, game: room.round.game });
+  for (const event of events) if (event.final || time - event.at <= 150) audio.play(event.type, { color: event.color, game: room.round.game, group: event.final ? 'finish' : 'effects' });
   if (events.length) view.render(room, playerId, localRound, time);
 }
 
@@ -431,7 +434,7 @@ function enforceLifecycle(time, beforeInput = false) {
   } else {
     if (room.round.game === FIREWORK_GAME || room.round.game === JUMP_GAME) localRound.run.advance(time);
     if (room.round.game === FIREWORK_GAME) flushLaneEvents(time);
-    if ([MEALS_GAME, BURGER_GAME, COIN_GAME, DODGE_GAME].includes(room.round.game)) {
+    if ([LADDER_GAME, MEALS_GAME, BURGER_GAME, COIN_GAME, DODGE_GAME].includes(room.round.game)) {
       localRound.run.advance(time, !beforeInput);
       flushLaneEvents(time);
     }
@@ -463,10 +466,10 @@ function tap(color) {
   enforceLifecycle(time, true);
   if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
   if (!buttons[color]?.disabled && room.round.game === PERM_GAME) audio.permTap(localRound.run, time, color);
-  else if (!buttons[color]?.disabled && room.round.game !== HAPPY_GAME) audio.pressButton(room.round.game === MEALS_GAME ? 'meals' : room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay');
+  else if (!buttons[color]?.disabled && ![LADDER_GAME, HAPPY_GAME].includes(room.round.game)) audio.pressButton(room.round.game === MEALS_GAME ? 'meals' : room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay');
   const clearedBefore = localRound.run.cleared;
   const action = localRound.run.tap(color, time);
-  if ([MEALS_GAME, BURGER_GAME, COIN_GAME, DODGE_GAME, FIREWORK_GAME].includes(room.round.game)) flushLaneEvents(time);
+  if ([LADDER_GAME, MEALS_GAME, BURGER_GAME, COIN_GAME, DODGE_GAME, FIREWORK_GAME].includes(room.round.game)) flushLaneEvents(time);
   if (action.type === 'ignored') return;
   if (room.round.game === HAPPY_GAME) {
     if (action.type === 'note') audio.play('hit', { color, game: HAPPY_GAME });
@@ -759,13 +762,14 @@ function updateGameProfile() {
   document.body.classList.toggle('dice-theme', Boolean(themed && game === DICE_GAME));
   document.body.classList.toggle('facing-theme', Boolean(themed && game === FACING_GAME));
   document.body.classList.toggle('meals-theme', Boolean(themed && game === MEALS_GAME));
+  document.body.classList.toggle('ladder-theme', Boolean(themed && game === LADDER_GAME));
   document.body.classList.toggle('dynamite-theme', Boolean(themed && game === DYNAMITE_GAME));
   document.body.classList.toggle('letters-theme', Boolean(themed && game === LETTERS_GAME));
   buttons.forEach((button, index) => {
-    const action = !picking && game === STATIONERY_GAME ? STATIONERY_NAMES[index] : !picking && game === CLOCK_GAME ? 'Stop' : game === HAPPY_GAME && !picking ? HAPPY_TONES[index] : picking ? ['Down', 'Select', 'Up'][index] : game === MEALS_GAME ? ['Fries', 'Burger', 'Drink'][index] : [DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
+    const action = !picking && game === STATIONERY_GAME ? STATIONERY_NAMES[index] : !picking && game === CLOCK_GAME ? 'Stop' : game === HAPPY_GAME && !picking ? HAPPY_TONES[index] : picking ? ['Down', 'Select', 'Up'][index] : game === MEALS_GAME ? ['Fries', 'Burger', 'Drink'][index] : [LADDER_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
     button.children[1].textContent = action;
     const label = ['Red circle', 'Green triangle', 'Blue diamond'][index];
-    button.setAttribute('aria-label', picking || [STATIONERY_GAME, CLOCK_GAME, HAPPY_GAME, MEALS_GAME, COIN_GAME, DODGE_GAME, LETTERS_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? `${label}: ${action}` : label);
+    button.setAttribute('aria-label', picking || [LADDER_GAME, STATIONERY_GAME, CLOCK_GAME, HAPPY_GAME, MEALS_GAME, COIN_GAME, DODGE_GAME, LETTERS_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? `${label}: ${action}` : label);
   });
   document.body.classList.toggle('coin-theme', Boolean(themed && game === COIN_GAME));
   document.body.classList.toggle('dodge-theme', Boolean(themed && game === DODGE_GAME));

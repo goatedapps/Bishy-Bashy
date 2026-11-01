@@ -1,6 +1,7 @@
 import { createRun } from './games.js';
 
 const SCHEMAS = {
+  'ladder-climber': { blockedUntil: 'time', finishAt: 'nullableTime' },
   'happy-days': { judgments: 'rhythmStates', pressedMask: 'mask', offset: 'offset' },
   'get-those-burgers-out': { filledMask: 'index', pendingAt: 'mealTimes', setAt: 'time', blockedUntil: 'time' },
   'dynamite-spark': { blockedUntil: 'time' },

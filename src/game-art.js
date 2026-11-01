@@ -1,3 +1,4 @@
+import { ladderPortrait } from './ladder-view.js';
 import { stationeryPortrait, clockPortrait } from './desk-clock-view.js';
 import { happyPortrait } from './happy-view.js';
 import { kayaPortrait } from './kaya-view.js';
@@ -23,7 +24,8 @@ const node = (tag, className, text) => {
 export function gameArt(game) {
   const art = node('span', `game-art art-${game}`);
   art.setAttribute('aria-hidden', 'true');
-  if (game === 'stationery-master') art.append(stationeryPortrait(0));
+  if (game === 'ladder-climber') art.append(ladderPortrait());
+  else if (game === 'stationery-master') art.append(stationeryPortrait(0));
   else if (game === 'clock-stopper') art.append(clockPortrait());
   else if (game === 'happy-days') art.append(happyPortrait());
   else if (game === 'wheres-kaya') art.append(kayaPortrait());

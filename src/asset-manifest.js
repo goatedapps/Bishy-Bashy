@@ -301,6 +301,16 @@ export const ASSETS = [
     "hash": "96d904a3df5dc7b9"
   },
   {
+    "path": "assets/optimized/ladder-sprites-30deca010d7c.webp",
+    "bytes": 152240,
+    "hash": "30deca010d7c62d2"
+  },
+  {
+    "path": "assets/optimized/bg-ladder-tower-9c74900f4413.webp",
+    "bytes": 102434,
+    "hash": "9c74900f44134688"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",

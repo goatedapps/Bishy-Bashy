@@ -1,11 +1,11 @@
 # Dokidoki Dash!
 
-This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, Get Those Burgers Out!, Where’s Kaya, Happy Days, Stationery Master, and Clock Stopper.
+This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, Get Those Burgers Out!, Where’s Kaya, Happy Days, Stationery Master, Clock Stopper, and Ladder Climber.
 The Vite frontend deploys independently to GitHub Pages; `server/` is a separate Node WebSocket room service on Render.
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 23 adds Stationery throw intros and six-item counter cycles; deploy frontend and backend together.
+Protocol version 24 adds Ladder Climber and its shared seeded course; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -128,7 +128,7 @@ Results may stop music and countdown cues, but must not truncate an accepted loc
 `src/dynamite-view.js` uses a paused, locally clocked GSAP tween to smoothly scroll the continuous segmented wire while the spark descends; loop `electrical-buzz.mp3` only for the active local spark, stop it on finish/interruption, and preserve `dynamite-explode.mp3` in a dedicated finish group through results, defer podium audio until it ends, and duck music during the explosion.
 `shared/meals.js` owns eight seeded fries/burger/drink orders; independent 300 ms drops fill required slots, taps on a full column play Wrong without altering the meal, each completed meal plays Ding once, and final elapsed time includes the last landing.
 `src/meals-view.js` shows empty slots and falling items; presses use `plop.mp3`, and both new games show accepted clear times at the top of each player's column.
-All 19 registered games are available in both Arcade and Game Select.
+All 20 registered games are available in both Arcade and Game Select.
 The handshake requires `dynamite-meals` alongside existing capabilities.
 
 ## Timing invariants
@@ -162,7 +162,7 @@ Mark each entry complete as its game is implemented.
 10. [ ] Horse Speeder — accelerating and weaving between horses.
 11. [ ] Shark Jumper — following colored input sequences.
 12. [ ] Blaster Soda Race — alternating buttons to accelerate.
-13. [ ] Building Climber — alternating buttons to climb.
+13. [x] Ladder Climber — position-based ladder climbing.
 14. [ ] Burst the Balloon — rapid button presses to inflate and burst a balloon.
 15. [ ] Wonder Oven — stopping three matching food symbols.
 
@@ -217,7 +217,7 @@ Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys use the common loopi
 `src/scripted-demo.js` owns their bounded input/cue timelines and hidden-screen pause; keep tutorial simulations isolated from real rounds and skip stale sounds.
 Slots demonstrates all three row locks, Fireworks demonstrates the first three-rocket set with one rocket of each color, and Monkeys watches and copies one two-color sequence.
 
-All 19 registered games now have animated How to play demos; keep the shared cat-paw artwork and delete obsolete human-finger assets rather than carrying both.
+All 20 registered games now have animated How to play demos; keep the shared cat-paw artwork and delete obsolete human-finger assets rather than carrying both.
 `src/remaining-demos.js` owns the remaining ten isolated examples and their real scene renderers; short jump/wire examples demonstrate progress without pretending to finish the full game.
 Monkeys shows generated red-apple, green-pear, and blue-ball holding poses for the current cue, with a smaller centered character and no corner symbols; neutral poses during gaps must not reveal a future item.
 Optimize only selected new image names when appropriate with `python scripts/optimize-images.py NAME...`, retaining new masters and prompts while avoiding unrelated asset changes.
@@ -236,7 +236,7 @@ Dynamite wire previews must use the shared seeded sequence even without a player
 `src/kaya-view.js` renders one dog, two copies of the same kitten, and three copies of the same opaque blanket; animate swaps from the shared round clock and never expose the dog during covered phases.
 Use supplied `card-move.mp3` once per shuffle with the common bounded cue scheduler; score and reveal through `ChoiceMatch`, with one Ding and the common large result circle for each correct player.
 Kaya is in Arcade, Game Select, Party, and the animated cat-paw tutorial catalog; reduced motion removes the crossing arcs while preserving the essential horizontal tracking movement.
-The handshake and health endpoint report protocol 23 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
+The handshake and health endpoint report protocol 24 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
 
 `shared/happy.js` owns Happy Days’ fixed 57-note arrangement on the supplied recording’s 145 BPM grid, 17 hold notes, and 30-second duration.
 Judge both press and release edges at ±55 ms for Perfect (1000 points) and ±140 ms for Good (500 points); a failed edge scores zero for that note, and holding early never collects future notes.
@@ -264,3 +264,9 @@ Use the supplied `stationery-master-voice.mp3` and `clock-stopper-voice.mp3` thr
 Every gameplay player column ends with the compact `src/player-footer.js` identity row using the chosen character and name; replace duplicate top labels to preserve vertical space, and keep empty-seat labels visible.
 Stationery begins each set with a two-second GSAP throw sequence, seeking a paused timeline from shared elapsed time with 80 ms launches and 500 ms flights; counting opens only after all items land, retaining the 10-to-6-second answer windows.
 Reduced motion shows each landed item without flight, and round changes or navigation kill the old timeline; the tutorial uses the same renderer and input gates.
+
+`shared/ladder.js` owns ten seeded ladders with 3–6 rungs each, changing left/middle/right positions, a 100 ms step guard, 250 ms wrong-position recovery, and 180 ms ladder handoffs.
+Red/green/blue climb left/middle/right one rung per press; preserve completed rungs after a miss and rank final trophy arrival time within the 45-second deadline.
+`src/ladder-view.js` scrolls the illustrated course and worker from local or published progress with paused GSAP tweens; retain compact player footers and omit progress counters.
+Each accepted rung uses supplied `Diuup.mp3`; each completed ladder uses one Ding, including the final trophy arrival, which also plays `applause.mp3` in the preserved finish group.
+The cat-paw tutorial demonstrates two ladders using the real course and renderer; the new game joins Arcade, Game Select, and Party immediately.
