@@ -15,7 +15,7 @@ function counterActions(stage, counts = stage.puzzle.counts) {
 test('Stationery has six shrinking seeded desks, exact 1–6 object counts, and distinct bounded scatter positions', () => {
   const round = settings(STATIONERY_GAME), stages = stationeryStages(round);
   assert.equal(stages.length, 6);
-  assert.deepEqual(STATIONERY_WINDOWS_MS, [10000, 9200, 8400, 7600, 6800, 6000]);
+  assert.deepEqual(STATIONERY_WINDOWS_MS, [8000, 7400, 6800, 6200, 5600, 5000]);
   assert.deepEqual(stages.map(stage => stage.answerEnd - stage.answerAt), STATIONERY_WINDOWS_MS);
   assert.equal(stages.at(-1).endsAt, round.duration);
   assert.deepEqual(stages, stationeryStages(round));

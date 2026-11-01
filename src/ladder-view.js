@@ -33,17 +33,19 @@ export class LadderStage {
     const current = this.course.findIndex(item => progress < item.start + item.steps);
     this.rungs.forEach(({ rung, column, height, index }) => {
       rung.hidden = y(height) < -12 || y(height) > 112;
-      rung.style.left = `${20 + column * 30}%`; rung.style.top = `${y(height)}%`;
+      rung.style.left = `${25 + column * 25}%`; rung.style.top = `${y(height)}%`;
       rung.classList.toggle('ladder-active', index === current); rung.classList.toggle('ladder-past', index < current);
     });
     this.platforms.forEach(({ element, height }) => { element.style.top = `${y(height)}%`; });
     this.worker.hidden = !occupied;
-    this.worker.style.left = `${20 + this.position.column * 30}%`; this.worker.style.top = `${y(this.position.height)}%`;
-    this.worker.classList.toggle('ladder-cheer', Boolean(terminal && run?.done && progress === run.goal));
+    this.worker.style.left = `${25 + this.position.column * 25}%`; this.worker.style.top = `${y(this.position.height)}%`;
+    const collected = Boolean(terminal && run?.done && progress === run.goal);
+    this.worker.classList.toggle('ladder-cheer', collected);
+    this.worker.classList.toggle('ladder-left-reach', !collected && progress % 2 === 1);
     this.worker.style.scale = !this.motion?.matches && run?.feedback?.kind === 'hit' && time - run.feedback.at < 150 ? '1.04 1.08' : '1';
     const last = this.course.at(-1), finish = terminal && run?.done && progress === run.goal;
     this.trophy.hidden = y(last.base + last.steps + (finish ? 1.8 : 1)) < -25;
-    this.trophy.style.left = `${20 + last.column * 30}%`; this.trophy.style.top = `${y(last.base + last.steps + (finish ? 1.8 : 1))}%`;
+    this.trophy.style.left = `${25 + last.column * 25}%`; this.trophy.style.top = `${y(last.base + last.steps + (finish ? 1.8 : 1))}%`;
     this.trophy.classList.toggle('ladder-collected', Boolean(finish));
     this.element.setAttribute('aria-label', finish ? 'Trophy reached!' : `Climb the ${['left', 'middle', 'right'][point.column]} ladder, one press per rung`);
   }

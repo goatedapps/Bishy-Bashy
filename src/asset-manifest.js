@@ -468,6 +468,11 @@ export const ASSETS = [
     "hash": "bb08279f242e5be1"
   },
   {
+    "path": "audio/ladder-climber-voice.mp3",
+    "bytes": 39506,
+    "hash": "671850a5c401efd2"
+  },
+  {
     "path": "audio/clock-stopper-voice.mp3",
     "bytes": 39506,
     "hash": "62840dd9b9cb4f8e"
@@ -561,6 +566,11 @@ export const ASSETS = [
     "path": "audio/type-in-letters-voice.mp3",
     "bytes": 44522,
     "hash": "1c62e4a15bd52171"
+  },
+  {
+    "path": "audio/get-trophy.mp3",
+    "bytes": 28653,
+    "hash": "25b8336fb1640f03"
   },
   {
     "path": "audio/happy-days-music.mp3",

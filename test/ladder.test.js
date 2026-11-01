@@ -50,7 +50,7 @@ test('Ladder deadline rejects final arrivals beyond the limit, and peer snapshot
 test('Ladder renders a seeded preview before any run exists and shows the trophy only near the summit', () => {
   const previous = globalThis.document;
   class Element {
-    constructor() { this.children = []; this.style = {}; this.classList = { toggle() {} }; }
+    constructor() { this.children = []; this.style = {}; this.classes = new Set(); this.classList = { toggle: (name, enabled) => enabled ? this.classes.add(name) : this.classes.delete(name) }; }
     append(...nodes) { this.children.push(...nodes); }
     replaceChildren(...nodes) { this.children = nodes; }
     setAttribute() {}
@@ -62,8 +62,15 @@ test('Ladder renders a seeded preview before any run exists and shows the trophy
     const settings = round(123), run = createRun(settings, 0);
     stage.render(settings, run, 0, 0, true, true, 0, false);
     assert.deepEqual(stage.course, run.course); assert.equal(stage.trophy.hidden, true);
+    assert.equal(stage.worker.style.left, `${25 + run.course[0].column * 25}%`);
+    assert.equal(stage.worker.classes.has('ladder-left-reach'), false);
+    run.tap(run.sequence[0], 100); stage.render(settings, run, 300, 300, true, true, 1, false);
+    assert.equal(stage.worker.classes.has('ladder-left-reach'), true);
+    run.tap(run.sequence[1], 400); stage.render(settings, run, 600, 600, true, true, 2, false);
+    assert.equal(stage.worker.classes.has('ladder-left-reach'), false);
     run.cleared = run.goal; run.done = true;
     stage.render(settings, run, 10000, 10000, true, true, run.goal, true);
     assert.equal(stage.trophy.hidden, false); assert.equal(stage.worker.hidden, false);
+    assert.equal(stage.worker.classes.has('ladder-left-reach'), false);
   } finally { globalThis.document = previous; }
 });

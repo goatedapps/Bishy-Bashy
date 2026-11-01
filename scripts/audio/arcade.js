@@ -1,4 +1,5 @@
 export const ARCADE_VOICE_FILES = {
+  'ladder-climber': 'ladder-climber-voice.mp3',
   'clock-stopper': 'clock-stopper-voice.mp3',
   'stationery-master': 'stationery-master-voice.mp3',
   'happy-days': 'happy-days-voice.mp3',

@@ -5,7 +5,7 @@ The Vite frontend deploys independently to GitHub Pages; `server/` is a separate
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 24 adds Ladder Climber and its shared seeded course; deploy frontend and backend together.
+Protocol version 25 shortens Stationery count windows to 8–5 seconds; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -236,7 +236,7 @@ Dynamite wire previews must use the shared seeded sequence even without a player
 `src/kaya-view.js` renders one dog, two copies of the same kitten, and three copies of the same opaque blanket; animate swaps from the shared round clock and never expose the dog during covered phases.
 Use supplied `card-move.mp3` once per shuffle with the common bounded cue scheduler; score and reveal through `ChoiceMatch`, with one Ding and the common large result circle for each correct player.
 Kaya is in Arcade, Game Select, Party, and the animated cat-paw tutorial catalog; reduced motion removes the crossing arcs while preserving the essential horizontal tracking movement.
-The handshake and health endpoint report protocol 24 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
+The handshake and health endpoint report protocol 25 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
 
 `shared/happy.js` owns Happy Days’ fixed 57-note arrangement on the supplied recording’s 145 BPM grid, 17 hold notes, and 30-second duration.
 Judge both press and release edges at ±55 ms for Perfect (1000 points) and ±140 ms for Good (500 points); a failed edge scores zero for that note, and holding early never collects future notes.
@@ -248,7 +248,7 @@ The Happy Days cat-paw tutorial includes release events and keeps the paw down t
 
 Happy Days must render the same chart on the frozen round clock before GO and before a peer’s first snapshot, preserving negative countdown elapsed time instead of drawing time-zero placeholders.
 
-`shared/stationery.js` owns six seeded shared desks with 1–6 of each item and 10/9.2/8.4/7.6/6.8/6-second count windows.
+`shared/stationery.js` owns six seeded shared desks with 1–6 of each item and 8/7.4/6.8/6.2/5.6/5-second count windows.
 Red/green/blue increment pencil/eraser/sharpener counters from zero through six, wrapping back to zero; all three exact counts earn one point at settlement.
 Validate monotonic bounded action proofs and acknowledge their revision so stale acknowledgements cannot discard newer counter updates; allow 500 ms transport grace and reveal targets only after settlement.
 `shared/clock.js` owns ten shared clock sets, targeting hours 1–10 with constant per-set revolutions decreasing from 1200 to 500 ms.
@@ -262,11 +262,14 @@ Stationery proofs remain bounded by the window and 40 ms per-color input guard, 
 Use the supplied `stationery-master-voice.mp3` and `clock-stopper-voice.mp3` through the shared game announcement bank.
 
 Every gameplay player column ends with the compact `src/player-footer.js` identity row using the chosen character and name; replace duplicate top labels to preserve vertical space, and keep empty-seat labels visible.
-Stationery begins each set with a two-second GSAP throw sequence, seeking a paused timeline from shared elapsed time with 80 ms launches and 500 ms flights; counting opens only after all items land, retaining the 10-to-6-second answer windows.
+Stationery begins each set with a two-second GSAP throw sequence, seeking a paused timeline from shared elapsed time with 80 ms launches and 500 ms flights; counting opens only after all items land, retaining the 8-to-5-second answer windows.
 Reduced motion shows each landed item without flight, and round changes or navigation kill the old timeline; the tutorial uses the same renderer and input gates.
 
 `shared/ladder.js` owns ten seeded ladders with 3–6 rungs each, changing left/middle/right positions, a 100 ms step guard, 250 ms wrong-position recovery, and 180 ms ladder handoffs.
 Red/green/blue climb left/middle/right one rung per press; preserve completed rungs after a miss and rank final trophy arrival time within the 45-second deadline.
 `src/ladder-view.js` scrolls the illustrated course and worker from local or published progress with paused GSAP tweens; retain compact player footers and omit progress counters.
-Each accepted rung uses supplied `Diuup.mp3`; each completed ladder uses one Ding, including the final trophy arrival, which also plays `applause.mp3` in the preserved finish group.
+Each accepted rung uses supplied `Diuup.mp3`; each completed ladder uses one Ding, including the final trophy arrival, which also plays `get-trophy.mp3` and `applause.mp3` together in the preserved finish group.
 The cat-paw tutorial demonstrates two ladders using the real course and renderer; the new game joins Arcade, Game Select, and Party immediately.
+
+Ladder positions share the player lane with roughly half-width overlap; keep worker and trophy centers aligned to the same left/middle/right mapping.
+Alternate the rear climbing sprite’s reach on accepted-rung parity, reset its orientation for celebration, and deduplicate both trophy finish sounds by round ID.

@@ -2,7 +2,7 @@ import { ChoiceRun } from './choice-round.js';
 import { seededIndex } from './seeded-index.js';
 
 export const STATIONERY_GAME = 'stationery-master';
-export const STATIONERY_WINDOWS_MS = [10000, 9200, 8400, 7600, 6800, 6000];
+export const STATIONERY_WINDOWS_MS = [8000, 7400, 6800, 6200, 5600, 5000];
 export const STATIONERY_GOAL = 6;
 export const STATIONERY_MAX_COUNT = 6;
 export const STATIONERY_THROW_MS = 500;

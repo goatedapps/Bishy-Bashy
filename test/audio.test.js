@@ -1109,11 +1109,17 @@ test('Happy Days plays the supplied 30-second music excerpt once, restores song 
 });
 
 
-test('Ladder reuses Diuup for steps and keeps trophy applause in the finish group', async () => {
-  const { audio, requests } = setup(); audio.selectGame('ladder-climber'); await audio.unlock();
+test('Ladder reuses Diuup and layers trophy audio once at the same timestamp through results', async () => {
+  const { audio, requests, context } = setup(); audio.selectGame('ladder-climber'); await audio.unlock();
   assert.ok(requests.some(url => url.includes('Diuup.mp3')));
+  assert.ok(requests.some(url => url.includes('get-trophy.mp3')));
   audio.play('ladderStep'); assert.equal([...audio.voices].at(-1).id, 'ladderStep');
   audio.play('stageComplete'); assert.equal([...audio.voices].at(-1).id, 'ding');
-  audio.play('applause', { group: 'finish' }); const voice = [...audio.voices].at(-1);
-  audio.endPlayer(); assert.equal(voice.group, 'finish'); assert.equal(Boolean(voice.stopped), false);
+  audio.finishLadder('round-1');
+  const voices = [...audio.voices].filter(voice => voice.group === 'finish');
+  assert.deepEqual(voices.map(voice => voice.id), ['getTrophy', 'applause']);
+  assert.ok(voices.every(voice => voice.source.started.at === context.currentTime));
+  const count = context.sources.length; audio.finishLadder('round-1'); assert.equal(context.sources.length, count);
+  audio.endPlayer(); assert.ok(voices.every(voice => !voice.stopped));
+  audio.setEnabled(false); assert.ok(voices.every(voice => voice.stopped));
 });
