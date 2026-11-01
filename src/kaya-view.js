@@ -3,7 +3,7 @@ const node = (className) => { const element = document.createElement('span'); el
 export function kayaPortrait() {
   const portrait = node('kaya-sprite kaya-dog');
   portrait.setAttribute('role', 'img');
-  portrait.setAttribute('aria-label', 'Kaya, a cheerful tan Singapore Special dog');
+  portrait.setAttribute('aria-label', 'Kaya, a short-coated tan Singapore Special dog with upright ears');
   return portrait;
 }
 

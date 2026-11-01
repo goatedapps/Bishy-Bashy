@@ -296,6 +296,11 @@ export const ASSETS = [
     "hash": "da292cf680b4d1a1"
   },
   {
+    "path": "assets/optimized/kaya-dog-photo-96d904a3df5d.webp",
+    "bytes": 37440,
+    "hash": "96d904a3df5dc7b9"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",

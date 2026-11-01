@@ -7,7 +7,7 @@
 .kaya-subject { position:absolute; left:calc((var(--kaya-slot,1) + 1) * 25%); top:52%; width:min(29cqw,260px,72cqh); aspect-ratio:1; transform:translate(-50%,-50%) translateY(var(--kaya-lift,0px)); }
 .kaya-sprite { display:block; width:100%; height:100%; background-image:var(--image-kaya-sprites,url('/assets/optimized/kaya-sprites-7229c62bd10f.webp')); background-size:200% 200%; background-repeat:no-repeat; }
 .kaya-subject>.kaya-sprite { position:absolute; inset:0; }
-.kaya-dog { background-position:0 0; }
+.kaya-dog { background-image:var(--image-kaya-dog-photo,url('/assets/optimized/kaya-dog-photo-96d904a3df5d.webp')); background-size:contain; background-position:center; }
 .kaya-kitten { background-position:100% 0; }
 /* Clip the atlas gutter so neighboring dog pixels cannot appear above a cover. */
 .kaya-blanket { background-position:0 100%; clip-path:inset(5% 0 0); }
