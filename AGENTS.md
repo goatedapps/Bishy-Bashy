@@ -5,7 +5,7 @@ The Vite frontend deploys independently to GitHub Pages; `server/` is a separate
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 21 adds shared Stationery Master counters and Clock Stopper timing sets; deploy frontend and backend together.
+Protocol version 22 adds wrapping Stationery counters and shorter shared count windows; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -236,7 +236,7 @@ Dynamite wire previews must use the shared seeded sequence even without a player
 `src/kaya-view.js` renders one dog, two copies of the same kitten, and three copies of the same opaque blanket; animate swaps from the shared round clock and never expose the dog during covered phases.
 Use supplied `card-move.mp3` once per shuffle with the common bounded cue scheduler; score and reveal through `ChoiceMatch`, with one Ding and the common large result circle for each correct player.
 Kaya is in Arcade, Game Select, Party, and the animated cat-paw tutorial catalog; reduced motion removes the crossing arcs while preserving the essential horizontal tracking movement.
-The handshake and health endpoint report protocol 21 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
+The handshake and health endpoint report protocol 22 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
 
 `shared/happy.js` owns Happy Days’ fixed 57-note arrangement on the supplied recording’s 145 BPM grid, 17 hold notes, and 30-second duration.
 Judge both press and release edges at ±55 ms for Perfect (1000 points) and ±140 ms for Good (500 points); a failed edge scores zero for that note, and holding early never collects future notes.
@@ -248,10 +248,15 @@ The Happy Days cat-paw tutorial includes release events and keeps the paw down t
 
 Happy Days must render the same chart on the frozen round clock before GO and before a peer’s first snapshot, preserving negative countdown elapsed time instead of drawing time-zero placeholders.
 
-`shared/stationery.js` owns six seeded shared desks with 1–9 of each item and 14/12/10/9/8/7-second count windows.
-Red/green/blue increment pencil/eraser/sharpener counters up to nine; all three exact counts earn one point at settlement.
+`shared/stationery.js` owns six seeded shared desks with 1–9 of each item and 10/9.2/8.4/7.6/6.8/6-second count windows.
+Red/green/blue increment pencil/eraser/sharpener counters from zero through nine, wrapping back to zero; all three exact counts earn one point at settlement.
 Validate monotonic bounded action proofs and acknowledge their revision so stale acknowledgements cannot discard newer counter updates; allow 500 ms transport grace and reveal targets only after settlement.
 `shared/clock.js` owns ten shared clock sets, targeting hours 1–10 with constant per-set revolutions decreasing from 1200 to 500 ms.
 Accept any button between half and one-and-a-half revolutions; rank absolute local stop error, sharing ties and awarding 10/7/4/1 points independently of packet arrival order.
 `shared/shared-match.js` selects the authoritative match model; `src/desk-clock-view.js` renders the common desk, fixed four player counters, and individually stopped clocks using the same scene in cat-paw tutorials.
 Both new games use supplied Punch/Ding/Wrong cues, original optimized art, and the common three controls; Clock results display points rather than correct-set counts.
+
+Stationery uses the cluttered desk backdrop without baked-in pencils, erasers, or sharpeners; preserve exact countability of runtime objects.
+Keep all four player columns visible in Stationery and Clock gameplay, including grey Open spot placeholders; only isolated tutorials omit empty seats.
+Stationery proofs remain bounded by the window and 40 ms per-color input guard, allowing repeat counter cycles beyond 27 presses.
+Use the supplied `stationery-master-voice.mp3` and `clock-stopper-voice.mp3` through the shared game announcement bank.

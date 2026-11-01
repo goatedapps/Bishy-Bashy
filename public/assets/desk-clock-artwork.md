@@ -1,5 +1,27 @@
 # Stationery Master and Clock Stopper artwork
 
+## Cluttered desk update
+
+Created with the built-in imagegen tool on 2026-11-01.
+The new `bg-stationery-desk.png` master is 2,258,731 bytes; `optimized/bg-stationery-desk-790bf4dce222.webp` is the optimized delivery copy (135,904 bytes).
+The original empty-desk master is retained as `bg-stationery-desk-original.png`.
+Only runtime objects contain pencils, erasers, and sharpeners, so decorative clutter cannot change the answer.
+
+Prompt:
+
+> Use case: illustration-story.
+> Original wide landscape 3:2 hand-painted cartoon background for Stationery Master, a counting party game.
+> Straight overhead view of a warmly lit maple study desk full of naturally scattered school supplies: overlapping cream loose papers, a few closed colorful books and notebooks, a partially open notebook, small silver paperclips, binder clips, sticky notes, rolls of pastel tape, a small ruler and folded paper corners.
+> Distribute clutter across the whole desktop, with objects at casual angles, suggesting a busy student's desk.
+> Keep papers and low-profile clutter mostly pale and low contrast in the central 85 percent, with book stacks and bulkier objects toward edges.
+> Runtime yellow pencils, pink erasers, and blue sharpeners will be drawn ON TOP of the papers, so preserve clear readable light surfaces throughout, with no deep dark central areas.
+> Cheerful polished painted cartoon family party-game style, subtle texture, clean dark plum outlines, warm cream, sage, muted coral and pastel blue colors.
+> Absolutely NO pencils, pens, erasers, pencil sharpeners, crayons, writing tools, containers hiding objects, people, animals, legible letters, words, numbers, labels, interface or buttons.
+> Books and papers can have faint abstract decorative lines without readable text.
+> Full-bleed rectangular desk scene, no border.
+
+## Initial artwork
+
 Created with the built-in image generation tool on 2026-11-01.
 Original PNG masters are retained beside this file; runtime WebP copies are generated with `python scripts/optimize-images.py stationery-sprites bg-stationery-desk clock-dial bg-clock-workshop`.
 The four masters total 5,996,558 bytes; optimized delivery images total 272,664 bytes.

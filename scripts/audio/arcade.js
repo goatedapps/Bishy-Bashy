@@ -1,4 +1,6 @@
 export const ARCADE_VOICE_FILES = {
+  'clock-stopper': 'clock-stopper-voice.mp3',
+  'stationery-master': 'stationery-master-voice.mp3',
   'happy-days': 'happy-days-voice.mp3',
   'wheres-kaya': 'wheres-kaya-voice.mp3',
   'get-those-burgers-out': 'get-the-burgers-out-voice.mp3',

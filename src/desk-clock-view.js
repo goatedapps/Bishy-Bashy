@@ -31,7 +31,8 @@ export function clockPortrait() {
 }
 
 export class DeskClockStage {
-  constructor() {
+  constructor({ preview = false } = {}) {
+    this.preview = preview;
     this.element = node('section', 'shared-set-stage'); this.element.hidden = true;
     this.header = node('div', 'shared-set-heading');
     this.title = node('strong', ''); this.timer = node('strong', ''); this.header.append(this.title, this.timer);
@@ -47,15 +48,16 @@ export class DeskClockStage {
     const stationery = round.game === STATIONERY_GAME;
     const phase = run.phase(time), stage = phase.stage, elapsed = time - run.start;
     const roster = (room.set?.players || room.players).filter(player => round.playerIds.includes(player.id));
+    const seats = this.preview ? roster : Array.from({ length: 4 }, (_, index) => roster[index] || null);
     const rosterKey = `${round.id}/${roster.map(player => player.id).join('/')}`;
     this.element.className = `shared-set-stage ${stationery ? 'stationery-shared' : 'clock-shared'}`;
     this.desk.hidden = !stationery;
     if (this.rosterKey !== rosterKey) {
       this.rosterKey = rosterKey;
-      this.rows = roster.map((player, index) => {
-        const card = node('article', `shared-set-player set-player-${index}${player.id === playerId ? ' you' : ''}`);
+      this.rows = seats.map((player, index) => {
+        const card = node('article', `shared-set-player set-player-${index}${player?.id === playerId ? ' you' : ''}${!player ? ' empty' : ''}`);
         const heading = node('div', 'set-player-heading');
-        const name = node('strong', 'set-player-name', `${player.name}${player.id === playerId ? ' · You' : ''}`);
+        const name = node('strong', 'set-player-name', player ? `${player.name}${player.id === playerId ? ' · You' : ''}` : 'Open spot');
         const score = node('strong', 'set-player-score'); heading.append(name, score);
         const counters = node('div', 'desk-counters');
         const counts = [0, 1, 2].map(color => {
@@ -91,8 +93,13 @@ export class DeskClockStage {
       this.items.forEach(item => { item.hidden = phase.mode === 'wait'; });
       this.desk.setAttribute('aria-label', phase.mode === 'wait' ? 'Desk hidden until GO' : result ? `Pencils ${result.answer[0]}, erasers ${result.answer[1]}, sharpeners ${result.answer[2]}` : 'Count the scattered pencils, erasers and sharpeners');
     }
-    roster.forEach((player, index) => {
+    seats.forEach((player, index) => {
       const row = this.rows[index];
+      if (!player) {
+        row.score.textContent = ''; row.counters.hidden = true; row.clockSpace.hidden = true;
+        row.timing.hidden = false; row.timing.textContent = 'Waiting to join'; row.award.hidden = true; row.result.hidden = true;
+        return;
+      }
       row.score.textContent = String(round.choice.scores[player.id] || 0);
       row.counters.hidden = !stationery; row.clockSpace.hidden = stationery; row.timing.hidden = stationery; row.award.hidden = stationery;
       row.result.hidden = !result || age < 0 || age >= 650;

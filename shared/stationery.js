@@ -2,7 +2,7 @@ import { ChoiceRun } from './choice-round.js';
 import { seededIndex } from './seeded-index.js';
 
 export const STATIONERY_GAME = 'stationery-master';
-export const STATIONERY_WINDOWS_MS = [14000, 12000, 10000, 9000, 8000, 7000];
+export const STATIONERY_WINDOWS_MS = [10000, 9200, 8400, 7600, 6800, 6000];
 export const STATIONERY_GOAL = 6;
 export const STATIONERY_GRACE_MS = 500;
 export const STATIONERY_REVEAL_MS = 900;
@@ -50,9 +50,8 @@ export class StationeryRun extends ChoiceRun {
     if (this.done || phase.mode !== 'play' || !Number.isInteger(color) || color < 0 || color > 2 || time - this.lastInputs[color] < 40) return { type: 'ignored' };
     this.index = phase.index;
     const counts = [...this.counts];
-    if (counts[color] === 9) return { type: 'ignored' };
     this.lastInputs[color] = time;
-    counts[color]++;
+    counts[color] = (counts[color] + 1) % 10;
     this.counters.set(this.index, counts);
     const actions = [...(this.traces.get(this.index) || []), [color, Math.floor(time - this.start)]];
     this.traces.set(this.index, actions);
@@ -68,7 +67,7 @@ export class StationeryMatch {
   }
   choose(playerId, message, receivedElapsed) {
     const { index, actions } = message, stage = this.stages[index];
-    if (!Object.hasOwn(this.state.scores, playerId) || !Number.isInteger(index) || !stage || !Array.isArray(actions) || !actions.length || actions.length > 27) return false;
+    if (!Object.hasOwn(this.state.scores, playerId) || !Number.isInteger(index) || !stage || !Array.isArray(actions) || !actions.length || actions.length > Math.ceil((stage.answerEnd - stage.answerAt) / 40) * 3) return false;
     const key = `${playerId}/${index}`, prior = this.choices.get(key);
     if (prior && JSON.stringify(prior.actions) === JSON.stringify(actions)) return true;
     if (receivedElapsed < stage.answerAt || receivedElapsed >= stage.revealAt || this.state.results.some(result => result.index === index) || prior && actions.length <= prior.actions.length) return false;
@@ -78,8 +77,9 @@ export class StationeryMatch {
       const action = actions[position];
       if (!Array.isArray(action) || action.length !== 2) return false;
       const [color, at] = action;
-      if (!Number.isInteger(color) || color < 0 || color > 2 || !Number.isInteger(at) || at < stage.answerAt || at >= stage.answerEnd || at < previousAt || at < last[color] + 40 || at > receivedElapsed + 250 || ++counts[color] > 9) return false;
+      if (!Number.isInteger(color) || color < 0 || color > 2 || !Number.isInteger(at) || at < stage.answerAt || at >= stage.answerEnd || at < previousAt || at < last[color] + 40 || at > receivedElapsed + 250) return false;
       if (prior && position < prior.actions.length && (color !== prior.actions[position][0] || at !== prior.actions[position][1])) return false;
+      counts[color] = (counts[color] + 1) % 10;
       previousAt = last[color] = at;
     }
     const entry = { actions: actions.map(action => [...action]), counts };

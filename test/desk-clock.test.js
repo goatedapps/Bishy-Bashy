@@ -15,6 +15,7 @@ function counterActions(stage, counts = stage.puzzle.counts) {
 test('Stationery has six shrinking seeded desks, exact 1–9 object counts, and distinct bounded scatter positions', () => {
   const round = settings(STATIONERY_GAME), stages = stationeryStages(round);
   assert.equal(stages.length, 6);
+  assert.deepEqual(STATIONERY_WINDOWS_MS, [10000, 9200, 8400, 7600, 6800, 6000]);
   assert.deepEqual(stages.map(stage => stage.answerEnd - stage.answerAt), STATIONERY_WINDOWS_MS);
   assert.equal(stages.at(-1).endsAt, round.duration);
   assert.deepEqual(stages, stationeryStages(round));
@@ -27,7 +28,7 @@ test('Stationery has six shrinking seeded desks, exact 1–9 object counts, and 
   }
 });
 
-test('Stationery counters respond locally, cap at nine, reject bounce and boundary taps, and retain newer proofs after stale acknowledgements', () => {
+test('Stationery counters respond locally, wrap after nine, reject bounce and boundary taps, and retain newer proofs after stale acknowledgements', () => {
   const run = new StationeryRun(settings(STATIONERY_GAME), 1000);
   assert.equal(run.tap(0, 999).type, 'ignored');
   assert.equal(run.tap(0, NaN).type, 'ignored');
@@ -41,7 +42,10 @@ test('Stationery counters respond locally, cap at nine, reject bounce and bounda
   assert.equal(run.acknowledge(0, 2), true);
   for (let count = 1; count < 9; count++) run.tap(0, 1000 + count * 40);
   assert.equal(run.counts[0], 9);
-  assert.equal(run.tap(0, 2000).type, 'ignored');
+  assert.equal(run.tap(0, 2000).type, 'choice');
+  assert.equal(run.counts[0], 0);
+  run.tap(0, 2040);
+  assert.equal(run.counts[0], 1);
   const stage = run.stages[0];
   assert.equal(run.tap(2, run.start + stage.answerEnd).type, 'ignored');
   run.advance(run.start + stage.endsAt);
@@ -165,5 +169,35 @@ test('the shared desk hides countdown items and future answers, while clocks fre
     clockView.render(clockRoom, 'a', { run: clockRun }, clockRun.start + stage.targetAt + 100);
     assert.equal(clockView.rows[0].clock.minute.style.transform, ownAngle);
     assert.equal(clockView.rows[1].clock.minute.style.transform, peerAngle);
+  } finally { globalThis.document = previous; }
+});
+
+
+test('Stationery accepts corrections beyond 27 taps, wraps counters on the server, and keeps all four seats visible', () => {
+  const round = settings(STATIONERY_GAME), stages = stationeryStages(round), match = new StationeryMatch(round, stages), stage = stages[0];
+  const counts = [...stage.puzzle.counts]; counts[0] += 20;
+  const actions = counterActions(stage, counts);
+  assert.ok(actions.length > 27);
+  assert.equal(match.choose('a', { index: 0, actions: actions.slice(0, 10) }, 4000), true);
+  assert.equal(match.state.counters.a.counts[0], 0);
+  assert.equal(match.choose('a', { index: 0, actions }, 5000), true);
+  assert.deepEqual(match.state.counters.a.counts, stage.puzzle.counts);
+  match.advance(stage.revealAt);
+  assert.equal(match.state.scores.a, 1);
+  const previous = globalThis.document; globalThis.document = { createElement: () => new Element() };
+  try {
+    for (const game of [STATIONERY_GAME, CLOCK_GAME]) {
+      const scheduled = { ...settings(game), playerIds: ['a', 'b'] }, run = createRun(scheduled, 0);
+      scheduled.choice = { scores: { a: 0, b: 0 }, results: [], counters: { b: { index: 0, counts: [3, 2, 1] } }, stops: {} };
+      const room = { round: scheduled, players: [{ id: 'a', name: 'Host' }, { id: 'b', name: 'Friend' }] };
+      const view = new DeskClockStage(); view.render(room, 'a', { run }, 1000);
+      assert.equal(view.rows.length, 4);
+      assert.equal(view.rows[2].card.children[0].children[0].textContent, 'Open spot');
+      assert.equal(view.rows[3].timing.textContent, 'Waiting to join');
+      assert.equal(view.rows[2].clockSpace.hidden, true);
+      if (game === STATIONERY_GAME) assert.equal(view.rows[1].counts[0].value.textContent, '3');
+      const preview = new DeskClockStage({ preview: true }); preview.render(room, 'a', { run }, 1000);
+      assert.equal(preview.rows.length, 2);
+    }
   } finally { globalThis.document = previous; }
 });

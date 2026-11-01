@@ -286,9 +286,9 @@ export const ASSETS = [
     "hash": "c3a615c9559a8656"
   },
   {
-    "path": "assets/optimized/bg-stationery-desk-4ef2ee049a32.webp",
-    "bytes": 47380,
-    "hash": "4ef2ee049a322ad3"
+    "path": "assets/optimized/bg-stationery-desk-790bf4dce222.webp",
+    "bytes": 135904,
+    "hash": "790bf4dce222e1c5"
   },
   {
     "path": "assets/optimized/bg-clock-workshop-da292cf680b4.webp",
@@ -456,6 +456,16 @@ export const ASSETS = [
     "path": "audio/applause.mp3",
     "bytes": 161280,
     "hash": "bb08279f242e5be1"
+  },
+  {
+    "path": "audio/clock-stopper-voice.mp3",
+    "bytes": 39506,
+    "hash": "62840dd9b9cb4f8e"
+  },
+  {
+    "path": "audio/stationery-master-voice.mp3",
+    "bytes": 43268,
+    "hash": "b65857d50e0f47af"
   },
   {
     "path": "audio/happy-days-voice.mp3",

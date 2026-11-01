@@ -84,7 +84,7 @@ const RUNS = {
 export const REMAINING_DEMO_GAMES = Object.keys(RUNS);
 
 const INSTRUCTIONS = {
-  'stationery-master': ['Count the pencils, erasers and sharpeners.', 'Red = pencil, green = eraser, blue = sharpener. Tap each total.'],
+  'stationery-master': ['Count each item and tap its button that many times.', 'Red: pencil. Green: eraser. Blue: sharpener. Counts loop 9 → 0.'],
   'clock-stopper': ['Watch the minute hand make its first full turn.', 'Press any button when it returns to 12.'],
   'happy-days': ['Press the matching color as a bar reaches the line.', 'Hold long bars. Release when the tail reaches the line.'],
   'wheres-kaya': ['Remember Kaya. Follow the blankets as they shuffle.', 'Choose Kaya: red = left, green = middle, blue = right.'],
@@ -226,7 +226,7 @@ export class RemainingDemo extends ScriptedDemo {
     super({ ...options, className: `remaining-demo demo-${game}`, plan, createRun: plan.createRun,
       label: `${game} animated gameplay demonstration. A cat paw performs the actions beside the instructions, then the example repeats.`, instructions: INSTRUCTIONS[game] });
     this.game = game;
-    this.stage = new STAGES[game]();
+    this.stage = ['stationery-master', 'clock-stopper'].includes(game) ? new DeskClockStage({ preview: true }) : new STAGES[game]();
     this.stage.element.hidden = false;
     this.scene.append(this.stage.element);
     this.paint(0);
