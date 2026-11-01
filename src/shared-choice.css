@@ -6,7 +6,7 @@
 .shared-demo { grid-row:2; grid-column:1; display:grid; place-items:center; width:100%; height:100%; min-height:0; perspective:700px; }
 .shared-duck-card { position:relative; width:min(210px,28vh); aspect-ratio:1; border:3px solid #3b214d; border-radius:18%; background:#fff8df; overflow:hidden; box-shadow:0 4px #476b8844; }
 .shared-duck-card>.direction-duck { position:absolute; inset:3%; width:94%; height:94%; }
-.direction-duck.is-back { background-image:var(--image-facing-duck-back,url('/assets/optimized/facing-duck-back-bc3f154e9baf.webp')); }
+.direction-duck.is-back { background-image:var(--image-facing-duck-back,url('/assets/optimized/facing-duck-back-ae88bace16bc.webp')); }
 .shared-options { grid-row:3; grid-column:1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); width:100%; height:100%; gap:12px; }
 .shared-option { position:relative; display:flex; justify-content:center; align-items:center; min-width:0; min-height:0; padding:10px 8px 23px; border:3px solid currentColor; border-radius:16px; background:#fff8e3; box-shadow:0 4px #223a5355; }
 .shared-option .direction-duck { width:min(90px,100%); max-height:100%; aspect-ratio:1; }

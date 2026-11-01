@@ -74,7 +74,9 @@ Keep the arena overlay above all character and effect layers, and show an explic
 `src/viewport.js` and `src/viewport.css` fit the active arena and shared controls inside the visual viewport, with controls outside the arena and instructions keeping Ready visible.
 Final standings hide setup and restart controls and show Exit to every connected player.
 `exit-set` accepts only the current completed set ID and returns the whole room to mode selection; active-set Back to modes remains host-only.
-Facing turns take 1800–1400 ms across five available difficulties; Arcade coin pairs launch every 400 ms and fall for 750 ms; Game Select starts with 500 ms launches and 900 ms falls, accelerating independently each round.
+Facing turns take 1800–1400 ms across five available difficulties; its reverse duck sprite must expose a left-pointing bill while clearly showing its back.
+Coins starts Arcade with 1200 ms falls and 700 ms launches; Game Select starts with 1300 ms falls and 720 ms launches, decreasing initial values by 80/40 ms per difficulty.
+Every Coins round progressively halves both fall duration and launch interval over its first 36 pairs; freeze each pair’s timings at launch so airborne objects never change speed.
 Shared styles live in `src/style.css`; the pink disco stage lives in `src/games.css`.
 The landing page and set standings use `src/sets.css` and `src/set-view.js`.
 The illustrated landing screen only creates or joins rooms; `src/home.css` scopes its landscape, central title, and form to outside rooms, and its help button introduces multiplayer room-code setup.
@@ -187,7 +189,7 @@ Shared Facing/Dice layouts explicitly place their heading, demonstration, option
 
 `shared/characters.js` defines sixteen generated player characters; fresh create/join clients choose one before mode selection, and the server validates and preserves `characterId` across reconnects and set standings.
 `src/characters.js` and `src/characters.css` own the character grid; use the chosen portraits in lobby seats and podiums, keeping minigame protagonist art unchanged.
-Coins requires 36 catches and resolves the earliest outstanding pair on a fixed spawn schedule with no recovery pause, renders up to three overlapping pairs, and derives launch times from round start plus index so remote snapshots cannot resize or restart the rain.
+Coins requires 36 catches and resolves the earliest outstanding pair on a fixed spawn schedule with no recovery pause, renders up to three overlapping pairs, and derives an immutable per-pair schedule from round start and index so remote snapshots cannot resize or restart the rain.
 Coins and Slots fill fixed-size player-panel containers; never let reel contents, completion state or cached previous-round sizes determine panel height, and reset slot portrait caches on round changes.
 
 Party mode gives every rostered player 30 seconds to lock one game; the server assigns random games at the deadline and plays all picks in player order, including duplicates.
@@ -224,3 +226,5 @@ Burger Girl serves five four-layer burgers; launch layers 56% of a fall apart wi
 On a miss, retain caught layers and restart the missing ingredient and approaching layers after 300 ms; publish the same deterministic overlapping drops remotely.
 Each served burger emits one stage-completion Ding and the common large yellow circle, including the final burger.
 Shared Dice throws use the round clock for a 260 ms aerial tumble and 120 ms landing bounce with a shadow; preserve answer windows and show settled dice under reduced motion.
+
+Dodge instructions say “Move into gaps between walls. Red - Move left. Blue - Move right” and separately explain green jumping; omit lane symbols beneath the fox in both gameplay and its shared tutorial scene.

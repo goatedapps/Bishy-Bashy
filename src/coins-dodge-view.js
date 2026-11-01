@@ -16,7 +16,7 @@ class LaneStage {
     this.element.hidden = true;
     this.element.setAttribute('role', 'group');
     const tracks = node('div', 'lane-tracks');
-    tracks.append(...SHAPES.map((shape, index) => node('span', `track-mark track-${index}`, shape)));
+    tracks.append(...SHAPES.map((shape, index) => node('span', `track-mark track-${index}`, kind === 'dodge' ? '' : shape)));
     this.line = node('span', 'lane-impact-line');
     this.shadow = node('span', 'lane-shadow');
     this.player = node('div', 'lane-runner');
@@ -59,7 +59,7 @@ export class CoinStage extends LaneStage {
       pair.forEach((drop, fake) => {
         drop.hidden = !present || active && (!playing || !wave);
         drop.style.setProperty('--drop-column', String(wave ? fake ? wave.decoy : wave.column : fake ? 2 : 0));
-        drop.style.setProperty('--fall-progress', String(wave ? Math.max(0, Math.min(1, (time - wave.launchedAt) / run.fallMs)) : 0));
+        drop.style.setProperty('--fall-progress', String(wave ? Math.max(0, Math.min(1, (time - wave.launchedAt) / wave.fallMs)) : 0));
       });
     });
     this.element.setAttribute('aria-label', !present ? 'Open spot' : playing ? `Gold coin ${['left', 'middle', 'right'][run.wave.column]}, fake ${['left', 'middle', 'right'][run.wave.decoy]}; raccoon ${['left', 'middle', 'right'][run.position]}` : `${cleared} coins caught`);

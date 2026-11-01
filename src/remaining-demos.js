@@ -82,7 +82,7 @@ const INSTRUCTIONS = {
   'dice-dice-more-dice': ['Choose the die with the most dots.', 'Red = left, green = middle, blue = right.'],
   'facing-which-way': ['Watch the card turn and flip.', 'Choose its final picture: red left, green middle, blue right.'],
   'its-raining-coins': ['Move under gold coins. Avoid the fakes.', 'Red = left, green = middle, blue = right.'],
-  'dodge-or-die': ['Red and blue move into gaps in the walls.', 'Press green to jump over low hurdles.'],
+  'dodge-or-die': ['Move into gaps between walls. Red - Move left. Blue - Move right', 'Press green to jump over low hurdles.'],
   'type-in-letters': ['Move with red / blue. Enter with green.', 'Type the target before time runs out. Choose ⌫ to erase.'],
   'dynamite-spark': ['Press the color of the wire at the spark.', 'Tap four times per color, then follow the next color.'],
   'get-those-burgers-out': ['Fill every empty slot to serve the meal.', 'Red = fries, green = burger, blue = drink.'],

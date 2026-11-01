@@ -41,7 +41,7 @@ export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') 
   if (game === MEALS_GAME) return { seed, difficulty: level, goal: MEALS_GOAL, duration: MEALS_DURATION_MS };
   if (game === DYNAMITE_GAME) return { seed, difficulty: level, goal: DYNAMITE_GOAL, duration: DYNAMITE_DURATION_MS };
   if (game === LETTERS_GAME) return { seed, difficulty: level, goal: 0, duration: LETTERS_DURATION_MS };
-  if (game === COIN_GAME) return { seed, difficulty: level, goal: COIN_GOAL, duration: COIN_DURATION_MS, fallMs: mode === 'arcade' ? 750 : 900 - (level - 1) * 100, spawnMs: mode === 'arcade' ? 400 : 500 - (level - 1) * 70 };
+  if (game === COIN_GAME) return { seed, difficulty: level, goal: COIN_GOAL, duration: COIN_DURATION_MS, fallMs: mode === 'arcade' ? 1200 : 1300 - (level - 1) * 80, spawnMs: mode === 'arcade' ? 700 : 720 - (level - 1) * 40 };
   if (game === DODGE_GAME) return { seed, difficulty: level, goal: DODGE_GOAL + level - 1, duration: DODGE_DURATION_MS, approachMs: 1350 - (level - 1) * 100 };
   if (game === DICE_GAME) return { seed, difficulty: level, goal: DICE_GOAL, duration: DICE_DURATION_MS };
   if (game === FACING_GAME) return { seed, difficulty: level, goal: mode === 'arcade' ? 8 : FACING_GOAL, duration: facingDuration(1800 - (level - 1) * 100, level + 1, mode === 'arcade' ? 8 : FACING_GOAL), turnCount: level + 1, stepMs: 1800 - (level - 1) * 100 };
@@ -84,7 +84,7 @@ export function gameRules(game, round = {}) {
   if (game === DYNAMITE_GAME) return ['Match the wire colour with the same button', 'Tap four sections per colour; clear all 13 groups', 'Reach the dynamite first; wrong colours briefly pause the spark'];
   if (game === LETTERS_GAME) return ['Red moves left, blue moves right, green enters a letter', 'Finish the three letters before time runs out to earn a point; choose ⌫ to erase', 'Everyone who finishes scores; each new word has less time'];
   if (game === COIN_GAME) return ['Catch gold coins and avoid cracked purple coins', 'Red = left, green = middle, blue = right'];
-  if (game === DODGE_GAME) return ['Move around tall walls and jump over low hurdles', 'Red moves left, blue moves right, green jumps'];
+  if (game === DODGE_GAME) return ['Move into gaps between walls. Red - Move left. Blue - Move right', 'Press green to jump over low hurdles'];
   if (game === DICE_GAME) return ['Pick the highest of the three shared dice', 'Red = left, green = middle, blue = right', '21 throws get faster; most correct wins'];
   if (game === FACING_GAME) return ['Watch the shared duck card turn and flip', 'Choose its final picture: red = left, green = middle, blue = right', `You have 3 seconds; answers reveal together; most correct of ${round.goal || FACING_GOAL} wins`];
   if (game === BURGER_GAME) return ['Move the plate to catch the falling food', 'Red = left, green = middle, blue = right'];

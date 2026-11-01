@@ -136,9 +136,9 @@ export const ASSETS = [
     "hash": "21fcae531114e52d"
   },
   {
-    "path": "assets/optimized/facing-duck-back-bc3f154e9baf.webp",
-    "bytes": 44326,
-    "hash": "bc3f154e9baf08ef"
+    "path": "assets/optimized/facing-duck-back-ae88bace16bc.webp",
+    "bytes": 47864,
+    "hash": "ae88bace16bc58e2"
   },
   {
     "path": "assets/optimized/bg-dynamite-workshop-01ed95b6cbf9.webp",

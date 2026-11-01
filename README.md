@@ -375,7 +375,7 @@ Each turn or flip uses the supplied `flip.mp3`; old cues never replay after mute
 The result holds for 650 ms before the next common set.
 `shared/facing.js` owns front/back pose composition, seeded options, and the complete shared schedule.
 `src/shared-choice-view.js` and `src/shared-choice.css` draw the covered card, picture options, choices, and fixed player score columns.
-The original matching reverse-side duck master and optimized delivery file are documented in [duck artwork notes](public/assets/facing-duck-back-artwork.md).
+The matching reverse-side duck exposes a prominent left-pointing bill while retaining the rear view; its master, prompt, and optimized delivery file are documented in [duck artwork notes](public/assets/facing-duck-back-artwork.md).
 
 Both shared choice games accept bounded clock-stamped answers with an 80 ms transport grace after each deadline and acknowledge retries privately.
 The server locks the first valid answer, keeps pending choices out of broadcasts, settles each set once, and owns final scores.
@@ -388,13 +388,17 @@ Move the raccoon with **red = left, green = middle, blue = right** to catch gold
 The three marked chutes match the shared control bar, whose captions show Left / Middle / Right during this game.
 Collect 36 coins before the 40-second deadline; fastest completion wins.
 A missed gold coin or a caught fake adds a mistake while keeping collected coins; movement remains responsive and the next drop keeps its fixed launch time.
-Game Select falls last 900, 800, and 700 ms, with new pairs launching every 500, 430, and 360 ms across its three rounds.
-Arcade pairs fall for 750 ms and launch every 400 ms, so several pairs are visible at once.
+Game Select starts its three rounds with 1300, 1220, and 1140 ms falls and 720, 680, and 640 ms launch intervals.
+Arcade starts with 1200 ms falls and 700 ms launch intervals.
+Within every round, each successive pair gradually shortens both durations, reaching half the initial duration on pair 36 and holding that pace thereafter.
+Each pair keeps its assigned fall duration while airborne, with at most three overlapping pairs visible.
 `shared/coins.js` owns seeded chute pairs and resolves landings at their scheduled local timestamp, accepting a lane change exactly at landing.
 
 ## Play Dodge or Die!!
 
-Guide the helmeted fox with **red = one lane left, green = jump, blue = one lane right** using the same three gameplay buttons.
+Move into gaps between walls: **red moves one lane left, blue moves one lane right**.
+Press **green** to jump over low hurdles.
+The game and animated demo omit the circle, triangle, and diamond beneath the fox because movement is relative rather than a direct lane selection.
 Tall walls block two lanes, leaving one open lane; striped low hurdles span all three lanes and require a jump at the landing line.
 Clear 12 obstacles in Arcade; Game Select increases the goal from 12 to 14 and shortens each approach from 1350 to 1150 ms.
 Every round has a 40-second deadline, and fastest completion wins.
@@ -609,7 +613,7 @@ Refresh every device after deploying the paired frontend and server update; the 
 Active gameplay uses the visual viewport height and a flex layout, with the shared control bar outside the arena so tablet browser chrome cannot push it below the screen.
 The Ready action remains visible while short screens can scroll the instructions card internally.
 Facing turns now take 1800/1700/1600/1500/1400 ms across available difficulty levels, and Game Select plays only levels 1–3.
-Arcade Coins uses 750 ms falls with new pairs every 400 ms; every Game Select round also has overlapping drops.
+Coins progressively accelerates both its fall durations and launch intervals during every round, with overlapping drops in Arcade and Game Select.
 
 Menu and instructions music share one gesture-authorized media element with separate remembered positions, following [WebKit's media-element reuse guidance](https://webkit.org/blog/7734/auto-play-policy-changes-for-macos/).
 The first playback request happens before awaiting audio-context resume or file decoding, so it stays attached to the enabling gesture.

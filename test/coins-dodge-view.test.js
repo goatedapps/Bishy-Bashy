@@ -50,3 +50,11 @@ test('Coins renders each overlapping pair without exposing future launches',()=>
  view.render(round,run,run.start+round.fallMs+1,0,true,true,run.cleared);
  assert.ok(view.drops.filter(pair=>!pair[0].hidden).length>=1);
 }));
+
+test('Dodge removes the misleading lane symbols in the shared gameplay and tutorial scene', () => withDocument(() => {
+  const view = new DodgeStage();
+  const tracks = view.element.children[0];
+  assert.ok(tracks.children.every(track => !track.textContent));
+  const coins = new CoinStage();
+  assert.deepEqual(coins.element.children[0].children.map(track => track.textContent), ['●', '▲', '◆']);
+}));

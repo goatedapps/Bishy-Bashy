@@ -206,3 +206,44 @@ test('coin drops overlap on a fixed schedule in Arcade and every Game Select dif
   assert.ok(run.activeWaves(firstLand+1).length>=1);
  }
 });
+
+test('Coins accelerates fall durations and launch intervals throughout each round without rescheduling airborne pairs', () => {
+  for (const mode of ['arcade', 'game-select', 'party']) for (let level = 1; level <= 5; level++) {
+    const round = { id: 'ramp', game: COIN_GAME, ...roundSettings(COIN_GAME, 123, level, mode) };
+    const run = new CoinRun(round, 1000);
+    const waves = run.schedule;
+    assert.equal(waves[0].fallMs, round.fallMs);
+    assert.equal(waves[0].spawnMs, round.spawnMs);
+    assert.equal(waves[35].fallMs, Math.round(round.fallMs * .5));
+    assert.equal(waves[35].spawnMs, Math.round(round.spawnMs * .5));
+    for (let index = 1; index < 36; index++) {
+      assert.ok(waves[index].fallMs < waves[index - 1].fallMs);
+      assert.ok(waves[index].spawnMs < waves[index - 1].spawnMs);
+      assert.ok(waves[index].landAt > waves[index - 1].landAt);
+    }
+    const original = structuredClone(waves);
+    for (let index = 0; index < 36; index++) {
+      const wave = waves[index];
+      run.tap(wave.column, wave.landAt);
+      assert.equal(run.feedback.at, wave.landAt);
+      assert.ok(run.activeWaves(wave.landAt + 1).length <= 3);
+    }
+    assert.equal(run.done, true);
+    assert.equal(run.elapsed, waves[35].landAt - run.start);
+    assert.deepEqual(run.schedule, original);
+  }
+});
+
+test('Coins delayed frames and remote projections use each pair’s own immutable fall duration', () => {
+  const round = settings(COIN_GAME), run = new CoinRun(round, 1000);
+  const time = run.schedule[30].launchedAt + 1;
+  const active = run.activeWaves(time);
+  assert.ok(active.length > 0 && active.length <= 3);
+  assert.ok(active.every(wave => wave.launchedAt <= time && wave.landAt > time));
+  assert.ok(new Set(active.map(wave => wave.fallMs)).size > 1);
+  const frequent = new CoinRun(round, 1000);
+  for (let at = 1000; at <= time; at += 10) frequent.advance(at);
+  frequent.advance(time);
+  run.advance(time);
+  assert.deepEqual([run.cleared, run.mistakes, run.feedback], [frequent.cleared, frequent.mistakes, frequent.feedback]);
+});

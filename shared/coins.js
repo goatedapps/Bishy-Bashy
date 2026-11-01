@@ -16,23 +16,32 @@ export function coinSequence(seed, count = 128) {
 
 export class CoinRun {
   constructor(round, localStart) {
-    Object.assign(this, { id: round.id, start: localStart, end: localStart + round.duration, goal: round.goal, fallMs: round.fallMs, spawnMs: round.spawnMs || Math.round(round.fallMs * .55),
+    Object.assign(this, { id: round.id, start: localStart, end: localStart + round.duration, goal: round.goal, baseFallMs: round.fallMs, baseSpawnMs: round.spawnMs || Math.round(round.fallMs * .55),
       index: 0, position: 1, blockedUntil: 0, cleared: 0, mistakes: 0, feedback: null, events: [], done: false, elapsed: null });
     this.sequence = coinSequence(round.seed);
+    // Assign timings per pair so acceleration never changes an airborne trajectory.
+    this.schedule = [];
+    let launchedAt = this.start;
+    while (launchedAt < this.end) {
+      const index = this.schedule.length;
+      const pace = 1 - .5 * Math.min(index / (COIN_GOAL - 1), 1);
+      const fallMs = Math.round(this.baseFallMs * pace);
+      const spawnMs = Math.round(this.baseSpawnMs * pace);
+      this.schedule.push({ ...this.sequence[index % this.sequence.length], index, launchedAt, fallMs, spawnMs, landAt: launchedAt + fallMs });
+      launchedAt += spawnMs;
+    }
   }
 
   get wave() { return this.sequence[this.index % this.sequence.length]; }
-  get launchedAt() { return this.start + this.index * this.spawnMs; }
+  get launchedAt() { return this.schedule[this.index]?.launchedAt ?? this.end; }
+  get fallMs() { return this.schedule[this.index]?.fallMs ?? Math.round(this.baseFallMs * .5); }
+  get spawnMs() { return this.schedule[this.index]?.spawnMs ?? Math.round(this.baseSpawnMs * .5); }
+  get landAt() { return this.schedule[this.index]?.landAt ?? this.end; }
+
   activeWaves(time) {
     if (this.done || !Number.isFinite(time) || time < this.start || time >= this.end) return [];
-    const last = Math.floor((time - this.start) / this.spawnMs);
-    const first = Math.max(this.index, Math.floor((time - this.start - this.fallMs) / this.spawnMs) + 1);
-    return Array.from({ length: Math.max(0, Math.min(3, last - first + 1)) }, (_, offset) => {
-      const index = first + offset;
-      return { ...this.sequence[index % this.sequence.length], index, launchedAt: this.start + index * this.spawnMs };
-    });
+    return this.schedule.filter(wave => wave.index >= this.index && wave.launchedAt <= time && wave.landAt > time).slice(0, 3);
   }
-  get landAt() { return this.launchedAt + this.fallMs; }
 
   advance(time, inclusive = true) {
     if (this.done || !Number.isFinite(time) || time < this.start) return;
