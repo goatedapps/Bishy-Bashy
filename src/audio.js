@@ -8,7 +8,7 @@ const MUSIC_MODES = ['auto', 'on', 'off'];
 const MENU_TRACKS = { menu: 'Background-ActionRock.mp3', instructions: 'game-instructions.mp3' };
 const MENU_TRACK_GAINS = { menu: 1, instructions: 2 };
 const EXTRA_AUDIO_FILES = { wrong: 'wrong.mp3', buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.mp3', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3', wheelSpin: 'roulette.mp3', gameSelect: 'Game-select.mp3' };
-const GAME_AUDIO_FILES = { 'facial-slot-machine': { ding: 'Ding.mp3' }, party: { ding: 'Ding.mp3' }, 'get-those-burgers-out': { mealPlop: 'plop.mp3', ding: 'Ding.mp3' }, 'dynamite-spark': { dynamiteBuzz: 'electrical-buzz.mp3', dynamiteExplosion: 'dynamite-explode.mp3', ding: 'Ding.mp3' }, 'jump-for-the-meat': { jumpBounce: 'bounce.mp3', ding: 'Ding.mp3' }, 'type-in-letters': { ding: 'Ding.mp3', lettersPress: 'Diuup.mp3' }, 'perm-mania': { ding: 'Ding.mp3', permBeat: 'perm-beat.mp3' }, 'mimicking-monkeys': { ding: 'Ding.mp3' }, 'its-raining-coins': { ding: 'Ding.mp3' }, 'dodge-or-die': { ding: 'Ding.mp3' }, 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3', ding: 'Ding.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3', diceRoll: 'dice-roll.mp3' }, 'facing-which-way': { ding: 'Ding.mp3', facingFlip: 'flip.mp3' } };
+const GAME_AUDIO_FILES = { 'wheres-kaya': { ding: 'Ding.mp3', kayaShuffle: 'card-move.mp3' }, 'facial-slot-machine': { ding: 'Ding.mp3' }, party: { ding: 'Ding.mp3' }, 'get-those-burgers-out': { mealPlop: 'plop.mp3', ding: 'Ding.mp3' }, 'dynamite-spark': { dynamiteBuzz: 'electrical-buzz.mp3', dynamiteExplosion: 'dynamite-explode.mp3', ding: 'Ding.mp3' }, 'jump-for-the-meat': { jumpBounce: 'bounce.mp3', ding: 'Ding.mp3' }, 'type-in-letters': { ding: 'Ding.mp3', lettersPress: 'Diuup.mp3' }, 'perm-mania': { ding: 'Ding.mp3', permBeat: 'perm-beat.mp3' }, 'mimicking-monkeys': { ding: 'Ding.mp3' }, 'its-raining-coins': { ding: 'Ding.mp3' }, 'dodge-or-die': { ding: 'Ding.mp3' }, 'fireworks-craze': { fireworkLaunch: 'Fireworks.mp3', ding: 'Ding.mp3' }, 'burger-girl': { ding: 'Ding.mp3' }, 'me-find-mistake': { ding: 'Ding.mp3' }, 'dice-dice-more-dice': { ding: 'Ding.mp3', diceRoll: 'dice-roll.mp3' }, 'facing-which-way': { ding: 'Ding.mp3', facingFlip: 'flip.mp3' } };
 const PROFILES = {
   'dice-dice-more-dice': { music: 'music', urgency: 'urgency', go: 'go' },
   'facing-which-way': { music: 'music', urgency: 'urgency', go: 'go' },
@@ -351,6 +351,8 @@ export class GameAudio {
       if (voice) this.demonstrationNotes.add(index);
     });
   }
+
+  kayaShuffles(run) { this.sharedCues(run, 'wheres-kaya', 'kayaShuffle', run.cues); }
 
   facingTurns(run) { this.sharedCues(run, 'facing-which-way', 'facingFlip', run.cues); }
 

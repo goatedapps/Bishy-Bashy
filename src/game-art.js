@@ -1,3 +1,4 @@
+import { kayaPortrait } from './kaya-view.js';
 import { raccoonPortrait, runnerPortrait, coinPortrait } from './coins-dodge-view.js';
 import { facePortrait } from './slot-view.js';
 import { monkeyPortrait } from './monkey-view.js';
@@ -20,7 +21,8 @@ const node = (tag, className, text) => {
 export function gameArt(game) {
   const art = node('span', `game-art art-${game}`);
   art.setAttribute('aria-hidden', 'true');
-  if (game === 'get-those-burgers-out') art.append(mealPortrait(1));
+  if (game === 'wheres-kaya') art.append(kayaPortrait());
+  else if (game === 'get-those-burgers-out') art.append(mealPortrait(1));
   else if (game === 'dynamite-spark') art.append(dynamitePortrait());
   else if (game === 'type-in-letters') art.append(lettersPortrait());
   else if (game === 'its-raining-coins') art.append(raccoonPortrait());
@@ -52,7 +54,11 @@ export function ruleVisual(game) {
   const first = node('div', 'rule-example');
   const second = node('div', 'rule-example');
   let label;
-  if (game === 'get-those-burgers-out') {
+  if (game === 'wheres-kaya') {
+    first.append(gameArt(game), node('strong', '', 'Remember Kaya'));
+    second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Follow the blankets'));
+    label = 'Remember Kaya, follow the covered animals as they shuffle, then choose red for left, green for middle, or blue for right.';
+  } else if (game === 'get-those-burgers-out') {
     const items = node('div', 'tutorial-meal-items');
     items.append(mealPortrait(0), mealPortrait(1), mealPortrait(2));
     first.append(items);

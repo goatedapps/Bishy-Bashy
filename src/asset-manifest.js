@@ -256,6 +256,16 @@ export const ASSETS = [
     "hash": "8ba2641ce09d214d"
   },
   {
+    "path": "assets/optimized/kaya-sprites-7229c62bd10f.webp",
+    "bytes": 136306,
+    "hash": "7229c62bd10f90b9"
+  },
+  {
+    "path": "assets/optimized/bg-kaya-home-c59bae0737a8.webp",
+    "bytes": 152264,
+    "hash": "c59bae0737a8058c"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",
@@ -486,6 +496,11 @@ export const ASSETS = [
     "path": "audio/type-in-letters-voice.mp3",
     "bytes": 44522,
     "hash": "1c62e4a15bd52171"
+  },
+  {
+    "path": "audio/card-move.mp3",
+    "bytes": 12735,
+    "hash": "184c4680ff560fa7"
   },
   {
     "path": "audio/perm-beat.mp3",

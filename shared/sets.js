@@ -53,6 +53,7 @@ export function setStandings(players) {
 }
 
 export function roundDetail(round) {
+  if (round.game === 'wheres-kaya') return 'Find Kaya · Most correct wins';
   if (round.game === 'dynamite-spark') return 'Reach the dynamite · Fastest wins';
   if (round.game === 'get-those-burgers-out') return 'Serve the meals · Fastest wins';
   if (round.game === 'type-in-letters') return '30 seconds · Most points wins';

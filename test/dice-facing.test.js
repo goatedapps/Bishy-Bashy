@@ -1,3 +1,4 @@
+import { KAYA_GAME } from '../shared/kaya.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { diceSequence, DICE_GAME } from '../shared/dice.js';
@@ -43,7 +44,7 @@ test('duck back/front poses compose through flips and every seeded puzzle has ex
   }
 });
 
-for (const game of [DICE_GAME,FACING_GAME]) {
+for (const game of [DICE_GAME,FACING_GAME,KAYA_GAME]) {
   test(`${game}: synchronized windows lock the first input, keep choices private, and award every correct player once`, () => {
     const round = settings(game), run = createRun(round, 1000), match = new ChoiceMatch(round, run.stages);
     for (const stage of run.stages) {

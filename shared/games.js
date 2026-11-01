@@ -1,3 +1,4 @@
+import { KAYA_GAME, KayaRun, KAYA_GOAL, KAYA_DURATION_MS, kayaDuration } from './kaya.js';
 import { COIN_GAME, CoinRun, COIN_GOAL, COIN_DURATION_MS } from './coins.js';
 import { DODGE_GAME, DodgeRun, DODGE_GOAL, DODGE_DURATION_MS } from './dodge.js';
 import { TOTEM_GAME, TotemRun, BLOCK_COUNT, GAME_DURATION_MS, MISTAKE_FREEZE_MS } from './totem.js';
@@ -19,6 +20,7 @@ import { MEALS_GAME, MealsRun, MEALS_GOAL, MEALS_DURATION_MS } from './meals.js'
 export const COUNTDOWN_MS = 3_000;
 
 export const GAMES = Object.assign(Object.create(null), {
+  [KAYA_GAME]: { id: KAYA_GAME, title: "Where's Kaya", subtitle: 'Follow Kaya beneath the blankets', sharedArena: true, scoring: 'points', duration: KAYA_DURATION_MS, goal: KAYA_GOAL },
   [TOTEM_GAME]: { id: TOTEM_GAME, title: 'Totem Shrinker', subtitle: 'A taller tower each round', duration: GAME_DURATION_MS, goal: BLOCK_COUNT },
   [PERM_GAME]: { id: PERM_GAME, title: 'Perm Mania', subtitle: 'A faster groove each round', duration: PERM_DURATION_MS, goal: PHRASE_COUNT },
   [SLOT_GAME]: { id: SLOT_GAME, title: 'Facial Slot Machine', subtitle: 'Faster faces each round', duration: SLOT_DURATION_MS, goal: REEL_COUNT },
@@ -38,6 +40,7 @@ export const GAMES = Object.assign(Object.create(null), {
 
 export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') {
   const level = Math.max(1, Math.min(5, Math.trunc(difficulty) || 1));
+  if (game === KAYA_GAME) return { seed, difficulty: level, goal: KAYA_GOAL, duration: kayaDuration(level) };
   if (game === MEALS_GAME) return { seed, difficulty: level, goal: MEALS_GOAL, duration: MEALS_DURATION_MS };
   if (game === DYNAMITE_GAME) return { seed, difficulty: level, goal: DYNAMITE_GOAL, duration: DYNAMITE_DURATION_MS };
   if (game === LETTERS_GAME) return { seed, difficulty: level, goal: 0, duration: LETTERS_DURATION_MS };
@@ -61,6 +64,7 @@ export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') 
 }
 
 export function createRun(round, localStart, timingOffset = 0) {
+  if (round.game === KAYA_GAME) return new KayaRun(round, localStart);
   if (round.game === MEALS_GAME) return new MealsRun(round, localStart);
   if (round.game === DYNAMITE_GAME) return new DynamiteRun(round, localStart);
   if (round.game === LETTERS_GAME) return new LettersRun(round, localStart);
@@ -80,6 +84,7 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game, round = {}) {
+  if (game === KAYA_GAME) return ['Remember Kaya, then follow the blankets', 'Choose Kaya: red = left, green = middle, blue = right', 'Six sets get faster; each correct answer earns a point'];
   if (game === MEALS_GAME) return ['Fill the empty slots to complete each meal', 'Red = fries, green = burger, blue = drink', 'Serve all eight meals as fast as you can'];
   if (game === DYNAMITE_GAME) return ['Match the wire colour with the same button', 'Tap four sections per colour; clear all 13 groups', 'Reach the dynamite first; wrong colours briefly pause the spark'];
   if (game === LETTERS_GAME) return ['Red moves left, blue moves right, green enters a letter', 'Finish the three letters before time runs out to earn a point; choose ⌫ to erase', 'Everyone who finishes scores; each new word has less time'];

@@ -1060,3 +1060,25 @@ test('fresh players start with sound and music on, guests use 20 percent music a
   audio.setEnabled(false);
   assert.equal(new GameAudio({ storage }).enabled, false);
 });
+
+test('Kaya schedules one supplied shuffle sound per swap and cancels without stale replay across mute and navigation', async () => {
+  const { audio, setTime, requests } = setup();
+  audio.selectGame('wheres-kaya');
+  await audio.unlock();
+  assert.ok(requests.some(url => url.includes('card-move.mp3')));
+  const run = createRun({ id: 'kaya', game: 'wheres-kaya', ...roundSettings('wheres-kaya', 123) }, 1000);
+  audio.scheduleRound(run.id, run.start, run.end, true, false, { game: 'wheres-kaya' });
+  setTime(run.cues[0].at - 150);
+  audio.kayaShuffles(run); audio.kayaShuffles(run);
+  assert.equal([...audio.voices].filter(voice => voice.id === 'kayaShuffle').length, 1);
+  audio.setEnabled(false);
+  assert.equal([...audio.voices].filter(voice => voice.id === 'kayaShuffle').length, 0);
+  setTime(run.cues[0].at + 300);
+  audio.setEnabled(true); await audio.unlock();
+  audio.kayaShuffles(run);
+  assert.equal([...audio.voices].filter(voice => voice.id === 'kayaShuffle').length, 0);
+  setTime(run.cues[1].at - 100); audio.kayaShuffles(run);
+  assert.equal([...audio.voices].filter(voice => voice.id === 'kayaShuffle').length, 1);
+  audio.stopRound();
+  assert.equal([...audio.voices].filter(voice => voice.id === 'kayaShuffle').length, 0);
+});

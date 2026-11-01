@@ -1,0 +1,26 @@
+.kaya-theme .arena { background:#edd4ad var(--image-bg-kaya-home,url('/assets/optimized/bg-kaya-home-c59bae0737a8.webp')) center / cover; }
+.is-playing.kaya-theme #player-lanes { display:none; }
+.shared-kaya .shared-choice-heading { color:#442f37; background:#fff8e4ed; border-radius:10px; padding:3px 9px; font-size:clamp(15px,2vw,22px); }
+.shared-kaya .shared-demo { grid-row:2 / 4; }
+.shared-kaya .shared-options { display:none; }
+.kaya-scene { position:relative; width:100%; height:100%; min-height:0; overflow:hidden; container-type:size; }
+.kaya-subject { position:absolute; left:calc((var(--kaya-slot,1) + 1) * 25%); top:52%; width:min(29cqw,260px,72cqh); aspect-ratio:1; transform:translate(-50%,-50%) translateY(var(--kaya-lift,0px)); }
+.kaya-sprite { display:block; width:100%; height:100%; background-image:var(--image-kaya-sprites,url('/assets/optimized/kaya-sprites-7229c62bd10f.webp')); background-size:200% 200%; background-repeat:no-repeat; }
+.kaya-subject>.kaya-sprite { position:absolute; inset:0; }
+.kaya-dog { background-position:0 0; }
+.kaya-kitten { background-position:100% 0; }
+/* Clip the atlas gutter so neighboring dog pixels cannot appear above a cover. */
+.kaya-blanket { background-position:0 100%; clip-path:inset(5% 0 0); }
+.kaya-slot { position:absolute; left:calc((var(--slot) + 1) * 25%); top:84%; transform:translateX(-50%); font:24px/1 Nunito,system-ui; text-shadow:0 2px #fff8e4; }
+.kaya-slot:nth-last-child(3) { --slot:0; }
+.kaya-slot:nth-last-child(2) { --slot:1; }
+.kaya-slot:last-child { --slot:2; }
+.kaya-found .kaya-dog { filter:drop-shadow(0 0 8px #ffdf64); }
+.kaya-correct-slot { color:#8c6523; }
+.art-wheres-kaya { background:#fbe9cb; }
+.game-art>.kaya-dog { position:absolute; inset:0; width:100%; height:100%; }
+.demo-wheres-kaya .instruction-demo-scene { background:#edd4ad var(--image-bg-kaya-home,url('/assets/optimized/bg-kaya-home-c59bae0737a8.webp')) center / cover; }
+.demo-wheres-kaya .shared-choice-stage { grid-template-rows:26px minmax(0,1fr) 40px 0; }
+.demo-wheres-kaya .shared-kaya .shared-choice-heading>strong:first-child { visibility:visible; font-size:13px; }
+.demo-wheres-kaya .kaya-subject { width:min(30cqw,55cqh); }
+.demo-wheres-kaya .kaya-slot { font-size:14px; }

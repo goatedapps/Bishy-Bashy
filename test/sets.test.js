@@ -1,3 +1,4 @@
+import { isSharedChoice } from '../shared/choice-round.js';
 import { LettersRun, LETTERS_FEEDBACK_MS, LETTERS_PACKET_MS } from '../shared/letters.js';
 import { letterClaim } from './helpers/letters.js';
 import test from 'node:test';
@@ -39,7 +40,7 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
       }
       time = round.endAt + LETTERS_PACKET_MS; service.tick(); return;
     }
-    if (round.game === 'dice-dice-more-dice' || round.game === 'facing-which-way') {
+    if (isSharedChoice(round.game)) {
       const run = createRun(round, 0);
       for (const stage of run.stages) {
         time = round.startAt + stage.answerAt + 10;

@@ -1,3 +1,5 @@
+import { KAYA_GAME } from '../shared/kaya.js';
+import { KayaScene } from './kaya-view.js';
 import { diePortrait, setDie, duckPortrait, facingMoveLabel } from './dice-facing-view.js';
 import { FACING_GAME } from '../shared/facing.js';
 
@@ -46,7 +48,8 @@ export class SharedChoiceStage {
     this.duck = duckPortrait();
     this.flap = node('span', 'facing-flap');
     this.card.append(this.duck, this.flap);
-    this.demo.append(this.card);
+    this.kaya = new KayaScene();
+    this.demo.append(this.card, this.kaya.element);
     this.options = node('div', 'shared-options');
     this.optionCards = Array.from({ length: 3 }, (_, color) => {
       const card = node('div', `shared-option option-${color}`);
@@ -69,6 +72,7 @@ export class SharedChoiceStage {
     const round = room.round, run = local?.run;
     if (!run || !round.choice) return;
     const facing = round.game === FACING_GAME;
+    const kaya = round.game === KAYA_GAME;
     const phase = run.phase(time), stage = phase.stage, puzzle = stage.puzzle;
     const roster = (room.set?.players || room.players).filter(player => round.playerIds.includes(player.id));
     const rosterKey = `${round.id}/${roster.map(player => player.id).join('/')}`;
@@ -87,14 +91,21 @@ export class SharedChoiceStage {
       });
       this.players.replaceChildren(...this.rows.map(row => row.card));
     }
-    this.element.className = `shared-choice-stage ${facing ? 'shared-facing' : 'shared-dice'}`;
+    this.element.className = `shared-choice-stage ${kaya ? 'shared-kaya' : facing ? 'shared-facing' : 'shared-dice'}`;
     const result = time - run.start >= stage.answerEnd ? round.choice.results.find(result => result.index === phase.index) : null;
     const canAnswer = phase.mode === 'play';
     const revealed = phase.mode === 'reveal' || phase.mode === 'done';
     this.title.textContent = `Set ${phase.index + 1} / ${run.goal}`;
     this.clock.textContent = canAnswer ? `${Math.max(0, (run.start + stage.answerEnd - time) / 1000).toFixed(1)} s` : phase.mode === 'wait' ? 'Get ready' : revealed ? 'Answers' : phase.mode === 'turn' ? facingMoveLabel(puzzle.moves[phase.turn]) : phase.mode === 'look' ? 'Look!' : 'Track the card';
-    this.demo.hidden = !facing || canAnswer || revealed;
-    this.options.hidden = facing && !canAnswer && !revealed;
+    this.card.hidden = !facing;
+    this.kaya.element.hidden = !kaya;
+    this.demo.hidden = !kaya && (!facing || canAnswer || revealed);
+    this.options.hidden = kaya || facing && !canAnswer && !revealed;
+    if (kaya) {
+      this.title.textContent = canAnswer ? "Where's Kaya?" : revealed ? 'There’s Kaya!' : phase.mode === 'look' ? 'Remember Kaya' : 'Follow the blankets';
+      this.clock.textContent = canAnswer ? `${Math.max(0, (run.start + stage.answerEnd - time) / 1000).toFixed(1)} s` : phase.mode === 'wait' ? 'Get ready' : '';
+      this.kaya.render(phase, result);
+    }
     if (facing) {
       this.card.hidden = phase.mode === 'wait';
       const visible = phase.mode === 'look' || phase.mode === 'cover' && !this.motion?.matches || revealed;
@@ -117,16 +128,16 @@ export class SharedChoiceStage {
     }
     this.element.classList.toggle('shared-revealed', Boolean(result));
     this.optionCards.forEach(({ card, die, duck, players, shadow }, color) => {
-      die.hidden = facing;
+      die.hidden = facing || kaya;
       duck.hidden = !facing;
       if (!this.options.hidden) {
         if (facing) setDuckPose(duck, puzzle.options[color]);
         else setDie(die, phase.mode === 'wait' ? 0 : puzzle.values[color]);
       }
       const throwAge = time - run.start - stage.startsAt;
-      const pose = diceThrowPose(throwAge, color, facing || this.motion?.matches);
+      const pose = diceThrowPose(throwAge, color, facing || kaya || this.motion?.matches);
       die.style.transform = pose.transform;
-      shadow.hidden = facing || phase.mode === 'wait';
+      shadow.hidden = facing || kaya || phase.mode === 'wait';
       shadow.style.transform = `translateX(-50%) scale(${1 - pose.height * .45})`;
       shadow.style.opacity = String(.24 - pose.height * .15);
       card.classList.toggle('shared-correct-option', Boolean(result && result.answer === color));

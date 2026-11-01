@@ -1,3 +1,4 @@
+import { KayaRun } from '../shared/kaya.js';
 import { roundSettings } from '../shared/games.js';
 import { JumpRun } from '../shared/jump.js';
 import { BurgerRun } from '../shared/burger.js';
@@ -24,7 +25,7 @@ const make = Type => (round, start) => new Type(round, start);
 
 class ChoiceDemoRun {
   constructor(round, start) {
-    const Type = round.game === 'facing-which-way' ? FacingRun : DiceRun;
+    const Type = round.game === 'wheres-kaya' ? KayaRun : round.game === 'facing-which-way' ? FacingRun : DiceRun;
     const run = new Type(round, start);
     run.stages = run.stages.slice(0, 1);
     run.goal = 1;
@@ -71,11 +72,12 @@ const RUNS = {
   'jump-for-the-meat': make(JumpRun), 'burger-girl': make(BurgerRun), 'me-find-mistake': make(MistakeRun),
   'its-raining-coins': make(CoinRun), 'dodge-or-die': make(DodgeRun), 'dynamite-spark': make(DynamiteRun),
   'get-those-burgers-out': make(MealsRun), 'dice-dice-more-dice': make(ChoiceDemoRun),
-  'facing-which-way': make(ChoiceDemoRun), 'type-in-letters': make(LettersDemoRun),
+  'wheres-kaya': make(ChoiceDemoRun), 'facing-which-way': make(ChoiceDemoRun), 'type-in-letters': make(LettersDemoRun),
 };
 export const REMAINING_DEMO_GAMES = Object.keys(RUNS);
 
 const INSTRUCTIONS = {
+  'wheres-kaya': ['Remember Kaya. Follow the blankets as they shuffle.', 'Choose Kaya: red = left, green = middle, blue = right.'],
   'jump-for-the-meat': ['Press any button as the dinosaur lands.', 'Perfect landings jump twice as high.'],
   'burger-girl': ['Move the plate under the falling food.', 'Red = left, green = middle, blue = right.'],
   'me-find-mistake': ['Find the picture that is different.', 'Red = top, green = middle, blue = bottom.'],
@@ -161,7 +163,8 @@ export function remainingDemoPlan(game, round = {}) {
   } else {
     const stage = probe.stages[0];
     press(stage.puzzle.answer, START + stage.answerAt + (game === 'facing-which-way' ? 800 : 950));
-    if (game === 'facing-which-way') effects.push(...stage.cues.map(at => ({ type: 'effect', sound: 'facingFlip', at: START + at })));
+    if (game === 'wheres-kaya') effects.push(...stage.cues.map(at => ({ type: 'effect', sound: 'kayaShuffle', at: START + at })));
+    else if (game === 'facing-which-way') effects.push(...stage.cues.map(at => ({ type: 'effect', sound: 'facingFlip', at: START + at })));
     else effects.push({ type: 'effect', sound: 'diceRoll', at: START });
     completeAt = START + stage.answerEnd + 80;
     sampleComplete = true;
@@ -178,7 +181,7 @@ const STAGES = {
   'jump-for-the-meat': JumpStage, 'burger-girl': BurgerStage, 'me-find-mistake': MistakeStage,
   'its-raining-coins': CoinStage, 'dodge-or-die': DodgeStage, 'dynamite-spark': DynamiteStage,
   'get-those-burgers-out': MealsStage, 'dice-dice-more-dice': SharedChoiceStage,
-  'facing-which-way': SharedChoiceStage, 'type-in-letters': LettersStage,
+  'wheres-kaya': SharedChoiceStage, 'facing-which-way': SharedChoiceStage, 'type-in-letters': LettersStage,
 };
 
 export class RemainingDemo extends ScriptedDemo {

@@ -1,6 +1,6 @@
 export const CHOICE_GRACE_MS = 80;
 export const CHOICE_PACKET_MS = 800;
-export const isSharedChoice = game => game === 'dice-dice-more-dice' || game === 'facing-which-way';
+export const isSharedChoice = game => game === 'dice-dice-more-dice' || game === 'facing-which-way' || game === 'wheres-kaya';
 
 export class ChoiceRun {
   constructor(round, localStart, stages) {

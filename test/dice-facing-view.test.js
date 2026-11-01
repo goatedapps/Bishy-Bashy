@@ -10,7 +10,7 @@ class Element {
   setAttribute(name,value){this.attributes.set(name,value);}
   getAttribute(name){return this.attributes.get(name);}
 }
-for(const game of ['dice-dice-more-dice','facing-which-way']) test(`${game}: common options and fixed player columns hide answers until the deadline`,()=>{
+for(const game of ['dice-dice-more-dice','facing-which-way','wheres-kaya']) test(`${game}: common options and fixed player columns hide answers until the deadline`,()=>{
   const previous=globalThis.document;globalThis.document={createElement:()=>new Element()};
   try{
     const players=[{id:'a',name:'Solo',connected:true}];
@@ -27,7 +27,7 @@ for(const game of ['dice-dice-more-dice','facing-which-way']) test(`${game}: com
     run.tap(stage.puzzle.answer,run.start+stage.answerAt+10);
     match.choose('a',{index:0,color:stage.puzzle.answer,elapsed:stage.answerAt+10},stage.answerAt+20);
     view.render(room,'a',local,run.start+stage.answerAt+30);
-    assert.equal(view.options.hidden,false);
+    assert.equal(view.options.hidden,game === 'wheres-kaya');
     assert.equal(view.rows[0].selection.textContent,'Locked');
     assert.equal(view.rows[0].result.hidden,true);
     assert.ok(view.optionCards.every(option=>option.players.children.length===0));
