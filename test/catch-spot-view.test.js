@@ -54,8 +54,11 @@ test('Burger hides future food before launch and shows only completed layers, wi
   stage.render(round, run, 1001, 0, true, true, 0);
   assert.equal(stage.falling.hidden, false);
   assert.match(stage.element.getAttribute('aria-label'), /falling in/);
+  stage.render(round, run, run.start + run.launchGap + 1, 0, true, true, 0);
+  assert.equal(stage.drops.filter(drop => !drop.hidden).length, 2);
+  assert.deepEqual(stage.drops.slice(0, 2).map(drop => drop.dataset.kind), ['0', '1']);
   for (let index = 0; index < 4; index++) {
-    run.tap(run.column, run.launchedAt + 1);
+    run.tap(run.column, run.landAt - 1);
     run.advance(run.landAt);
   }
   stage.render(round, run, run.feedback.at + 1, 0, true, true, 4);

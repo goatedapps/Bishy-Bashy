@@ -115,7 +115,7 @@ export function remainingDemoPlan(game, round = {}) {
   } else if (game === 'burger-girl' || game === 'its-raining-coins') {
     while (!probe.done) {
       const land = probe.landAt;
-      press(game === 'burger-girl' ? probe.column : probe.wave.column, land - Math.min(350, settings.fallMs / 2));
+      press(game === 'burger-girl' ? probe.column : probe.wave.column, land - Math.min(game === 'burger-girl' ? 180 : 350, settings.fallMs / 2));
       probe.advance(land);
       effects.push({ type: 'complete', at: land });
     }

@@ -314,9 +314,12 @@ Get under each falling ingredient before it reaches the plate; catches happen au
 A move exactly on the landing timestamp counts, and a delayed frame cannot change an already scheduled landing time.
 
 Catch lettuce, patty, tomato, and a top bun to serve one burger.
-Serve **three burgers / twelve ingredients** to finish, ranked by local elapsed time; perfect runs can tie.
+Serve **five burgers / twenty ingredients** to finish, ranked by local elapsed time; perfect runs can tie.
 A miss costs **300 ms** of recovery and repeats that ingredient in a new seeded chute, keeping completed layers and served burgers.
-Successful catches leave **160 ms** before the next ingredient starts.
+Ingredients launch at **56% of the current fall duration**, so successive layers overlap in the air within each burger.
+Each served burger gets a **700 ms** pause, one set-completion Ding, and the large yellow circle.
+Each new burger shortens its fall and launch gap by another **7% of the initial duration**, reaching 28% faster on the fifth burger.
+A miss cancels the approaching layers and restarts from the missing ingredient after recovery.
 Game Select shortens each fall from **1,100, 990, and 880 ms** across its three rounds.
 The deadline is **35 seconds**, and unfinished rounds earn zero points.
 These initial speeds are provisional until phone playtesting.
@@ -343,6 +346,8 @@ Original artwork and generation prompts are preserved in [artwork notes](public/
 
 Choose **Game Select → Dice, Dice, More Dice**, or encounter it in Arcade.
 Everyone sees the same three dice in one shared row.
+Each throw tumbles through a 260 ms arc and a 120 ms landing bounce with a grounded shadow, driven by the shared round clock.
+Reduced motion shows settled dice immediately, and the animation leaves answer windows unchanged.
 Choose the highest die with red for left, green for middle, or blue for right.
 Each throw has three distinct values from one to six, so exactly one choice is highest.
 Each player locks one answer per throw; every correct answer earns one point.

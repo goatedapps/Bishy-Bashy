@@ -8,6 +8,23 @@ const node = (tag, className, text) => {
   if (text !== undefined) element.textContent = text;
   return element;
 };
+export function diceThrowPose(age, color, reducedMotion = false) {
+  if (reducedMotion || age < 0 || age >= 380) return { transform: '', height: 0 };
+  const direction = color === 1 ? -1 : 1;
+  if (age < 260) {
+    const progress = age / 260;
+    const remaining = 1 - progress;
+    const height = remaining * (.35 + 2.6 * progress);
+    return {
+      transform: `translate(${direction * remaining * 35}%,${-height * 100}%) rotateX(${remaining * 540}deg) rotateZ(${direction * remaining * 240}deg) scale(${.72 + .28 * progress})`,
+      height,
+    };
+  }
+  const progress = (age - 260) / 120;
+  const bounce = Math.sin(progress * Math.PI);
+  return { transform: `translateY(${-bounce * 13}%) scale(${1 + .16 * (1 - progress) * Math.cos(progress * Math.PI * 2)},${1 - .16 * (1 - progress) * Math.cos(progress * Math.PI * 2)})`, height: bounce * .13 };
+}
+
 export function setDuckPose(duck, pose) {
   duck.classList.toggle('is-back', Boolean(pose.back));
   duck.style.transform = `rotate(${pose.angle}deg)`;
@@ -36,9 +53,11 @@ export class SharedChoiceStage {
       const shape = node('span', 'shared-option-shape', SHAPES[color]);
       const die = diePortrait(0), duck = duckPortrait();
       const players = node('div', 'shared-option-players');
-      card.append(shape, die, duck, players);
+      const shadow = node('span', 'dice-ground-shadow');
+      shadow.setAttribute('aria-hidden', 'true');
+      card.append(shape, shadow, die, duck, players);
       this.options.append(card);
-      return { card, die, duck, players };
+      return { card, die, duck, players, shadow };
     });
     this.players = node('div', 'shared-choice-players');
     this.element.append(this.header, this.demo, this.options, this.players);
@@ -97,7 +116,7 @@ export class SharedChoiceStage {
       this.card.setAttribute('aria-label', visible ? `${pose.back ? 'Back' : 'Front'} of duck, rotated ${pose.angle} degrees` : 'Covered duck card');
     }
     this.element.classList.toggle('shared-revealed', Boolean(result));
-    this.optionCards.forEach(({ card, die, duck, players }, color) => {
+    this.optionCards.forEach(({ card, die, duck, players, shadow }, color) => {
       die.hidden = facing;
       duck.hidden = !facing;
       if (!this.options.hidden) {
@@ -105,7 +124,11 @@ export class SharedChoiceStage {
         else setDie(die, phase.mode === 'wait' ? 0 : puzzle.values[color]);
       }
       const throwAge = time - run.start - stage.startsAt;
-      die.style.transform = !facing && !this.motion?.matches && throwAge >= 0 && throwAge < 120 ? `rotate(${Math.sin(throwAge / 120 * Math.PI * 2) * 8}deg)` : '';
+      const pose = diceThrowPose(throwAge, color, facing || this.motion?.matches);
+      die.style.transform = pose.transform;
+      shadow.hidden = facing || phase.mode === 'wait';
+      shadow.style.transform = `translateX(-50%) scale(${1 - pose.height * .45})`;
+      shadow.style.opacity = String(.24 - pose.height * .15);
       card.classList.toggle('shared-correct-option', Boolean(result && result.answer === color));
       const markersKey = result ? `${round.id}/${phase.index}/${JSON.stringify(result.choices)}` : '';
       if (players.dataset.state !== markersKey) {

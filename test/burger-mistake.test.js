@@ -10,11 +10,11 @@ const settings = (game, level = 1) => ({ id: game, game, ...roundSettings(game, 
 function finishBurger(round, misses = 0) {
   const run = new BurgerRun(round, 0);
   for (let index = 0; index < misses; index++) {
-    run.tap((run.column + 1) % 3, run.launchedAt + 1);
+    run.tap((run.column + 1) % 3, run.landAt - 1);
     run.advance(run.landAt);
   }
   while (!run.done && run.landAt < run.end) {
-    run.tap(run.column, run.launchedAt + 1);
+    run.tap(run.column, run.landAt - 1);
     run.advance(run.landAt);
   }
   return run;
@@ -26,14 +26,38 @@ test('Burger Girl catches seeded ingredients at the local landing time across al
     const run = finishBurger(round);
     assert.ok(run instanceof BurgerRun);
     assert.equal(run.done, true);
-    assert.equal(run.cleared, 12);
+    assert.equal(run.cleared, 20);
     assert.equal(run.mistakes, 0);
-    assert.equal(run.elapsed, 12 * round.fallMs + 11 * 160);
+    const expected = Array.from({ length: 5 }, (_, burger) => {
+      const fall = Math.round(round.fallMs * (1 - burger * .07));
+      return fall + 3 * Math.round(fall * .56);
+    }).reduce((sum, duration) => sum + duration, 4 * 700);
+    assert.equal(run.elapsed, expected);
+    assert.equal(run.events.filter(event => event.type === 'stageComplete').length, 5);
+    assert.deepEqual(run.stageFeedback, { correct: true, at: run.elapsed });
     assert.ok(run.elapsed < round.duration);
     assert.deepEqual(run.sequence, new BurgerRun(round, 10000).sequence);
     assert.equal(new Set(run.sequence).size, 3);
   }
   assert.deepEqual([1, 2, 3, 4, 5].map(level => settings(BURGER_GAME, level).fallMs), [1100, 990, 880, 770, 660]);
+});
+
+test('Burger launches overlap within each set, accelerate between sets, and pause to serve', () => {
+  const run = createRun(settings(BURGER_GAME), 0);
+  const drops = run.drops;
+  assert.equal(drops.length, 4);
+  assert.ok(drops[1].launchedAt < drops[0].landAt);
+  assert.ok(drops.every((drop, index) => drop.ingredient === index));
+  for (const drop of drops) {
+    assert.equal(run.landAt, drop.landAt);
+    assert.equal(run.column, drop.column);
+    run.tap(drop.column, drop.landAt);
+  }
+  assert.equal(run.cleared, 4);
+  assert.equal(run.launchedAt, drops[3].landAt + 700);
+  assert.ok(run.fallMs < drops[0].landAt - drops[0].launchedAt);
+  assert.equal(run.drops[0].ingredient, 0);
+  assert.equal(run.stageFeedback.at, drops[3].landAt);
 });
 
 test('Burger catches include a move exactly on landing, keep prior layers after a miss, and cannot be mashed early', () => {

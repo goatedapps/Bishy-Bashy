@@ -219,3 +219,8 @@ All 15 registered games now have animated How to play demos; keep the shared cat
 `src/remaining-demos.js` owns the remaining ten isolated examples and their real scene renderers; short jump/wire examples demonstrate progress without pretending to finish the full game.
 Monkeys shows generated red-apple, green-pear, and blue-ball holding poses for the current cue, with a smaller centered character and no corner symbols; neutral poses during gaps must not reveal a future item.
 Optimize only selected new image names when appropriate with `python scripts/optimize-images.py NAME...`, retaining new masters and prompts while avoiding unrelated asset changes.
+
+Burger Girl serves five four-layer burgers; launch layers 56% of a fall apart within a burger, pause 700 ms between burgers, and reduce fall duration by 7% of the initial duration per served burger.
+On a miss, retain caught layers and restart the missing ingredient and approaching layers after 300 ms; publish the same deterministic overlapping drops remotely.
+Each served burger emits one stage-completion Ding and the common large yellow circle, including the final burger.
+Shared Dice throws use the round clock for a 260 ms aerial tumble and 120 ms landing bounce with a shadow; preserve answer windows and show settled dice under reduced motion.

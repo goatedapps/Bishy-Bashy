@@ -44,8 +44,12 @@ export class BurgerStage {
     this.element.hidden = true;
     this.chutes = node('div', 'catch-chutes');
     for (let column = 0; column < 3; column++) this.chutes.append(node('span', `catch-chute catch-color-${column}`, SHAPES[column]));
-    this.falling = node('div', 'catch-falling');
-    this.falling.append(ingredientPortrait());
+    this.drops = Array.from({ length: 4 }, () => {
+      const drop = node('div', 'catch-falling');
+      drop.append(ingredientPortrait());
+      return drop;
+    });
+    this.falling = this.drops[0];
     this.player = node('div', 'catch-player');
     this.player.append(chefPortrait());
     this.stack = node('div', 'burger-stack');
@@ -57,7 +61,7 @@ export class BurgerStage {
     });
     this.player.append(this.stack);
     this.toast = node('span', 'catch-toast');
-    this.element.append(this.chutes, this.falling, this.player, this.toast);
+    this.element.append(this.chutes, ...this.drops, this.player, this.toast);
     this.element.setAttribute('role', 'group');
   }
 
@@ -74,13 +78,20 @@ export class BurgerStage {
     this.element.classList.toggle('catch-success', Boolean(showing && feedback.kind === 'catch'));
     this.element.style.setProperty('--served-age', String(served ? age / 500 : 0));
     this.element.style.setProperty('--chef-column', String(run?.position ?? cleared % 3));
-    this.falling.dataset.attempt = String(run?.index ?? 0);
-    const progress = run ? (time - run.launchedAt) / run.fallMs : 0;
-    this.falling.hidden = !playing || progress < 0 || progress > 1;
-    this.falling.style.setProperty('--drop-column', String(run?.column ?? 1));
-    this.falling.style.setProperty('--drop-progress', String(Math.max(0, Math.min(1, progress))));
+    const falling = run?.drops || [];
+    this.drops.forEach((drop, index) => {
+      const item = falling[index];
+      const progress = item ? (time - item.launchedAt) / (item.landAt - item.launchedAt) : -1;
+      drop.hidden = !playing || progress < 0 || progress > 1;
+      drop.dataset.attempt = String(item?.index ?? 0);
+      drop.style.setProperty('--drop-column', String(item?.column ?? 1));
+      drop.style.setProperty('--drop-progress', String(Math.max(0, Math.min(1, progress))));
+      if (item && drop.dataset.kind !== String(item.ingredient)) {
+        drop.dataset.kind = String(item.ingredient);
+        drop.replaceChildren(ingredientPortrait(item.ingredient));
+      }
+    });
     const kind = run?.ingredient ?? cleared % 4;
-    if (this.kind !== kind) { this.kind = kind; this.falling.replaceChildren(ingredientPortrait(kind)); }
     this.toast.hidden = !showing;
     this.toast.textContent = !showing ? '' : feedback.kind === 'miss' ? 'Miss!' : served ? 'Served!' : '+1';
     this.element.setAttribute('aria-label', !present ? 'Open spot' : run && playing ? `${INGREDIENT_NAMES[kind]} falling in ${['left', 'middle', 'right'][run.column]} chute; plate ${['left', 'middle', 'right'][run.position]}` : `${Math.floor(cleared / 4)} burgers served`);

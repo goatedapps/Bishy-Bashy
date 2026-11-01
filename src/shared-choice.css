@@ -62,3 +62,7 @@
 
 .shared-facing .shared-demo,.shared-facing .shared-options { grid-row:2 / 4; }
 .shared-facing .shared-options { height:min(200px,100%); align-self:center; }
+
+.shared-dice .shared-option { perspective:650px; }
+.shared-dice .die-portrait { position:relative; z-index:1; transform-origin:center; box-shadow:3px 5px 0 #bfb494,5px 8px 0 #4e393b; }
+.dice-ground-shadow { position:absolute; left:50%; top:72%; width:55%; height:12%; border-radius:50%; background:#382532; filter:blur(3px); pointer-events:none; }

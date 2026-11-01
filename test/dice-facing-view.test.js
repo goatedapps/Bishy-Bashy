@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { SharedChoiceStage } from '../src/shared-choice-view.js';
+import { SharedChoiceStage, diceThrowPose } from '../src/shared-choice-view.js';
 import { createRun, roundSettings } from '../shared/games.js';
 import { ChoiceMatch } from '../shared/choice-round.js';
 class Element {
@@ -80,4 +80,19 @@ test('Facing preserves covered-card geometry across mirror boundaries without an
       assert.equal(view.options.hidden, false);
     }
   } finally { globalThis.document = previous; }
+});
+
+test('Dice throw travels through an aerial tumble, landing bounce, and stable rest without extending answer windows', () => {
+  const initial = diceThrowPose(0, 0);
+  const airborne = diceThrowPose(100, 0);
+  assert.ok(airborne.height > initial.height);
+  assert.match(airborne.transform, /rotateX/);
+  assert.notEqual(airborne.transform, diceThrowPose(100, 1).transform);
+  assert.match(diceThrowPose(260, 0).transform, /scale\(1.16,0.84/);
+  assert.ok(diceThrowPose(300, 0).height > 0);
+  assert.deepEqual(diceThrowPose(380, 0), { transform: '', height: 0 });
+  assert.deepEqual(diceThrowPose(100, 0, true), { transform: '', height: 0 });
+  const run = createRun({id: 'dice', game: 'dice-dice-more-dice', ...roundSettings('dice-dice-more-dice', 123)}, 0);
+  assert.equal(run.phase(100).mode, 'play');
+  assert.equal(run.stages.at(-1).answerEnd - run.stages.at(-1).answerAt, 800);
 });
