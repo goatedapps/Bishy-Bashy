@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STAR_GAME, STAR_STEP_MS, STAR_MAX_DEPTH, StarRun, starCourse, validStarResult } from '../shared/stars.js';
+import { STAR_GAME, STAR_STEP_MS, STAR_MAX_DEPTH, StarRun, starCourse, traceStarRoute, validStarResult } from '../shared/stars.js';
 import { roundSettings, comparePlayers } from '../shared/games.js';
 import { captureVisual, sanitizeVisual, RemoteRuns } from '../shared/visual-state.js';
 import { RoomService } from '../server/rooms.js';
@@ -16,15 +16,37 @@ test('seeded mazes vary bar lengths, vertical gaps, and floating star positions 
     assert.ok(gaps.every(gap => gap >= 80 && gap <= 165));
     assert.ok(new Set(shelves.slice(0, 10).map(wall => wall.width)).size >= 5);
     assert.ok(new Set(gaps.slice(0, 10)).size >= 5);
-    assert.ok(new Set(stars.map(star => star.x)).size > 40);
-    assert.ok(stars.filter(star => shelves.every(wall => Math.abs(star.y - (wall.y - 22)) > 1)).length > 64);
-    assert.equal(stars.length, 128); assert.equal(new Set(stars.map(star => star.id)).size, 128);
+    assert.ok(new Set(stars.map(star => star.x)).size > 30);
+    assert.ok(stars.filter(star => shelves.every(wall => Math.abs(star.y - (wall.y - 22)) > 1)).length > 16);
+    assert.equal(stars.length, 64); assert.equal(new Set(stars.map(star => star.id)).size, 64);
     assert.ok(course.bottom < STAR_MAX_DEPTH);
     for (const star of stars) {
       assert.ok(star.x >= 32 && star.x <= 268);
       assert.ok(shelves.every(wall => star.x + 12 <= wall.x || star.x - 12 >= wall.x + wall.width || star.y + 12 <= wall.y || star.y - 12 >= wall.y + wall.height));
       assert.ok(stars.every(other => other.id === star.id || Math.hypot(star.x - other.x, star.y - other.y) >= 40));
     }
+  }
+});
+
+test('one continuous legal drive collects all 64 stars before the deadline across varied maze seeds', () => {
+  for (let seed = 0; seed < 100; seed++) {
+    const round = settings(seed), run = new StarRun(round, 500000);
+    assert.equal(run.course.shelves.length, 64);
+    assert.equal(run.goal, 64);
+    const trace = traceStarRoute(run.course);
+    for (const [step, mask] of trace.inputs) {
+      const at = run.start + step * STAR_STEP_MS;
+      for (const color of [0, 2]) {
+        const held = Boolean(mask & (1 << color));
+        if (held !== Boolean(run.pressedMask & (1 << color))) run[held ? 'tap' : 'release'](color, at);
+      }
+    }
+    run.advance(run.start + 44000);
+    assert.equal(run.cleared, 64, `seed ${seed}`);
+    assert.equal(run.done, false);
+    assert.ok(run.events.filter(event => event.type === 'stageComplete').every(event => event.at < run.end));
+    run.advance(run.end);
+    assert.equal(validStarResult(round, run), true, `seed ${seed} score proof`);
   }
 });
 
@@ -136,7 +158,7 @@ test('maze scenes render before a round exists, rotate with the run, hide collec
   globalThis.document = { createElement: () => new Element() };
   try {
     const stage = new StarStage(); stage.render({}, null, 0, 0, false, false);
-    assert.equal(stage.car.hidden, true); assert.equal(stage.world.children.length, 192);
+    assert.equal(stage.car.hidden, true); assert.equal(stage.world.children.length, 128);
     const round = settings(123), run = new StarRun(round, 0);
     run.advance(1500); run.tap(2, 1500); run.advance(1800);
     stage.render(round, run, 1800, 1800, true, true);

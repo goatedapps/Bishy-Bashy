@@ -5,7 +5,7 @@ The Vite frontend deploys independently to GitHub Pages; `server/` is a separate
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 28 adds Star Collector with replay-validated tilt physics; deploy frontend and backend together.
+Protocol version 29 adds Star Collector with replay-validated tilt physics; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -236,7 +236,7 @@ Dynamite wire previews must use the shared seeded sequence even without a player
 `src/kaya-view.js` renders one dog, two copies of the same kitten, and three copies of the same opaque blanket; animate swaps from the shared round clock and never expose the dog during covered phases.
 Use supplied `card-move.mp3` once per shuffle with the common bounded cue scheduler; score and reveal through `ChoiceMatch`, with one Ding and the common large result circle for each correct player.
 Kaya is in Arcade, Game Select, Party, and the animated cat-paw tutorial catalog; reduced motion removes the crossing arcs while preserving the essential horizontal tracking movement.
-The handshake and health endpoint report protocol 28 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
+The handshake and health endpoint report protocol 29 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
 
 `shared/happy.js` owns Happy Days’ seeded 57-note arrangements on the supplied recording’s 145 BPM grid, 17 hold notes, and 30-second duration.
 Judge both press and release edges at ±55 ms for Perfect (1000 points) and ±140 ms for Good (500 points); a failed edge scores zero for that note, and holding early never collects future notes.
@@ -283,10 +283,11 @@ Kaya’s grid overrides must outrank both generic shared-choice and tutorial sty
 Clock and Stationery tutorials use their scene renderer’s result circle; suppress the generic demo completion overlay to avoid duplicate feedback.
 
 Star Collector varies seeded bar lengths (94–226), vertical gaps (80–165), and floating/surface star placements throughout its course.
-Keep stars clear of walls and within steering reach of the previous exit gap; all players, previews, tutorials, and server replays share the same layout.
+Generate exactly 64 stars from a continuous 44-second reference drive using the same movement integrator as live play, so one valid route collects every star before the deadline.
+Preserve 64 bars, floating placements, wall clearance, and 40-unit star separation; all players, previews, tutorials, and server replays share the same layout.
 Star Collector uses `shared/stars.js` for the seeded alternating-shelf course, fixed 120 Hz tilt physics, unique star pickups, and replay-validated 45-second scores.
 Hold red/blue to tilt left/right, release to level with momentum, and keep green unused in the shared three-button bar.
 `src/stars-view.js` rotates each maze and follows its car; peer smoothing must never run physics or award pickups.
 Use supplied `car-bump.mp3` once per distinct impact and `Ding.mp3` once per star, preserving collected stars after collisions.
 The catalog, looping cat-paw demo, illustrated assets, and supplied `star-collector-voice.mp3` cover all three set modes.
-The protocol 28 handshake requires `star-collector`; deploy frontend and backend together.
+The protocol 29 handshake requires `star-collector`; deploy frontend and backend together.

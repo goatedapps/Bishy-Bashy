@@ -2,49 +2,66 @@ import { seededIndex } from './seeded-index.js';
 
 export const STAR_GAME = 'star-collector';
 export const STAR_DURATION_MS = 45000;
-export const STAR_GOAL = 128;
+export const STAR_GOAL = 64;
 export const STAR_STEP_MS = 1000 / 120;
 export const STAR_RADIUS = 10;
 export const STAR_MAX_DEPTH = 11000;
 
+const courses = new Map();
+const initialCar = () => ({ x: 70, y: 60, vx: 0, vy: 0, tilt: 0 });
+
+export function traceStarRoute(course) {
+  const car = initialCar(), inputs = [], samples = [];
+  let mask = 0;
+  for (let step = 0; step < 44000 / STAR_STEP_MS; step++) {
+    const wall = course.shelves.find(item => item.y >= car.y + STAR_RADIUS - 1);
+    const next = step * STAR_STEP_MS < 750 ? 0 : wall?.left ? 4 : 1;
+    if (next !== mask) { inputs.push([step, next]); mask = next; }
+    moveStarCar(car, course, mask);
+    samples.push({ x: car.x, y: car.y, at: (step + 1) * STAR_STEP_MS });
+  }
+  return { inputs, samples };
+}
+
 export function starCourse(seed) {
+  if (courses.has(seed)) return courses.get(seed);
   const choose = seededIndex(seed);
   let y = 135;
-  const shelves = Array.from({ length: STAR_GOAL / 2 }, (_, i) => {
+  const shelves = Array.from({ length: 64 }, (_, i) => {
     const left = i % 2 === 0, width = 94 + choose(133);
     if (i) y += 80 + choose(86);
-    return { x: left ? 10 : 290 - width, y, width, height: 9, left };
+    return Object.freeze({ x: left ? 10 : 290 - width, y, width, height: 9, left });
   });
-  const stars = shelves.flatMap((wall, i) => {
-    if (!i) return [{ x: 55, y: 113, id: 0 }, { x: 140 + choose(121), y: 45 + choose(55), id: 1 }];
-    const previous = shelves[i - 1], pair = [];
-    for (let n = 0; n < 2; n++) {
-      let star;
-      for (let attempt = 0; attempt < 16; attempt++) {
-        const onBar = choose(4) === 0;
-        const starY = onBar ? wall.y - 22 : previous.y + 34 + choose(wall.y - previous.y - 65);
-        // Floating stars stay within steering reach of the previous bar's exit gap.
-        const travel = 190 * Math.sqrt(2 * Math.max(0, starY - previous.y - 10) / 330);
-        const low = onBar ? wall.x + 24 : Math.max(32, previous.left ? previous.x + previous.width + STAR_RADIUS - travel : 32);
-        const high = onBar ? wall.x + wall.width - 24 : Math.min(268, previous.left ? 268 : previous.x - STAR_RADIUS + travel);
-        star = { x: Math.round(low + choose(Math.max(1, Math.floor(high - low) + 1))), y: starY, id: i * 2 + n };
-        if (pair.every(other => Math.hypot(star.x - other.x, star.y - other.y) >= 40)) break;
-      }
-      if (pair.some(other => Math.hypot(star.x - other.x, star.y - other.y) < 40)) {
-        star = { x: pair[0].x < 150 ? 268 : 32, y: wall.y - 22, id: i * 2 + n };
-      }
-      pair.push(star);
-    }
-    return pair;
+  const course = { shelves, stars: [], bottom: shelves.at(-1).y + 150 };
+  const { samples } = traceStarRoute(course);
+  const candidates = [{ x: 55, y: 113 }];
+  // Sample an actual continuous drive, including acceleration and wall collisions.
+  // The upward offset keeps artwork off bars while staying inside the pickup radius.
+  for (const sample of samples) {
+    const star = { x: sample.x, y: sample.y - 12 };
+    if (star.x < 32 || star.x > 268 || star.y < 100) continue;
+    if (shelves.some(wall => star.x + 12 > wall.x && star.x - 12 < wall.x + wall.width && star.y + 12 > wall.y && star.y - 12 < wall.y + wall.height)) continue;
+    if (candidates.some(other => Math.hypot(star.x - other.x, star.y - other.y) < 40)) continue;
+    candidates.push(star);
+  }
+  if (candidates.length < STAR_GOAL) throw new Error('Star course has too few reachable placements');
+  course.stars = Array.from({ length: STAR_GOAL }, (_, id) => {
+    const low = Math.floor(id * candidates.length / STAR_GOAL);
+    const high = Math.floor((id + 1) * candidates.length / STAR_GOAL);
+    const point = id === 0 ? candidates[0] : candidates[low + choose(high - low)];
+    return Object.freeze({ ...point, id });
   });
-  return { shelves, stars, bottom: shelves.at(-1).y + 150 };
+  Object.freeze(course.shelves); Object.freeze(course.stars); Object.freeze(course);
+  if (courses.size >= 8) courses.delete(courses.keys().next().value);
+  courses.set(seed, course);
+  return course;
 }
 
 export class StarRun {
   constructor(round, start) {
     this.id = round.id; this.start = start; this.end = start + round.duration;
     this.goal = STAR_GOAL; this.course = starCourse(round.seed);
-    this.x = 70; this.y = 60; this.vx = 0; this.vy = 0; this.tilt = 0;
+    Object.assign(this, initialCar());
     this.pressedMask = 0; this.collected = Array(STAR_GOAL).fill(0);
     this.cleared = 0; this.mistakes = 0; this.step = 0; this.proof = [];
     this.done = false; this.elapsed = null; this.feedback = null; this.events = []; this.lastBump = -Infinity;
@@ -74,24 +91,8 @@ export class StarRun {
   }
 
   integrate(step) {
-    const dt = STAR_STEP_MS / 1000, at = this.start + step * STAR_STEP_MS;
-    const direction = Number(Boolean(this.pressedMask & 4)) - Number(Boolean(this.pressedMask & 1));
-    this.tilt += Math.max(-1.6 * dt, Math.min(1.6 * dt, direction * .43 - this.tilt));
-    this.vx = Math.max(-190, Math.min(190, (this.vx + Math.sin(this.tilt) * 650 * dt) * Math.exp(-.65 * dt)));
-    this.vy = Math.min(190, this.vy + Math.cos(this.tilt) * 330 * dt);
-    const walls = this.course.shelves.filter(wall => Math.abs(wall.y - this.y) < 35);
-    let impact = 0;
-    this.x += this.vx * dt;
-    if (this.x < 20 || this.x > 280) { impact = Math.abs(this.vx); this.x = Math.max(20, Math.min(280, this.x)); this.vx *= -.25; }
-    for (const wall of walls) if (this.y + STAR_RADIUS > wall.y && this.y - STAR_RADIUS < wall.y + wall.height && this.x + STAR_RADIUS > wall.x && this.x - STAR_RADIUS < wall.x + wall.width) {
-      impact = Math.max(impact, Math.abs(this.vx)); this.x = this.vx > 0 ? wall.x - STAR_RADIUS : wall.x + wall.width + STAR_RADIUS; this.vx *= -.25;
-    }
-    const previousY = this.y;
-    this.y += this.vy * dt;
-    for (const wall of walls) if (this.x + STAR_RADIUS > wall.x && this.x - STAR_RADIUS < wall.x + wall.width && previousY + STAR_RADIUS <= wall.y + .01 && this.y + STAR_RADIUS >= wall.y) {
-      impact = Math.max(impact, Math.abs(this.vy)); this.y = wall.y - STAR_RADIUS; this.vy = 0;
-    }
-    if (this.y > this.course.bottom) { impact = Math.max(impact, this.vy); this.y = this.course.bottom; this.vy = 0; }
+    const at = this.start + step * STAR_STEP_MS;
+    const impact = moveStarCar(this, this.course, this.pressedMask);
     if (impact > 35 && at - this.lastBump >= 180) {
       this.lastBump = at; this.mistakes++; this.feedback = { kind: 'crash', at }; this.events.push({ type: 'carBump', at });
     }
@@ -111,4 +112,26 @@ export function validStarResult(round, message) {
   }
   run.advance(round.duration);
   return message.elapsed === round.duration && message.cleared === run.cleared && message.mistakes === run.mistakes;
+}
+
+function moveStarCar(car, course, mask) {
+  const dt = STAR_STEP_MS / 1000;
+  const direction = Number(Boolean(mask & 4)) - Number(Boolean(mask & 1));
+  car.tilt += Math.max(-1.6 * dt, Math.min(1.6 * dt, direction * .43 - car.tilt));
+  car.vx = Math.max(-190, Math.min(190, (car.vx + Math.sin(car.tilt) * 650 * dt) * Math.exp(-.65 * dt)));
+  car.vy = Math.min(190, car.vy + Math.cos(car.tilt) * 330 * dt);
+  const walls = course.shelves.filter(wall => Math.abs(wall.y - car.y) < 35);
+  let impact = 0;
+  car.x += car.vx * dt;
+  if (car.x < 20 || car.x > 280) { impact = Math.abs(car.vx); car.x = Math.max(20, Math.min(280, car.x)); car.vx *= -.25; }
+  for (const wall of walls) if (car.y + STAR_RADIUS > wall.y && car.y - STAR_RADIUS < wall.y + wall.height && car.x + STAR_RADIUS > wall.x && car.x - STAR_RADIUS < wall.x + wall.width) {
+    impact = Math.max(impact, Math.abs(car.vx)); car.x = car.vx > 0 ? wall.x - STAR_RADIUS : wall.x + wall.width + STAR_RADIUS; car.vx *= -.25;
+  }
+  const previousY = car.y;
+  car.y += car.vy * dt;
+  for (const wall of walls) if (car.x + STAR_RADIUS > wall.x && car.x - STAR_RADIUS < wall.x + wall.width && previousY + STAR_RADIUS <= wall.y + .01 && car.y + STAR_RADIUS >= wall.y) {
+    impact = Math.max(impact, Math.abs(car.vy)); car.y = wall.y - STAR_RADIUS; car.vy = 0;
+  }
+  if (car.y > course.bottom) { impact = Math.max(impact, car.vy); car.y = course.bottom; car.vy = 0; }
+  return impact;
 }
