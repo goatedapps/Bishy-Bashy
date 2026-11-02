@@ -40,6 +40,24 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
       }
       time = round.endAt + LETTERS_PACKET_MS; service.tick(); return;
     }
+    if (round.game === 'star-collector') {
+      time = round.endAt + 100;
+      for (const index of order) {
+        const run = createRun(round, 0);
+        if (index === winner) {
+          let held = null;
+          for (let at = 0; at < round.duration; at += 16) {
+            run.advance(at);
+            const wall = run.course.shelves.find(item => item.y >= run.y + 9);
+            const color = wall?.left ? 2 : 0;
+            if (color !== held) { if (held !== null) run.release(held, at); run.tap(color, at); held = color; }
+          }
+        }
+        run.advance(round.duration);
+        service.handle(clients[index], { type: 'result', roundId: round.id, status: 'finished', elapsed: run.elapsed, cleared: run.cleared, mistakes: run.mistakes, proof: run.proof });
+      }
+      return;
+    }
     if (round.game === 'happy-days') {
       time = round.endAt + 100;
       for (const index of order) {

@@ -1109,6 +1109,15 @@ test('Happy Days plays the supplied 30-second music excerpt once, restores song 
 });
 
 
+test('Star Collector loads supplied bump, pickup and announcement audio and respects effects mute', async () => {
+  const { audio, requests } = setup(); audio.selectGame('star-collector'); await audio.unlock();
+  for (const file of ['car-bump.mp3', 'Ding.mp3', 'star-collector-voice.mp3']) assert.ok(requests.some(url => url.includes(file)), file);
+  audio.play('carBump'); assert.equal([...audio.voices].at(-1).id, 'carBump');
+  audio.play('stageComplete'); assert.equal([...audio.voices].at(-1).id, 'ding');
+  audio.setEnabled(false);
+  const count = audio.voices.size; audio.play('carBump'); audio.play('stageComplete'); assert.equal(audio.voices.size, count);
+});
+
 test('Ladder reuses Diuup and layers trophy audio once at the same timestamp through results', async () => {
   const { audio, requests, context } = setup(); audio.selectGame('ladder-climber'); await audio.unlock();
   assert.ok(requests.some(url => url.includes('Diuup.mp3')));

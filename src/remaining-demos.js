@@ -1,3 +1,5 @@
+import { StarRun } from '../shared/stars.js';
+import { StarStage } from './stars-view.js';
 import { LadderRun } from '../shared/ladder.js';
 import { LadderStage } from './ladder-view.js';
 import { StationeryRun } from '../shared/stationery.js';
@@ -76,6 +78,7 @@ class LettersDemoRun extends LettersRun {
 }
 
 const RUNS = {
+  'star-collector': make(StarRun),
   'ladder-climber': make(LadderRun),
   'stationery-master': make(ChoiceDemoRun), 'clock-stopper': make(ChoiceDemoRun),
   'happy-days': (round, start) => new HappyRun(round, start, 0, happyChart(round.seed).slice(0, 4)),
@@ -87,6 +90,7 @@ const RUNS = {
 export const REMAINING_DEMO_GAMES = Object.keys(RUNS);
 
 const INSTRUCTIONS = {
+  'star-collector': ['Hold red to tilt left; hold blue to tilt right.', 'Release to level. Collect stars; most in 45 seconds wins.'],
   'ladder-climber': ['Follow the ladder: red = left, green = middle, blue = right.', 'Press once per rung. Climb to the trophy.'],
   'stationery-master': ['Count each item and tap its button that many times.', 'Red: pencil. Green: eraser. Blue: sharpener. Counts loop 6 → 0.'],
   'clock-stopper': ['Watch the minute hand make its first full turn.', 'Press any button when it returns to 12.'],
@@ -123,6 +127,17 @@ export function remainingDemoPlan(game, round = {}) {
     probe.tap(color, at);
   };
   let completeAt, freezeAt, sampleComplete = false;
+  if (game === 'star-collector') {
+    for (const [color, at, until] of [[2, 500, 1900], [0, 2200, 3700], [2, 4100, 5800]]) {
+      presses.push({ color, at, holdUntil: until }, { color, at: until, type: 'release' });
+      effects.push({ at, type: 'press', color });
+    }
+    const demo = createRun(settings, 0);
+    for (const cue of presses) { demo.advance(cue.at); if (cue.type === 'release') demo.release(cue.color, cue.at); else demo.tap(cue.color, cue.at); }
+    demo.advance(6500);
+    for (const event of demo.events) effects.push({ at: event.at, type: 'effect', sound: event.type === 'carBump' ? 'carBump' : 'stageComplete' });
+    return { settings, createRun, start: 0, sampleComplete: true, presses, cues: effects.sort((a,b) => a.at-b.at), completeAt: 6500, freezeAt: 6500, sceneOwnsCompletion: true, duration: 7800 };
+  }
   if (game === 'ladder-climber') {
     let at = START + 800;
     for (const ladder of probe.course.slice(0, 2)) {
@@ -223,6 +238,7 @@ export function remainingDemoPlan(game, round = {}) {
 }
 
 const STAGES = {
+  'star-collector': StarStage,
   'ladder-climber': LadderStage,
   'stationery-master': DeskClockStage, 'clock-stopper': DeskClockStage,
   'happy-days': HappyStage,

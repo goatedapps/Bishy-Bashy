@@ -14,7 +14,8 @@ for (const game of REMAINING_DEMO_GAMES) test(`${game}: demo inputs complete the
     demo.advance(0, true);
     for (const cue of plan.cues) demo.advance(cue.at, true);
     demo.advance(plan.completeAt + 500, true);
-    assert.equal(demo.run.mistakes, 0, game);
+    if (game === 'star-collector') assert.ok(demo.run.events.some(event => event.type === 'carBump'));
+    else assert.equal(demo.run.mistakes, 0, game);
     assert.ok(demo.run.cleared > 0, game);
     if (!plan.sampleComplete) assert.equal(demo.run.done, true, game);
     demo.advance(plan.duration, true);

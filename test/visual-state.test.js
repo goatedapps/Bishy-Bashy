@@ -88,6 +88,7 @@ test('played states reconstruct feedback and active phases for every lane-based 
     let time=run.start+100;
     if(game==='happy-days'){time=run.start+run.notes[0].at;run.tap(run.notes[0].color,time);}
     else if(game==='get-those-burgers-out'){run.tap(0,time);time+=300;run.advance(time);}
+    else if(game==='star-collector'){run.tap(2,time);time+=2000;run.advance(time);}
     else if(game==='ladder-climber')run.tap(run.sequence[0],time);
     else if(game==='dynamite-spark')run.tap(run.sequence[0],time);
     else if(game==='totem-shrinker')run.tap(run.sequence[0],time);

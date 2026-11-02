@@ -1,6 +1,7 @@
 import { createRun } from './games.js';
 
 const SCHEMAS = {
+  'star-collector': { x: 'starX', y: 'starY', vx: 'starVelocity', vy: 'starVelocity', tilt: 'starTilt', pressedMask: 'starMask', collected: 'starStates' },
   'ladder-climber': { blockedUntil: 'time', finishAt: 'nullableTime' },
   'happy-days': { judgments: 'rhythmStates', pressedMask: 'mask', offset: 'offset' },
   'get-those-burgers-out': { filledMask: 'index', pendingAt: 'mealTimes', setAt: 'time', blockedUntil: 'time' },
@@ -42,6 +43,12 @@ export function sanitizeVisual(round, visual, receivedElapsed) {
   const number = (value, low, high, integer = false) => Number.isFinite(value) && value >= low && value <= high && (!integer || Number.isInteger(value));
   for (const [key, type] of Object.entries(schema)) {
     const value = visual.fields[key];
+    if (type.startsWith('star')) {
+      const valid = type === 'starStates' ? Array.isArray(value) && value.length === 128 && value.every(item => item === 0 || item === 1) : type === 'starX' ? number(value, 0, 300) : type === 'starY' ? number(value, 0, 8500) : type === 'starVelocity' ? number(value, -250, 250) : type === 'starTilt' ? number(value, -.44, .44) : [0, 1, 4, 5].includes(value);
+      if (!valid) return null;
+      fields[key] = Array.isArray(value) ? [...value] : value;
+      continue;
+    }
     if (type === 'rhythmStates') {
       if (!Array.isArray(value) || value.length !== round.goal || !value.every(item => Number.isInteger(item) && item >= 0 && item <= 4)) return null;
       fields[key] = [...value];
@@ -101,6 +108,7 @@ export class RemoteRuns {
     let entry = this.runs.get(key);
     if (!entry || entry.start !== start) {
       entry = { start, run: createRun(round, start), visual: null };
+      entry.run.remote = true;
       this.runs.set(key, entry);
     }
     if (entry.visual !== visual) {

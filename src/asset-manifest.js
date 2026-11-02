@@ -311,6 +311,16 @@ export const ASSETS = [
     "hash": "9c74900f44134688"
   },
   {
+    "path": "assets/optimized/star-sprites-1eae24779dc7.webp",
+    "bytes": 163732,
+    "hash": "1eae24779dc7d1c0"
+  },
+  {
+    "path": "assets/optimized/bg-star-observatory-bccceb92a6e6.webp",
+    "bytes": 80398,
+    "hash": "bccceb92a6e69201"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",
@@ -468,6 +478,11 @@ export const ASSETS = [
     "hash": "bb08279f242e5be1"
   },
   {
+    "path": "audio/star-collector-voice.mp3",
+    "bytes": 40760,
+    "hash": "9b82b75005dcf868"
+  },
+  {
     "path": "audio/ladder-climber-voice.mp3",
     "bytes": 39506,
     "hash": "671850a5c401efd2"
@@ -566,6 +581,11 @@ export const ASSETS = [
     "path": "audio/type-in-letters-voice.mp3",
     "bytes": 44522,
     "hash": "1c62e4a15bd52171"
+  },
+  {
+    "path": "audio/car-bump.mp3",
+    "bytes": 13293,
+    "hash": "a2635be3d77208d4"
   },
   {
     "path": "audio/get-trophy.mp3",
