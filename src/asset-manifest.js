@@ -341,6 +341,11 @@ export const ASSETS = [
     "hash": "d89fff10ef5d2f57"
   },
   {
+    "path": "assets/optimized/shark-wave-659f2799c813.webp",
+    "bytes": 85482,
+    "hash": "659f2799c813f01e"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",

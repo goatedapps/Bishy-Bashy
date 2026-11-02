@@ -121,3 +121,38 @@ test('horse scenes have bounded traffic, render before GO, preserve finished sce
     stage.render(round, run, 1000, 1000, true, true, 0, false); assert.equal(stage.rider.classes.has('horse-stride'), false);
   } finally { globalThis.document = previous; }
 });
+
+test('collision recoil moves the rider backward, keeps the struck horse ahead, and never changes gameplay state', () => {
+  const previous = globalThis.document;
+  class Element {
+    constructor() { this.children = []; this.style = {}; this.classes = new Set(); this.classList = { toggle: (name, value) => value ? this.classes.add(name) : this.classes.delete(name) }; }
+    append(...children) { this.children.push(...children); }
+    setAttribute() {}
+  }
+  globalThis.document = { createElement: () => new Element() };
+  try {
+    const round = settings(), run = new HorseRun(round, 500000);
+    run.position = run.moveFrom = (run.traffic[0].safe + 1) % 3;
+    for (let at = run.start; !run.mistakes && at < run.start + 10000; at += 100) run.tap(1, at);
+    assert.equal(run.mistakes, 1); assert.equal(run.feedback.color, run.position);
+    const impact = run.feedback.at, state = [run.distance, run.speed, run.cleared, run.position];
+    const stage = new HorseStage();
+    stage.render(round, run, impact, 0, true, true, run.cleared, false);
+    assert.equal(stage.rider.style.top, '80%');
+    stage.render(round, run, impact + 90, 0, true, true, run.cleared, false);
+    assert.equal(stage.rider.style.top, '85%'); assert.ok(stage.rider.classes.has('horse-stumble'));
+    const struck = [0, 1, 2].filter(column => column !== run.traffic[0].safe).indexOf(run.feedback.color);
+    assert.ok(parseFloat(stage.opponents[struck].style.top) < parseFloat(stage.rider.style.top) - 8);
+    const visual = sanitizeVisual(round, captureVisual(HORSE_GAME, run, impact + 90), impact + 90 - run.start);
+    const peer = new RemoteRuns().get(round, { id: 'peer', progress: { cleared: run.cleared, mistakes: run.mistakes, visual } }, 2000);
+    stage.render(round, peer, 2000 + impact + 90 - run.start, 0, true, true, peer.cleared, false);
+    assert.equal(stage.rider.style.top, '85%');
+    stage.render(round, run, impact + 700, 0, true, true, run.cleared, false);
+    assert.equal(stage.rider.style.top, '80%'); assert.ok(!stage.rider.classes.has('horse-stumble'));
+    stage.motion = { matches: true };
+    stage.render(round, run, impact + 90, 0, true, true, run.cleared, false); assert.equal(stage.rider.style.top, '80%');
+    const next = { ...round, id: 'next' };
+    stage.render(next, new HorseRun(next, 0), 0, 0, true, true, 0, false); assert.equal(stage.rider.style.top, '80%');
+    assert.deepEqual([run.distance, run.speed, run.cleared, run.position], state);
+  } finally { globalThis.document = previous; }
+});

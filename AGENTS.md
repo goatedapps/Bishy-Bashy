@@ -308,4 +308,8 @@ Include the real recovery in the cat-paw tutorial; keep the common controls and 
 Protocol 31 requires `shark-jumper`; deploy frontend and backend together.
 
 `src/result-message.js` builds the actual client finish payload and includes any run-owned replay proof automatically; exercise this builder in Shark Jumper server and WebSocket regression tests.
-Shark Jumper shows cropped, upward-tilted shark heads using the original illustrated atlas, including the landed grey heads in gameplay and tutorials.
+Shark Jumper uses intact tilted sharks with illustrated foreground waves covering submerged bodies; avoid hard head crops or fading the shark itself.
+Keep the puppy above water layers and share wave occlusion across gameplay, tutorials, grey sharks, and posters; Shark jump presses use Plop alone without Punch.
+
+Horse impacts publish the struck lane in feedback; `src/horse-view.js` seeks a bounded backward recoil and separates/fades that opponent to avoid visual pass-through.
+Keep recoil cosmetic, preserve distance and steering, reset by round, and honor reduced motion on local and peer scenes.

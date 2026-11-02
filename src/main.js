@@ -469,7 +469,7 @@ function tap(color) {
   enforceLifecycle(time, true);
   if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
   if (!buttons[color]?.disabled && room.round.game === PERM_GAME) audio.permTap(localRound.run, time, color);
-  else if (!buttons[color]?.disabled && ![LADDER_GAME, HAPPY_GAME].includes(room.round.game)) audio.pressButton(room.round.game === HORSE_GAME ? 'horse' : room.round.game === MEALS_GAME ? 'meals' : room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay');
+  else if (!buttons[color]?.disabled && ![LADDER_GAME, HAPPY_GAME].includes(room.round.game)) audio.pressButton(room.round.game === SHARK_GAME ? 'shark' : room.round.game === HORSE_GAME ? 'horse' : room.round.game === MEALS_GAME ? 'meals' : room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay');
   const clearedBefore = localRound.run.cleared;
   const action = localRound.run.tap(color, time);
   if ([SHARK_GAME, HORSE_GAME, STAR_GAME, LADDER_GAME, MEALS_GAME, BURGER_GAME, COIN_GAME, DODGE_GAME, FIREWORK_GAME].includes(room.round.game)) flushLaneEvents(time);

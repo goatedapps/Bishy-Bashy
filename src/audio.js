@@ -263,6 +263,7 @@ export class GameAudio {
   }
 
   pressButton(kind = 'menu') {
+    if (kind === 'shark') return;
     if (!this.enabled || this.preferences.effectsVolume === 0) return;
     const id = kind === 'horse' ? 'horseGallop' : kind === 'instructions' ? 'instructionReveal' : kind === 'meals' ? 'mealPlop' : kind === 'jump' ? 'jumpBounce' : kind === 'letters' ? 'lettersPress' : kind === 'gameplay' ? 'gameplayPress' : 'buttonPress';
     const request = ++this.buttonRequest;

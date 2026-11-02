@@ -1,4 +1,4 @@
-import { sharkPortrait } from './shark-view.js';
+import { sharkPortrait, sharkPlatform } from './shark-view.js';
 import { horsePortrait } from './horse-view.js';
 import { starPortrait } from './stars-view.js';
 import { ladderPortrait } from './ladder-view.js';
@@ -27,7 +27,7 @@ const node = (tag, className, text) => {
 export function gameArt(game) {
   const art = node('span', `game-art art-${game}`);
   art.setAttribute('aria-hidden', 'true');
-  if (game === 'shark-jumper') art.append(sharkPortrait('red'), sharkPortrait());
+  if (game === 'shark-jumper') art.append(sharkPlatform('red').element, sharkPortrait());
   else if (game === 'horse-speeder') art.append(horsePortrait('poster'));
   else if (game === 'star-collector') art.append(starPortrait('poster'));
   else if (game === 'ladder-climber') art.append(ladderPortrait());

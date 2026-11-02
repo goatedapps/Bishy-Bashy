@@ -41,3 +41,25 @@ Polished hand-painted cartoon party-game style with thick friendly contours and 
 Keep central 85 percent clear calm aqua water for separately rendered colored sharks and a small puppy hopping upward along a zigzag path.
 No animals, sharks, people, boats, foreground rocks, floating platforms, UI, numbers, words, bases or progress indicators.
 Clear readable low-contrast water beneath gameplay, charming tropical holiday mood.
+
+## Foreground wave
+
+Generated on 2026-11-02 as a separate transparent foreground layer, retained in `shark-wave.png`.
+The runtime reuses the intact shark illustrations and covers their bodies with this wave, replacing the unnatural hard-cut head treatment.
+Use the same layer over colored and stone sharks in gameplay, tutorials, and posters.
+The wave master is 1,466,339 bytes; its 1024-pixel hashed WebP delivery is 85,482 bytes, a 94.2% reduction.
+Alpha verification confirms transparent empty upper corners and an effectively opaque lower water band.
+
+### Wave prompt
+
+Create an original 1536x1024 transparent PNG game overlay for a cute tropical arcade game.
+A single broad strip of brilliant turquoise blue lagoon water fills the LOWER HALF of the image and extends flush to the entire left edge, right edge, and bottom edge, with zero transparent holes inside the water.
+The UPPER HALF is completely transparent empty alpha.
+The boundary at about 42 percent image height is a natural uneven gently rolling scalloped wave crest, small curling aqua crests with white foam outlines and a few little white splash tips, very playful.
+Below the crest show quiet mostly opaque turquoise aqua water with soft illustrated ripples in a restrained cartoon style.
+Colors match a sunny bright blue tropical lagoon.
+This is a FOREGROUND occlusion layer to cover the submerged body of a shark sprite while leaving its head visible above the scalloped edge.
+No animals, sharks, characters, islands, beach, horizon, objects, lettering, border, oval puddle, drop shadow, or gradients fading to transparency at bottom.
+Exactly one full-width water band, not separated waves or a sprite sheet.
+Genuine transparent alpha above the wave crest; opaque water below.
+Hand-painted party arcade illustration with clean soft outlines.

@@ -885,6 +885,8 @@ Deploy frontend and room service together with protocol 31 and the `star-collect
 
 Tap green to accelerate, red to move one lane left, and blue to move one lane right.
 Coasting gradually reduces speed, while collisions sharply slow the horse without removing distance or blocking steering.
+A collision also produces a 650 ms visual backward recoil; the struck horse stays ahead and fades as the rider recovers, avoiding a pass-through appearance.
+Collision recoil follows published impact timestamps on peers, resets between rounds, and is suppressed under reduced motion.
 Race 3200 units to the finish within 60 seconds; clean simulated runs take about 32 seconds.
 The seeded traffic has two slower horses per row and one clear lane, with 140-unit spacing at difficulty one decreasing to 100 at difficulty five.
 At maximum speed, even the closest rows leave enough time for two 180 ms lane changes plus a 600 ms reaction allowance.
@@ -913,10 +915,12 @@ Arcade begins with 30 sharks; Game Select increases the course from 30 to 40 to 
 Fastest final landing wins, with a 45-second deadline and one final Ding for completing the full path.
 `shared/shark.js` owns the shared course, landing schedule, recovery, bounded input history, and server replay validation.
 `src/shark-view.js` uses the same local and published peer timing to draw colored shark heads, landed stone heads, puppy arcs, water splashes, and the climb-back pose.
-Crop each shark to its head and tilt it upward by 35 degrees to suggest emergence from the water.
+Tilt the intact shark illustrations upward by 35 degrees and cover their submerged bodies with a separate illustrated foreground wave.
+Use the same wave layering for colored and stone sharks, tutorials, and posters; keep the puppy above the water layers.
+Jump presses use Plop without a layered Punch cue in gameplay or the tutorial.
 `src/result-message.js` includes the jump history in the actual client finish message, allowing the server to accept a valid clear and advance the set.
 Reduced motion uses discrete jumps and a recovery pose while retaining the same input gates and results.
 The animated cat-paw tutorial demonstrates correct jumps, a wrong color, and recovery using the real model and renderer.
-Original masters and prompts live in `public/assets/shark-artwork.md`; optimized sprite and background delivery totals approximately 341 KB.
+Original masters and prompts live in `public/assets/shark-artwork.md`; optimized sprite, background, and foreground-wave delivery totals approximately 426 KB.
 The game is available in Arcade, Game Select, and Party, with shared controls and no jump counter or progress bar.
 Deploy frontend and backend together with protocol 31 and the `shark-jumper` capability.

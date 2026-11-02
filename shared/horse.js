@@ -66,11 +66,12 @@ export class HorseRun {
       if (newGap <= 0) {
         const at = before + Math.max(0, Math.min(1, oldGap / (oldGap - newGap))) * (stopAt - before);
         const lane = horseLane(this, at);
-        const hit = [0, 1, 2].some(column => column !== wave.safe && Math.abs(column - lane) < .6);
+        const hitColumn = [0, 1, 2].find(column => column !== wave.safe && Math.abs(column - lane) < .6);
+        const hit = hitColumn !== undefined;
         this.index++;
         if (hit) {
           this.speed = Math.max(34, this.speed * .4); this.mistakes++; this.stumbleUntil = at + 450;
-          this.feedback = { kind: 'crash', at }; this.events.push({ type: 'stageWrong', at });
+          this.feedback = { kind: 'crash', color: hitColumn, at }; this.events.push({ type: 'stageWrong', at });
         } else {
           this.feedback = { kind: 'clear', at }; this.events.push({ type: 'stageComplete', at });
         }

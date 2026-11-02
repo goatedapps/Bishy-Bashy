@@ -5,6 +5,13 @@ import { remainingDemoPlan, REMAINING_DEMO_GAMES } from '../src/remaining-demos.
 import { ScriptedDemo } from '../src/scripted-demo.js';
 import { createGameDemo } from '../src/game-demo.js';
 
+test('Shark Jumper tutorial sounds come only from accepted jumps and water impacts', () => {
+  const plan = remainingDemoPlan('shark-jumper');
+  assert.equal(plan.cues.filter(cue => cue.sound === 'sharkJump').length, 5);
+  assert.equal(plan.cues.filter(cue => cue.sound === 'sharkSplash').length, 1);
+  assert.ok(plan.cues.every(cue => cue.type !== 'press' && cue.sound !== 'gameplayPress'));
+});
+
 for (const game of REMAINING_DEMO_GAMES) test(`${game}: demo inputs demonstrate the intended actions and reset cleanly`, () => {
   for (let level = 1; level <= 3; level++) {
     const plan = remainingDemoPlan(game, roundSettings(game, 123, level));

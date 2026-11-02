@@ -139,10 +139,10 @@ export function remainingDemoPlan(game, round = {}) {
     let at = START + 600;
     for (let index = 0; index < 5; index++) {
       if (index === 2) {
-        press((probe.sequence[probe.cleared] + 1) % 3, at, 'gameplayPress');
+        press((probe.sequence[probe.cleared] + 1) % 3, at);
         at += SHARK_RECOVERY_MS + 400;
       }
-      press(probe.sequence[probe.cleared], at, 'gameplayPress');
+      press(probe.sequence[probe.cleared], at);
       at += SHARK_JUMP_MS + 500; probe.advance(at);
     }
     for (const event of probe.events) effects.push({ at: event.at, type: 'effect', sound: event.type });
