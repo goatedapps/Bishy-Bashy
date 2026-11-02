@@ -50,7 +50,7 @@ export class GameFeedback {
     }
     const previous = this.previous;
     this.previous = snapshot;
-    const gained = snapshot.cleared > previous.cleared;
+    const gained = round.game !== 'horse-speeder' && snapshot.cleared > previous.cleared;
     const missed = snapshot.mistakes > previous.mistakes;
     const feedback = snapshot.feedback !== previous.feedback && time - snapshot.feedback?.at < 200 ? snapshot.feedback : null;
     const finished = snapshot.finished && !previous.finished;

@@ -9,7 +9,7 @@ from PIL import Image
 root = Path(__file__).resolve().parents[1]
 destination = root / 'public/assets/optimized'
 destination.mkdir(exist_ok=True)
-sizes = {'star-sprites': 1024, 'bg-star-observatory': 1280, 'ladder-sprites': 1024, 'bg-ladder-tower': 1280, 'kaya-dog-photo': 512, 'stationery-sprites': 1024, 'clock-dial': 512, 'bg-stationery-desk': 1280, 'bg-clock-workshop': 1280, 'happy-bird': 512, 'bg-happy-stage': 1280, 'kaya-sprites': 1024, 'bg-kaya-home': 1280, **{f'party-character-{i:02d}': 256 for i in range(16)}, 'tutorial-cat-paw': 256, **{f'monkey-item-{color}': 480 for color in ['red', 'green', 'blue']}, 'dynamite-meals-sprites': 1024, 'totem-blocks': 768, 'perm-disco-sprites': 1152, 'facial-slot-faces': 1152,
+sizes = {'horse-sprites': 1024, 'bg-horse-course': 1280, 'star-sprites': 1024, 'bg-star-observatory': 1280, 'ladder-sprites': 1024, 'bg-ladder-tower': 1280, 'kaya-dog-photo': 512, 'stationery-sprites': 1024, 'clock-dial': 512, 'bg-stationery-desk': 1280, 'bg-clock-workshop': 1280, 'happy-bird': 512, 'bg-happy-stage': 1280, 'kaya-sprites': 1024, 'bg-kaya-home': 1280, **{f'party-character-{i:02d}': 256 for i in range(16)}, 'tutorial-cat-paw': 256, **{f'monkey-item-{color}': 480 for color in ['red', 'green', 'blue']}, 'dynamite-meals-sprites': 1024, 'totem-blocks': 768, 'perm-disco-sprites': 1152, 'facial-slot-faces': 1152,
          'fireworks-festival': 1280, 'mimicking-monkey': 512, 'jump-dino': 512,
          'jump-meat': 256, 'burger-chef-chibi': 512, 'burger-ingredients': 768, 'odd-pictures': 1024,
          'dice-jester': 512, 'facing-duck': 512, 'facing-duck-back': 512, 'coin-raccoon': 512, 'dodge-fox': 512,

@@ -2,6 +2,7 @@ import { STAR_GOAL, STAR_MAX_DEPTH } from './stars.js';
 import { createRun } from './games.js';
 
 const SCHEMAS = {
+  'horse-speeder': { distance: 'horseDistance', speed: 'horseSpeed', position: 'column', moveFrom: 'horseLane', moveAt: 'time', index: 'index', lastThrust: 'time', stumbleUntil: 'time' },
   'star-collector': { x: 'starX', y: 'starY', vx: 'starVelocity', vy: 'starVelocity', tilt: 'starTilt', pressedMask: 'starMask', collected: 'starStates' },
   'ladder-climber': { blockedUntil: 'time', finishAt: 'nullableTime' },
   'happy-days': { judgments: 'rhythmStates', pressedMask: 'mask', offset: 'offset' },
@@ -44,6 +45,11 @@ export function sanitizeVisual(round, visual, receivedElapsed) {
   const number = (value, low, high, integer = false) => Number.isFinite(value) && value >= low && value <= high && (!integer || Number.isInteger(value));
   for (const [key, type] of Object.entries(schema)) {
     const value = visual.fields[key];
+    if (type.startsWith('horse')) {
+      if (!number(value, 0, type === 'horseDistance' ? round.goal : type === 'horseSpeed' ? 104 : 2)) return null;
+      fields[key] = value;
+      continue;
+    }
     if (type.startsWith('star')) {
       const valid = type === 'starStates' ? Array.isArray(value) && value.length === STAR_GOAL && value.every(item => item === 0 || item === 1) : type === 'starX' ? number(value, 0, 300) : type === 'starY' ? number(value, 0, STAR_MAX_DEPTH) : type === 'starVelocity' ? number(value, -250, 250) : type === 'starTilt' ? number(value, -.44, .44) : [0, 1, 4, 5].includes(value);
       if (!valid) return null;
@@ -122,6 +128,7 @@ export class RemoteRuns {
       run.feedback = visual.feedback ? { ...visual.feedback, at: start + visual.feedback.at } : null;
       run.stageFeedback = visual.stageFeedback ? { ...visual.stageFeedback, at: start + visual.stageFeedback.at } : null;
       if (run.feedback && round.game === 'me-find-mistake') run.feedback.puzzle = run.sequence[Math.max(0, Math.min(run.goal - 1, run.index - 1))];
+      run.sampleAt = start + visual.sample;
       entry.visual = visual;
     }
     return entry.run;

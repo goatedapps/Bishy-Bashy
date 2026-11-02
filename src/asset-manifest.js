@@ -321,6 +321,16 @@ export const ASSETS = [
     "hash": "bccceb92a6e69201"
   },
   {
+    "path": "assets/optimized/horse-sprites-2af4438c2e7e.webp",
+    "bytes": 201836,
+    "hash": "2af4438c2e7ea591"
+  },
+  {
+    "path": "assets/optimized/bg-horse-course-964701fa00d7.webp",
+    "bytes": 229700,
+    "hash": "964701fa00d767c5"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",
@@ -476,6 +486,11 @@ export const ASSETS = [
     "path": "audio/applause.mp3",
     "bytes": 161280,
     "hash": "bb08279f242e5be1"
+  },
+  {
+    "path": "audio/horse-speeder-voice.mp3",
+    "bytes": 39506,
+    "hash": "fab13d280c26c5b5"
   },
   {
     "path": "audio/star-collector-voice.mp3",

@@ -1,3 +1,4 @@
+import { HORSE_GAME, validHorseResult } from '../shared/horse.js';
 import { STAR_GAME, validStarResult } from '../shared/stars.js';
 import { createSharedMatch } from '../shared/shared-match.js';
 import { HAPPY_GAME, validHappyScore } from '../shared/happy.js';
@@ -79,7 +80,7 @@ export class RoomService {
     if (!returning && room.set) room.set.players.push({ id: player.id, name: player.name, characterId: player.characterId, points: 0, wins: 0 });
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 29, capabilities: ['star-collector', 'desk-clock', 'happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 30, capabilities: ['horse-speeder', 'star-collector', 'desk-clock', 'happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -455,6 +456,7 @@ export class RoomService {
     const elapsedRace = GAMES[round.game] && round.game !== PERM_GAME && !['points', 'accuracy'].includes(GAMES[round.game].scoring);
     if (elapsedRace && message.status === 'finished' && (message.cleared !== round.goal || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || message.mistakes > 1000)) return this.error(client, 'Complete every match before submitting a result.');
     if (round.game === MISTAKE_GAME && message.status === 'finished' && (!Number.isInteger(message.cleared) || message.cleared < player.progress.cleared || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || !Number.isInteger(message.attempted) || message.attempted !== message.cleared + message.mistakes || message.attempted > round.goal || message.attempted < 0 || message.elapsed < round.duration && message.attempted !== round.goal || message.elapsed === round.duration && received < round.endAt - 250)) return this.error(client, 'Report the completed picture boards and correct answers.');
+    if (round.game === HORSE_GAME && message.status === 'finished' && !validHorseResult(round, message)) return this.error(client, 'Complete the race and report a valid driving history.');
     if (round.game === STAR_GAME && message.status === 'finished' && (received < round.endAt - 250 || message.cleared < player.progress.cleared || !validStarResult(round, message))) return this.error(client, 'Finish the 45-second round and report the collected stars.');
     if (round.game === HAPPY_GAME && message.status === 'finished' && (received < round.endAt - 250 || message.elapsed !== round.duration || message.cleared < player.progress.cleared || message.mistakes < player.progress.mistakes || !validHappyScore(round, message, true))) return this.error(client, 'Wait for the music to finish and report the judged notes and accuracy score.');
     if (round.game === PERM_GAME && message.status === 'finished' && (received < round.endAt - 250 || message.elapsed !== round.duration || !Number.isInteger(message.cleared) || message.cleared < player.progress.cleared || message.cleared > round.goal || !Number.isInteger(message.score) || message.score < 0 || message.score > round.maxScore || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || message.mistakes > 1000)) return this.error(client, 'Wait for the rhythm round to finish before submitting a valid score.');

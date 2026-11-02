@@ -1,3 +1,4 @@
+import { driveHorse } from './helpers/horse.js';
 import { isSharedChoice } from '../shared/choice-round.js';
 import { LettersRun, LETTERS_FEEDBACK_MS, LETTERS_PACKET_MS } from '../shared/letters.js';
 import { letterClaim } from './helpers/letters.js';
@@ -39,6 +40,15 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
         time += LETTERS_FEEDBACK_MS; service.tick();
       }
       time = round.endAt + LETTERS_PACKET_MS; service.tick(); return;
+    }
+    if (round.game === 'horse-speeder') {
+      const runs = clients.map((_, index) => driveHorse(round, { delay: index === winner ? 0 : (index === 0 ? 1 : index) * 1000 }));
+      time = round.startAt + Math.max(...runs.map(run => run.elapsed)) + 100;
+      for (const index of order) {
+        const run = runs[index];
+        service.handle(clients[index], { type: 'result', roundId: round.id, status: 'finished', elapsed: run.elapsed, cleared: run.cleared, mistakes: run.mistakes, proof: run.proof });
+      }
+      return;
     }
     if (round.game === 'star-collector') {
       time = round.endAt + 100;

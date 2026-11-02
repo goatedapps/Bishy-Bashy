@@ -1109,6 +1109,14 @@ test('Happy Days plays the supplied 30-second music excerpt once, restores song 
 });
 
 
+test('Horse Speeder uses supplied announcement, Ding for overtakes, and Wrong for collisions', async () => {
+  const { audio, requests } = setup(); audio.selectGame('horse-speeder'); await audio.unlock();
+  for (const file of ['horse-speeder-voice.mp3', 'Ding.mp3', 'wrong.mp3']) assert.ok(requests.some(url => url.includes(file)), file);
+  audio.play('stageComplete'); assert.equal([...audio.voices].at(-1).id, 'ding');
+  audio.play('stageWrong'); assert.equal([...audio.voices].at(-1).id, 'wrong');
+  audio.setEnabled(false); const count = audio.voices.size; audio.play('stageComplete'); assert.equal(audio.voices.size, count);
+});
+
 test('Star Collector loads supplied bump, pickup and announcement audio and respects effects mute', async () => {
   const { audio, requests } = setup(); audio.selectGame('star-collector'); await audio.unlock();
   for (const file of ['car-bump.mp3', 'Ding.mp3', 'star-collector-voice.mp3']) assert.ok(requests.some(url => url.includes(file)), file);

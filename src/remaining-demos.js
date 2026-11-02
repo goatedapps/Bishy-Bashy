@@ -1,3 +1,5 @@
+import { HorseRun } from '../shared/horse.js';
+import { HorseStage } from './horse-view.js';
 import { StarRun } from '../shared/stars.js';
 import { StarStage } from './stars-view.js';
 import { LadderRun } from '../shared/ladder.js';
@@ -78,6 +80,7 @@ class LettersDemoRun extends LettersRun {
 }
 
 const RUNS = {
+  'horse-speeder': make(HorseRun),
   'star-collector': make(StarRun),
   'ladder-climber': make(LadderRun),
   'stationery-master': make(ChoiceDemoRun), 'clock-stopper': make(ChoiceDemoRun),
@@ -90,6 +93,7 @@ const RUNS = {
 export const REMAINING_DEMO_GAMES = Object.keys(RUNS);
 
 const INSTRUCTIONS = {
+  'horse-speeder': ['Tap green to accelerate; stop tapping to slow down.', 'Red moves left; blue moves right. Dodge horses and finish first.'],
   'star-collector': ['Hold red to tilt left; hold blue to tilt right.', 'Release to level. Collect stars; most in 45 seconds wins.'],
   'ladder-climber': ['Follow the ladder: red = left, green = middle, blue = right.', 'Press once per rung. Climb to the trophy.'],
   'stationery-master': ['Count each item and tap its button that many times.', 'Red: pencil. Green: eraser. Blue: sharpener. Counts loop 6 → 0.'],
@@ -127,6 +131,16 @@ export function remainingDemoPlan(game, round = {}) {
     probe.tap(color, at);
   };
   let completeAt, freezeAt, sampleComplete = false;
+  if (game === 'horse-speeder') {
+    for (let at = START + 300; at <= START + 9500; at += 50) {
+      probe.advance(at);
+      const wave = probe.traffic[probe.index];
+      if (wave && probe.position !== wave.safe && at - probe.moveAt >= 180) press(probe.position > wave.safe ? 0 : 2, at, 'gameplayPress');
+      if ((at - START - 300) % 200 === 0) press(1, at, 'gameplayPress');
+    }
+    for (const event of probe.events) effects.push({ at: event.at, type: 'effect', sound: event.type });
+    return { settings, createRun, start: START, sampleComplete: true, presses, cues: effects.sort((a,b) => a.at-b.at), completeAt: START + 9500, freezeAt: START + 9500, sceneOwnsCompletion: true, duration: START + 10800 };
+  }
   if (game === 'star-collector') {
     for (const [color, at, until] of [[2, 500, 1900], [0, 2200, 3700], [2, 4100, 5800]]) {
       presses.push({ color, at, holdUntil: until }, { color, at: until, type: 'release' });
@@ -238,6 +252,7 @@ export function remainingDemoPlan(game, round = {}) {
 }
 
 const STAGES = {
+  'horse-speeder': HorseStage,
   'star-collector': StarStage,
   'ladder-climber': LadderStage,
   'stationery-master': DeskClockStage, 'clock-stopper': DeskClockStage,

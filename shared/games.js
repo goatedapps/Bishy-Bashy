@@ -1,3 +1,4 @@
+import { HORSE_GAME, HorseRun, HORSE_GOAL, HORSE_DURATION_MS } from './horse.js';
 import { STAR_GAME, StarRun, STAR_DURATION_MS, STAR_GOAL } from './stars.js';
 import { LADDER_GAME, LadderRun, ladderCourse, LADDER_DURATION_MS } from './ladder.js';
 import { STATIONERY_GAME, StationeryRun, STATIONERY_GOAL, STATIONERY_DURATION_MS } from './stationery.js';
@@ -25,6 +26,7 @@ import { MEALS_GAME, MealsRun, MEALS_GOAL, MEALS_DURATION_MS } from './meals.js'
 export const COUNTDOWN_MS = 3_000;
 
 export const GAMES = Object.assign(Object.create(null), {
+  [HORSE_GAME]: { id: HORSE_GAME, title: 'Horse Speeder', subtitle: 'Accelerate and weave through the field', duration: HORSE_DURATION_MS, goal: HORSE_GOAL },
   [STAR_GAME]: { id: STAR_GAME, title: 'Star Collector', subtitle: 'Tilt the maze and chase the stars', scoring: 'points', scoreNoun: 'stars', duration: STAR_DURATION_MS, goal: STAR_GOAL },
   [LADDER_GAME]: { id: LADDER_GAME, title: 'Ladder Climber', subtitle: 'Follow the ladders to the trophy', duration: LADDER_DURATION_MS, goal: 45 },
   [STATIONERY_GAME]: { id: STATIONERY_GAME, title: 'Stationery Master', subtitle: 'Count the desk, tap the totals', sharedArena: true, scoring: 'points', duration: STATIONERY_DURATION_MS, goal: STATIONERY_GOAL },
@@ -50,6 +52,7 @@ export const GAMES = Object.assign(Object.create(null), {
 
 export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') {
   const level = Math.max(1, Math.min(5, Math.trunc(difficulty) || 1));
+  if (game === HORSE_GAME) return { seed, difficulty: level, goal: HORSE_GOAL, duration: HORSE_DURATION_MS, spacing: 140 - (level - 1) * 10 };
   if (game === STAR_GAME) return { seed, difficulty: level, goal: STAR_GOAL, duration: STAR_DURATION_MS };
   if (game === LADDER_GAME) return { seed, difficulty: level, goal: ladderCourse(seed).reduce((sum, ladder) => sum + ladder.steps, 0), ladderSets: 10, duration: LADDER_DURATION_MS };
   if (game === STATIONERY_GAME) return { seed, difficulty: level, goal: STATIONERY_GOAL, duration: STATIONERY_DURATION_MS };
@@ -79,6 +82,7 @@ export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') 
 }
 
 export function createRun(round, localStart, timingOffset = 0) {
+  if (round.game === HORSE_GAME) return new HorseRun(round, localStart);
   if (round.game === STAR_GAME) return new StarRun(round, localStart);
   if (round.game === LADDER_GAME) return new LadderRun(round, localStart);
   if (round.game === STATIONERY_GAME) return new StationeryRun(round, localStart);
@@ -104,6 +108,7 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game, round = {}) {
+  if (game === HORSE_GAME) return ['Tap green to accelerate; stop tapping to slow down', 'Red moves left; blue moves right. Dodge slower horses', 'Reach the finish first; bumps knock down your speed'];
   if (game === STAR_GAME) return ['Hold red to tilt left; hold blue to tilt right', 'Release to level the maze; green is unused', 'Steer the car into stars; most collected in 45 seconds wins'];
   if (game === LADDER_GAME) return ['Follow the ladder position: red = left, green = middle, blue = right', 'Press once per rung, then follow the next ladder', 'Climb all ten ladders to reach the trophy'];
   if (game === STATIONERY_GAME) return ['Count the pencils, erasers and sharpeners on the desk', 'Red = pencil, green = eraser, blue = sharpener; tap each total', 'Match all three counts before time runs out; 6 loops back to 0'];
