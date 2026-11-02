@@ -296,7 +296,7 @@ Horse Speeder uses `shared/horse.js` for a 3200-unit race, 120 Hz speed/distance
 Red/blue move left/right in 180 ms; green taps add speed with a 100 ms guard, coasting slows down, and bumps reduce speed without losing distance or blocking steering.
 Keep a safe lane in every traffic row and enough maximum-speed spacing for two lane changes plus reaction time; Game Select narrows row spacing from 140 to 120 across its three rounds.
 `src/horse-view.js` renders bounded perspective traffic, rear-view gallop poses, the finish banner, and accepted clear times; keep gameplay free of speedometers, counters, and progress bars.
-Overtakes and the finish use Ding, bumps use Wrong, and tutorial presses use Punch; the supplied `horse-speeder-voice.mp3` announces selection, and future horse-specific sounds must also be supplied.
+Overtakes and the finish use Ding, every gameplay/tutorial press uses `horse-gallop.mp3`, and horse collisions use `Punch-button.mp3`; the supplied `horse-speeder-voice.mp3` announces selection, and future horse-specific sounds must also be supplied.
 Protocol 31 requires `horse-speeder`, and bounded result proofs fit the 16 KiB WebSocket limit; deploy frontend and backend together.
 
 Shark Jumper uses `shared/shark.js` for a seeded color-matching zigzag climb: press the next shark’s color, jump for 240 ms, and turn it grey only after landing.
@@ -306,3 +306,6 @@ Use `plop.mp3` once at jump takeoff and `shark-splash.mp3` once at the 220 ms wa
 Start Arcade with 30 sharks and Game Select with 30/40/50 across its rounds; rank the final scheduled landing within 45 seconds and validate bounded jump histories on the server.
 Include the real recovery in the cat-paw tutorial; keep the common controls and omit gameplay counters and progress bars.
 Protocol 31 requires `shark-jumper`; deploy frontend and backend together.
+
+`src/result-message.js` builds the actual client finish payload and includes any run-owned replay proof automatically; exercise this builder in Shark Jumper server and WebSocket regression tests.
+Shark Jumper shows cropped, upward-tilted shark heads using the original illustrated atlas, including the landed grey heads in gameplay and tutorials.

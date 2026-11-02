@@ -3,10 +3,11 @@
 .shark-sprite { display:block; width:100%; height:100%; background:var(--image-shark-sprites,url('/assets/optimized/shark-sprites-7ca5a8542479.webp')) 0 0 / 300% 200% no-repeat; }
 .shark-green { background-position:50% 0; }.shark-blue { background-position:100% 0; }
 .shark-stone { background-position:0 100%; }.shark-puppy { background-position:50% 100%; }.shark-climb { background-position:100% 100%; }
-.shark-platform { position:absolute; width:60%; aspect-ratio:1; }
+.shark-head { clip-path:inset(0 0 0 52%); transform:translateX(-25%) rotate(-35deg); transform-origin:75% 50%; }
+.shark-platform { position:absolute; width:60%; aspect-ratio:1; mask-image:linear-gradient(#000 0 60%,transparent 80%); }
 .shark-platform>.shark-sprite { position:absolute; inset:0; }
 .shark-next>.shark-sprite { filter:drop-shadow(0 0 2px #fff8cf); }
-.shark-mark { position:absolute; left:39%; top:43%; font-size:clamp(8px,4cqw,18px); color:#fff; text-shadow:0 1px 2px #243248; line-height:1; }
+.shark-mark { position:absolute; left:47%; top:39%; font-size:clamp(8px,4cqw,18px); color:#fff; text-shadow:0 1px 2px #243248; line-height:1; }
 .shark-stage>.shark-puppy,.shark-stage>.shark-climb { position:absolute; width:26%; height:auto; aspect-ratio:1; z-index:30; }
 .shark-splash { position:absolute; width:20%; height:4%; border:3px solid #efffff; border-radius:50%; box-shadow:0 0 0 2px #60d5ef99,inset 0 0 0 3px #b8faffaa; z-index:31; pointer-events:none; }
 .art-shark-jumper { background:linear-gradient(#a2eced,#23b7d5); }

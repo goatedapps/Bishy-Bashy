@@ -3,7 +3,7 @@ import { sharkCourse, SHARK_GOAL, SHARK_JUMP_MS, SHARK_FALL_MS, SHARK_RECOVERY_M
 const node = className => { const element = document.createElement('span'); element.className = className; return element; };
 const COLORS = ['red', 'green', 'blue'];
 export function sharkPortrait(kind = 'puppy') {
-  const element = node(`shark-sprite shark-${kind}`);
+  const element = node(`shark-sprite shark-${kind}${['red', 'green', 'blue', 'stone'].includes(kind) ? ' shark-head' : ''}`);
   element.setAttribute('role', 'img'); element.setAttribute('aria-label', kind === 'puppy' || kind === 'climb' ? 'Cute puppy' : `${kind} shark`);
   return element;
 }
@@ -41,7 +41,7 @@ export class SharkStage {
       const stone = step <= landed;
       const color = step ? this.course[step - 1].color : 0;
       const kind = stone ? 'stone' : COLORS[color];
-      sprite.className = `shark-sprite shark-${kind}`;
+      sprite.className = `shark-sprite shark-${kind} shark-head`;
       sprite.setAttribute('aria-label', stone ? 'Safe grey stone shark' : `${COLORS[color]} shark`);
       element.style.left = `${x(step)}%`; element.style.top = `${y(step)}%`;
       element.style.transform = `translate(-50%,-50%) scaleX(${step % 2 ? -1 : 1})`;

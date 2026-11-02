@@ -1,3 +1,4 @@
+import { resultMessage } from '../src/result-message.js';
 import { driveSharks } from './helpers/shark.js';
 import { driveHorse } from './helpers/horse.js';
 import { letterClaim } from './helpers/letters.js';
@@ -251,7 +252,7 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
     }) : null;
     time = simulatedRuns ? round.startAt + Math.max(...simulatedRuns.map(run => run.elapsed)) + 100 : round.game === PERM_GAME ? round.endAt + 100 : round.startAt + 4000;
     waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.history.length === index + 1);
-    clients.forEach((socket, place) => send(socket, { type: 'result', roundId: round.id, status: 'finished', elapsed: simulatedRuns ? simulatedRuns[place].elapsed : round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: simulatedRuns ? simulatedRuns[place].cleared : round.goal, attempted: round.goal, mistakes: simulatedRuns ? simulatedRuns[place].mistakes : 0, ...(['shark-jumper', 'horse-speeder', 'star-collector'].includes(round.game) ? { proof: simulatedRuns[place].proof } : {}), ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}), ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) }));
+    clients.forEach((socket, place) => send(socket, round.game === 'shark-jumper' ? resultMessage(round, { id: round.id, run: simulatedRuns[place], goDelay: 0 }, 'finished', simulatedRuns[place].elapsed, simulatedRuns[place].elapsed) : { type: 'result', roundId: round.id, status: 'finished', elapsed: simulatedRuns ? simulatedRuns[place].elapsed : round.game === PERM_GAME ? round.duration : 1000 + place * 500, cleared: simulatedRuns ? simulatedRuns[place].cleared : round.goal, attempted: round.goal, mistakes: simulatedRuns ? simulatedRuns[place].mistakes : 0, ...(['shark-jumper', 'horse-speeder', 'star-collector'].includes(round.game) ? { proof: simulatedRuns[place].proof } : {}), ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}), ...(round.game === PERM_GAME ? { score: round.maxScore - place * 100 } : {}) }));
     state = (await waiting).room;
     }
     expectedPoints.forEach((_, place) => { expectedPoints[place] += round.game === 'star-collector' ? 10 : [10, 7, 4, 1][place]; });

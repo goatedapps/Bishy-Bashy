@@ -1118,11 +1118,12 @@ test('Shark Jumper loads Plop and Splash, keeps the final jump tail through resu
   audio.setEnabled(false); assert.equal(jump.stopped, true);
 });
 
-test('Horse Speeder uses supplied announcement, Ding for overtakes, and Wrong for collisions', async () => {
+test('Horse Speeder uses gallop for button presses, Punch for collisions, and Ding for overtakes', async () => {
   const { audio, requests } = setup(); audio.selectGame('horse-speeder'); await audio.unlock();
-  for (const file of ['horse-speeder-voice.mp3', 'Ding.mp3', 'wrong.mp3']) assert.ok(requests.some(url => url.includes(file)), file);
+  for (const file of ['horse-speeder-voice.mp3', 'horse-gallop.mp3', 'Ding.mp3', 'Punch-button.mp3']) assert.ok(requests.some(url => url.includes(file)), file);
+  audio.pressButton('horse'); assert.equal([...audio.voices].at(-1).id, 'horseGallop');
   audio.play('stageComplete'); assert.equal([...audio.voices].at(-1).id, 'ding');
-  audio.play('stageWrong'); assert.equal([...audio.voices].at(-1).id, 'wrong');
+  audio.play('stageWrong'); assert.equal([...audio.voices].at(-1).id, 'gameplayPress');
   audio.setEnabled(false); const count = audio.voices.size; audio.play('stageComplete'); assert.equal(audio.voices.size, count);
 });
 

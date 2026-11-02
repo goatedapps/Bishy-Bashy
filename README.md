@@ -893,9 +893,10 @@ The server verifies the driving history and fractional finish time before accept
 `src/horse-view.js` shows the original rear-view horse and jockey, animated strides, scrolling track, perspective traffic, finish banner, and four independent player lanes.
 Remote scenes use published movement state and bounded cosmetic projection; they never resolve gameplay.
 The isolated cat-paw tutorial accelerates and steers through the same traffic model.
-Successful overtakes and the finish use `Ding.mp3`; collisions use `wrong.mp3`, and button presses reuse `Punch-button.mp3`.
+Successful overtakes and the finish use `Ding.mp3`; collisions use `Punch-button.mp3`, and all three gameplay buttons use supplied `horse-gallop.mp3`.
+The animated tutorial uses the same gallop button cue.
 The supplied `horse-speeder-voice.mp3` announces selection through the existing voice/applause gate.
-Horse-specific hoofbeats and neighs await supplied audio; no new audio is generated or downloaded.
+Horse-specific neighs await supplied audio; no new audio is generated or downloaded.
 The game is in Arcade, Game Select, and Party, with local clear times and the common fixed control bar.
 Original masters and prompts live in `public/assets/horse-artwork.md`; optimized sprite and background downloads total approximately 432 KB.
 Protocol 30 requires `horse-speeder`; deploy frontend and backend together.
@@ -911,7 +912,9 @@ The puppy returns to its last safe grey shark, preserving every completed jump, 
 Arcade begins with 30 sharks; Game Select increases the course from 30 to 40 to 50 sharks across three rounds.
 Fastest final landing wins, with a 45-second deadline and one final Ding for completing the full path.
 `shared/shark.js` owns the shared course, landing schedule, recovery, bounded input history, and server replay validation.
-`src/shark-view.js` uses the same local and published peer timing to draw colored sharks, landed stone sharks, puppy arcs, water splashes, and the climb-back pose.
+`src/shark-view.js` uses the same local and published peer timing to draw colored shark heads, landed stone heads, puppy arcs, water splashes, and the climb-back pose.
+Crop each shark to its head and tilt it upward by 35 degrees to suggest emergence from the water.
+`src/result-message.js` includes the jump history in the actual client finish message, allowing the server to accept a valid clear and advance the set.
 Reduced motion uses discrete jumps and a recovery pose while retaining the same input gates and results.
 The animated cat-paw tutorial demonstrates correct jumps, a wrong color, and recovery using the real model and renderer.
 Original masters and prompts live in `public/assets/shark-artwork.md`; optimized sprite and background delivery totals approximately 341 KB.

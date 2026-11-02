@@ -608,6 +608,11 @@ export const ASSETS = [
     "hash": "1c62e4a15bd52171"
   },
   {
+    "path": "audio/horse-gallop.mp3",
+    "bytes": 17331,
+    "hash": "3cedc2dcd2e5ab8b"
+  },
+  {
     "path": "audio/shark-splash.mp3",
     "bytes": 97802,
     "hash": "6d6b9a8f4c8e801d"

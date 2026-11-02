@@ -1,3 +1,4 @@
+import { resultMessage } from './result-message.js';
 import { SHARK_GAME } from '../shared/shark.js';
 import './shark.css';
 import { HORSE_GAME } from '../shared/horse.js';
@@ -339,14 +340,8 @@ function complete(status, elapsed = null) {
   localRound.status = status;
   localRound.run.done = true;
   const delay = status === 'finished' ? Number($('result-delay').value) : 0;
-  pending = { roomCode: room.code, playerId, dueAt: Date.now() + delay, message: {
-    type: 'result', roundId: localRound.id, status, elapsed, cleared: localRound.run.cleared,
-    mistakes: localRound.run.mistakes, visual: captureVisual(room.round.game, localRound.run, performance.now()), goDelay: localRound.goDelay,
-    ...([PERM_GAME, HAPPY_GAME].includes(room.round.game) ? { score: localRound.run.score } : {}),
-    ...(room.round.game === SLOT_GAME ? { reelMask: localRound.run.reelMask } : {}),
-    ...([HORSE_GAME, STAR_GAME].includes(room.round.game) ? { proof: localRound.run.proof } : {}),
-    ...(room.round.game === MISTAKE_GAME ? { attempted: localRound.run.index } : {}),
-  } };
+  pending = { roomCode: room.code, playerId, dueAt: Date.now() + delay,
+    message: resultMessage(room.round, localRound, status, elapsed, performance.now()) };
   sessionStorage.setItem('bb-pending', JSON.stringify(pending));
   lastPendingSent = -Infinity;
   $('submission-status').textContent = delay ? `Finish saved. Sending after ${delay / 1000} seconds of test delay.` : 'Result saved. Waiting for confirmation…';
@@ -474,7 +469,7 @@ function tap(color) {
   enforceLifecycle(time, true);
   if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
   if (!buttons[color]?.disabled && room.round.game === PERM_GAME) audio.permTap(localRound.run, time, color);
-  else if (!buttons[color]?.disabled && ![LADDER_GAME, HAPPY_GAME].includes(room.round.game)) audio.pressButton(room.round.game === MEALS_GAME ? 'meals' : room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay');
+  else if (!buttons[color]?.disabled && ![LADDER_GAME, HAPPY_GAME].includes(room.round.game)) audio.pressButton(room.round.game === HORSE_GAME ? 'horse' : room.round.game === MEALS_GAME ? 'meals' : room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay');
   const clearedBefore = localRound.run.cleared;
   const action = localRound.run.tap(color, time);
   if ([SHARK_GAME, HORSE_GAME, STAR_GAME, LADDER_GAME, MEALS_GAME, BURGER_GAME, COIN_GAME, DODGE_GAME, FIREWORK_GAME].includes(room.round.game)) flushLaneEvents(time);

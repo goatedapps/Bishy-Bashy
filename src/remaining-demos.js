@@ -152,8 +152,8 @@ export function remainingDemoPlan(game, round = {}) {
     for (let at = START + 300; at <= START + 9500; at += 50) {
       probe.advance(at);
       const wave = probe.traffic[probe.index];
-      if (wave && probe.position !== wave.safe && at - probe.moveAt >= 180) press(probe.position > wave.safe ? 0 : 2, at, 'gameplayPress');
-      if ((at - START - 300) % 200 === 0) press(1, at, 'gameplayPress');
+      if (wave && probe.position !== wave.safe && at - probe.moveAt >= 180) press(probe.position > wave.safe ? 0 : 2, at, 'horseGallop');
+      if ((at - START - 300) % 200 === 0) press(1, at, 'horseGallop');
     }
     for (const event of probe.events) effects.push({ at: event.at, type: 'effect', sound: event.type });
     return { settings, createRun, start: START, sampleComplete: true, presses, cues: effects.sort((a,b) => a.at-b.at), completeAt: START + 9500, freezeAt: START + 9500, sceneOwnsCompletion: true, duration: START + 10800 };

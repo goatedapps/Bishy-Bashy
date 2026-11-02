@@ -1,3 +1,4 @@
+import { resultMessage } from '../src/result-message.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { SHARK_GAME, SharkRun, sharkCourse, SHARK_JUMP_MS, SHARK_FALL_MS, SHARK_RECOVERY_MS, validSharkResult } from '../shared/shark.js';
@@ -89,11 +90,13 @@ test('four players submit verified jump histories and retain finishes on duplica
   service.handle(clients[0], { type: 'start' });
   clients.forEach(client => { service.handle(client, { type: 'sync', rtt: 20, uncertainty: 10, count: 5 }); service.handle(client, { type: 'ready', ready: true }); });
   const round = room.round, runs = clients.map((_, i) => driveSharks(round, { misses: i }));
-  const result = run => ({ type: 'result', roundId: round.id, status: 'finished', cleared: run.cleared, mistakes: run.mistakes, elapsed: run.elapsed, proof: run.proof });
+  const result = run => JSON.parse(JSON.stringify(resultMessage(round, { id: round.id, run, goDelay: 0 }, 'finished', run.elapsed, run.start + run.elapsed)));
   time = round.startAt + Math.max(...runs.map(run => run.elapsed)) + 100;
   service.handle(clients[0], { ...result(runs[0]), proof: [] }); assert.equal(room.players[0].result, null);
   for (const index of [3, 2, 1, 0]) service.handle(clients[index], result(runs[index]));
   assert.deepEqual(room.set.players.map(player => player.points), [10, 7, 4, 1]);
+  assert.equal(room.set.phase, 'intermission');
+  assert.equal(room.set.history.length, 1);
   service.handle(clients[0], result(runs[0])); assert.equal(messages.at(-1).type, 'result-ack');
   assert.equal(room.set.players[0].points, 10);
 });
@@ -111,6 +114,7 @@ test('bounded shark scenes turn landed targets grey, animate recovery, reset cor
     const round = settings(), run = createRun(round, 0);
     run.tap(run.sequence[0], 100); stage.render(round, run, 200, 200, true, true);
     assert.equal(stage.sharks.length, 8); assert.ok(!stage.sharks[1].sprite.className.includes('stone'));
+    assert.ok(stage.sharks[1].sprite.className.includes('shark-head'));
     run.advance(340); stage.render(round, run, 340, 340, true, true); assert.ok(stage.sharks[1].sprite.className.includes('stone'));
     run.tap((run.sequence[1] + 1) % 3, 400); stage.render(round, run, 650, 650, true, true);
     assert.equal(stage.puppy.hidden, true); assert.equal(stage.splash.hidden, false);
