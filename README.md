@@ -924,3 +924,7 @@ The animated cat-paw tutorial demonstrates correct jumps, a wrong color, and rec
 Original masters and prompts live in `public/assets/shark-artwork.md`; optimized sprite, background, and foreground-wave delivery totals approximately 426 KB.
 The game is available in Arcade, Game Select, and Party, with shared controls and no jump counter or progress bar.
 Deploy frontend and backend together with protocol 31 and the `shark-jumper` capability.
+
+Render deploys the multiplayer room service; GitHub Pages deploys the playable frontend through the separate Deploy website to GitHub Pages workflow.
+A successful Render deployment can coexist with a failed Pages test job, leaving the public game on the previous graphics and controls.
+Check the Pages workflow result and published frontend asset filenames when confirming that a release is live.

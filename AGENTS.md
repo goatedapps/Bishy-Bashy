@@ -313,3 +313,6 @@ Keep the puppy above water layers and share wave occlusion across gameplay, tuto
 
 Horse impacts publish the struck lane in feedback; `src/horse-view.js` seeks a bounded backward recoil and separates/fades that opponent to avoid visual pass-through.
 Keep recoil cosmetic, preserve distance and steering, reset by round, and honor reduced motion on local and peer scenes.
+
+Stationery server tests must set fake packet receipt after the final submitted action; a fixed three-second offset rejects valid larger seeded desks as future input.
+When checking releases, verify the GitHub Pages workflow and public frontend assets separately from Render’s room-service deployment.

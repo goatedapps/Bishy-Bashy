@@ -72,6 +72,17 @@ test('Stationery verifies growing input proofs, rejects rewrites and late presse
   assert.equal(match.state.scores.a, 1);
 });
 
+test('a maximum-size Stationery answer is received after its last press, preserving future-input checks', () => {
+  const round = { ...settings(STATIONERY_GAME), seed: 90 }, stages = stationeryStages(round);
+  const stage = stages[0], actions = counterActions(stage), match = new StationeryMatch(round, stages);
+  assert.deepEqual(stage.puzzle.counts, [6, 6, 6]);
+  assert.ok(actions.at(-1)[1] > 3000 + 250);
+  assert.equal(match.choose('a', { index: 0, actions }, 3000), false);
+  assert.equal(match.choose('a', { index: 0, actions }, actions.at(-1)[1] + 20), true);
+  match.advance(stage.revealAt);
+  assert.equal(match.state.scores.a, 1);
+});
+
 test('Clock periods accelerate from 1.2 to 0.5 seconds and target hours advance from one through ten', () => {
   const round = settings(CLOCK_GAME), stages = clockStages(round);
   assert.equal(stages.length, 10);
@@ -126,7 +137,7 @@ for (const game of [STATIONERY_GAME, CLOCK_GAME]) test(`${game}: server owns sco
   service.handle(clients[0], { type: 'result', roundId: round.id, status: 'finished', cleared: 999, elapsed: 100, mistakes: 0 });
   assert.equal(room.players[0].result, null);
   const input = game === CLOCK_GAME ? { index: 0, color: 2, elapsed: stage.targetAt } : { index: 0, actions: counterActions(stage) };
-  if (game === CLOCK_GAME) time = round.startAt + stage.targetAt + 20;
+  time = round.startAt + (game === CLOCK_GAME ? stage.targetAt : input.actions.at(-1)[1]) + 20;
   service.handle(clients[0], { type: 'shared-choice', roundId: round.id, ...input });
   const ack = messages.find(entry => entry.message.type === 'shared-choice-ack').message;
   assert.equal(ack.index, 0);
