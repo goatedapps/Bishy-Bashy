@@ -2,7 +2,7 @@
 
 Created using the built-in imagegen tool on 2026-10-30 for gameplay, posters, and How to play illustrations.
 The transparent master is `dynamite-meals-sprites.png`.
-Delivery uses `optimized/dynamite-meals-sprites-2e73a04cfb68.webp` at 1024 square pixels, WebP quality 86, method 6, alpha quality 100, and 173,556 bytes.
+Delivery uses `../../public/assets/optimized/dynamite-meals-sprites-2e73a04cfb68.webp` at 1024 square pixels, WebP quality 86, method 6, alpha quality 100, and 173,556 bytes.
 Quadrants are burger, fries, drink, and dynamite in reading order.
 
 ## Prompt

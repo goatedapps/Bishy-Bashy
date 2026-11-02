@@ -28,7 +28,7 @@ mapping = {name: asset for name, asset in mapping.items() if name in sizes}
 before = after = 0
 for name in selected:
     size = sizes[name]
-    source = root / f'public/assets/{name}.png'
+    source = root / f'archive/artwork/{name}.png'
     with Image.open(source) as image:
         image.thumbnail((size, size), Image.Resampling.LANCZOS)
         temporary = destination / f'{name}.webp'

@@ -2,7 +2,7 @@
 
 Updated with the built-in image-generation tool on 2026-11-01, editing the previous reverse sprite with `facing-duck.png` as its identity and style reference.
 The transparent master is `facing-duck-back.png`; previous artwork remains in Git history.
-The game and animated tutorial deliver `optimized/facing-duck-back-ae88bace16bc.webp`, resized to 512 pixels with WebP quality 86, method 6, and alpha quality 100 (47,864 bytes).
+The game and animated tutorial deliver `../../public/assets/optimized/facing-duck-back-ae88bace16bc.webp`, resized to 512 pixels with WebP quality 86, method 6, and alpha quality 100 (47,864 bytes).
 The rear three-quarter view exposes a large left-pointing orange bill, matching the reverse of the right-facing front sprite while keeping the back of the cap and body dominant.
 
 ## Prompt

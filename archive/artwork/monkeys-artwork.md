@@ -18,4 +18,4 @@ No scenery, no ground, no cast shadow outside the body, no other monkeys, no tex
 ## Selected output
 
 The tool returned `exec-9d68bc79-a0fd-48bd-a49f-dccf07e0f204.png` in the conversation's generated-images directory.
-The project copy is `public/assets/mimicking-monkey.png`.
+The project copy is `archive/artwork/mimicking-monkey.png`.

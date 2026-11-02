@@ -6,8 +6,8 @@ Coins, fake markers, lane guides, walls, hurdles, and collision cues are code-na
 
 ## Selected assets
 
-- `coin-raccoon.png`: source `exec-f5a73b43-5ded-40bd-80ef-d4a14e5430be.png`; delivery `optimized/coin-raccoon-441eaa2c2084.webp`, 512 × 512, 50,294 bytes.
-- `dodge-fox.png`: source `exec-c065210d-ad86-4df3-b489-e7f521f0cfe3.png`; delivery `optimized/dodge-fox-8c2d782072ee.webp`, 512 × 512, 54,910 bytes.
+- `coin-raccoon.png`: source `exec-f5a73b43-5ded-40bd-80ef-d4a14e5430be.png`; delivery `../../public/assets/optimized/coin-raccoon-441eaa2c2084.webp`, 512 × 512, 50,294 bytes.
+- `dodge-fox.png`: source `exec-c065210d-ad86-4df3-b489-e7f521f0cfe3.png`; delivery `../../public/assets/optimized/dodge-fox-8c2d782072ee.webp`, 512 × 512, 54,910 bytes.
 
 Runtime copies total 105,204 bytes and preserve alpha transparency.
 Both sprites are reused in the game library, illustrated instructions, bounded home cast, and Arcade reel.

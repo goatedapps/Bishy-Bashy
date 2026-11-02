@@ -423,27 +423,6 @@ export const ASSETS = [
     "downloadBytes": 555504
   },
   {
-    "path": "audio/perm-demo.wav",
-    "bytes": 9004,
-    "hash": "8979b35dc7e4a974",
-    "compressed": "audio/optimized/perm-demo.wav-8979b35dc7e4a974.gz",
-    "downloadBytes": 8495
-  },
-  {
-    "path": "audio/perm-hit.wav",
-    "bytes": 7724,
-    "hash": "74a73ac0b0206bd0",
-    "compressed": "audio/optimized/perm-hit.wav-74a73ac0b0206bd0.gz",
-    "downloadBytes": 7319
-  },
-  {
-    "path": "audio/perm-miss.wav",
-    "bytes": 9644,
-    "hash": "38b252c8d40b841e",
-    "compressed": "audio/optimized/perm-miss.wav-38b252c8d40b841e.gz",
-    "downloadBytes": 9116
-  },
-  {
     "path": "audio/perm-grow.wav",
     "bytes": 25644,
     "hash": "a2ded819fe335368",

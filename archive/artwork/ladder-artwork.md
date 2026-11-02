@@ -7,7 +7,7 @@ The worker, trophy, and modular rung section appear in gameplay, the poster, and
 ## Sprite atlas
 
 Master: `ladder-sprites.png`.
-Delivery: `optimized/ladder-sprites-30deca010d7c.webp`.
+Delivery: `../../public/assets/optimized/ladder-sprites-30deca010d7c.webp`.
 Prompt:
 
 > Use case: stylized-concept.
@@ -26,7 +26,7 @@ Prompt:
 ## Tower backdrop
 
 Master: `bg-ladder-tower.png`.
-Delivery: `optimized/bg-ladder-tower-9c74900f4413.webp`.
+Delivery: `../../public/assets/optimized/bg-ladder-tower-9c74900f4413.webp`.
 Prompt:
 
 > Use case: illustration-story.

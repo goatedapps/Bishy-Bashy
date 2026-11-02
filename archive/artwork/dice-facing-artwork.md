@@ -1,7 +1,7 @@
 # Dice and Facing Which Way artwork
 
 Generated on 2026-10-28 using the built-in image-generation tool in generate mode with transparent backgrounds.
-The original PNG masters are retained in this folder; runtime CSS uses content-hashed, resized WebP images from `optimized/`.
+The original PNG masters are retained in this folder; runtime CSS uses content-hashed, resized WebP images from `../../public/assets/optimized/`.
 The dice jester is decorative; all answer-bearing die faces and their exact pip counts remain code-native.
 The aviator duck clearly points right in its source pose, and the card renderer composes seeded rotations and horizontal mirrors from that pose.
 
@@ -13,8 +13,8 @@ The aviator duck clearly points right in its source pose, and the card renderer 
 Both PNG masters are 1,254 × 1,254 RGBA images, totaling 2,552,935 bytes.
 Their 512 × 512 WebP delivery copies retain transparency and total 102,310 bytes, a 96.0% reduction.
 
-- `optimized/dice-jester-0db45dfe5886.webp`: 52,864 bytes.
-- `optimized/facing-duck-ccbad1c0ed63.webp`: 49,446 bytes.
+- `../../public/assets/optimized/dice-jester-0db45dfe5886.webp`: 52,864 bytes.
+- `../../public/assets/optimized/facing-duck-ccbad1c0ed63.webp`: 49,446 bytes.
 
 ## Dice jester prompt
 

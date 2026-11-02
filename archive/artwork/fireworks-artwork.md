@@ -12,4 +12,4 @@ Use case: stylized-concept. Asset type: original 2D background illustration for 
 ## Selected output
 
 The tool returned `exec-fae34e03-0e83-40bf-9ee7-1c9789aae710.png` under the conversation's generated-images directory.
-The project copy is `public/assets/fireworks-festival.png`.
+The project copy is `archive/artwork/fireworks-festival.png`.

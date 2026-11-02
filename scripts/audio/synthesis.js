@@ -118,7 +118,6 @@ export function effects() {
     mistake[index] = Math.sin(phase + .55 * Math.sin(phase * 2)) * attack(time) * Math.exp(-time * 11) * release(time, .32);
   }
   result.mistake = normalize(mistake, .65);
-  result.tick = normalize(tone(74, .12, 'wood'), .48);
   const go = new Float32Array(Math.round(SAMPLE_RATE * .45));
   for (const [index, note] of [62, 69, 74, 78].entries()) mix(go, tone(note, .35, 'chord'), index * .018, .27);
   mix(go, drum('kick', 9), 0, .2);
@@ -130,13 +129,6 @@ export function effects() {
   const timeout = new Float32Array(SAMPLE_RATE);
   for (const [index, note] of [69, 66, 62].entries()) mix(timeout, tone(note, .42, 'chord'), index * .16, .25);
   result.timeout = normalize(timeout, .55);
-  const demo = tone(81, .14, 'wood');
-  mix(demo, drum('clap', 120), 0, .28);
-  result.permDemo = normalize(demo, .7);
-  const hit = tone(78, .12, 'wood');
-  mix(hit, drum('clap', 121), 0, .4);
-  result.permHit = normalize(hit, .62);
-  result.permMiss = normalize(tone(50, .15, 'bass'), .35);
   const grow = new Float32Array(SAMPLE_RATE * .4);
   [78, 81, 86].forEach((note, index) => mix(grow, tone(note, .2, 'wood'), index * .055, .3));
   result.permGrow = normalize(grow, .6);

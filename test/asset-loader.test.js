@@ -1,12 +1,30 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
+import { relative, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { gzipSync, gunzipSync } from 'node:zlib';
 import { AssetLoader } from '../src/asset-loader.js';
 import { ASSETS } from '../src/asset-manifest.js';
 
 const hash = bytes => createHash('sha256').update(bytes).digest('hex').slice(0, 16);
+
+test('published assets contain only manifest-owned runtime files and retain their artwork masters outside public', async () => {
+  const publicRoot = new URL('../public/', import.meta.url);
+  const files = await readdir(publicRoot, { recursive: true, withFileTypes: true });
+  const deliveryPaths = new Set(ASSETS.flatMap(asset => [asset.path, asset.compressed].filter(Boolean)));
+  for (const file of files.filter(file => file.isFile())) {
+    const path = relative(fileURLToPath(publicRoot), join(file.parentPath, file.name)).replaceAll('\\', '/');
+    assert.ok(deliveryPaths.has(path), `Unowned file would be published: ${path}`);
+  }
+  for (const asset of ASSETS.filter(asset => asset.path.startsWith('assets/'))) {
+    const master = asset.path.split('/').at(-1).replace(/-[0-9a-f]{12}\.webp$/, '.png');
+    const bytes = await readFile(new URL(`../archive/artwork/${master}`, import.meta.url));
+    assert.equal(bytes.subarray(0, 8).toString('hex'), '89504e470d0a1a0a', `Missing PNG master: ${master}`);
+  }
+});
+
 function setup(content = Buffer.from('complete sound')) {
   const asset = { path: 'audio/test.wav', bytes: content.length, hash: hash(content), compressed: 'audio/optimized/test.gz', downloadBytes: gzipSync(content).length };
   const entries = new Map();

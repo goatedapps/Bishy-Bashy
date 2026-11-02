@@ -19,7 +19,7 @@ No meat, no scenery, no ground shadow, no text, no logos, no other characters.
 ## Selected output
 
 The tool returned `exec-6c1c62f4-3755-4c09-85ca-17f118afeae3.png` in the conversation's generated-images directory.
-The project copy is `public/assets/jump-dino.png`.
+The project copy is `archive/artwork/jump-dino.png`.
 
 ## Meat reward sprite
 

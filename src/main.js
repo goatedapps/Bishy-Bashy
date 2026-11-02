@@ -25,7 +25,8 @@ import { COIN_GAME } from '../shared/coins.js';
 import { DODGE_GAME } from '../shared/dodge.js';
 import './arcade-reel.css';
 import './backgrounds.css';
-import QRCode from 'qrcode';
+import { prepareInvite } from './invitation.js';
+import { updateSound as renderSoundSettings, updateArcadeSettings as renderArcadeSettings } from './settings-view.js';
 import { SyncedClock } from './clock.js';
 import { TOTEM_GAME } from '../shared/totem.js';
 import { PERM_GAME, demoCues } from '../shared/perm.js';
@@ -77,7 +78,7 @@ let supportsRoomNavigation = false;
 let pending = readStored('bb-pending');
 let reconnectAt = 0, reconnectTimer, entryRequest = null, joining = false, intentionalClose = false, joined = false;
 let lastPong = 0, lastSyncSent = 0, lastPendingSent = -Infinity, lastProgressSent = 0, lastProgressKey = '';
-let inviteUrl = '', lanUrls = [], events = [];
+let lanUrls = [], events = [];
 let hiddenSince = document.hidden ? performance.now() : null;
 let partyAudioBaseline = true;
 let rulesDemo = null;
@@ -696,47 +697,13 @@ function animate() {
   requestAnimationFrame(animate);
 }
 
-async function prepareInvite() {
-  const url = new URL(location.href);
-  if (['localhost', '127.0.0.1', '[::1]'].includes(url.hostname) && lanUrls.length && serverUrl === defaultServer) url.host = new URL(lanUrls[0]).host;
-  url.search = ''; url.searchParams.set('room', room.code);
-  const address = new URL(serverUrl);
-  if (address.host !== url.host || address.protocol !== (location.protocol === 'https:' ? 'wss:' : 'ws:')) url.searchParams.set('server', serverUrl);
-  inviteUrl = url.href;
-  $('invite-link').value = inviteUrl;
-  $('copy-link').textContent = 'Copy link';
-  $('invite-note').textContent = ['localhost', '127.0.0.1'].includes(url.hostname) ? 'Open this computer’s Wi-Fi address to invite phones on the same network.' : location.protocol === 'https:' ? 'Scan on a phone or share this link. Up to four players.' : 'Connect phones to the same Wi-Fi, then scan or share this link.';
-  try { await QRCode.toCanvas($('qr'), inviteUrl, { width: 176, margin: 2, color: { dark: '#3b214d', light: '#fffdf5' } }); }
-  catch { $('invite-note').textContent = 'Share the invitation link or enter the room code.'; }
-}
-
 function updateSound() {
   updateArcadeSettings();
-  $('sound').classList.toggle('sound-off', !audio.enabled);
-  $('sound').setAttribute('aria-pressed', String(audio.enabled));
-  $('sound').setAttribute('aria-label', audio.enabled ? 'Mute sound' : 'Enable sound');
-  $('music-mode').value = audio.preferences.musicMode;
-  for (const [id, key] of [['music-volume', 'musicVolume'], ['effects-volume', 'effectsVolume']]) {
-    const value = Math.round(audio.preferences[key] * 100);
-    $(id).value = value;
-    $(`${id}-value`).textContent = `${value}%`;
-  }
-  $('audio-status').textContent = ({ off: 'Sound is off.', loading: 'Loading sounds…', ready: 'Sound ready.', waiting: 'Tap Preview sound to try it.', unavailable: 'Some sounds could not load. Tap Preview sound to retry.' })[audio.status];
-  const active = room?.set && room.set.phase !== 'complete' || room?.round && room.round.phase !== 'results';
-  $('audio-preview').disabled = Boolean(active) || audio.status === 'loading';
-  $('audio-preview').textContent = audio.previewing ? 'Stop preview' : 'Preview sound';
-  $('timing-offset').value = timingOffset;
-  $('timing-offset-value').textContent = `${timingOffset > 0 ? '+' : ''}${timingOffset} ms`;
-  $('timing-offset').disabled = Boolean(active);
+  renderSoundSettings({ audio, room, timingOffset });
 }
 
 function updateArcadeSettings() {
-  const length = room?.arcadeLength ?? selectedArcadeLength;
-  $('arcade-length').max = String(Object.keys(GAMES).length);
-  $('arcade-length').value = String(length);
-  $('arcade-length-value').textContent = String(length);
-  $('arcade-length').disabled = Boolean(room && (room.hostId !== playerId || room.set || isRoundActive(room.round)));
-  $('arcade-description').textContent = `Battle with your friends for ${length} randomly selected games`;
+  renderArcadeSettings({ room, playerId, selectedArcadeLength });
 }
 
 function updateGameProfile() {
@@ -903,9 +870,9 @@ for (const button of document.querySelectorAll('[data-mode]')) button.addEventLi
   if (room) send({ type: 'configure', mode: button.dataset.mode, game: room.selectedGame });
   else { selectedMode = button.dataset.mode; localStorage.setItem('bb-mode', selectedMode); updateGameProfile(); }
 });
-$('share').addEventListener('click', async () => { $('invite').showModal(); await prepareInvite(); });
+$('share').addEventListener('click', async () => { $('invite').showModal(); await prepareInvite({ room, lanUrls, serverUrl, defaultServer }); });
 $('copy-link').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(inviteUrl); $('copy-link').textContent = 'Copied!'; }
+  try { await navigator.clipboard.writeText($('invite-link').value); $('copy-link').textContent = 'Copied!'; }
   catch { $('invite-link').select(); $('invite-note').textContent = 'Select and copy the invitation link.'; }
 });
 let letterHoldTimer;

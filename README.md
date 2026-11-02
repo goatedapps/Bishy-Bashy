@@ -1,599 +1,15 @@
 # Dokidoki Dash!
 
-A four-player browser party game with Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, Get Those Burgers Out!, Where’s Kaya, Happy Days, Stationery Master, Clock Stopper, and Ladder Climber.
-Shared-screen games show one common challenge; each device controls only its own player.
-Every gameplay column has a slim bottom identity row with the player’s selected avatar and name.
-The static website runs on GitHub Pages; a separate Node WebSocket server coordinates rooms and results.
+A four-player browser party game with 23 minigames, illustrated tutorials, and shared multiplayer rooms.
+Each device controls its own player through the same red, green, and blue buttons.
+The frontend deploys independently to GitHub Pages; a separate Node WebSocket service coordinates rooms and results.
+This is an independent game with original artwork.
 
 - [Play](https://goatedapps.github.io/Bishy-Bashy/)
-- [Multiplayer server health](https://bishy-bashy-server.onrender.com/health)
-- [Approved visual mockup](mockups/totem-shrinker.html)
-
-## Choose a mode
-
-Create a room, share its QR code or invitation link, and join from up to four phones or tablets.
-The landing screen only asks for your name and offers **Create room** or **Join room** with a room code.
-The illustrated yellow homepage pairs a large Dokidoki Dash! title with the create/join panel, and its question-mark button introduces the multiplayer mini-games and room-code setup across devices.
-The homepage uses GSAP for a short title/panel entrance and a dinosaur companion greeting, with occasional idle movement that pauses while typing, in dialogs, or while the page is hidden.
-The two upper sky stars wiggle continuously in opposite directions, including while typing, and pause in dialogs or when hidden.
-Reduced-motion preferences show the settled homepage immediately, and leaving the homepage clears its animations.
-After creating or joining a room, choose a mode on the room screen.
-The lobby uses animated arcade-cabinet and fanned-card mode illustrations, chasing lights, drifting shapes, and four mascot seats with staggered squash-and-stretch dances and join bursts.
-`src/lobby-motion.js` and `src/lobby.css` keep text and controls stationary, pause decorations while hidden or in dialogs, honor reduced motion, and clear lobby animations before a set starts.
-Game Select opens a separate **Choose a game** screen after **Start set**; **Play selected game** confirms the centered poster.
-The horizontal illustrated poster carousel loops in both directions with touch scrolling, mouse dragging, snapping, arrow and keyboard controls, and title search.
-The host's centered poster selects the game after scrolling settles; guests follow the shared selection and cannot move the carousel.
-The selected character dances inside its yellow frame, while neighboring posters stay smaller and tilted; reduced motion keeps the artwork still and makes centering immediate.
-Choose **Arcade** for different games selected at random, played once each in a random order.
-In Settings, the host can choose 3 to all 23 games with the Number of games slider; the default is 5.
-Selecting Arcade keeps everyone in the room lobby; once friends have joined, the host taps **Start set** to start the single reel.
-Before each Arcade game, the reel spins for 4.7 seconds and lands on the same server-chosen game on every device.
-With sound enabled, `roulette.mp3` loops during the spin; `Game-select.mp3`, the selected game's voice clip, and `applause.mp3` play together once on landing.
-`scripts/audio/arcade.js` maps the supplied voice filenames, including `me-find-mistake.mp3`, and the startup loader caches them before play.
-The selected game stays visible for two seconds before How to play; there is no separate Spin button.
-The configured game plan has no repeats, and repeated starts or reconnects do not reroll it.
-Choose **Game Select** for three rounds of one game, with difficulty increasing each round.
-Only the host can change the mode or chosen game after joining.
-The host can use **Back to modes** to keep everyone in the same room and choose again.
-Before the first countdown this returns immediately; during an active round or an unfinished set with scores, confirmation explains that the current set and scores will be cleared for everyone.
-Rules screens include visual examples using the same artwork and color/shape controls as the game.
-The instructions card pauses for 1.4 seconds after its playful “How to play” heading, then reveals the illustration after 700 ms and short instruction lines at 850 ms intervals.
-Rules use only as many points as the game needs.
-It uses `public/audio/how-to-play.mp3` for the heading and `public/audio/Punch-button.mp3` for the illustration and each rule when effects are enabled.
-Ready becomes available once the final line is visible; redraws do not restart the sequence, and reduced-motion settings remove the entrance animation.
-**Leave** stays available during play and asks for confirmation before leaving an active set.
-Leaving forfeits only an unfinished round; an already accepted finish and previously earned points remain credited, and the other players can continue.
-Changing the setup resets everyone's Ready state; setup stays locked throughout the full set.
-In Game Select, the host taps **Start set** to show the game's instructions, with no more than three points.
-After clock synchronization, every connected player taps **Ready** on that screen before the shared three-second countdown can begin.
-In Arcade, each completed game shows a cumulative podium for five seconds, followed by a fresh reel spin, the next game's instructions, and an all-player Ready gate.
-In Game Select, instructions appear only once; subsequent rounds use a Ready button on the podium screen instead of repeating them.
-Game Select intermissions last at least five seconds and wait until every connected player is ready.
-Players may toggle readiness off again before the countdown starts.
-
-Each round awards **10 / 7 / 4 / 1 set points** by placement.
-Ties share placement points and skip the following occupied places: two tied first-place players earn 10 each, and the next player earns 4 for third.
-Unfinished rounds, forfeits, missing results, and Perm rounds with zero rhythm score earn zero set points.
-Final standings keep mode and game selection hidden and show an **Exit** button to every connected player.
-Exit returns everyone to mode selection together; stale exits and attempts to exit an unfinished set are ignored.
-The highest accumulated total wins the set; equal highest totals share victory, and a set with no points has no winner.
-Final standings include a round-by-round points table.
-Every transition and final screen restores a first/second/third podium using cumulative placement and total points.
-The accompanying Last game column shows each player's most recent performance and the set points earned in that round.
-The server awards points once per round and retains earned points if a player leaves between rounds.
-New guests can join only after the full set ends; original players can reconnect during it.
-The Arcade length and Game Select round count live in `shared/sets.js`, and new games join the shared catalog in `shared/games.js`.
-The catalog currently contains 23 games, all available in Game Select.
-Arcade selects the host-configured number of distinct games from the complete registered catalog, and its roulette includes all 23 games.
-`arcadeGameIds()` in `shared/sets.js` supplies the same eligible pool to server selection and the reel, so a spin cannot land on an omitted game.
-
-## Play Totem Shrinker
-
-Match the bottom block using red circle, green triangle, or blue diamond.
-The controls also accept **1 / 2 / 3** or **J / K / L** on a keyboard.
-Each correct tap clears one block immediately on that device.
-Only the next five blocks are displayed, with the next block at the bottom.
-All players receive the same seeded block sequence.
-A wrong tap freezes that player's inputs for 300 milliseconds.
-The first player to clear the tower wins, ranked by locally measured elapsed time.
-Arcade uses 30 blocks; Game Select uses **30, 40, and 50 blocks** across its three rounds.
-The round ends after 45 seconds; unfinished players time out.
-Base gameplay settings live in `shared/totem.js`; difficulty settings live in `shared/games.js`.
-
-Switching apps, hiding the tab, or reloading during a round forfeits that round.
-A network disconnection alone does not forfeit: local play continues and a saved result retries after reconnecting.
-The server accepts submissions for ten seconds after the round deadline.
-Ready gates wait up to 15 seconds for a disconnected player to return, then may continue with ready connected players.
-Skipped disconnected players earn zero for that round and may return for the next one.
-Connected players are never skipped because they have not clicked Ready or their clock measurements need refreshing.
-If no connected players remain, the set waits for one to return.
-A disconnected seat remains reserved for **30 seconds**, with a countdown visible to everyone still connected.
-After expiry, the player is removed, accepted results remain, and unfinished play forfeits.
-A new player can take that seat during a set, choose a character, and join the next round with their own scores.
-Hosting moves to a connected player if the host disconnects.
-
-Sound and music are enabled by default on every device after a user gesture.
-Fresh guests default to **20% music** and **70% effects**; saved personal choices take precedence.
-Use the music-note button to mute or enable music and effects, and the gear button for separate volume controls and a sound preview.
-All essential cues also appear visually.
-Enabled menu buttons play the user-supplied `public/audio/Button-Press.mp3` once per activation through the existing effects volume and mute controls.
-The three gameplay buttons and their keyboard shortcuts play `public/audio/Punch-button.mp3` once per enabled press (Jump uses the supplied `public/audio/bounce.mp3` instead), alongside the game's success and mistake cues.
-Fireworks Craze loads `public/audio/Fireworks.mp3` for each local rocket launch, including retries, without playing sounds for remote player rockets or replaying launches missed while muted or interrupted.
-Local successes use brief, proportional feedback: colored chips for cleared Totem blocks, dancer pops and growth bursts in Perm Mania, matched reel badge pops in Slots, and copied-move dots and stage bursts in Monkeys.
-Fireworks retain their expanding bursts with an impact ring, while Jump retains its boost sparks and squash-and-stretch with rising landing feedback.
-Finishes receive a larger lane-local burst; feedback never moves reaction targets, changes timing windows, or blocks input, and optional motion follows the device's reduced-motion preference.
-Physical phone audio and touch latency still need playtesting.
-
-## Music and sound
-
-Menus, game selection, intermissions, and standings loop the user-supplied `public/audio/Background-ActionRock.mp3` through the existing music volume and mute controls.
-The illustrated instructions screen uses `public/audio/game-instructions.mp3` instead, with each track retaining its playback position when paused.
-The instructions track has a +6 dB playback boost through the existing music volume control to compensate for its softer recording.
-Both tracks play after a user gesture and pause for the round countdown and gameplay, with Action Rock returning on transition screens after the podium cue.
-The same personal music settings apply; hiding the page or previewing gameplay sounds pauses menu music.
-Each post-game podium plays `public/audio/podium-winner.mp3` once through the effects controls before background music resumes, including the final set podium.
-Repeated score updates do not restart the podium cue, and leaving the podium or muting cancels it without replaying it later.
-
-The original soundtrack is a 128 BPM funky disco arcade loop, with an octave bass groove, four-on-the-floor drums, electric-piano-style chord stabs, and a bright melody.
-An additional percussion and melody layer enters on a beat near the final ten seconds.
-Correct taps have three wooden pop tones corresponding to the block colors; a wrong tap produces a springy falling sound.
-Countdown, GO, finish, and timeout each have a distinct cue.
-The countdown plays the user-supplied `public/audio/countdown.mp3` once across the three-second countdown, preserving its final beat and decay after GO without layering the old GO cue; rejoining audio mid-countdown skips to the current position rather than replaying it.
-
-Music defaults to **This device** for every player.
-The optional **One device per room** setting still selects the first participant in the round's fixed player list.
-Choose **This device** for personal music playback, such as headphones, or **Off** to keep effects only.
-The music continues while that player waits after finishing, then stops when the room reaches results or the round deadline.
-Network disconnection does not stop local audio; hiding the game, muting it, leaving, and forfeiting cancel scheduled playback.
-The finish cue is allowed to ring through a results-screen transition.
-
-Decoded sounds are cached and scheduled on the Web Audio clock from the agreed local start.
-Enabling sound or returning from an audio interruption joins the current musical position and skips old countdown cues.
-Sound loading and playback never gate gameplay or the result submission path.
-Effects duck the music briefly, independent category gains control the balance, and a master limiter provides additional headroom.
-Transient effects are capped at eight voices; the music uses two looping buffers.
-
-Each game's mono WAV bank totals less than 2.5 MB and decodes only after sound is enabled for that game.
-The normal and urgency loops each last 15 seconds at 32 kHz, with equal sample counts for phase alignment.
-The gameplay score and synthesis are in `scripts/audio/` and use no third-party recordings or music services.
-Regenerate the runtime files and their numerical analysis with:
-
-```sh
-npm run audio:render
-```
-
-These signal and lifecycle checks do not establish subjective sound quality or physical speaker latency.
-Listen on target phones, headphones, and speakers to tune the final balance.
-
-## Play Perm Mania
-
-Choose **Game Select → Perm Mania** before creating a room, or let the host choose it before starting a set.
-Arcade can also select Perm Mania randomly.
-Every player receives the same eight seeded rhythm phrases.
-Arcade uses 128 BPM; Game Select increases to **128, 136, and 144 BPM**.
-Each phrase demonstrates four beats, then asks the player to repeat that rhythm over four beats.
-Tap any colored button, **1 / 2 / 3**, or **J / K / L** in time with the notes.
-Watching taps do not score; missing notes and extra response taps count as mistakes.
-A phrase with at most one mistake grows the dancer's hair by one stage.
-The round lasts eight complete phrases: 30 seconds at 128 BPM, down to about 26.7 seconds at the third round's 144 BPM.
-The final result is submitted locally at that exact round duration.
-Rankings use hair growth first and timing score second, with exact ties sharing a rank.
-Completed rhythm rounds outrank forfeits and missing results; completion packet arrival order does not affect ranking.
-
-The initial hit window is ±140 ms, with **Perfect** feedback within 55 ms.
-These windows shrink proportionally with the higher tempo, and backing music, demonstrations, and visual beats speed up together.
-Accurate hits award up to 1,000 rhythm-score points each; stray response taps subtract 250 without reducing that score below zero.
-Rhythm score determines round placement after hair growth; placement then awards the shared set points.
-An 80 ms input guard ignores simultaneous keys or accidental double input, while repeated mashing still fails phrases.
-These are provisional casual-play settings, rather than a certified rhythm-game timing tolerance.
-The **Rhythm timing** setting ranges from −150 to +150 ms and freezes when the local round is scheduled.
-Increase it if taps consistently register late on a particular device or speaker setup.
-The visual guide works while muted; enabling personal music can help players joining from different locations.
-
-Perm Mania has its own disco backing, demonstration claps, and local hit/miss feedback.
-Each successful phrase plays the supplied `public/audio/Ding.mp3` when hair growth is awarded, including the final phrase.
-The demonstration sounds and visual notes share the agreed local timeline, but physical audio, display, and touch latency still require phone testing.
-This is an independent adaptation of the rhythm-and-hair-growth concept described in [this player guide](https://gamefaqs.gamespot.com/ps/575837-bishi-bashi-special-2/faqs/13258), with original artwork and music.
-[Perm Mania artwork notes](public/assets/perm-artwork.md) preserve the image-generation prompt and sprite layout.
-
-## Play Facial Slot Machine
-
-Choose **Game Select → Facial Slot Machine**, or encounter it in Arcade.
-Match all three reels to the portrait above the stage.
-All three rows spin at once, with neighboring portraits visible as they approach the center marker.
-The **red** button stops the red row, **green** stops green, and **blue** stops blue, in any order.
-Use **1 / 2 / 3** or **J / K / L** for the corresponding colors on a keyboard.
-The portrait nearest the center marker at the local input timestamp is selected.
-A correct face stays locked while the other rows continue.
-A miss pauses only that row for 450 ms, then resumes its motion from the stopped position; previous matches remain locked.
-Each row has its own 120 ms input guard, so simultaneous presses on different colors remain valid.
-The first player to lock all three target portraits wins, ranked by local elapsed time, with a 30-second deadline.
-Unfinished players receive zero set points.
-
-Every player receives the same seeded target and reel order, calculated from the agreed round start.
-There are six visually distinct portraits: Robot, Frog, Lion, Cat, Yeti, and Octopus.
-Each reel cycles through all six once, begins away from the target, and repeats deterministically.
-In Arcade, a portrait travels one position every 320 ms; Game Select uses **320, 290, and 260 ms** across its three rounds.
-These are provisional casual-play timings and should be tuned from phone playtests.
-Local input never waits for the server, and remote spinning follows the player's published pauses and lock positions at most four times a second.
-
-The game uses a turquoise, pink, and butter-yellow photo-booth stage, with three colored horizontal reel strips stacked inside each player's cabinet.
-The same three colored buttons retain their design and fixed position in all games, including future additions.
-Its six original portraits were produced with the built-in image-generation tool.
-[Facial Slot Machine artwork notes](public/assets/facial-slot-artwork.md) preserve the complete prompt, sprite order, and returned image details.
-The mechanic is an independent adaptation of matching the target face across three reels, as described in the [original game's player guide](https://gamefaqs.gamespot.com/ps/575837-bishi-bashi-special-2/faqs/13258).
-
-The original 128 BPM carousel-funk soundtrack combines a bouncing bassline, bright mallet melody, chord stabs, and claps.
-A second layer enters near the final ten seconds, and successful locks, retries, GO, and a completed face have distinct synthesized cues.
-The bank loads only for this game after sound is enabled, using the existing per-room music policy, mute controls, voice cap, and interruption handling.
-The editable composition lives in `scripts/audio/slots.js`, and the delivered WAV files and numerical measurements live in `public/audio/`.
-Automated signal and playback-lifecycle checks pass; balance and physical audio latency still need listening tests on target phones.
-
-## Play Fireworks Craze
-
-Choose **Game Select → Fireworks Craze**, or encounter it in Arcade.
-Press matching color buttons before the rockets fall back to the ground.
-Colors are visible from launch; rockets have no shape symbols.
-Keyboard controls remain **1 / 2 / 3** or **J / K / L**.
-
-Game Select has seven sets: **1 rocket, 3 rockets, 3 faster rockets, 4 rockets, then three sets of 5 rockets**.
-Arcade adds three more sets of five rockets for ten sets total.
-Rockets launch one after another, and you may burst airborne colors in any order.
-Repeated colors consume the oldest airborne matching rocket first.
-A wrong color or an unburst rocket landing fails only the current set, followed by a **650 ms** recovery.
-Completed sets remain credited.
-Clear all sets before the **45-second Game Select or 60-second Arcade** deadline; fastest local elapsed time wins.
-
-At base difficulty, airtimes are **2600, 2600, 2200, 2100, 2000, 2000, and 2000 ms** across the sets.
-Launch gaps are **420, 420, 340, 300, 260, 260, and 260 ms**.
-Game Select scales those times to **100%, 94%, and 88%** across its three rounds.
-These are provisional timings pending phone playtests.
-Every accepted rocket creates a small firework display.
-Completed sets play `Ding.mp3` and show a large yellow circle; failed sets play `wrong.mp3` and show a large red cross.
-All feedback works visually while muted.
-Remote lanes use bounded snapshots of the actual current set, launch schedule, and burst mask.
-
-The original generated festival background remains in `public/assets/fireworks-festival.png`.
-Its prompt is preserved in [Fireworks artwork notes](public/assets/fireworks-artwork.md).
-`src/firework-view.js` and `src/fireworks.css` draw the colored rocket arcs and burst particles.
-Each rocket reuses `Fireworks.mp3` at its scheduled local launch, skipping stale launches after interruptions.
-Frontend and room service must deploy together with protocol 31.
-
-## Play Mimicking Monkeys
-
-Choose **Game Select → Mimicking Monkeys**, or encounter it in Arcade.
-Watch the monkey demonstrate a sequence of red circles, green triangles, and blue diamonds, then copy the order using the shared three buttons.
-Keyboard controls remain **1 / 2 / 3** or **J / K / L**.
-The first sequence has two moves, and every completed stage adds one move to the same seeded prefix.
-Watch inputs are ignored; a **Your turn** label and a question mark indicate when you can answer.
-Copy the order at your own pace; this game does not judge rhythm.
-Neutral dots show sequence length during demonstrations and fill as response moves are accepted, without exposing the answer order.
-Repeated colors have a blank interval between flashes so they remain separate moves.
-
-Arcade requires five stages, ending with a six-move sequence.
-Game Select requires **5, 6, and 7 stages**, ending with sequences of **6 through 8 moves**.
-Demonstration steps take **650, 610, and 570 ms**, with each shape visible for 65% of its step.
-Each demonstration has a 550 ms lead-in and a 250 ms pause before answering.
-A wrong answer resets only the current response and adds 600 ms recovery before that sequence is demonstrated again.
-Completed stages remain credited, and a 100 ms input guard prevents simultaneous presses from submitting multiple answers.
-Finish every stage before the 45-second deadline; fastest local elapsed time wins, and unfinished rounds earn zero set points.
-These are provisional casual-play timings pending physical phone playtests.
-
-Every device uses the same seeded prefix and freezes its local clock mapping when the round is scheduled.
-Other lanes display the peer's actual demonstration phase and accepted response progress from published timing.
-Optional demonstration tones reuse the existing three color sounds and are scheduled from the same local timestamps as the shape flashes, with a 150 ms audio lookahead.
-Mute, replay, finish, and interruption cancel queued demonstration sounds; resuming skips past notes, and muted play remains fully supported.
-Backing music, local hit/miss feedback, and finish cues reuse the original disco bank and shared audio controls.
-Each fully correct local sequence plays the supplied `public/audio/Ding.mp3`, including the final sequence; individual matching inputs keep their color tones.
-Audio scheduling checks do not establish physical speaker latency or subjective mix quality.
-
-The original generated character lives in `public/assets/mimicking-monkey.png`, with its prompt preserved in [artwork notes](public/assets/monkeys-artwork.md).
-The leafy stage, shape cues, and response indicators live in `src/monkey-view.js` and `src/monkeys.css`.
-Deploy frontend and room service together to make the new catalog entry available; protocol 31 carries current scene snapshots and the announcement gate.
-
-## Play Jump for the Meat
-
-Choose **Game Select → Jump for the Meat**, or encounter it in Arcade.
-The dinosaur bounces automatically; press **any of the three buttons** as it lands, when the landing ring turns gold or green.
-Keyboard controls remain **1 / 2 / 3** or **J / K / L**.
-Watch the dinosaur descend onto the trampoline to judge when to press; the timing bar has been removed so the scene has more vertical space.
-The wide gold zone gives a **Good** landing, while its smaller green center gives **Perfect**, which adds twice as much height and shortens the race.
-The meat stays at the same target height: **8 Perfect landings**, **16 Good landings**, or an equivalent mixture reaches it.
-Each Good adds one of 16 height units; each Perfect adds two, capped at the target.
-The jump scene fills the player panel to its bottom edge, without a jump counter or height bar, leaving more vertical travel space on phones.
-Accepted boosts stretch the dinosaur briefly and create an impact burst; a Perfect landing also plays a distinct optional flourish.
-After reaching the target height, reach the meat at the final jump's apex to finish; final flight time is included in your locally measured result.
-Each finished lane immediately shows the accepted elapsed seconds above **CLEAR!**, including remote players while others continue.
-An early tap or missed landing causes a 450 ms recovery before another attempt, while successful boosts remain credited.
-A 100 ms input guard ignores simultaneous buttons and accidental double presses.
-Unfinished players time out after 30 seconds and receive zero set points.
-
-Arcade and every Game Select round use the same 16-unit meat height; later Game Select rounds adjust bounce speed and landing windows.
-Base bounce periods shorten from **1,200 to 1,100 ms** in 50 ms steps, with a seeded −80, 0, or +80 ms adjustment per height shared by all players.
-Landing windows narrow from **±150 to ±120 ms** in 15 ms steps; both window boundaries are inclusive.
-The Perfect half-window is 30% of the landing half-window, rounded to **45, 41, 36, 32, and 27 ms** across the five difficulties, with inclusive boundaries.
-Input judgments use the frozen local round clock, and a delayed animation frame cannot extend a missed landing or move the final apex time.
-Remote bounces follow published launch timing and height; only local inputs determine a player's result.
-These initial settings are provisional until playtested on phones.
-
-The game uses an original generated dinosaur and roasted drumstick on a peach-and-sand stage, with the trampoline, landing rings, and impact particles drawn in code.
-The delivered character is `public/assets/jump-dino.png`, with its full prompt preserved in [artwork notes](public/assets/jump-artwork.md).
-Illustrated rules explain the landing and the three interchangeable buttons, and all essential cues remain visible while muted.
-The game reuses the original opt-in disco audio bank for backing music, accepted boosts, misses, GO, and finish cues, plus the existing Perm growth flourish for Perfect landings.
-Jump also preloads the user-supplied `public/audio/bounce.mp3` for each enabled gameplay button press, replacing Punch for both touch and keyboard input.
-The finish cue, Perfect flourish, shared mute controls, and other games' button sounds keep their existing behavior.
-Only the additional flourish and bounce clip are loaded for Jump; the full Perm music bank is unnecessary.
-Automated timing comparisons confirm that all-Perfect play beats safe early landings at every difficulty; physical phone testing still needs to establish whether the choice feels satisfying.
-Deploy frontend and room service together to register the new game in both catalogs.
-
-## Play Burger Girl
-
-Choose **Game Select → Burger Girl**, or encounter it in Arcade.
-Red circle moves the chef's plate left, green triangle moves it to the middle, and blue diamond moves it right.
-The selected position persists until another button is pressed.
-Get under each falling ingredient before it reaches the plate; catches happen automatically on the local clock.
-A move exactly on the landing timestamp counts, and a delayed frame cannot change an already scheduled landing time.
-
-Catch lettuce, patty, tomato, and a top bun to serve one burger.
-Serve **five burgers / twenty ingredients** to finish, ranked by local elapsed time; perfect runs can tie.
-A miss costs **300 ms** of recovery and repeats that ingredient in a new seeded chute, keeping completed layers and served burgers.
-Ingredients launch at **56% of the current fall duration**, so successive layers overlap in the air within each burger.
-Each served burger gets a **700 ms** pause, one set-completion Ding, and the large yellow circle.
-Each new burger shortens its fall and launch gap by another **7% of the initial duration**, reaching 28% faster on the fifth burger.
-A miss cancels the approaching layers and restarts from the missing ingredient after recovery.
-Game Select shortens each fall from **1,100, 990, and 880 ms** across its three rounds.
-The deadline is **35 seconds**, and unfinished rounds earn zero points.
-These initial speeds are provisional until phone playtesting.
-
-The chef, ingredient sprites, building stack, and delivered-burger flourish stay inside each player's lane.
-Only local scheduled catches produce gameplay sounds; remote movement follows each player's published scene.
-The common music bank, punch-button controls, `Ding.mp3` for every successful local catch, and miss cues use the existing opt-in audio system.
-`shared/burger.js` owns the seed and catch rules; `src/catch-spot-view.js` and `src/catch-spot.css` draw the diner stage.
-
-## Play Me Find Mistake
-
-Choose **Game Select → Me Find Mistake**, or encounter it in Arcade.
-Choose the different picture with red for top, green for middle, or blue for bottom.
-Every answer advances to the next board, including wrong answers.
-Correct answers earn one point; mistakes earn none.
-The most correct answers wins, with equal scores sharing a place regardless of completion time.
-Game Select uses 8, 9, and 10 boards across its three rounds, with a 35-second limit.
-The first board has a 250 ms observation gate; subsequent boards accept input immediately after the previous answer's 260 ms feedback.
-Completed correct answers remain credited if the clock expires.
-`shared/mistake.js` owns seeded boards and correct-answer counts; `src/catch-spot-view.js` retains the answered board during feedback before revealing the next.
-Original artwork and generation prompts are preserved in [artwork notes](public/assets/catch-spot-artwork.md).
-
-## Play Dice, Dice, More Dice
-
-Choose **Game Select → Dice, Dice, More Dice**, or encounter it in Arcade.
-Everyone sees the same three dice in one shared row.
-Each throw tumbles through a 260 ms arc and a 120 ms landing bounce with a grounded shadow, driven by the shared round clock.
-Reduced motion shows settled dice immediately, and the animation leaves answer windows unchanged.
-Choose the highest die with red for left, green for middle, or blue for right.
-Each throw has three distinct values from one to six, so exactly one choice is highest.
-Each player locks one answer per throw; every correct answer earns one point.
-Choices and result symbols reveal together after the answer window closes, and individual scores stay in four fixed player columns at the bottom.
-There are **21 throws in 30.7 seconds**.
-The answer window shortens every three throws: **2.0, 1.6, 1.4, 1.2, 1.0, 0.9, and 0.8 seconds**.
-Brief result holds fill the remaining four seconds without reducing those answer windows.
-The most correct answers wins; equal counts share a place.
-Each throw plays the supplied `dice-roll.mp3`; correct and wrong answers use `Ding.mp3` and `wrong.mp3` once when results reveal.
-`shared/dice.js` owns the deterministic schedule and dice, and `shared/choice-round.js` owns private answers and server scoring.
-`src/shared-choice-view.js` renders the common screen using exact code-native pips and the existing illustrated carnival background.
-
-## Play Facing Which Way
-
-Choose **Game Select → Facing Which Way**, or encounter it in Arcade.
-Everyone watches the same duck card turn and flip on one shared screen.
-Remember its starting picture, follow the covered card, then choose the matching final picture from the three options below.
-Options include front and back views and different rotations; red chooses left, green middle, and blue right.
-Each of the **five Game Select or eight Arcade sets** gives everyone **three seconds** to lock one answer after the turns finish.
-Answers remain private until the deadline, then reveal together with each player's choice and a correct/wrong symbol.
-Every correct answer earns one point; the most correct answers wins, with ties sharing a place.
-The initial picture shows for 700 ms, the cover closes over 400 ms, and the card stays covered for another 350 ms before turning.
-Game Select increases from two to four turns, lasting 1000, 925, and 850 ms per turn across its three rounds.
-Each turn or flip uses the supplied `flip.mp3`; old cues never replay after mute or interruption.
-The result holds for 650 ms before the next common set.
-`shared/facing.js` owns front/back pose composition, seeded options, and the complete shared schedule.
-`src/shared-choice-view.js` and `src/shared-choice.css` draw the covered card, picture options, choices, and fixed player score columns.
-The matching reverse-side duck exposes a prominent left-pointing bill while retaining the rear view; its master, prompt, and optimized delivery file are documented in [duck artwork notes](public/assets/facing-duck-back-artwork.md).
-
-Both shared choice games accept bounded clock-stamped answers with an 80 ms transport grace after each deadline and acknowledge retries privately.
-The server locks the first valid answer, keeps pending choices out of broadcasts, settles each set once, and owns final scores.
-Missing an answer never pauses the common schedule, and disconnecting does not discard an accepted answer.
-Deploy frontend and backend together with **protocol 31**, including `shared-choices` and `mistake-points` capabilities.
-
-## Play Happy Days
-
-Every game uses a new shared-seed chart: lanes, odd-beat rests, and hold lengths vary while staying aligned to the same music.
-All players receive the same 57-note, 17-hold chart in a round, with equal maximum scores and full timing gaps around holds.
-
-
-Follow three columns of red, green, and blue rectangular notes for 30 seconds.
-Press the corresponding shared button when a bar’s leading edge reaches the bright bottom line.
-Long bars require a continuous hold; release when the tail reaches the line.
-Accepted bars light up, held tails shrink toward the line, and immediate feedback shows Perfect, Good, or Missed.
-The buttons reuse distinct supplied D, F♯, and A hit tones, and keyboard 1/J, 2/K, and 3/L supports the same press-and-release actions.
-Independent fingers and keys can hold different lanes simultaneously; a second source on one color does not release it until every source lets go.
-
-The seeded three-button arrangements each have 57 notes, including 17 holds of one or two beats, aligned to the supplied recording’s detected 145 BPM grid with a 240 ms grid offset.
-The chart begins at 1.895 seconds so players can see notes approaching, and the final release window ends before the 30-second finish.
-Perfect requires both relevant edges within ±55 ms and earns 1000 points; Good permits ±140 ms and earns 500 points.
-Missed notes earn zero; failing either edge of a hold misses that complete note, and keeping a button down never auto-collects later notes.
-The highest accuracy score wins, with equal point totals sharing a place regardless of hit count.
-The maximum is 57,000 points; successful musical phrases reuse one Ding, including the final phrase.
-Results show points plus Perfect, Good, and Missed note totals.
-
-`happy-days-music.mp3` supplies the original first 30 seconds of the track, without looping, changing tempo, or layering the generic urgency music.
-Music and bars use the scheduled round clock; mute/resume seeks to the current song position, and the frozen Rhythm timing setting adjusts local judgment and visual timing together.
-Existing note samples keep their fixed pitches and play at reduced level without repeatedly ducking the song.
-An offline default-level mix estimate peaks at approximately −4.69 dBFS before the existing limiter; physical phone and Bluetooth latency remain device-dependent and can be adjusted in Settings.
-The supplied `happy-days-voice.mp3` announces the game, and the newly supplied `wheres-kaya-voice.mp3` also joins the normal game announcement bank.
-
-Happy Days is available in Arcade, Game Select, and Party, with a looping cat-paw tutorial that demonstrates both tapping and holding.
-`shared/happy.js` owns the chart and scoring; `src/held-input.js` owns input-source lifetime; `src/happy-view.js` and `src/happy.css` render the three-column boards.
-The server validates full-duration results, consistent note totals, and bounded accuracy scores; note snapshots are cosmetic and never judge remote input.
-Deploy frontend and room service together with protocol 31 and the `happy-days` capability.
-[Original artwork prompts and audio analysis](public/assets/happy-days-artwork.md) record the generated masters and supplied music provenance.
-
-## Play Ladder Climber
-
-Follow ten orange ladders through the tower to the golden trophy.
-Each seeded ladder appears on the left, middle, or right and has 3–6 visible rungs; the next ladder always changes position.
-Press red for the left ladder, green for the middle, or blue for the right, once per rung.
-The wide left/middle/right ladder positions overlap by roughly half their visible width; the worker alternates reaching hands on each accepted step.
-Correct inputs climb one rung with supplied `Diuup.mp3`; each completed ladder plays Ding and the common large circle.
-Wrong positions briefly pause the worker for 250 ms without removing completed steps; a 100 ms input guard prevents accidental duplicate presses.
-Ladder handoffs and the final trophy arrival take 180 ms, and the accepted finish time includes that final arrival.
-The fastest player to reach the trophy wins within a 45-second deadline; trophy collection plays supplied `get-trophy.mp3` and `applause.mp3` together through the protected finish bus.
-The illustrated course scrolls smoothly with paused GSAP tweens following each player’s local or published scene, with reduced-motion support and no progress counters.
-The game is available in Arcade, Game Select, and Party, and its cat-paw tutorial demonstrates two ladders.
-The supplied `ladder-climber-voice.mp3` announces its selection.
-Deploy frontend and server together with protocol 31.
-[Artwork masters and prompts](public/assets/ladder-artwork.md) record the original illustrations.
-These initial input and recovery timings remain provisional pending phone play feedback.
-
-## Play Stationery Master
-
-Count the pencils, erasers, and sharpeners scattered across one shared illustrated desk cluttered with books, papers, paperclips, and tape.
-Each set contains 1–6 of each item; red counts pencils, green counts erasers, and blue counts sharpeners.
-Each press increments that player’s matching counter, wrapping from six to zero; the four player columns show everyone’s current counts and grey placeholders for open seats.
-Counters reset each set, and all three counts must match to earn one point.
-Each set starts with a two-second sequence that tosses the items onto the desk one by one; the counting window opens after they land.
-The GSAP animation follows the shared clock and skips flight motion under reduced motion.
-Six sets allow 8, 7.4, 6.8, 6.2, 5.6, and 5 seconds, followed by a short answer reveal.
-The server validates bounded input traces and monotonic retries, allows 500 ms for the final counter update, and owns all scores.
-Targets stay hidden until settlement; repeated or delayed updates cannot roll counters back or award a set twice.
-
-## Play Clock Stopper
-
-Press any button to stop your own clock when the minute hand returns to 12.
-Ten shared sets target 1:00 through 10:00, moving the hour hand forward once per set.
-Gameplay hides the top instructions and time counters.
-Each set previews the clock for 800 ms, then starts its minute hand at 12 at a constant speed.
-One revolution shrinks evenly from 1200 ms in the first set to 500 ms in the last.
-Inputs open halfway through the first revolution and close halfway through the next, preventing an immediate stop at the starting position.
-Rank each set by the absolute millisecond error from the first return to 12; award 10, 7, 4, and 1 points, with equal errors sharing a place and missing stops scoring zero.
-The server ranks local stop timestamps rather than packet arrival order and acknowledges immutable first answers.
-Each player sees their stopped hand, early/late error, and earned points before the next set.
-All four player columns remain visible, including grey placeholders for open seats.
-
-Both games join Arcade, Game Select, and Party, with original optimized illustrations and looping cat-paw tutorials using their real gameplay renderers.
-Game announcements use the supplied `stationery-master-voice.mp3` and `clock-stopper-voice.mp3` clips.
-Deploy frontend and room service together with protocol 31 and the `desk-clock` capability.
-[Artwork masters and prompts](public/assets/desk-clock-artwork.md) record the generated assets.
-
-## Play Where’s Kaya
-
-Remember Kaya, the tan Singapore Special dog sitting beside two identical grey kittens.
-Three identical opaque blankets cover the animals, then exchange positions on one shared screen.
-Red, green, and blue select the left, middle, and right blanket after the shuffling finishes.
-Every player privately locks one answer within 1.5 seconds; all correct players receive a point when the answer window closes.
-The server owns scores, answer deadlines, retry acknowledgements, and result settlement through the same shared-choice rules as Dice and Facing.
-Eight sets use 2–9 swaps, initially lasting 900, 720, 560, 420, 300, 220, 180, and 145 ms per swap.
-Game Select difficulties shorten each swap by another 15 ms per round, with a 100 ms minimum.
-Each set shows the animals for 1600 ms, lowers the blankets over 450 ms, holds for 250 ms, shuffles, settles for 250 ms, accepts answers for 1.5 seconds, then reveals for 900 ms.
-The first difficulty lasts 53.985 seconds; most correct answers wins, with equal scores sharing a place.
-The two final sets add eight and nine swaps at 180 and 145 ms each; gameplay hides its heading and timers.
-Each shuffle uses the supplied `card-move.mp3`, approved in place of the unavailable WAV, with bounded lookahead, deduplication, stale-cue skipping, and cancellation on mute or navigation.
-Correct answers play `Ding.mp3` and the large yellow circle in the player’s score box.
-The generated dog, kitten, blanket, and cozy Singapore home artwork also appear in its poster and looping cat-paw tutorial.
-Reduced motion removes decorative vertical crossing arcs while retaining the horizontal movement needed to track Kaya.
-The game is available in Arcade, Game Select, and Party.
-Deploy frontend and backend together with protocol 31 and `kaya-shuffle`.
-[Artwork masters and generation prompts](public/assets/kaya-artwork.md) document the original illustrations.
-
-## Play It's Raining Coins
-
-Move the raccoon with **red = left, green = middle, blue = right** to catch gold star coins while avoiding the cracked purple fakes.
-The three marked chutes match the shared control bar, whose captions show Left / Middle / Right during this game.
-Collect 36 coins before the 40-second deadline; fastest completion wins.
-A missed gold coin or a caught fake adds a mistake while keeping collected coins; movement remains responsive and the next drop keeps its fixed launch time.
-Game Select starts its three rounds with 1300, 1220, and 1140 ms falls and 720, 680, and 640 ms launch intervals.
-Arcade starts with 1200 ms falls and 700 ms launch intervals.
-Within every round, each successive pair gradually shortens both durations, reaching half the initial duration on pair 36 and holding that pace thereafter.
-Each pair keeps its assigned fall duration while airborne, with at most three overlapping pairs visible.
-`shared/coins.js` owns seeded chute pairs and resolves landings at their scheduled local timestamp, accepting a lane change exactly at landing.
-
-## Play Dodge or Die!!
-
-Move into gaps between walls: **red moves one lane left, blue moves one lane right**.
-Press **green** to jump over low hurdles.
-The game and animated demo omit the circle, triangle, and diamond beneath the fox because movement is relative rather than a direct lane selection.
-Tall walls block two lanes, leaving one open lane; striped low hurdles span all three lanes and require a jump at the landing line.
-Clear 12 obstacles in Arcade; Game Select increases the goal from 12 to 14 and shortens each approach from 1350 to 1150 ms.
-Every round has a 40-second deadline, and fastest completion wins.
-A bump adds a 550 ms recovery and keeps completed obstacles; clear obstacles have a 180 ms handoff.
-Jumps last 640 ms and clear a hurdle when their normalized height is at least 0.6 at impact, giving roughly a 378 ms valid launch window.
-Tall walls require the open lane even while airborne; lane steps have a 100 ms cooldown and a jump cannot restart in midair.
-`shared/dodge.js` owns the seeded wall lanes and alternating wall/hurdle schedule; delayed frames use scheduled impacts rather than frame arrival time.
-
-Both games use the existing Ding success cue, mistake cue, gameplay button sound, countdown, and podium music without adding or creating audio.
-Their initial difficulty values are provisional tuning, verified by deterministic simulations and desktop UI checks; player trials on phones can inform later pacing adjustments.
-The new generated raccoon and fox are retained as PNG masters with hashed 512-pixel WebP delivery images totaling 105,204 bytes.
-[Artwork prompts and provenance](public/assets/coins-dodge-artwork.md) record the built-in image-generation prompts and selected outputs.
-Both games enter Game Select and Arcade immediately, together with Dice and Facing Which Way.
-
-
-## Play Type in Letters
-
-Choose **Game Select → Start set → Type in Letters → Play selected game**.
-Everyone shares one alphabet and the same random three-letter target, with a shared game timer above the arena and a countdown for each word.
-The game supports the room's existing one-to-four-player roster, including three-player matches.
-**Red moves left, blue moves right, and green enters the selected letter**.
-Hold either movement button to keep moving, or use **1 / 2 / 3**, **J / K / L**, or **Left / Enter / Right** on a keyboard.
-Movement wraps through **A–Z and ⌫**; select **⌫** with green to erase the last entered letter.
-Incorrect entries stay visible so you can correct them.
-Every target resets all pointers to **N** and clears the entered letters, giving everyone the same starting position.
-The alphabet uses a single row on wide screens and three readable rows on phones.
-
-Each game has five shared words, with **10, 8, 6, 5, and 4 seconds** to finish each successive word.
-Every player who completes the word before its deadline earns **one typing point**; completing early never closes another player's window.
-A per-word countdown shows the time remaining, and matched players wait for their friends until the same shared deadline.
-Completed words receive a yellow circle and `Ding.mp3`; missed words receive a red cross and `wrong.mp3`.
-After an **800 ms** transport grace and **300 ms** of feedback, the next target starts on the fixed shared schedule, even if nobody finishes.
-The full game lasts **38.5 seconds**, with the usual Game Select readiness gates and cumulative placement points.
-Most typing points wins; exact ties share placement, and players with zero typing points receive no placement points.
-Type in Letters is available in Game Select, Party, and Arcade.
-
-`shared/letters.js` owns seeded targets, local input, bounded replay proofs, and shared word settlement.
-Each completed word sends a bounded input proof measured from the frozen local round clock; the server replays it before awarding one point per successful player.
-Inputs at or after the word deadline are rejected; pre-deadline claims can arrive within the 800 ms transport grace.
-This is bounded client-reported timing fairness, not proof of physical device synchronization or protection against a modified client.
-Correct text highlights immediately on the local device, and the authoritative result follows the shared deadline.
-Button presses use the supplied `Diuup.mp3` for both touch and keyboard input.
-The alphabet stays in one compact row on phones, and typed text occupies the corresponding fixed player column, including solo play.
-Type in Letters shows each player’s chosen avatar pointing to their selected key, with players 1 and 3 above the alphabet and players 2 and 4 below it.
-Pointers use separate tiers on each side so matching cursors remain distinguishable without covering letters.
-The server owns typing points and final results; cosmetic pointer snapshots at **4 Hz** cannot award points or block local input.
-Claims are retried until acknowledged; stale target/round claims, malformed proofs, and duplicate awards are rejected.
-Disconnection preserves accepted points; hiding or reloading still forfeits under the existing lifecycle rules.
-
-`src/letters-view.js` and `src/letters.css` render the shared arena, numbered player pointers, entered letters, scores, and result symbols.
-[Type in Letters artwork notes](public/assets/letters-artwork.md) retain the built-in image-generation prompt and optimized background provenance.
-The selection announcement plays the supplied `type-in-letters-voice.mp3` with the existing applause, using the shared preload and announcement lifecycle.
-Deploy frontend and room service together with **protocol 31** and the `shared-letters` capability.
-The word deadlines, initial repeat interval, transport grace, and feedback duration are provisional tuning values checked by deterministic tests and browser play, pending device playtests.
-
-## Backgrounds, set feedback, and Game Select announcements
-
-Every minigame now has its own original illustrated environment.
-Fireworks retains its existing festival backdrop; eleven new backgrounds cover the other games.
-`src/backgrounds.css` maps arena themes to optimized WebP deliveries, with all PNG masters retained in `public/assets/`.
-[Background artwork notes](public/assets/background-artwork.md) preserve the built-in image-generation prompts.
-The eleven new backgrounds total about **1.24 MB**; the full image delivery set stays below **3 MB**.
-New games should follow the same background and optimization workflow.
-
-Perm Mania, Mimicking Monkeys, and Fireworks publish set-result timestamps so each lane can display a large yellow circle for success or a red cross for failure.
-Me Find Mistake shows the same symbols during its 260 ms board feedback; shared Dice and Facing reveal result symbols in their bottom player boxes.
-Successful sets reuse `Ding.mp3`; failed sets reuse the supplied `wrong.mp3` through the effects bus.
-Perm settles the whole phrase before showing or sounding its result; individual rhythm notes keep their existing feedback.
-Lane symbols last 650 ms except the shorter picture-board feedback, sit at the center of each player panel, span 90% of its width, and remain visible with reduced motion and muted sound.
-
-After Play selected game, the selected game's supplied voice and `applause.mp3` play together once.
-The dedicated announcement screen lasts **two seconds**, then opens instructions while the matching voice and applause finish naturally.
-Readiness resets when preparing the round; later rounds retain their podium Ready gates.
-The server owns the two-second transition, so muted or disconnected devices cannot lengthen it; normal Ready gates still apply on instructions.
-Me Find Mistake uses its existing `me-find-mistake.mp3` voice filename.
-
-## Loading and delivery assets
-
-An animated dinosaur and orbiting star introduce the game while all runtime artwork and audio download.
-The progress bar reflects completed delivery bytes; failed or incomplete files keep the loader visible with a retry button, while successful downloads are retained.
-Images are decoded before entry opens, and the three display fonts are warmed with a bounded wait and native font fallbacks.
-After joining, Ready also waits for the selected game's audio bank to decode when sound is enabled; players can retry a failed bank or turn sound off to play muted.
-The room service enforces the asset acknowledgment for this frontend, independently of clock synchronization and readiness.
-
-Twelve optimized WebP images total **1,183,410 bytes**, down from **18,516,512 bytes** of PNG masters, a **93.6%** reduction.
-Original generated PNGs and provenance remain in `public/assets/`; runtime styles use the smaller hashed files in `public/assets/optimized/`.
-Run `python scripts/optimize-images.py` with Pillow after changing the PNG masters to regenerate delivery images and their CSS references.
-The predev/prebuild script `scripts/asset-manifest.mjs` versions every runtime asset by content and derives gzip delivery files for suitable WAVs.
-Gzip restores the exact original WAV bytes, preserving loop lengths and rhythm phase; browsers without decompression support download the original WAV instead.
-Current audio delivery is **10,582,412 bytes**, compared with **12,756,440 bytes** before this lossless compression.
-User-supplied MP3s retain their original encoding.
-Persistent browser caching reuses validated files across visits, and content changes invalidate only the affected files.
-Music MP3s use preloaded blob URLs without expanding full songs into decoded PCM buffers; gameplay banks decode only when needed.
-Physical phone memory, startup speed on slow networks, audio balance, and touch latency still need device playtests.
+- [Server health](https://bishy-bashy-server.onrender.com/health)
+- [Gameplay and multiplayer reference](docs/gameplay.md)
+- [Detailed gameplay constraints for maintainers](docs/gameplay-invariants.md)
+- [Artwork archive and generation prompts](archive/artwork/README.md)
 
 ## Run locally
 
@@ -605,331 +21,101 @@ npm run dev
 ```
 
 Open `http://localhost:3000` on the computer.
-For phones on the same Wi-Fi, open one of the network addresses printed by the server, then create an invitation.
-Choose the Wi-Fi adapter address if the computer also has VPN or virtual network adapters.
-Allow Node.js access to private networks if Windows Firewall asks.
-Guest Wi-Fi with device isolation can prevent local connections.
-
-For a browser-only check, use separate windows with distinct player names.
-Keep every game window visible during a round because hidden tabs forfeit.
-Joining a new room from a duplicated tab may require leaving the copied session first.
-
-## Timing and multiplayer
-
-The client exchanges four timestamps to estimate round-trip delay and server clock offset.
-It uses the median offset from the five lowest-latency fresh samples, retaining at most twenty recent samples.
-Server time is anchored to a monotonic clock.
-Every device freezes its server-to-local clock mapping when it receives a scheduled round.
-All input and completion times use `performance.now()`; later clock measurements cannot move that round's start.
-
-The server sends a shared random seed so each device derives the same sequence.
-It does not validate each tap or send permission to clear a block.
-Cosmetic progress broadcasts run at most four times per second per player and do not affect input response or rankings.
-A finish is saved to a session-storage outbox, retried until acknowledged, and accepted idempotently.
-Result arrival order does not affect the final ranking.
-Every game ranks local elapsed time except Perm Mania, which ranks growth and timing score.
-
-This friends-only game trusts client-reported results, with basic bounds and ownership checks.
-It is not a competitive anti-cheat system.
-Clock uncertainty and reported GO render delay are estimates, not proof of physical screen synchronization.
-Network asymmetry, browser scheduling, touch processing, screen refresh, sleep, and audio hardware can affect perceived fairness.
-
-Room codes are invitation identifiers.
-Private reconnect tokens stay on their device and are excluded from broadcasts, invitation links, and timing exports.
-Rooms and results live in server memory; a restart clears them.
-An empty room expires after thirty minutes without connected players.
-Use one server instance until shared room storage is implemented.
-
-## Connection checks
-
-Open the gear button for connection settings, ping, sample count, and uncertainty.
-Its **Connection tests** section retains the original sync milestone's tools.
-
-1. Join four devices and check that names and countdowns agree.
-2. Clear blocks and check that friends see progress while only your controls affect your tower.
-3. Set a three-second result delay on an early finisher and verify that arrival order does not change the winner.
-4. Use **Disconnect for 5 seconds**, continue playing, and check that the finish is confirmed after reconnecting.
-5. Switch apps during play and verify a forfeit while the room continues.
-6. Let a round expire and check timeout results.
-7. Export a timing report to inspect estimates and final timings without reconnect credentials.
+Phones on the same Wi-Fi can use one of the network addresses printed by the server.
+Allow Node.js access to private networks if Windows Firewall asks; guest-network device isolation can prevent local connections.
+For local multiplayer checks, use separate browser windows with distinct player names and keep every window visible during play.
 
 ```sh
 npm test
 npm run build
+npm start
 ```
 
-Automated checks cover deterministic gameplay, all five difficulty levels, shared schedules, room ownership and capacity, progress throttling, delayed and duplicate results, reconnection, and missing players.
-Four-client WebSocket tests complete entire Arcade and Game Select sets for every current game, checking automatic progression and cumulative scoring.
-Additional checks cover tied points, host migration, locked setup, skipped players, and tempo-scaled audio playback.
-Physical phone/tablet playtesting remains necessary.
+Tests cover deterministic gameplay, timing, audio lifecycle, multiplayer protocols, reconnects, complete sets, and scoring.
+The integration tests need permission to open local WebSocket connections.
+Physical phone and tablet playtesting remains necessary for input, screen, and audio latency.
+`npm start` serves the generated `dist/` frontend and the room service on `PORT`, defaulting to 3000.
+
+## Play and modes
+
+Create a room, choose a character, and share its room code, QR code, or invitation link.
+Invitation links with a valid room code permit joining only.
+Choose a mode inside the room before starting a set.
+
+| Mode | How it works |
+| --- | --- |
+| Arcade | The host chooses 3 to all registered games, default 5; a shared reel selects distinct games. |
+| Game Select | Choose one game and play three rounds with increasing difficulty. |
+| Party | Each rostered player locks one game in 30 seconds; play the picks in player order, including duplicates. |
+
+All 23 games are available in every mode:
+Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, Get Those Burgers Out!, Where’s Kaya, Happy Days, Stationery Master, Clock Stopper, Ladder Climber, Star Collector, Horse Speeder, and Shark Jumper.
+The common keyboard shortcuts are **1 / 2 / 3** or **J / K / L**.
+Game instructions explain each game's actions and any additional keyboard controls.
+
+Readiness resets between rounds and waits for every connected player and a fresh clock estimate.
+Set placements award **10 / 7 / 4 / 1 points**, with ties sharing placement points.
+Party mode retains cumulative points, win counts, and history between cycles.
+Hiding or reloading an active game forfeits the round; a network disconnection alone allows local play and pending-result retries.
+Disconnected seats are reserved for 30 seconds, and Ready gates wait up to 15 seconds for disconnected players.
+Accepted finishes and earned points survive a player leaving.
 
 ## Hosting
 
-`npm run build` writes static files to `dist/` with relative paths for GitHub Pages.
-`npm start` serves that build and the WebSocket endpoint on the port supplied by `PORT`, defaulting to 3000.
-The health endpoint reports protocol version 31, including shared desk counters, clock stops, Happy Days hold inputs, and the existing gameplay and readiness gates.
-Deploy the frontend and backend together when changing the multiplayer protocol.
-
+`npm run build` writes the static frontend to `dist/` with relative URLs for GitHub Pages.
 The Pages workflow tests, builds, and deploys `main`.
-The repository Actions variable `MULTIPLAYER_SERVER_URL` is embedded as `VITE_SERVER_URL`.
-Its current public value is `wss://bishy-bashy-server.onrender.com`.
+Set the repository Actions variable `MULTIPLAYER_SERVER_URL` to the public secure WebSocket endpoint; the build embeds it as `VITE_SERVER_URL`.
+The configured service address is `wss://bishy-bashy-server.onrender.com`.
 Server addresses are public configuration and must not contain secrets.
-Players can override the address under Connection settings, and invitation links preserve that override.
+Players can override the endpoint in Connection settings, and invitations preserve the override.
 
-The included `render.yaml` configures a single Node web service.
-Use `npm ci && npm run build` to build and `npm start` to start.
-Set `ALLOWED_ORIGINS=https://goatedapps.github.io` and the health path to `/health`.
-Origins contain no repository path or trailing slash.
-Additional allowed origins may be comma-separated.
-HTTPS pages require a secure `wss://` server; the client uses its `/ws` endpoint automatically.
-A sleeping hosted service may take time to wake up, and redeploying it clears rooms.
+`render.yaml` configures the Node service with build command `npm ci && npm run build` and start command `npm start`.
+Set `ALLOWED_ORIGINS=https://goatedapps.github.io`; additional origins may be comma-separated, with no repository path or trailing slash.
+HTTPS pages require `wss://`, and the client connects at `/ws`.
+Use `/health` for the health check; it reports protocol version 31.
+Deploy frontend and backend together when changing protocol requirements, and verify both deployments separately.
+Keep one server instance while rooms live in memory; restarting or redeploying the service clears rooms.
+A sleeping service may need time to wake up.
 
-## Artwork and source layout
+## Assets and generated files
 
-`shared/totem.js` defines the game rules and deterministic local run.
-`shared/perm.js` defines the rhythm rules; `shared/games.js` supplies the catalog and difficulty settings.
-`shared/slots.js` defines deterministic reel layouts, local stop judgments, and retry timing.
-`shared/fireworks.js` defines seeded multi-rocket sets, airborne matching, landing deadlines, retries, and local set completion.
-`shared/monkeys.js` defines seeded memory prefixes, demonstration/response phases, replay recovery, and stage completion.
-`shared/jump.js` defines seeded jump arcs, landing judgments, retry timing, and final-apex completion.
-`shared/sets.js` supplies mode lengths, random selection, placement awards, and cumulative ranking.
-`src/main.js` coordinates lifecycle, timing, input, rooms, and the result outbox.
-`src/game-view.js` renders towers and results; `src/audio.js` owns audio loading, mixing, and lifecycle.
-`src/set-view.js` renders the mode choices, intermission, and cumulative standings.
-`src/slot-view.js` and `src/slots.css` render the target portrait, four reel cabinets, and their feedback.
-`scripts/audio/` contains the original composition and synthesis; `public/audio/` contains its rendered runtime assets.
-`server/rooms.js` owns multiplayer room state and protocol validation.
-`public/assets/totem-blocks.png` contains original generated character artwork reused from the approved mockup.
-[Artwork notes](.lavish/totem-shrinker/artwork.md) preserve the generation prompt.
-This is an independent game inspired by arcade party games, using original artwork.
+Original PNG masters and generation prompts are retained in `archive/artwork/`, outside the published website.
+Only optimized delivery artwork belongs in `public/assets/optimized/`.
+After changing a master, use Pillow to regenerate all delivery images or select names:
 
-## Multiplayer display and tablet layout
+```sh
+python scripts/optimize-images.py
+python scripts/optimize-images.py shark-sprites shark-wave
+```
 
-Each player publishes a bounded snapshot of their current scene at most four times per second, including object index, lane, and round-relative animation timestamps.
-`shared/visual-state.js` validates the allowed fields and reconstructs each peer's current scene against the viewer's frozen round clock.
-Remote Coins, Burger, and Dodge objects now use the actual falling object and player position, including changes after catches, misses, and jumps.
-The same relay carries slot pauses, memory demonstrations, direction-card phases, picture boards, rockets, and dinosaur bounces.
-These snapshots only draw peers; local inputs and result rankings remain independent of packet arrival.
-Network delay and the quarter-second update cadence can produce brief visual lag after another player moves.
-Refresh every device after deploying the paired frontend and server update; the frontend requires `live-gameplay-v2` support.
+The optimizer reads the archive, updates hashed WebP files and CSS references, and removes superseded delivery images.
+`npm run dev` and `npm run build` regenerate `src/asset-manifest.js` and losslessly compressed WAV delivery files.
+The startup loader verifies and caches runtime assets; retain original runtime WAVs for browsers without decompression support.
+Audio filenames must match runtime references exactly, including letter case.
 
-Active gameplay uses the visual viewport height and a flex layout, with the shared control bar outside the arena so tablet browser chrome cannot push it below the screen.
-The Ready action remains visible while short screens can scroll the instructions card internally.
-Facing turns now take 1800/1700/1600/1500/1400 ms across available difficulty levels, and Game Select plays only levels 1–3.
-Coins progressively accelerates both its fall durations and launch intervals during every round, with overlapping drops in Arcade and Game Select.
+Reuse supplied audio; new sounds must come from the user.
+The original synthesized scores live in `scripts/audio/`; regenerate their runtime files with `npm run audio:render`.
+Signal analysis is printed to the terminal rather than published as an unused JSON file.
+The legacy Perm demo/hit/miss WAVs and synthesized countdown WAV have been retired; Perm uses its supplied beat and colored hits, and the countdown uses `countdown.mp3`.
 
-Menu and instructions music share one gesture-authorized media element with separate remembered positions, following [WebKit's media-element reuse guidance](https://webkit.org/blog/7734/auto-play-policy-changes-for-macos/).
-The first playback request happens before awaiting audio-context resume or file decoding, so it stays attached to the enabling gesture.
+`dist/`, `node_modules/`, `.npm-cache/`, and `*.log` are generated local files and are ignored by Git.
+The retired `mockups/` and `.lavish/` prototypes have been removed; their original Totem artwork prompt remains in the archive.
 
-The local Cleared banner sits above every character and effect inside the arena.
-Each finished lane also shows a compact Cleared badge (Finished for Perm Mania), including peers who finish before the local player.
-The final Exit action uses the current completed set ID and is available to hosts and guests without changing active-set navigation permissions.
+## Source layout
 
-## Play Dynamite Spark
+| Location | Responsibility |
+| --- | --- |
+| `shared/` | Seeded game models, catalog, timing, visual snapshots, and set scoring. |
+| `server/rooms.js` | Room ownership, protocol validation, readiness, results, and set transitions. |
+| `src/main.js` | Client session, round lifecycle, clock mapping, input, and pending submissions. |
+| `src/settings-view.js`, `src/invitation.js` | Settings display and invitation links/QR codes. |
+| `src/*-view.js`, `src/*.css` | Game scenes, shared screens, and layout. |
+| `src/audio.js` | Gesture-authorized audio banks, mixing, scheduling, and cancellation. |
+| `src/*demo*.js` | Isolated looping How to play examples using real models and artwork. |
+| `scripts/` | Asset delivery generation, image optimization, and audio synthesis. |
+| `test/` | Gameplay, rendering, audio, protocol, and integration checks. |
 
-Match the current wire section with red, green, or blue to move the spark toward the dynamite.
-There are 13 seeded colour groups of four sections, requiring 52 correct presses.
-A wrong colour pauses input for 250 ms while keeping cleared sections; a 40 ms guard rejects simultaneous presses.
-The first player to reach the dynamite wins by local elapsed time, with a 45-second deadline.
-The electrical buzz loops while the local spark is active, button presses use the supplied `Punch-button.mp3`, and the final press plays `dynamite-explode.mp3` and Ding.
-Each finished column shows its accepted time above CLEAR.
-The supplied `dynamite-spark-voice.mp3` announces selection.
-[Artwork notes](public/assets/dynamite-artwork.md) retain the original background prompt and master.
-
-## Play Get Those Burgers Out!
-
-Fill every empty slot with fries, burgers, and drinks using red, green, and blue respectively.
-Eight seeded meals each require one to three items of every kind.
-Button presses use `plop.mp3`; each item falls for 300 ms into its matching slot.
-Repeated presses launch multiple items in the same column while earlier items are still falling, with one independent drop per required slot.
-Taps on full columns play Wrong without changing the meal, and every completed meal plays Ding once before a 300 ms serving hold.
-The final clear time includes the last item's landing and appears above CLEAR at the top of the player's column.
-The fastest completion wins, with a 45-second deadline.
-[Artwork notes](public/assets/meals-artwork.md) retain the original restaurant background prompt and master.
-Both new games are available in Game Select and Arcade.
-Deploy frontend and server together with protocol 31 and the `dynamite-meals` capability.
-These initial input and animation timings remain provisional pending physical phone playtests.
-
-Both games use original generated food and dynamite sprites in gameplay, game posters, and the illustrated rules.
-The optimized shared sprite sheet and retained master are documented in [sprite artwork notes](public/assets/dynamite-meals-sprites.md).
-Meals sit at the bottom of the player panel without meal counters, progress bars, or decorative ovals.
-Dynamite Spark has no section counter; a locally clocked GSAP tween scrolls the continuous wire smoothly as each correct input moves the spark.
-The final explosion uses a protected finish sound, reduces backing music while it plays, and finishes before podium audio begins.
-
-Dice keeps each result circle or cross visible in the player's bottom score box for 650 ms, including across fast throw transitions, with Ding on each correct answer.
-Perm Mania uses `perm-beat.mp3` for Watch demonstration notes, and the matching `hit-red.wav`, `hit-green.wav`, or `hit-blue.wav` for live response taps, without layering Punch or piano sounds.
-The beat follows the same seeded rhythm sequence and timing adjustment at every tempo, while music, successful phrase Ding, and settled phrase results retain their existing behavior.
-Arcade includes every registered game immediately; games without a supplied announcement voice still play the selection cue and applause.
-
-## Longer Arcade rounds
-
-Arcade plays 15 Me Find Mistake boards with a 45-second deadline, eight Facing Which Way sets over 71.2 seconds, and ten Fireworks sets with a 60-second deadline.
-Fireworks keeps its opening seven sets and adds three more five-rocket sets at the existing final-set speed.
-Game Select retains its existing counts and difficulty progression.
-Facing keeps the full three-second answer window in every added set, with all clients following the same extended schedule.
-Deploy frontend and server together with protocol 31 so every device follows the scheduled set count.
-These longer Arcade counts are initial tuning values pending play feedback.
-
-Meal input immediately reserves an available slot, including when several items are already falling in that column.
-Each item keeps its own 300 ms landing time, and overflow presses play Wrong without adding another item.
-Remote snapshots carry nine bounded per-slot launch times so every device can show simultaneous falls and the same accepted finish time.
-
-Totem Shrinker, Dodge or Die, and Mimicking Monkeys use the freed space from bottom counters, progress bars, and decorative bases for taller play areas.
-Facing Which Way keeps player scores in a fixed bottom row while the card demonstration and answer options change above them.
-Dice retains 21 throws and eases its final speed to an 800 ms answer window, with the complete timeline extended to 30.7 seconds.
-
-## Player characters and stable round layouts
-
-After creating or joining a room, choose one of sixteen original cute characters before continuing to mode selection.
-The selected character appears in lobby seats and podiums and stays attached to that player through reconnects and across the set.
-The selection screen uses sixteen individually optimized transparent sprites extracted from the retained generated master.
-[Character artwork notes](public/assets/party-characters.md) preserve the prompt and delivery details.
-Coins and Facial Slot Machine use bounded player panels whose dimensions remain independent of the current round's contents; Slots also clears its cached portrait frames when a new round begins.
-Deploy frontend and backend together with protocol 31, including `character-picker` and `overlapping-coins` capabilities.
-
-The catch target is 36 coins so the overlapping launch schedule increases pressure without halving the race length.
-
-
-## Party mode
-
-Choose **Party** between Arcade and Game Select, then **Start set** to open four fixed player columns.
-Unused or offline columns are greyed out.
-Game lists loop in both directions, with the current choice highlighted.
-Each player has 30 seconds to choose from the full catalog using touch/scroll, the list's arrow keys and Enter, or the shared red Down, green Select, and blue Up buttons.
-Only your own column can be controlled on your device.
-Each locked choice plays the supplied `Ding.mp3` and bursts into sparkles; missing choices are assigned randomly by the server at the deadline.
-The server holds the completed selections for 900 ms so the last lock effect can finish, with a static confirmation for reduced motion.
-The group plays one round of every selected game in player order, including repeated picks.
-Each game has illustrated instructions and an all-player Ready gate; between games, the podium holds for five seconds before the next instructions.
-After everyone's picks have been played, each connected player may choose **Continue**, or **Exit** returns the room to mode selection.
-Continue opens fresh 30-second choices once everyone agrees, retaining points, cumulative leadership, first-place game-win counts, and round history.
-Disconnected friends have a 15-second reconnect window before the remaining players can continue.
-Set IDs and cycle numbers prevent delayed pick or Continue messages from affecting a later selection.
-Frontend and server must deploy together for protocol 31 with `party-mode` and `arcade-length` capabilities.
-
-Invitation links and QR codes containing a valid room code disable Create room so invited guests join the intended room.
-Protocol 18 requires `timed-letters` and `expiring-seats`; deploy the frontend and room service together.
-Facing keeps covered-card mirror parity across every turn and reveal, and sizes its square card and options from their available containers in every mode.
-
-## Totem Shrinker demonstration
-
-Totem Shrinker replaces its static How to play artwork with a looping mini-demo on the instructions screen and in its rules dialog.
-The left side shows the actual temple backdrop and five visible Totem blocks; the right side shows two rules and the same red, green, and blue button styling as gameplay.
-An illustrated cat paw presses green, blue, then red, clearing each matching bottom block at the press and letting the stack drop into place.
-After three clears, the demo holds briefly and resets.
-Each demo press plays its matching `hit-green.wav`, `hit-blue.wav`, or `hit-red.wav` through the existing mute and effects-volume controls.
-The demo skips stale hit cues, pauses when hidden or covered by a dialog, and substitutes discrete changes for sliding motion when reduced motion is enabled.
-The existing instruction reveal and Ready/audio gates remain in place, and every registered game now uses the animated format.
-`src/totem-demo.js` owns the bounded demonstration timeline; it never sends inputs or changes real gameplay state.
-The original cat-paw and monkey item masters and imagegen prompts are retained in [artwork notes](public/assets/cat-paw-monkey-items-artwork.md), with the optimized WebP included in startup asset readiness.
-
-## Perm Mania demonstration
-
-Perm Mania hides the bottom growth counter and progress bar during gameplay.
-Its How to play screen and rules dialog show one Watch-and-copy phrase using the real Perm run model, dancer, hair growth, rhythm dots, and disco backdrop.
-The tutorial follows the scheduled round tempo and uses the existing cat paw to press green for every beat, while explaining that any button can copy the rhythm.
-Watch cues use `perm-beat.mp3`; tutorial response presses use the requested `hit-red.wav`, `hit-green.wav`, and `hit-blue.wav`, and a successful phrase plays Ding before the loop resets.
-Live Watch cues use `perm-beat.mp3`, while player button presses use the matching colored hit WAV.
-The shared mini-demo layout lives in `src/instruction-demo.js` and `src/instruction-demo.css`; `src/perm-demo.js` owns the isolated one-set simulation and bounded audio cues.
-Hidden screens and covering dialogs pause the tutorial, stale sounds are skipped, and reduced motion preserves the rhythm and feedback without dancer motion or hair tweening.
-New and revised How to play screens use this gameplay-left, instructions-and-buttons-right format going forward.
-
-## Slot, fireworks, and monkey tutorials
-
-Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys now use the same gameplay-left, instructions-and-buttons-right mini-demo format on their instructions screens and in their rules dialogs.
-Slots shows the model face and actual scrolling rows, then presses each row’s matching color when the model reaches the center.
-Fireworks launches the first three-rocket pattern with three distinct colors and bursts each rocket with its matching button before landing.
-Monkeys watches one two-color demonstration and repeats the same buttons in order.
-Each successful example pauses briefly and loops, reusing the existing backgrounds, sprites, cat paw, hit sounds, and Ding success cue; fireworks also retains the supplied launch sound and Monkeys its colored demonstration tones.
-`src/scripted-demo.js` keeps their real gameplay models isolated from multiplayer state, applies inputs at their scheduled times, and skips stale sound cues.
-The tutorials respect mute, effects volume, hidden-screen and dialog pauses, and reduced motion; reduced-motion slot rows advance discretely while retaining the same stop judgments.
-
-## Complete animated tutorial catalog and item-based Monkeys
-
-All seventeen minigames have looping gameplay-left, instructions-and-controls-right tutorials using the shared generated cat paw.
-The human-finger master and delivery image have been removed.
-The remaining examples demonstrate three precise jumps, one four-layer burger, one odd-picture board, one dice throw, one covered-card puzzle, three coin catches, a wall and hurdle, one timed typing target, two wire color groups, and one meal order, and one Kaya tracking set.
-They reuse actual local game models and scene renderers, isolated from multiplayer state; jump and wire examples show progress rather than an artificial full-game clear.
-Tutorial input, correct-answer reveal, success effects, sounds, pause/resume, and reduced motion share the same bounded timeline.
-Mimicking Monkeys now displays the monkey holding a large red apple, green pear, or blue ball instead of a small corner symbol, in both gameplay and its tutorial.
-The character occupies less of the lane, leaving room around the item cue; neutral gaps never reveal upcoming items.
-Perm Mania retains `perm-beat.mp3` for Watch cues and uses the actual pressed button’s `hit-red.wav`, `hit-green.wav`, or `hit-blue.wav` for live inputs.
-Original new artwork and prompts are retained in `public/assets/`; named image optimization can update only selected assets.
-
-Type in Letters keeps all 26 letters and backspace in one row in both gameplay and the animated tutorial.
-Dynamite Spark derives wire colors from the scheduled round seed for every lane before gameplay and before any peer snapshot arrives, including open spots.
-
-## Star Collector
-
-Hold red to tilt the maze left and blue to tilt right; releasing levels it while the car keeps its momentum.
-Green is unused, and the same three-button control bar stays in place.
-Steer through alternating bars with seeded lengths of 94–226 units and vertical gaps of 80–165 units during a 45-second round.
-Stars vary horizontally and vertically, floating between bars and over exit gaps as well as above bar surfaces.
-Each maze contains 64 stars, half the original total.
-Place stars along one continuous drive using the exact live acceleration, tilt, momentum, and collision rules.
-That route collects every star before 44 seconds, within the 45-second round.
-Keep floating and bar-adjacent stars clear of walls and at least 40 units apart; each placement stays within pickup range of its proven route.
-Every collected star stays collected after bumps, and the most stars wins with equal totals sharing a placing.
-The four player lanes show the same seeded course, with a camera following each car down the maze.
-The game appears in Arcade, Game Select, and Party, with an animated cat-paw tutorial using the real simulation.
-`shared/stars.js` owns fixed 120 Hz physics, bounded input histories, wall collisions, and unique star pickups.
-The server replays the input history before accepting a final score and rejects early or inconsistent finishes.
-`src/stars-view.js` renders the rotating maze and smooths peer snapshots without simulating remote gameplay.
-Wall impacts use the supplied `car-bump.mp3`, pickups use `Ding.mp3`, and selection uses the supplied `star-collector-voice.mp3`.
-Held pointer and keyboard sources release on cancellation, focus loss, dialogs, and round changes.
-The original illustration masters and generation prompts are recorded in `public/assets/star-artwork.md`.
-Optimized sprite and background downloads total approximately 244 KB.
-Deploy frontend and room service together with protocol 31 and the `star-collector` capability.
-
-## Horse Speeder
-
-Tap green to accelerate, red to move one lane left, and blue to move one lane right.
-Coasting gradually reduces speed, while collisions sharply slow the horse without removing distance or blocking steering.
-A collision also produces a 650 ms visual backward recoil; the struck horse stays ahead and fades as the rider recovers, avoiding a pass-through appearance.
-Collision recoil follows published impact timestamps on peers, resets between rounds, and is suppressed under reduced motion.
-Race 3200 units to the finish within 60 seconds; clean simulated runs take about 32 seconds.
-The seeded traffic has two slower horses per row and one clear lane, with 140-unit spacing at difficulty one decreasing to 100 at difficulty five.
-At maximum speed, even the closest rows leave enough time for two 180 ms lane changes plus a 600 ms reaction allowance.
-`shared/horse.js` owns fixed 120 Hz movement, distance-based overtakes, speed limits, collision timing, and bounded replay proofs.
-The server verifies the driving history and fractional finish time before accepting results, independent of packet arrival order.
-`src/horse-view.js` shows the original rear-view horse and jockey, animated strides, scrolling track, perspective traffic, finish banner, and four independent player lanes.
-Remote scenes use published movement state and bounded cosmetic projection; they never resolve gameplay.
-The isolated cat-paw tutorial accelerates and steers through the same traffic model.
-Successful overtakes and the finish use `Ding.mp3`; collisions use `Punch-button.mp3`, and all three gameplay buttons use supplied `horse-gallop.mp3`.
-The animated tutorial uses the same gallop button cue.
-The supplied `horse-speeder-voice.mp3` announces selection through the existing voice/applause gate.
-Horse-specific neighs await supplied audio; no new audio is generated or downloaded.
-The game is in Arcade, Game Select, and Party, with local clear times and the common fixed control bar.
-Original masters and prompts live in `public/assets/horse-artwork.md`; optimized sprite and background downloads total approximately 432 KB.
-Protocol 30 requires `horse-speeder`; deploy frontend and backend together.
-WebSocket messages are bounded to 16 KiB to accommodate the validated race input history and final scene snapshot.
-
-## Shark Jumper
-
-Press red, green, or blue to match the next shark’s own color and jump onto it.
-The puppy follows a seeded rising zigzag path, with eight bounded visible shark slots showing the upcoming colors.
-Every 240 ms jump uses `plop.mp3` at takeoff, and the target shark becomes grey stone only after landing.
-A wrong press makes the puppy fall into the water, plays `shark-splash.mp3` at the 220 ms water impact, and starts a one-second fall/climb-back recovery.
-The puppy returns to its last safe grey shark, preserving every completed jump, and ignores inputs during jumps or recovery.
-Arcade begins with 30 sharks; Game Select increases the course from 30 to 40 to 50 sharks across three rounds.
-Fastest final landing wins, with a 45-second deadline and one final Ding for completing the full path.
-`shared/shark.js` owns the shared course, landing schedule, recovery, bounded input history, and server replay validation.
-`src/shark-view.js` uses the same local and published peer timing to draw colored shark heads, landed stone heads, puppy arcs, water splashes, and the climb-back pose.
-Tilt the intact shark illustrations upward by 35 degrees and subtract the foreground wave’s alpha from the submerged body pixels.
-Display only the foam crest with feathered edges, preventing fins or tails from reappearing below a strip and avoiding rectangular water bands.
-Bound shark and puppy sizes by both panel width and height; `test/fixtures/shark-visual.html` previews desktop, narrow-phone, and wide layouts under Vite.
-Use the same wave layering for colored and stone sharks, tutorials, and posters; keep the puppy above the water layers.
-Jump presses use Plop without a layered Punch cue in gameplay or the tutorial.
-`src/result-message.js` includes the jump history in the actual client finish message, allowing the server to accept a valid clear and advance the set.
-Reduced motion uses discrete jumps and a recovery pose while retaining the same input gates and results.
-The animated cat-paw tutorial demonstrates correct jumps, a wrong color, and recovery using the real model and renderer.
-Original masters and prompts live in `public/assets/shark-artwork.md`; optimized sprite, background, and foreground-wave delivery totals approximately 426 KB.
-The game is available in Arcade, Game Select, and Party, with shared controls and no jump counter or progress bar.
-Deploy frontend and backend together with protocol 31 and the `shark-jumper` capability.
-
-Render deploys the multiplayer room service; GitHub Pages deploys the playable frontend through the separate Deploy website to GitHub Pages workflow.
-A successful Render deployment can coexist with a failed Pages test job, leaving the public game on the previous graphics and controls.
-Check the Pages workflow result and published frontend asset filenames when confirming that a release is live.
-
-Fireworks Craze keeps a single in-scene Set label using the scheduled goal, including all seven Game Select or ten Arcade sets.
-Its redundant bottom cleared count and progress bar are hidden.
+Local gameplay measures input with `performance.now()` and freezes its clock mapping at round scheduling.
+Results use elapsed duration or game-specific scores; packet arrival order never decides placement.
+Cosmetic peer snapshots run at most four times per second and never advance gameplay.
+Reconnect tokens remain private and must not appear in broadcasts, invitations, or reports.

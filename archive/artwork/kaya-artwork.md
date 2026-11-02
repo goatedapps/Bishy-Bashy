@@ -3,7 +3,7 @@
 ## Photo-based Kaya update
 
 Generated with the built-in imagegen tool on 2026-11-01 using the user-supplied dog photo as an identity reference and the original atlas as an illustration-style reference.
-`kaya-dog-photo.png` is the retained transparent master; `optimized/kaya-dog-photo-96d904a3df5d.webp` is its 512-pixel delivery sprite.
+`kaya-dog-photo.png` is the retained transparent master; `../../public/assets/optimized/kaya-dog-photo-96d904a3df5d.webp` is its 512-pixel delivery sprite.
 The master is 1,029,689 bytes and the optimized sprite is 37,440 bytes, a 96.4% reduction.
 The shared `.kaya-dog` style uses this sprite in gameplay, posters, and the cat-paw tutorial; the kitten and blanket continue using the original atlas.
 The reference photo remains outside the repository.

@@ -3,7 +3,7 @@
 ## Cluttered desk update
 
 Created with the built-in imagegen tool on 2026-11-01.
-The new `bg-stationery-desk.png` master is 2,258,731 bytes; `optimized/bg-stationery-desk-790bf4dce222.webp` is the optimized delivery copy (135,904 bytes).
+The new `bg-stationery-desk.png` master is 2,258,731 bytes; `../../public/assets/optimized/bg-stationery-desk-790bf4dce222.webp` is the optimized delivery copy (135,904 bytes).
 The original empty-desk master is retained as `bg-stationery-desk-original.png`.
 Only runtime objects contain pencils, erasers, and sharpeners, so decorative clutter cannot change the answer.
 
@@ -29,7 +29,7 @@ The four masters total 5,996,558 bytes; optimized delivery images total 272,664 
 ## Stationery sprites
 
 Master: `stationery-sprites.png`.
-Delivery: `optimized/stationery-sprites-5eeaa3167a57.webp`.
+Delivery: `../../public/assets/optimized/stationery-sprites-5eeaa3167a57.webp`.
 Prompt:
 
 > Use case: stylized-concept.
@@ -48,7 +48,7 @@ Prompt:
 ## Desk background
 
 Master: `bg-stationery-desk.png`.
-Delivery: `optimized/bg-stationery-desk-4ef2ee049a32.webp`.
+Delivery: `../../public/assets/optimized/bg-stationery-desk-790bf4dce222.webp`.
 Prompt:
 
 > Use case: illustration-story.
@@ -62,7 +62,7 @@ Prompt:
 ## Clock dial
 
 Master: `clock-dial.png`.
-Delivery: `optimized/clock-dial-c3a615c9559a.webp`.
+Delivery: `../../public/assets/optimized/clock-dial-c3a615c9559a.webp`.
 Prompt:
 
 > Use case: stylized-concept.
@@ -78,7 +78,7 @@ Prompt:
 ## Clock workshop background
 
 Master: `bg-clock-workshop.png`.
-Delivery: `optimized/bg-clock-workshop-da292cf680b4.webp`.
+Delivery: `../../public/assets/optimized/bg-clock-workshop-da292cf680b4.webp`.
 Prompt:
 
 > Use case: illustration-story.

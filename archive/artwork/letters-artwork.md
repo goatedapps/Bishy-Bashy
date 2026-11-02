@@ -4,7 +4,7 @@ Generated with the built-in imagegen tool on 2026-10-30 for the shared alphabet 
 The references supplied by the user informed the game mechanics; this environment is original artwork.
 
 - Master: `bg-letters-workshop.png` (2,022,665 bytes).
-- Delivery: `optimized/bg-letters-workshop-21fcae531114.webp` (108,816 bytes).
+- Delivery: `../../public/assets/optimized/bg-letters-workshop-21fcae531114.webp` (108,816 bytes).
 - Optimization: fit within 1280 by 1280 pixels, WebP quality 86, method 6, preserving the original master.
 - The game's target, alphabet, numbered pointers, score cards, and ABC poster are code-native overlays.
 

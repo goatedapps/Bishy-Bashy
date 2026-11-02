@@ -1,7 +1,7 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { AUDIO_FILES, SAMPLE_RATE, LOOP_SECONDS, BPM } from './audio/score.js';
-import { music, effects, mix, inspect, wav } from './audio/synthesis.js';
+import { music, effects, mix, inspect, wav, tone, normalize } from './audio/synthesis.js';
 import { slotAudio } from './audio/slots.js';
 
 const output = new URL('../public/audio/', import.meta.url);
@@ -14,11 +14,10 @@ for (const [id, samples] of Object.entries(assets)) {
   await writeFile(new URL(file, output), wav(samples));
   report.files[id] = { file, ...inspect(samples, ['music', 'urgency', 'permMusic', 'permUrgency', 'slotMusic', 'slotUrgency'].includes(id)) };
 }
-await writeFile(new URL('analysis.json', output), JSON.stringify(report, null, 2) + '\n');
-
 if (process.argv.includes('--preview')) {
   const preview = new Float32Array(Math.round(SAMPLE_RATE * (LOOP_SECONDS * 2 + 4.5)));
-  for (let index = 0; index < 3; index++) mix(preview, assets.tick, index, .42);
+  const tick = normalize(tone(74, .12, 'wood'), .48);
+  for (let index = 0; index < 3; index++) mix(preview, tick, index, .42);
   mix(preview, assets.go, 3, .48);
   for (let repeat = 0; repeat < 2; repeat++) mix(preview, assets.music, 3 + LOOP_SECONDS * repeat, .26);
   mix(preview, assets.urgency, 3 + LOOP_SECONDS, .26);

@@ -20,11 +20,11 @@ export const MELODY = [
 
 export const AUDIO_FILES = {
   red: 'hit-red.wav', green: 'hit-green.wav', blue: 'hit-blue.wav',
-  mistake: 'mistake.wav', tick: 'countdown.wav', go: 'go.wav',
+  mistake: 'mistake.wav', go: 'go.wav',
   finish: 'finish.wav', timeout: 'timeout.wav',
   music: 'totem-party.wav', urgency: 'totem-party-urgency.wav',
   permMusic: 'perm-groove.wav', permUrgency: 'perm-groove-urgency.wav',
-  permDemo: 'perm-demo.wav', permHit: 'perm-hit.wav', permMiss: 'perm-miss.wav', permGrow: 'perm-grow.wav', permGo: 'perm-go.wav',
+  permGrow: 'perm-grow.wav', permGo: 'perm-go.wav',
   slotMusic: 'slot-carousel.wav', slotUrgency: 'slot-carousel-urgency.wav',
   slotLock: 'slot-lock.wav', slotMiss: 'slot-miss.wav', slotWin: 'slot-win.wav', slotGo: 'slot-go.wav',
 };
