@@ -1109,6 +1109,15 @@ test('Happy Days plays the supplied 30-second music excerpt once, restores song 
 });
 
 
+test('Shark Jumper loads Plop and Splash, keeps the final jump tail through results, and respects mute', async () => {
+  const { audio, requests } = setup(); audio.selectGame('shark-jumper'); await audio.unlock();
+  for (const file of ['plop.mp3', 'shark-splash.mp3', 'Ding.mp3']) assert.ok(requests.some(url => url.includes(file)), file);
+  audio.play('sharkJump', { group: 'finish' }); const jump = [...audio.voices].at(-1); assert.equal(jump.id, 'sharkJump');
+  audio.play('sharkSplash'); assert.equal([...audio.voices].at(-1).id, 'sharkSplash');
+  audio.endPlayer(); assert.equal(jump.stopped, false);
+  audio.setEnabled(false); assert.equal(jump.stopped, true);
+});
+
 test('Horse Speeder uses supplied announcement, Ding for overtakes, and Wrong for collisions', async () => {
   const { audio, requests } = setup(); audio.selectGame('horse-speeder'); await audio.unlock();
   for (const file of ['horse-speeder-voice.mp3', 'Ding.mp3', 'wrong.mp3']) assert.ok(requests.some(url => url.includes(file)), file);

@@ -1,11 +1,11 @@
 # Dokidoki Dash!
 
-This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, Get Those Burgers Out!, Where’s Kaya, Happy Days, Stationery Master, Clock Stopper, Ladder Climber, Star Collector, and Horse Speeder.
+This is a four-device party game with playable Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, Get Those Burgers Out!, Where’s Kaya, Happy Days, Stationery Master, Clock Stopper, Ladder Climber, Star Collector, Horse Speeder, and Shark Jumper.
 The Vite frontend deploys independently to GitHub Pages; `server/` is a separate Node WebSocket room service on Render.
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 30 adds Horse Speeder with replay-validated acceleration and traffic; deploy frontend and backend together.
+Protocol version 31 adds Shark Jumper with scheduled landings and fall recovery; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -128,7 +128,7 @@ Results may stop music and countdown cues, but must not truncate an accepted loc
 `src/dynamite-view.js` uses a paused, locally clocked GSAP tween to smoothly scroll the continuous segmented wire while the spark descends; loop `electrical-buzz.mp3` only for the active local spark, stop it on finish/interruption, and preserve `dynamite-explode.mp3` in a dedicated finish group through results, defer podium audio until it ends, and duck music during the explosion.
 `shared/meals.js` owns eight seeded fries/burger/drink orders; independent 300 ms drops fill required slots, taps on a full column play Wrong without altering the meal, each completed meal plays Ding once, and final elapsed time includes the last landing.
 `src/meals-view.js` shows empty slots and falling items; presses use `plop.mp3`, and both new games show accepted clear times at the top of each player's column.
-All 22 registered games are available in both Arcade and Game Select.
+All 23 registered games are available in both Arcade and Game Select.
 The handshake requires `dynamite-meals` alongside existing capabilities.
 
 ## Timing invariants
@@ -160,7 +160,7 @@ Mark each entry complete as its game is implemented.
 8. [x] It's Raining Coins — moving to catch falling coins.
 9. [x] Dodge or Die!! — avoiding obstacles and timing jumps.
 10. [x] Horse Speeder — accelerating and weaving between horses.
-11. [ ] Shark Jumper — following colored input sequences.
+11. [x] Shark Jumper — jumping onto color-matched sharks and recovering from falls.
 12. [ ] Blaster Soda Race — alternating buttons to accelerate.
 13. [x] Ladder Climber — position-based ladder climbing.
 14. [ ] Burst the Balloon — rapid button presses to inflate and burst a balloon.
@@ -217,7 +217,7 @@ Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys use the common loopi
 `src/scripted-demo.js` owns their bounded input/cue timelines and hidden-screen pause; keep tutorial simulations isolated from real rounds and skip stale sounds.
 Slots demonstrates all three row locks, Fireworks demonstrates the first three-rocket set with one rocket of each color, and Monkeys watches and copies one two-color sequence.
 
-All 22 registered games now have animated How to play demos; keep the shared cat-paw artwork and delete obsolete human-finger assets rather than carrying both.
+All 23 registered games now have animated How to play demos; keep the shared cat-paw artwork and delete obsolete human-finger assets rather than carrying both.
 `src/remaining-demos.js` owns the remaining ten isolated examples and their real scene renderers; short jump/wire examples demonstrate progress without pretending to finish the full game.
 Monkeys shows generated red-apple, green-pear, and blue-ball holding poses for the current cue, with a smaller centered character and no corner symbols; neutral poses during gaps must not reveal a future item.
 Optimize only selected new image names when appropriate with `python scripts/optimize-images.py NAME...`, retaining new masters and prompts while avoiding unrelated asset changes.
@@ -236,7 +236,7 @@ Dynamite wire previews must use the shared seeded sequence even without a player
 `src/kaya-view.js` renders one dog, two copies of the same kitten, and three copies of the same opaque blanket; animate swaps from the shared round clock and never expose the dog during covered phases.
 Use supplied `card-move.mp3` once per shuffle with the common bounded cue scheduler; score and reveal through `ChoiceMatch`, with one Ding and the common large result circle for each correct player.
 Kaya is in Arcade, Game Select, Party, and the animated cat-paw tutorial catalog; reduced motion removes the crossing arcs while preserving the essential horizontal tracking movement.
-The handshake and health endpoint report protocol 30 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
+The handshake and health endpoint report protocol 31 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
 
 `shared/happy.js` owns Happy Days’ seeded 57-note arrangements on the supplied recording’s 145 BPM grid, 17 hold notes, and 30-second duration.
 Judge both press and release edges at ±55 ms for Perfect (1000 points) and ±140 ms for Good (500 points); a failed edge scores zero for that note, and holding early never collects future notes.
@@ -290,11 +290,19 @@ Hold red/blue to tilt left/right, release to level with momentum, and keep green
 `src/stars-view.js` rotates each maze and follows its car; peer smoothing must never run physics or award pickups.
 Use supplied `car-bump.mp3` once per distinct impact and `Ding.mp3` once per star, preserving collected stars after collisions.
 The catalog, looping cat-paw demo, illustrated assets, and supplied `star-collector-voice.mp3` cover all three set modes.
-The protocol 30 handshake requires `star-collector`; deploy frontend and backend together.
+The protocol 31 handshake requires `star-collector`; deploy frontend and backend together.
 
 Horse Speeder uses `shared/horse.js` for a 3200-unit race, 120 Hz speed/distance simulation, seeded moving traffic, and validated finish proofs within a 60-second deadline.
 Red/blue move left/right in 180 ms; green taps add speed with a 100 ms guard, coasting slows down, and bumps reduce speed without losing distance or blocking steering.
 Keep a safe lane in every traffic row and enough maximum-speed spacing for two lane changes plus reaction time; Game Select narrows row spacing from 140 to 120 across its three rounds.
 `src/horse-view.js` renders bounded perspective traffic, rear-view gallop poses, the finish banner, and accepted clear times; keep gameplay free of speedometers, counters, and progress bars.
 Overtakes and the finish use Ding, bumps use Wrong, and tutorial presses use Punch; the supplied `horse-speeder-voice.mp3` announces selection, and future horse-specific sounds must also be supplied.
-Protocol 30 requires `horse-speeder`, and bounded result proofs fit the 16 KiB WebSocket limit; deploy frontend and backend together.
+Protocol 31 requires `horse-speeder`, and bounded result proofs fit the 16 KiB WebSocket limit; deploy frontend and backend together.
+
+Shark Jumper uses `shared/shark.js` for a seeded color-matching zigzag climb: press the next shark’s color, jump for 240 ms, and turn it grey only after landing.
+The protagonist is a cute puppy; wrong colors cause a fall and one-second climb-back onto the last safe shark without losing completed jumps.
+Use `plop.mp3` once at jump takeoff and `shark-splash.mp3` once at the 220 ms water impact; use Ding only for the full completed path.
+`src/shark-view.js` keeps eight bounded shark slots, authored jump/fall/climb motion, discrete reduced-motion states, and published remote timing without advancing peer gameplay.
+Start Arcade with 30 sharks and Game Select with 30/40/50 across its rounds; rank the final scheduled landing within 45 seconds and validate bounded jump histories on the server.
+Include the real recovery in the cat-paw tutorial; keep the common controls and omit gameplay counters and progress bars.
+Protocol 31 requires `shark-jumper`; deploy frontend and backend together.

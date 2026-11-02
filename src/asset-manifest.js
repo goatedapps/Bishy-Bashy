@@ -331,6 +331,16 @@ export const ASSETS = [
     "hash": "964701fa00d767c5"
   },
   {
+    "path": "assets/optimized/shark-sprites-7ca5a8542479.webp",
+    "bytes": 206400,
+    "hash": "7ca5a8542479add9"
+  },
+  {
+    "path": "assets/optimized/bg-shark-lagoon-d89fff10ef5d.webp",
+    "bytes": 134616,
+    "hash": "d89fff10ef5d2f57"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",
@@ -596,6 +606,11 @@ export const ASSETS = [
     "path": "audio/type-in-letters-voice.mp3",
     "bytes": 44522,
     "hash": "1c62e4a15bd52171"
+  },
+  {
+    "path": "audio/shark-splash.mp3",
+    "bytes": 97802,
+    "hash": "6d6b9a8f4c8e801d"
   },
   {
     "path": "audio/car-bump.mp3",

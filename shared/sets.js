@@ -53,6 +53,7 @@ export function setStandings(players) {
 }
 
 export function roundDetail(round) {
+  if (round.game === 'shark-jumper') return 'Match the sharks · Fastest wins';
   if (round.game === 'horse-speeder') return 'Race to the finish · Fastest wins';
   if (round.game === 'star-collector') return '45 seconds · Most stars wins';
   if (round.game === 'ladder-climber') return 'Climb to the trophy · Fastest wins';

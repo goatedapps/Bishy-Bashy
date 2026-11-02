@@ -5,7 +5,7 @@ import { remainingDemoPlan, REMAINING_DEMO_GAMES } from '../src/remaining-demos.
 import { ScriptedDemo } from '../src/scripted-demo.js';
 import { createGameDemo } from '../src/game-demo.js';
 
-for (const game of REMAINING_DEMO_GAMES) test(`${game}: demo inputs complete the intended example without mistakes and reset cleanly`, () => {
+for (const game of REMAINING_DEMO_GAMES) test(`${game}: demo inputs demonstrate the intended actions and reset cleanly`, () => {
   for (let level = 1; level <= 3; level++) {
     const plan = remainingDemoPlan(game, roundSettings(game, 123, level));
     const demo = Object.create(ScriptedDemo.prototype);
@@ -14,7 +14,8 @@ for (const game of REMAINING_DEMO_GAMES) test(`${game}: demo inputs complete the
     demo.advance(0, true);
     for (const cue of plan.cues) demo.advance(cue.at, true);
     demo.advance(plan.completeAt + 500, true);
-    if (game === 'star-collector') assert.ok(demo.run.events.some(event => event.type === 'carBump'));
+    if (game === 'shark-jumper') assert.equal(demo.run.mistakes, 1);
+    else if (game === 'star-collector') assert.ok(demo.run.events.some(event => event.type === 'carBump'));
     else assert.equal(demo.run.mistakes, 0, game);
     assert.ok(demo.run.cleared > 0, game);
     if (!plan.sampleComplete) assert.equal(demo.run.done, true, game);

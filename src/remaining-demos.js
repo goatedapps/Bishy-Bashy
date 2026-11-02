@@ -1,3 +1,5 @@
+import { SharkRun, SHARK_JUMP_MS, SHARK_RECOVERY_MS } from '../shared/shark.js';
+import { SharkStage } from './shark-view.js';
 import { HorseRun } from '../shared/horse.js';
 import { HorseStage } from './horse-view.js';
 import { StarRun } from '../shared/stars.js';
@@ -80,6 +82,7 @@ class LettersDemoRun extends LettersRun {
 }
 
 const RUNS = {
+  'shark-jumper': make(SharkRun),
   'horse-speeder': make(HorseRun),
   'star-collector': make(StarRun),
   'ladder-climber': make(LadderRun),
@@ -93,6 +96,7 @@ const RUNS = {
 export const REMAINING_DEMO_GAMES = Object.keys(RUNS);
 
 const INSTRUCTIONS = {
+  'shark-jumper': ['Press the color of the next shark to jump onto it.', 'Landed sharks turn grey. Fall? Climb back up and continue.'],
   'horse-speeder': ['Tap green to accelerate; stop tapping to slow down.', 'Red moves left; blue moves right. Dodge horses and finish first.'],
   'star-collector': ['Hold red to tilt left; hold blue to tilt right.', 'Release to level. Collect stars; most in 45 seconds wins.'],
   'ladder-climber': ['Follow the ladder: red = left, green = middle, blue = right.', 'Press once per rung. Climb to the trophy.'],
@@ -131,6 +135,19 @@ export function remainingDemoPlan(game, round = {}) {
     probe.tap(color, at);
   };
   let completeAt, freezeAt, sampleComplete = false;
+  if (game === 'shark-jumper') {
+    let at = START + 600;
+    for (let index = 0; index < 5; index++) {
+      if (index === 2) {
+        press((probe.sequence[probe.cleared] + 1) % 3, at, 'gameplayPress');
+        at += SHARK_RECOVERY_MS + 400;
+      }
+      press(probe.sequence[probe.cleared], at, 'gameplayPress');
+      at += SHARK_JUMP_MS + 500; probe.advance(at);
+    }
+    for (const event of probe.events) effects.push({ at: event.at, type: 'effect', sound: event.type });
+    return { settings, createRun, start: START, sampleComplete: true, presses, cues: effects.sort((a,b) => a.at-b.at), completeAt: at, freezeAt: at, sceneOwnsCompletion: true, duration: at + 1400 };
+  }
   if (game === 'horse-speeder') {
     for (let at = START + 300; at <= START + 9500; at += 50) {
       probe.advance(at);
@@ -252,6 +269,7 @@ export function remainingDemoPlan(game, round = {}) {
 }
 
 const STAGES = {
+  'shark-jumper': SharkStage,
   'horse-speeder': HorseStage,
   'star-collector': StarStage,
   'ladder-climber': LadderStage,

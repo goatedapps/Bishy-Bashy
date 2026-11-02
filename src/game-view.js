@@ -1,3 +1,5 @@
+import { SHARK_GAME } from '../shared/shark.js';
+import { SharkStage } from './shark-view.js';
 import { HORSE_GAME } from '../shared/horse.js';
 import { HorseStage } from './horse-view.js';
 import { STAR_GAME } from '../shared/stars.js';
@@ -44,7 +46,7 @@ import { DynamiteStage, dynamitePortrait } from './dynamite-view.js';
 import { MEALS_GAME } from '../shared/meals.js';
 import { MealsStage, mealPortrait } from './meals-view.js';
 
-const STAGES = { [HORSE_GAME]: 'horse', [STAR_GAME]: 'stars', 'ladder-climber': 'ladder', [HAPPY_GAME]: 'happy', [MEALS_GAME]: 'meals', [DYNAMITE_GAME]: 'dynamite', [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake' };
+const STAGES = { [SHARK_GAME]: 'shark', [HORSE_GAME]: 'horse', [STAR_GAME]: 'stars', 'ladder-climber': 'ladder', [HAPPY_GAME]: 'happy', [MEALS_GAME]: 'meals', [DYNAMITE_GAME]: 'dynamite', [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake' };
 
 const SHAPES = ['●', '▲', '◆'];
 const $ = id => document.getElementById(id);
@@ -105,6 +107,7 @@ export class GameView {
       const fireworks = new FireworkStage();
       const monkeys = new MonkeyStage();
       const jump = new JumpStage();
+      const shark = new SharkStage();
       const horse = new HorseStage();
       const stars = new StarStage();
       const ladder = new LadderStage();
@@ -115,7 +118,7 @@ export class GameView {
       const mistake = new MistakeStage();
       const coins = new CoinStage();
       const dodge = new DodgeStage();
-      zone.append(horse.element, stars.element, ladder.element, happy.element, meals.element, dynamite.element, tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element, burger.element, mistake.element, coins.element, dodge.element);
+      zone.append(shark.element, horse.element, stars.element, ladder.element, happy.element, meals.element, dynamite.element, tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element, burger.element, mistake.element, coins.element, dodge.element);
       const effects = node('div', 'game-feedback');
       effects.setAttribute('aria-hidden', 'true');
       const ring = node('span', 'feedback-ring');
@@ -133,7 +136,7 @@ export class GameView {
       const footer = new PlayerFooter();
       lane.append(name, finishBadge, zone, node('div', 'base'), remaining, progress, status, stageResult, footer.element);
       $('player-lanes').append(lane);
-      return { horse, stars, ladder, footer, happy, meals, dynamite, lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, coins, dodge, remaining, progress, fill, status, effects, ring, particles, towerKey: '' };
+      return { shark, horse, stars, ladder, footer, happy, meals, dynamite, lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, coins, dodge, remaining, progress, fill, status, effects, ring, particles, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -172,7 +175,7 @@ export class GameView {
       $('results').hidden = true;
       return;
     }
-    const hideCounters = [HORSE_GAME, STAR_GAME, LADDER_GAME, HAPPY_GAME, 'totem-shrinker', PERM_GAME, DODGE_GAME, MONKEY_GAME, JUMP_GAME, MEALS_GAME, DYNAMITE_GAME].includes(game);
+    const hideCounters = [SHARK_GAME, HORSE_GAME, STAR_GAME, LADDER_GAME, HAPPY_GAME, 'totem-shrinker', PERM_GAME, DODGE_GAME, MONKEY_GAME, JUMP_GAME, MEALS_GAME, DYNAMITE_GAME].includes(game);
     const perm = game === PERM_GAME;
     const slots = game === SLOT_GAME;
     const fireworks = game === FIREWORK_GAME;
@@ -201,16 +204,17 @@ export class GameView {
       elements.stageResult.setAttribute('aria-label', stageFeedback?.correct ? 'Correct set' : 'Wrong set');
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.finishBadge.hidden = !active || status?.status !== 'finished';
-      const finishLabel = game === HORSE_GAME || jump || game === DYNAMITE_GAME || game === MEALS_GAME ? `${((status?.elapsed || 0) / 1000).toFixed(2)} s\nCLEAR!` : game === STAR_GAME ? `${cleared} stars` : perm || mistake || game === HAPPY_GAME ? '✓ Finished' : '✓ Cleared!';
+      const finishLabel = game === SHARK_GAME || game === HORSE_GAME || jump || game === DYNAMITE_GAME || game === MEALS_GAME ? `${((status?.elapsed || 0) / 1000).toFixed(2)} s\nCLEAR!` : game === STAR_GAME ? `${cleared} stars` : perm || mistake || game === HAPPY_GAME ? '✓ Finished' : '✓ Cleared!';
       if (elements.finishBadge.textContent !== finishLabel) elements.finishBadge.textContent = finishLabel;
       elements.finishBadge.setAttribute('aria-live', own ? 'off' : 'polite');
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';
-      elements.tower.hidden = game === HORSE_GAME || game === STAR_GAME || game === LADDER_GAME || game === HAPPY_GAME || game === MEALS_GAME || game === DYNAMITE_GAME || perm || slots || fireworks || monkeys || jump || burger || mistake || dice || facing || game === COIN_GAME || game === DODGE_GAME;
+      elements.tower.hidden = game === SHARK_GAME || game === HORSE_GAME || game === STAR_GAME || game === LADDER_GAME || game === HAPPY_GAME || game === MEALS_GAME || game === DYNAMITE_GAME || perm || slots || fireworks || monkeys || jump || burger || mistake || dice || facing || game === COIN_GAME || game === DODGE_GAME;
       elements.avatar.hidden = !perm;
       elements.slots.cabinet.hidden = !slots;
       elements.fireworks.element.hidden = !fireworks;
       elements.monkeys.element.hidden = !monkeys;
       elements.jump.element.hidden = !jump;
+      elements.shark.element.hidden = game !== SHARK_GAME;
       elements.horse.element.hidden = game !== HORSE_GAME;
       elements.stars.element.hidden = game !== STAR_GAME;
       elements.ladder.element.hidden = game !== LADDER_GAME;
