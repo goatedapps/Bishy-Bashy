@@ -76,3 +76,18 @@ test('the Happy Days tutorial keeps its cat paw down through a hold and releases
     assert.ok(demo.plan.presses.some(cue => cue.type === 'release' && cue.at === hold.holdUntil));
   } finally { globalThis.document = previous; }
 });
+
+
+test('Clock and Stationery tutorials use one success circle from their real scene renderer', () => {
+  const previous = globalThis.document;
+  globalThis.document = { hidden: false, createElement: () => new Element(), createElementNS: () => new Element() };
+  try {
+    for (const game of ['clock-stopper', 'stationery-master']) {
+      const demo = createGameDemo(game, {});
+      demo.advance(0, true); demo.advance(demo.plan.completeAt + 100, true);
+      assert.equal(demo.completion.hidden, true);
+      assert.equal(demo.stage.rows.filter(row => !row.result.hidden && row.result.textContent === '○').length, 1);
+      demo.dispose();
+    }
+  } finally { globalThis.document = previous; }
+});

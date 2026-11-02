@@ -278,3 +278,6 @@ Kaya and Clock gameplay hide both the shared heading row and match HUD, includin
 Type in Letters uses chosen-avatar pointers outside the keys: seats 1 and 3 point down from two upper tiers, seats 2 and 4 point up from two lower tiers, avoiding collisions when cursors coincide.
 Happy Days derives each chart from the shared round seed, varying lanes, odd-beat rests, and one/two-beat holds while retaining the music grid, 57 notes, 17 holds, judgment gaps, and equal maximum scores.
 Use the same seed in local runs, remote pre-snapshot previews, and tutorials; never regenerate charts independently per player.
+
+Kaya’s grid overrides must outrank both generic shared-choice and tutorial styles, regardless of stylesheet import order; retain explicitly square animal/blanket containers.
+Clock and Stationery tutorials use their scene renderer’s result circle; suppress the generic demo completion overlay to avoid duplicate feedback.

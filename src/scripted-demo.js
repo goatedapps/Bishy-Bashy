@@ -61,7 +61,7 @@ export class ScriptedDemo {
     const copying = phase && typeof phase === 'object' ? phase.mode === 'play' || this.run.done : time >= presses[0].at - 300;
     this.lines.forEach((line, index) => line.classList.toggle('demo-active', index === Number(copying)));
     const completeAt = this.plan.completeAt + (this.plan.celebrateDelay || 0);
-    this.completion.hidden = !(this.run.done || this.plan.sampleComplete && time >= completeAt) || time < completeAt || time >= completeAt + 650;
+    this.completion.hidden = Boolean(this.plan.sceneOwnsCompletion) || !(this.run.done || this.plan.sampleComplete && time >= completeAt) || time < completeAt || time >= completeAt + 650;
   }
 
   dispose() {

@@ -219,7 +219,7 @@ export function remainingDemoPlan(game, round = {}) {
   const cues = presses.filter(cue => !sounded.has(cue.at)).concat(effects);
   if (!cues.some(cue => cue.type === 'complete' && cue.at === completeAt)) cues.push({ type: 'complete', at: completeAt });
   return { settings, createRun, start: START, presses, cues: cues.sort((a, b) => a.at - b.at), completeAt,
-    freezeAt, sampleComplete, duration: Math.max(completeAt + 1700, freezeAt || 0) };
+    freezeAt, sampleComplete, sceneOwnsCompletion: ['clock-stopper', 'stationery-master'].includes(game), duration: Math.max(completeAt + 1700, freezeAt || 0) };
 }
 
 const STAGES = {
