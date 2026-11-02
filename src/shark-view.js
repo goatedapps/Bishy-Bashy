@@ -9,10 +9,10 @@ export function sharkPortrait(kind = 'puppy') {
 }
 
 export function sharkPlatform(kind = 'stone') {
-  const element = node('shark-platform'), sprite = sharkPortrait(kind), wave = node('shark-wave'), mark = node('shark-mark');
+  const element = node('shark-platform'), body = node('shark-body'), sprite = sharkPortrait(kind), wave = node('shark-wave'), mark = node('shark-mark');
   wave.setAttribute('aria-hidden', 'true');
-  element.append(sprite, wave, mark);
-  return { element, sprite, wave, mark };
+  body.append(sprite); element.append(body, wave, mark);
+  return { element, body, sprite, wave, mark };
 }
 
 export class SharkStage {
@@ -66,7 +66,7 @@ export class SharkStage {
     this.puppy.hidden = !occupied || Boolean(recovering && !this.motion?.matches && age >= SHARK_FALL_MS && age < 400);
     this.puppy.className = `shark-sprite shark-${recovering && age >= 400 ? 'climb' : 'puppy'}`;
     this.puppy.style.left = `${positionX + drift}%`;
-    this.puppy.style.top = `calc(${y(progress) - arc + fall}% - 9cqw)`;
+    this.puppy.style.top = `calc(${y(progress) - arc + fall}% - min(9cqw,5.7cqh))`;
     this.puppy.style.transform = `translate(-50%,-100%) scaleX(${direction})`;
     const splashAge = age - SHARK_FALL_MS;
     this.splash.hidden = !occupied || splashAge < 0 || splashAge > 380;

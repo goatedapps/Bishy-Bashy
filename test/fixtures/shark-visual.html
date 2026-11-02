@@ -1,0 +1,39 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Shark visual check</title>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #eef1f3; font: 16px sans-serif; padding: 12px; }
+  h2 { margin: 4px 0 8px; }
+  .row { display: grid; grid-template-columns: 280px 88px 480px; gap: 12px; }
+  .check { position: relative; overflow: hidden; border: 2px solid #d6cb8c; }
+  .desktop { height: 680px; }
+  .phone { height: 580px; }
+  .wide { height: 420px; }
+</style>
+<body class="demo-shark-jumper">
+  <h2>Desktop / phone / wide panel — real SharkStage renderer</h2>
+  <div class="row">
+    <div class="check instruction-demo-scene desktop" id="desktop"></div>
+    <div class="check instruction-demo-scene phone" id="phone"></div>
+    <div class="check instruction-demo-scene wide" id="wide"></div>
+  </div>
+  <script type="module">
+    import '/src/shark.css';
+    import { SharkStage } from '/src/shark-view.js';
+    import { SharkRun } from '/shared/shark.js';
+    import { roundSettings } from '/shared/games.js';
+
+    const round = { id: 'visual', game: 'shark-jumper', ...roundSettings('shark-jumper', 123) };
+    for (const id of ['desktop', 'phone', 'wide']) {
+      const run = new SharkRun(round, 0);
+      for (let jump = 0; jump < 3; jump++) {
+        run.tap(run.sequence[run.cleared], 100 + jump * 300);
+        run.advance(340 + jump * 300);
+      }
+      const stage = new SharkStage();
+      document.getElementById(id).append(stage.element);
+      stage.render(round, run, 1000, 1000, true, true, run.cleared, false);
+    }
+  </script>
+</body>

@@ -4,6 +4,7 @@ import { FIREWORK_GAME, FireworkRun, fireworkSequence, FIREWORK_FREEZE_MS, FIREW
 import { roundSettings, createRun, comparePlayers } from '../shared/games.js';
 import { RoomService } from '../server/rooms.js';
 import { captureVisual, sanitizeVisual, RemoteRuns } from '../shared/visual-state.js';
+import { FireworkStage } from '../src/firework-view.js';
 
 const settings = (difficulty = 1) => ({ id: 'fireworks', game: FIREWORK_GAME, ...roundSettings(FIREWORK_GAME, 123, difficulty) });
 
@@ -18,6 +19,26 @@ function clearSet(run) {
   }
   return time - 100;
 }
+
+test('the remaining in-scene Set label uses the scheduled seven- or ten-set goal', () => {
+  const previous = globalThis.document;
+  class Element {
+    constructor() { this.children = []; this.style = { setProperty() {} }; this.classList = { toggle() {} }; }
+    append(...children) { this.children.push(...children); }
+    setAttribute() {}
+  }
+  globalThis.document = { createElement: () => new Element() };
+  try {
+    for (const mode of ['game-select', 'arcade']) {
+      const round = { game: FIREWORK_GAME, ...roundSettings(FIREWORK_GAME, 123, 1, mode) };
+      const stage = new FireworkStage();
+      stage.render(round, null, 0, true, true, 2, false);
+      assert.equal(stage.count.textContent, `Set 3 / ${round.goal}`);
+      stage.render(round, null, 0, true, true, round.goal, true);
+      assert.equal(stage.count.textContent, `Set ${round.goal} / ${round.goal}`);
+    }
+  } finally { globalThis.document = previous; }
+});
 
 test('seven seeded sets have counts 1, 3, 3, 4, 5, 5, 5 and the third set is faster', () => {
   assert.deepEqual(fireworkSequence(123), fireworkSequence(123));

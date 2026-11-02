@@ -915,7 +915,9 @@ Arcade begins with 30 sharks; Game Select increases the course from 30 to 40 to 
 Fastest final landing wins, with a 45-second deadline and one final Ding for completing the full path.
 `shared/shark.js` owns the shared course, landing schedule, recovery, bounded input history, and server replay validation.
 `src/shark-view.js` uses the same local and published peer timing to draw colored shark heads, landed stone heads, puppy arcs, water splashes, and the climb-back pose.
-Tilt the intact shark illustrations upward by 35 degrees and cover their submerged bodies with a separate illustrated foreground wave.
+Tilt the intact shark illustrations upward by 35 degrees and subtract the foreground wave’s alpha from the submerged body pixels.
+Display only the foam crest with feathered edges, preventing fins or tails from reappearing below a strip and avoiding rectangular water bands.
+Bound shark and puppy sizes by both panel width and height; `test/fixtures/shark-visual.html` previews desktop, narrow-phone, and wide layouts under Vite.
 Use the same wave layering for colored and stone sharks, tutorials, and posters; keep the puppy above the water layers.
 Jump presses use Plop without a layered Punch cue in gameplay or the tutorial.
 `src/result-message.js` includes the jump history in the actual client finish message, allowing the server to accept a valid clear and advance the set.
@@ -928,3 +930,6 @@ Deploy frontend and backend together with protocol 31 and the `shark-jumper` cap
 Render deploys the multiplayer room service; GitHub Pages deploys the playable frontend through the separate Deploy website to GitHub Pages workflow.
 A successful Render deployment can coexist with a failed Pages test job, leaving the public game on the previous graphics and controls.
 Check the Pages workflow result and published frontend asset filenames when confirming that a release is live.
+
+Fireworks Craze keeps a single in-scene Set label using the scheduled goal, including all seven Game Select or ten Arcade sets.
+Its redundant bottom cleared count and progress bar are hidden.

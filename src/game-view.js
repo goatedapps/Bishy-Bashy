@@ -175,7 +175,7 @@ export class GameView {
       $('results').hidden = true;
       return;
     }
-    const hideCounters = [SHARK_GAME, HORSE_GAME, STAR_GAME, LADDER_GAME, HAPPY_GAME, 'totem-shrinker', PERM_GAME, DODGE_GAME, MONKEY_GAME, JUMP_GAME, MEALS_GAME, DYNAMITE_GAME].includes(game);
+    const hideCounters = [FIREWORK_GAME, SHARK_GAME, HORSE_GAME, STAR_GAME, LADDER_GAME, HAPPY_GAME, 'totem-shrinker', PERM_GAME, DODGE_GAME, MONKEY_GAME, JUMP_GAME, MEALS_GAME, DYNAMITE_GAME].includes(game);
     const perm = game === PERM_GAME;
     const slots = game === SLOT_GAME;
     const fireworks = game === FIREWORK_GAME;

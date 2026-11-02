@@ -117,6 +117,7 @@ test('bounded shark scenes turn landed targets grey, animate recovery, reset cor
     assert.ok(stage.sharks[1].sprite.className.includes('shark-emerging'));
     assert.equal(stage.sharks[1].wave.className, 'shark-wave');
     assert.equal(stage.sharks[1].element.children.indexOf(stage.sharks[1].wave), 1);
+    assert.equal(stage.sharks[1].body.children[0], stage.sharks[1].sprite);
     assert.ok(Number(stage.sharks[0].element.style.zIndex) > Number(stage.sharks[1].element.style.zIndex));
     run.advance(340); stage.render(round, run, 340, 340, true, true); assert.ok(stage.sharks[1].sprite.className.includes('stone'));
     run.tap((run.sequence[1] + 1) % 3, 400); stage.render(round, run, 650, 650, true, true);

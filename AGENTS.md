@@ -308,7 +308,7 @@ Include the real recovery in the cat-paw tutorial; keep the common controls and 
 Protocol 31 requires `shark-jumper`; deploy frontend and backend together.
 
 `src/result-message.js` builds the actual client finish payload and includes any run-owned replay proof automatically; exercise this builder in Shark Jumper server and WebSocket regression tests.
-Shark Jumper uses intact tilted sharks with illustrated foreground waves covering submerged bodies; avoid hard head crops or fading the shark itself.
+Shark Jumper masks submerged sprite pixels using the wave alpha, then displays only a feathered foam crest; never overlay opaque rectangular water strips or leave body parts visible below the waterline.
 Keep the puppy above water layers and share wave occlusion across gameplay, tutorials, grey sharks, and posters; Shark jump presses use Plop alone without Punch.
 
 Horse impacts publish the struck lane in feedback; `src/horse-view.js` seeks a bounded backward recoil and separates/fades that opponent to avoid visual pass-through.
@@ -316,3 +316,6 @@ Keep recoil cosmetic, preserve distance and steering, reset by round, and honor 
 
 Stationery server tests must set fake packet receipt after the final submitted action; a fixed three-second offset rejects valid larger seeded desks as future input.
 When checking releases, verify the GitHub Pages workflow and public frontend assets separately from Render’s room-service deployment.
+
+Shark sprite size is bounded by panel width and height; use `test/fixtures/shark-visual.html` under Vite to check desktop, narrow-phone, and wide layouts with the real renderer.
+Fireworks shows only its in-scene Set label, derived from `round.goal`; hide the redundant bottom counter and progress bar.

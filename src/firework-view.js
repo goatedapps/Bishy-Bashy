@@ -1,3 +1,4 @@
+import { FIREWORK_GOAL } from '../shared/fireworks.js';
 const COLORS = ['#ff637b', '#70ef9d', '#72bbff'];
 
 export function fireworkBadge() {
@@ -57,9 +58,10 @@ export class FireworkStage {
         { transform: 'scale(.3)', opacity: 1 }, { transform: 'scale(1.4)', opacity: 0 },
       ], { duration: 450, easing: 'ease-out' });
     }
-    this.count.textContent = active && present ? `Set ${Math.min(cleared + 1, 5)} / 5` : '';
+    const goal = round.goal ?? FIREWORK_GOAL;
+    this.count.textContent = active && present ? `Set ${Math.min(cleared + 1, goal)} / ${goal}` : '';
     const airborne = rockets.filter(rocket => !rocket.hit && time >= rocket.launchAt && time < rocket.launchAt + rocket.airMs);
-    const label = !present ? 'Open spot' : terminal ? 'Round complete' : `Set ${Math.min(cleared + 1, 5)}: ${airborne.map(rocket => ['Red', 'Green', 'Blue'][rocket.color]).join(', ') || 'Get ready'}`;
+    const label = !present ? 'Open spot' : terminal ? 'Round complete' : `Set ${Math.min(cleared + 1, goal)}: ${airborne.map(rocket => ['Red', 'Green', 'Blue'][rocket.color]).join(', ') || 'Get ready'}`;
     this.element.setAttribute('aria-label', label);
     this.element.setAttribute('role', 'img');
   }

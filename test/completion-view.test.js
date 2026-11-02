@@ -84,7 +84,7 @@ test('Jump hides progress counters and shows each accepted local or remote finis
   } finally { globalThis.document = previous; }
 });
 
-for (const game of ['totem-shrinker','perm-mania','dodge-or-die','mimicking-monkeys']) test(`${game} hides bottom counters and progress without affecting the active scene`,()=>{
+for (const game of ['totem-shrinker','perm-mania','dodge-or-die','mimicking-monkeys','fireworks-craze']) test(`${game} hides bottom counters and progress without affecting the active scene`,()=>{
  const previous=globalThis.document,nodes=new Map();
  globalThis.document={hidden:false,createElement:()=>new Element(),createElementNS:()=>new Element(),createTextNode:text=>text,getElementById:id=>{if(!nodes.has(id))nodes.set(id,new Element());return nodes.get(id);}};
  try{
@@ -97,5 +97,6 @@ for (const game of ['totem-shrinker','perm-mania','dodge-or-die','mimicking-monk
   if(game==='dodge-or-die')assert.equal(view.lanes[0].dodge.element.hidden,false);
   if(game==='mimicking-monkeys')assert.equal(view.lanes[0].monkeys.element.hidden,false);
   if(game==='totem-shrinker')assert.equal(view.lanes[0].tower.hidden,false);
+  if(game==='fireworks-craze'){assert.equal(view.lanes[0].fireworks.element.hidden,false);assert.equal(view.lanes[0].fireworks.count.textContent,`Set 1 / ${round.goal}`);}
  }finally{globalThis.document=previous;}
 });
