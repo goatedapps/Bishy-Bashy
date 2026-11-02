@@ -5,7 +5,7 @@ The Vite frontend deploys independently to GitHub Pages; `server/` is a separate
 Run `npm run dev`, `npm test`, and `npm run build` for preview, meaningful gameplay/protocol checks, and static output.
 The Pages workflow deploys `main`; `MULTIPLAYER_SERVER_URL` supplies the public WebSocket endpoint.
 Keep the single server instance while rooms live in memory.
-Protocol version 25 shortens Stationery count windows to 8–5 seconds; deploy frontend and backend together.
+Protocol version 26 adds eight Kaya sets and seeded Happy Days charts; deploy frontend and backend together.
 
 ## Game and visuals
 
@@ -232,13 +232,13 @@ Dodge instructions say “Move into gaps between walls. Red - Move left. Blue - 
 Keep the Type in Letters tutorial alphabet in the same single 27-key row as gameplay.
 Dynamite wire previews must use the shared seeded sequence even without a player run or remote snapshot; never substitute alternating placeholder colors.
 
-`shared/kaya.js` owns Where’s Kaya’s six seeded shared sets with 2–7 swaps, 900–220 ms initial-difficulty shuffle times, and 1.5-second private answer windows.
+`shared/kaya.js` owns Where’s Kaya’s eight seeded shared sets with 2–9 swaps, 900–145 ms initial-difficulty shuffle times, and 1.5-second private answer windows.
 `src/kaya-view.js` renders one dog, two copies of the same kitten, and three copies of the same opaque blanket; animate swaps from the shared round clock and never expose the dog during covered phases.
 Use supplied `card-move.mp3` once per shuffle with the common bounded cue scheduler; score and reveal through `ChoiceMatch`, with one Ding and the common large result circle for each correct player.
 Kaya is in Arcade, Game Select, Party, and the animated cat-paw tutorial catalog; reduced motion removes the crossing arcs while preserving the essential horizontal tracking movement.
-The handshake and health endpoint report protocol 25 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
+The handshake and health endpoint report protocol 26 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
 
-`shared/happy.js` owns Happy Days’ fixed 57-note arrangement on the supplied recording’s 145 BPM grid, 17 hold notes, and 30-second duration.
+`shared/happy.js` owns Happy Days’ seeded 57-note arrangements on the supplied recording’s 145 BPM grid, 17 hold notes, and 30-second duration.
 Judge both press and release edges at ±55 ms for Perfect (1000 points) and ±140 ms for Good (500 points); a failed edge scores zero for that note, and holding early never collects future notes.
 `src/held-input.js` merges independent pointer and keyboard sources per color; clear them on cancellation, focus loss, dialogs, and round changes without auto-repeating rhythm inputs.
 `src/happy-view.js` renders three falling-note columns per player, glowing accepted notes and shrinking held tails; peer snapshots carry bounded note judgments, pressed masks, timing offsets, and scores without advancing gameplay.
@@ -273,3 +273,8 @@ The cat-paw tutorial demonstrates two ladders using the real course and renderer
 
 Ladder positions share the player lane with roughly half-width overlap; keep worker and trophy centers aligned to the same left/middle/right mapping.
 Alternate the rear climbing sprite’s reach on accepted-rung parity, reset its orientation for celebration, and deduplicate both trophy finish sounds by round ID.
+
+Kaya and Clock gameplay hide both the shared heading row and match HUD, including answer/round timers; retain countdown overlays and player results.
+Type in Letters uses chosen-avatar pointers outside the keys: seats 1 and 3 point down from two upper tiers, seats 2 and 4 point up from two lower tiers, avoiding collisions when cursors coincide.
+Happy Days derives each chart from the shared round seed, varying lanes, odd-beat rests, and one/two-beat holds while retaining the music grid, 57 notes, 17 holds, judgment gaps, and equal maximum scores.
+Use the same seed in local runs, remote pre-snapshot previews, and tutorials; never regenerate charts independently per player.

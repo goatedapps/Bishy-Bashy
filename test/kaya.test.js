@@ -4,14 +4,14 @@ import { KAYA_GAME, KAYA_GOAL, kayaStages, kayaDuration } from '../shared/kaya.j
 import { createRun, roundSettings, GAMES } from '../shared/games.js';
 import { kayaPositions, KayaScene } from '../src/kaya-view.js';
 
-test('Kaya has six seeded sets with more swaps and faster movement, and each final answer follows the actual swaps', () => {
+test('Kaya has eight seeded sets with more swaps and faster movement, and each final answer follows the actual swaps', () => {
   for (let difficulty = 1; difficulty <= 5; difficulty++) {
     const round = { id: 'kaya', game: KAYA_GAME, ...roundSettings(KAYA_GAME, 123, difficulty) };
     const stages = kayaStages(round);
-    if (difficulty === 1) assert.deepEqual(stages.map(stage => stage.stepMs), [900, 720, 560, 420, 300, 220]);
+    if (difficulty === 1) assert.deepEqual(stages.map(stage => stage.stepMs), [900, 720, 560, 420, 300, 220, 180, 145]);
     assert.equal(round.goal, KAYA_GOAL);
     assert.equal(GAMES[KAYA_GAME].sharedArena, true);
-    assert.equal(stages.length, 6);
+    assert.equal(stages.length, 8);
     assert.deepEqual(stages, kayaStages(round));
     assert.notDeepEqual(stages, kayaStages({ ...round, seed: 456 }));
     for (const stage of stages) {

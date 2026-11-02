@@ -99,6 +99,7 @@ export class SharedChoiceStage {
     const revealed = phase.mode === 'reveal' || phase.mode === 'done';
     this.title.textContent = `Set ${phase.index + 1} / ${run.goal}`;
     this.clock.textContent = canAnswer ? `${Math.max(0, (run.start + stage.answerEnd - time) / 1000).toFixed(1)} s` : phase.mode === 'wait' ? 'Get ready' : revealed ? 'Answers' : phase.mode === 'turn' ? facingMoveLabel(puzzle.moves[phase.turn]) : phase.mode === 'look' ? 'Look!' : 'Track the card';
+    this.header.hidden = kaya;
     this.card.hidden = !facing;
     this.kaya.element.hidden = !kaya;
     this.demo.hidden = !kaya && (!facing || canAnswer || revealed);

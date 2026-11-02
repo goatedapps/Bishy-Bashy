@@ -1,3 +1,4 @@
+import { characterPortrait } from './characters.js';
 import { PlayerFooter } from './player-footer.js';
 import { LETTERS_ALPHABET } from '../shared/letters.js';
 
@@ -65,7 +66,8 @@ export class LettersStage {
         outcome.setAttribute('role', 'img');
         outcome.hidden = true;
         const status = node('small', 'letter-player-status');
-        const pointer = node('span', `letter-pointer letter-pointer-${index}`, String(index + 1));
+        const pointer = node('span', `letter-pointer letter-pointer-${index} ${index % 2 === 0 ? 'points-down' : 'points-up'}`);
+        pointer.append(characterPortrait(player.characterId));
         pointer.setAttribute('aria-label', player.name);
         const footer = new PlayerFooter(player, player.id === playerId);
         card.append(name, score, typed, status, outcome, footer.element);

@@ -46,6 +46,7 @@ test('every registered game has an isolated animated tutorial that renders its w
       const demo = createGameDemo(game, { round: roundSettings(game, 123) });
       assert.ok(demo, game);
       assert.equal(demo.buttons.length, 3, game);
+      if (['wheres-kaya', 'clock-stopper'].includes(game)) assert.equal(demo.stage.header.hidden, true, game);
       assert.ok(demo.lines.length >= 2, game);
       demo.advance(0, true);
       const cues = demo.plan?.cues || [];

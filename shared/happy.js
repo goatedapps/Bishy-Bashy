@@ -1,3 +1,4 @@
+import { seededIndex } from './seeded-index.js';
 export const HAPPY_GAME = 'happy-days';
 export const HAPPY_DURATION_MS = 30_000;
 export const HAPPY_BPM = 145;
@@ -8,20 +9,26 @@ export const HAPPY_PERFECT_MS = 55;
 export const HAPPY_TRAVEL_MS = 2200;
 export const HAPPY_TONES = ['D', 'F♯', 'A'];
 
-// A three-button arrangement on the supplied recording's measured 145 BPM grid.
-export function happyChart() {
-  const melody = [0, 1, 2, 1, 0, 2, 2, 1, 0, 1, 2, 0, 1, 2, 1, 0];
-  const busy = [-Infinity, -Infinity, -Infinity], notes = [];
+// Seeded variations retain the recording's measured grid and equal scoring opportunities.
+export function happyChart(seed = 0) {
+  const choose = seededIndex(seed), busy = [-Infinity, -Infinity, -Infinity], notes = [];
+  let phrase = -1, rest = 7, swapHolds = false;
   for (let beat = 4; beat <= 68; beat++) {
-    if (beat % 8 === 7) continue;
+    const currentPhrase = Math.floor(beat / 8);
+    if (phrase !== currentPhrase) {
+      phrase = currentPhrase;
+      rest = phrase === 0 ? 5 + choose(2) * 2 : 1 + choose(4) * 2;
+      swapHolds = Boolean(choose(2));
+    }
+    if (phrase < 8 && beat % 8 === rest) continue;
     const at = Math.round(HAPPY_GRID_MS + beat * HAPPY_BEAT_MS);
-    let color = melody[(beat - 4) % melody.length];
-    const candidates = [color, (color + 1) % 3, (color + 2) % 3];
-    color = candidates.find(lane => busy[lane] + HAPPY_GOOD_MS * 2 < at);
-    if (color === undefined) continue;
-    const duration = beat % 8 === 0 ? Math.round(HAPPY_BEAT_MS * 2) : beat % 8 === 4 ? Math.round(HAPPY_BEAT_MS) : 0;
+    const preferred = choose(3), direction = choose(2) + 1;
+    const color = [preferred, (preferred + direction) % 3, (preferred + direction * 2) % 3].find(lane => busy[lane] + HAPPY_GOOD_MS * 2 < at);
+    if (color === undefined) throw new Error('Happy Days chart has overlapping note windows');
+    const holdBeats = beat % 8 === 0 ? swapHolds ? 1 : 2 : beat % 8 === 4 ? swapHolds ? 2 : 1 : 0;
+    const duration = Math.round(HAPPY_BEAT_MS * holdBeats);
     busy[color] = at + duration;
-    notes.push({ index: notes.length, color, at, duration, phrase: Math.floor(beat / 8) });
+    notes.push({ index: notes.length, color, at, duration, phrase });
   }
   return notes;
 }
@@ -37,7 +44,7 @@ export function validHappyScore(round, { cleared, mistakes, score }, finished = 
 }
 
 export class HappyRun {
-  constructor(round, localStart, timingOffset = 0, notes = happyChart()) {
+  constructor(round, localStart, timingOffset = 0, notes = happyChart(round.seed)) {
     Object.assign(this, { id: round.id, start: localStart, end: localStart + round.duration, duration: round.duration,
       offset: Math.max(-150, Math.min(150, Number(timingOffset) || 0)), notes, goal: notes.length,
       judgments: Array(notes.length).fill(0), headErrors: Array(notes.length).fill(0), pressedMask: 0,

@@ -24,3 +24,9 @@
 .demo-wheres-kaya .shared-kaya .shared-choice-heading>strong:first-child { visibility:visible; font-size:13px; }
 .demo-wheres-kaya .kaya-subject { width:min(30cqw,55cqh); }
 .demo-wheres-kaya .kaya-slot { font-size:14px; }
+
+.is-playing:is(.kaya-theme,.clock-theme) .match-hud { display:none; }
+.shared-kaya { grid-template-rows:minmax(0,1fr) 90px; }
+.shared-kaya .shared-demo { grid-row:1; }
+.shared-kaya .shared-choice-players { grid-row:2; }
+.demo-wheres-kaya .shared-kaya { grid-template-rows:minmax(0,1fr); }

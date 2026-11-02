@@ -60,3 +60,6 @@
 
 .shared-set-player.empty { opacity:1; background:#ece7d9b8; border-color:#b5ad9e; color:#80776c; }
 .shared-set-player.empty .clock-timing { margin:auto 0; font:800 11px/1.3 Nunito,system-ui; }
+
+.clock-shared,.demo-clock-stopper .clock-shared { grid-template-rows:minmax(0,1fr); }
+.clock-shared .shared-set-players { grid-row:1; }

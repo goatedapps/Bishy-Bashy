@@ -76,3 +76,21 @@ test('shared set feedback marks only winners with circles, marks other players l
     assert.equal(stage.notice.textContent, 'Time is up!');
   } finally { globalThis.document = previous; }
 });
+
+
+test('letter pointers show the chosen avatar and alternate above/below by player seat', () => {
+  const previous = globalThis.document; globalThis.document = { createElement: () => new Element() };
+  try {
+    const round = { id: 'four-avatars', game: LETTERS_GAME, playerIds: ['a', 'b', 'c', 'd'], ...roundSettings(LETTERS_GAME, 123) };
+    round.letters = new LettersMatch(round).state;
+    const players = round.playerIds.map((id, index) => ({ id, name: `Friend ${index + 1}`, characterId: index * 3, connected: true, progress: {} }));
+    const run = new LettersRun(round, 0), stage = new LettersStage();
+    stage.render({ round, players }, 'a', { run, start: 0, end: round.duration }, 1000);
+    stage.rows.forEach((row, index) => {
+      assert.equal(row.pointer.children[0].dataset.character, String(index * 3));
+      assert.ok(row.pointer.className.includes(index % 2 === 0 ? 'points-down' : 'points-up'));
+      assert.equal(row.pointer.textContent, '');
+      assert.equal(row.pointer.parentNode, stage.keys[13].markers);
+    });
+  } finally { globalThis.document = previous; }
+});

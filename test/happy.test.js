@@ -18,9 +18,9 @@ function perform(run, shift = 0) {
   run.advance(run.end);
 }
 
-test('Happy Days uses one fixed musical chart with three columns, taps and holds, and room for both timing windows', () => {
-  const notes = happyChart();
-  assert.deepEqual(notes, happyChart());
+test('Happy Days uses seeded musical charts with three columns, taps and holds, and room for both timing windows', () => {
+  const notes = happyChart(123);
+  assert.deepEqual(notes, happyChart(123));
   assert.equal(notes.length, HAPPY_GOAL);
   assert.equal(round.duration, 30000);
   assert.equal(new Set(notes.map(note => note.color)).size, 3);
@@ -32,7 +32,20 @@ test('Happy Days uses one fixed musical chart with three columns, taps and holds
     const previous = notes.filter(other => other.index < note.index && other.color === note.color).at(-1);
     if (previous) assert.ok(note.at - previous.at - previous.duration > HAPPY_GOOD_MS * 2);
   }
-  for (let level = 1; level <= 5; level++) assert.deepEqual(createRun({ ...round, ...roundSettings(HAPPY_GAME, 999, level) }, 0).notes, notes);
+  for (let level = 1; level <= 5; level++) assert.deepEqual(createRun({ ...round, ...roundSettings(HAPPY_GAME, 123, level) }, 0).notes, notes);
+  assert.notDeepEqual(happyChart(123), happyChart(999));
+  assert.notDeepEqual(happyChart(123).map(note => note.at), happyChart(999).map(note => note.at));
+  for (let seed = 0; seed < 100; seed++) {
+    const chart = happyChart(seed);
+    assert.equal(chart.length, HAPPY_GOAL); assert.equal(chart.filter(note => note.duration).length, 17);
+    for (const note of chart) {
+      const previous = chart.filter(other => other.index < note.index && other.color === note.color).at(-1);
+      if (previous) assert.ok(note.at - previous.at - previous.duration > HAPPY_GOOD_MS * 2);
+      assert.ok(note.at + note.duration + HAPPY_GOOD_MS < 30000);
+    }
+    const run = createRun({ ...round, seed }, 0); perform(run);
+    assert.equal(run.mistakes, 0); assert.equal(run.score, HAPPY_GOAL * 1000);
+  }
 });
 
 test('tap timing has inclusive Perfect/Good edges and rejects too-early, too-late and held repeat inputs', () => {

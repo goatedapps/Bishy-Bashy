@@ -68,3 +68,31 @@
   .letter-player-status:empty { min-height:0; }
 }
 @media(prefers-reduced-motion:reduce) { .letters-settled .letter-outcome { animation:none; } }
+
+.letters-stage { grid-template-rows:minmax(60px,1fr) 28px 142px auto; }
+.letters-alphabet { height:142px; align-items:center; padding-block:50px; }
+.letter-key { min-height:40px; padding:4px 0; }
+.letter-markers { inset:0; width:100%; display:block; }
+.letter-pointer { position:absolute; left:50%; transform:translateX(-50%); width:24px; min-width:24px; height:24px; padding:1px; border:2px solid var(--pointer-color); border-radius:50%; background:#fffbea; color:var(--pointer-color); }
+.letter-pointer>.character-portrait { width:18px; height:18px; }
+.letter-pointer-0 { --pointer-color:#be3153; top:-29px; }
+.letter-pointer-2 { --pointer-color:#257943; top:-55px; }
+.letter-pointer-1 { --pointer-color:#167498; top:calc(100% + 5px); }
+.letter-pointer-3 { --pointer-color:#7347a5; top:calc(100% + 31px); }
+.letter-pointer::after { content:''; position:absolute; left:50%; transform:translateX(-50%); width:0; height:0; border-inline:4px solid transparent; }
+.letter-pointer.points-down::after { bottom:-7px; border-top:6px solid var(--pointer-color); }
+.letter-pointer.points-up::after { top:-7px; border-bottom:6px solid var(--pointer-color); }
+@media(max-width:700px),(max-height:650px) {
+ .letters-stage { grid-template-rows:minmax(32px,1fr) 20px 128px auto; }
+ .letters-alphabet { height:128px; padding-block:45px; }
+ .letter-key { min-height:36px; padding:3px 0; }
+ .letter-pointer { width:21px; min-width:21px; height:21px; padding:0; border-width:1px; }
+ .letter-pointer>.character-portrait { width:19px; height:19px; }
+ .letter-pointer-0 { top:-25px; }.letter-pointer-2 { top:-48px; }
+ .letter-pointer-1 { top:calc(100% + 4px); }.letter-pointer-3 { top:calc(100% + 27px); }
+}
+.remaining-demo .letters-alphabet { flex:0 0 106px; height:106px; padding-block:35px; }
+.remaining-demo .letter-key { min-height:30px; padding:3px 0; }
+
+.remaining-demo .letter-pointer { width:18px; min-width:18px; height:18px; border:1px solid var(--pointer-color); }
+.remaining-demo .letter-pointer>.character-portrait { width:16px; height:16px; }

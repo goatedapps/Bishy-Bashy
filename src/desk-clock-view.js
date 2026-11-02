@@ -57,6 +57,7 @@ export class DeskClockStage {
     const rosterKey = `${round.id}/${roster.map(player => player.id).join('/')}`;
     this.element.className = `shared-set-stage ${stationery ? 'stationery-shared' : 'clock-shared'}`;
     this.desk.hidden = !stationery;
+    this.header.hidden = !stationery;
     if (this.rosterKey !== rosterKey) {
       this.rosterKey = rosterKey;
       this.rows = seats.map((player, index) => {

@@ -32,8 +32,8 @@ export class HappyStage {
   }
 
   render(round, run, time, elapsed, active, present, cleared, terminal = false) {
-    const chart = run?.notes || happyChart();
-    const key = `${round.id}/${chart.length}`;
+    const chart = run?.notes || happyChart(round.seed);
+    const key = `${round.id}/${round.seed}/${chart.length}`;
     if (this.key !== key) {
       this.key = key;
       this.notes.forEach(note => note.remove());

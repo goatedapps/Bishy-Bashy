@@ -78,7 +78,7 @@ class LettersDemoRun extends LettersRun {
 const RUNS = {
   'ladder-climber': make(LadderRun),
   'stationery-master': make(ChoiceDemoRun), 'clock-stopper': make(ChoiceDemoRun),
-  'happy-days': (round, start) => new HappyRun(round, start, 0, happyChart().slice(0, 4)),
+  'happy-days': (round, start) => new HappyRun(round, start, 0, happyChart(round.seed).slice(0, 4)),
   'jump-for-the-meat': make(JumpRun), 'burger-girl': make(BurgerRun), 'me-find-mistake': make(MistakeRun),
   'its-raining-coins': make(CoinRun), 'dodge-or-die': make(DodgeRun), 'dynamite-spark': make(DynamiteRun),
   'get-those-burgers-out': make(MealsRun), 'dice-dice-more-dice': make(ChoiceDemoRun),
