@@ -1,12 +1,33 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { STAR_GAME, STAR_STEP_MS, StarRun, starCourse, validStarResult } from '../shared/stars.js';
+import { STAR_GAME, STAR_STEP_MS, STAR_MAX_DEPTH, StarRun, starCourse, validStarResult } from '../shared/stars.js';
 import { roundSettings, comparePlayers } from '../shared/games.js';
 import { captureVisual, sanitizeVisual, RemoteRuns } from '../shared/visual-state.js';
 import { RoomService } from '../server/rooms.js';
 import { StarStage } from '../src/stars-view.js';
 
 const settings = seed => ({ id: 'stars', game: STAR_GAME, ...roundSettings(STAR_GAME, seed) });
+
+test('seeded mazes vary bar lengths, vertical gaps, and floating star positions without embedding or overlapping stars', () => {
+  for (let seed = 0; seed < 100; seed++) {
+    const course = starCourse(seed), { shelves, stars } = course;
+    const gaps = shelves.slice(1).map((wall, i) => wall.y - shelves[i].y);
+    assert.ok(shelves.every(wall => wall.width >= 94 && wall.width <= 226));
+    assert.ok(gaps.every(gap => gap >= 80 && gap <= 165));
+    assert.ok(new Set(shelves.slice(0, 10).map(wall => wall.width)).size >= 5);
+    assert.ok(new Set(gaps.slice(0, 10)).size >= 5);
+    assert.ok(new Set(stars.map(star => star.x)).size > 40);
+    assert.ok(stars.filter(star => shelves.every(wall => Math.abs(star.y - (wall.y - 22)) > 1)).length > 64);
+    assert.equal(stars.length, 128); assert.equal(new Set(stars.map(star => star.id)).size, 128);
+    assert.ok(course.bottom < STAR_MAX_DEPTH);
+    for (const star of stars) {
+      assert.ok(star.x >= 32 && star.x <= 268);
+      assert.ok(shelves.every(wall => star.x + 12 <= wall.x || star.x - 12 >= wall.x + wall.width || star.y + 12 <= wall.y || star.y - 12 >= wall.y + wall.height));
+      assert.ok(stars.every(other => other.id === star.id || Math.hypot(star.x - other.x, star.y - other.y) >= 40));
+    }
+  }
+});
+
 function drive(round, start = 0, frameMs = 16) {
   const run = new StarRun(round, start);
   const edges = [[500, 2, true], [2200, 2, false], [2200, 0, true], [4500, 0, false], [4500, 2, true], [7000, 2, false]];

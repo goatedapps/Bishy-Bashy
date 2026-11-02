@@ -1,3 +1,4 @@
+import { STAR_MAX_DEPTH } from './stars.js';
 import { createRun } from './games.js';
 
 const SCHEMAS = {
@@ -44,7 +45,7 @@ export function sanitizeVisual(round, visual, receivedElapsed) {
   for (const [key, type] of Object.entries(schema)) {
     const value = visual.fields[key];
     if (type.startsWith('star')) {
-      const valid = type === 'starStates' ? Array.isArray(value) && value.length === 128 && value.every(item => item === 0 || item === 1) : type === 'starX' ? number(value, 0, 300) : type === 'starY' ? number(value, 0, 8500) : type === 'starVelocity' ? number(value, -250, 250) : type === 'starTilt' ? number(value, -.44, .44) : [0, 1, 4, 5].includes(value);
+      const valid = type === 'starStates' ? Array.isArray(value) && value.length === 128 && value.every(item => item === 0 || item === 1) : type === 'starX' ? number(value, 0, 300) : type === 'starY' ? number(value, 0, STAR_MAX_DEPTH) : type === 'starVelocity' ? number(value, -250, 250) : type === 'starTilt' ? number(value, -.44, .44) : [0, 1, 4, 5].includes(value);
       if (!valid) return null;
       fields[key] = Array.isArray(value) ? [...value] : value;
       continue;

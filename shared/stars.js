@@ -5,16 +5,38 @@ export const STAR_DURATION_MS = 45000;
 export const STAR_GOAL = 128;
 export const STAR_STEP_MS = 1000 / 120;
 export const STAR_RADIUS = 10;
+export const STAR_MAX_DEPTH = 11000;
 
 export function starCourse(seed) {
   const choose = seededIndex(seed);
+  let y = 135;
   const shelves = Array.from({ length: STAR_GOAL / 2 }, (_, i) => {
-    const left = i % 2 === 0, width = 174 + choose(20);
-    return { x: left ? 10 : 290 - width, y: 135 + i * 125, width, height: 9, left };
+    const left = i % 2 === 0, width = 94 + choose(133);
+    if (i) y += 80 + choose(86);
+    return { x: left ? 10 : 290 - width, y, width, height: 9, left };
   });
-  const stars = shelves.flatMap((wall, i) => [0, 1].map(n => ({
-    x: wall.left ? 55 + n * 88 : 245 - n * 88, y: wall.y - 22, id: i * 2 + n,
-  })));
+  const stars = shelves.flatMap((wall, i) => {
+    if (!i) return [{ x: 55, y: 113, id: 0 }, { x: 140 + choose(121), y: 45 + choose(55), id: 1 }];
+    const previous = shelves[i - 1], pair = [];
+    for (let n = 0; n < 2; n++) {
+      let star;
+      for (let attempt = 0; attempt < 16; attempt++) {
+        const onBar = choose(4) === 0;
+        const starY = onBar ? wall.y - 22 : previous.y + 34 + choose(wall.y - previous.y - 65);
+        // Floating stars stay within steering reach of the previous bar's exit gap.
+        const travel = 190 * Math.sqrt(2 * Math.max(0, starY - previous.y - 10) / 330);
+        const low = onBar ? wall.x + 24 : Math.max(32, previous.left ? previous.x + previous.width + STAR_RADIUS - travel : 32);
+        const high = onBar ? wall.x + wall.width - 24 : Math.min(268, previous.left ? 268 : previous.x - STAR_RADIUS + travel);
+        star = { x: Math.round(low + choose(Math.max(1, Math.floor(high - low) + 1))), y: starY, id: i * 2 + n };
+        if (pair.every(other => Math.hypot(star.x - other.x, star.y - other.y) >= 40)) break;
+      }
+      if (pair.some(other => Math.hypot(star.x - other.x, star.y - other.y) < 40)) {
+        star = { x: pair[0].x < 150 ? 268 : 32, y: wall.y - 22, id: i * 2 + n };
+      }
+      pair.push(star);
+    }
+    return pair;
+  });
   return { shelves, stars, bottom: shelves.at(-1).y + 150 };
 }
 
