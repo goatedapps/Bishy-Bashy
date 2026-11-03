@@ -1,18 +1,20 @@
 <!doctype html>
 <html lang="en"><meta charset="UTF-8"><title>Witch delivery scene checks</title>
-<link rel="stylesheet" href="/src/witch.css"><link rel="stylesheet" href="/src/characters.css">
+<link rel="stylesheet" href="/src/instruction-demo.css"><link rel="stylesheet" href="/src/witch.css"><link rel="stylesheet" href="/src/characters.css">
 <style>body{margin:0;background:#eadff4;font:16px system-ui;color:#38234f}nav{padding:12px;display:flex;gap:8px;flex-wrap:wrap}button{font:inherit;padding:7px 14px}main{display:flex;gap:14px;padding:12px;align-items:start;flex-wrap:wrap}.frame{width:800px;height:500px;display:flex;background:#d9c8ed;border:2px solid #674d85}.phone{width:350px;height:460px}.witch-arena{height:100%}[hidden]{display:none!important}</style>
-<nav><button data-phase="run">Run</button><button data-phase="brake">Stop</button><button data-phase="aim">Aim</button><button data-phase="fly">Flight</button><button data-phase="land">Transformation</button><button data-phase="fail">Overrun</button><button data-phase="loop">Loop</button></nav>
-<main><div class="frame" id="desktop"></div><div class="frame phone" id="phone"></div></main>
+<nav><button data-phase="run">Run</button><button data-phase="brake">Stop</button><button data-phase="aim">Aim</button><button data-phase="fly">Flight</button><button data-phase="land">Transformation</button><button data-phase="fail">Overrun</button><button data-phase="loop">Loop</button><button data-phase="tutorial">Tutorial first frame</button></nav>
+<main id="scenes"><div class="frame" id="desktop"></div><div class="frame phone" id="phone"></div></main><section id="tutorial" style="margin:12px;width:min(1100px,95vw);height:400px;--ink:#38234f" hidden></section>
 <script type="module">
 import { WitchRun } from '/shared/witch.js';
 import { WitchArena } from '/src/witch-view.js';
-import { witchDemoPlan } from '/src/witch-demo.js';
+import { WitchDemo, witchDemoPlan } from '/src/witch-demo.js';
 const plan=witchDemoPlan(), arenas=['desktop','phone'].map(id=>{const view=new WitchArena();document.getElementById(id).append(view.element);return view;});
-let phase='run',epoch=performance.now();document.querySelectorAll('[data-phase]').forEach(button=>button.addEventListener('click',()=>{phase=button.dataset.phase;epoch=performance.now()}));
+const tutorial=new WitchDemo();document.getElementById('tutorial').append(tutorial.element);
+let phase='run',epoch=performance.now();document.querySelectorAll('[data-phase]').forEach(button=>button.addEventListener('click',()=>{phase=button.dataset.phase;epoch=performance.now();document.getElementById('scenes').hidden=phase==='tutorial';document.getElementById('tutorial').hidden=phase!=='tutorial'}));
 function frame(now){
+ if(phase==='tutorial'){requestAnimationFrame(frame);return}
  const brake=plan.presses.find(p=>p.color===1),release=brake.holdUntil;
- let time=phase==='loop'?(now-epoch)%plan.duration:({run:3300,brake:brake.at+50,aim:release-100,fly:release+1500,land:plan.completeAt+450,fail:10000})[phase];
+ let time=phase==='loop'?(now-epoch)%plan.duration:({run:3300,brake:brake.at+50,aim:release-100,fly:release+(plan.completeAt-release)*.55,land:plan.completeAt+450,fail:10000})[phase];
  const run=new WitchRun({},plan.start);
  if(phase==='fail'){for(let at=1000,color=0;at<time;at+=100,color=2-color)run.tap(color,at)}
  else for(const cue of plan.presses){if(cue.at>time)break;cue.type==='release'?run.release(cue.color,cue.at):run.tap(cue.color,cue.at)}

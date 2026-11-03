@@ -1,10 +1,12 @@
 export const WITCH_GAME = 'witch-delivery';
 export const WITCH_DURATION_MS = 20000;
-export const WITCH_GOAL = 40;
+export const WITCH_GOAL = 160;
+export const WITCH_GRAVITY = 450;
+export const WITCH_THROW_SCALE = 4.4;
 export const WITCH_ROAD = 180;
 export const FROG_SPACING = 14;
 export const WITCH_HOLD_MS = 2200;
-const DRAG = .8, MAX_SPEED = 42, ANGLE_RATE = 55;
+const ANGLE_RATE = 55;
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 
 export class WitchRun {
@@ -19,14 +21,14 @@ export class WitchRun {
   advance(time) {
     if (!Number.isFinite(time) || time < this.at || this.done) return;
     const until = Math.min(time, this.end);
-    let seconds = Math.max(0, until - this.at) / 1000;
+    const seconds = Math.max(0, until - this.at) / 1000;
     if (this.state === 'run') {
-      const distance = this.speed * (1 - Math.exp(-DRAG * seconds)) / DRAG;
+      const distance = this.speed * seconds;
       if (this.x + distance >= WITCH_ROAD) {
-        const crossing = -Math.log(1 - (WITCH_ROAD - this.x) * DRAG / this.speed) / DRAG;
+        const crossing = (WITCH_ROAD - this.x) / this.speed;
         this.x = WITCH_ROAD; this.state = 'fall'; this.failure = 'overrun'; this.speed = 0;
         this.landAt = this.at + crossing * 1000 + 900;
-      } else { this.x += distance; this.speed *= Math.exp(-DRAG * seconds); }
+      } else { this.x += distance; }
     } else if (this.state === 'aim') this.angle = Math.min(90, this.angle + seconds * ANGLE_RATE);
     this.at = until;
     if (['fly', 'fall'].includes(this.state) && until + 1e-6 >= this.landAt) {
@@ -50,7 +52,7 @@ export class WitchRun {
       this.power = this.speed; this.angle = 0; this.pressedMask = 2; this.state = 'aim';
     } else {
       if (this.state !== 'run' || time - this.lastTap < 40 || color === this.lastColor) return { type: 'ignored' };
-      this.lastColor = color; this.lastTap = time; this.speed = Math.min(MAX_SPEED, this.speed + 4);
+      this.lastColor = color; this.lastTap = time; this.speed += 4;
     }
     this.actions.push([time - this.start, color, 0]);
     return { type: 'move' };
@@ -63,11 +65,11 @@ export class WitchRun {
     if (cancel) { this.state = 'run'; this.angle = 0; return { type: 'move' }; }
     if (this.state !== 'aim') return { type: 'ignored' };
     this.launchAt = time;
-    const radians = this.angle * Math.PI / 180, velocity = this.power * 1.9;
+    const radians = this.angle * Math.PI / 180, velocity = this.power * WITCH_THROW_SCALE;
     this.stopX = this.x + 10 + 11 * Math.cos(radians);
     this.launchHeight = 34 + 11 * Math.sin(radians);
     const vertical = velocity * Math.sin(radians);
-    this.flightSeconds = (vertical + Math.sqrt(vertical * vertical + 2 * 30 * this.launchHeight)) / 30;
+    this.flightSeconds = (vertical + Math.sqrt(vertical * vertical + 2 * WITCH_GRAVITY * this.launchHeight)) / WITCH_GRAVITY;
     const rawX = this.stopX + velocity * Math.cos(radians) * this.flightSeconds;
     this.frogs = clamp(Math.floor((rawX - WITCH_ROAD) / FROG_SPACING) - 1, 0, WITCH_GOAL);
     this.targetX = WITCH_ROAD + (this.frogs + 1) * FROG_SPACING;
@@ -93,6 +95,16 @@ export function replayWitch(actions, sample) {
   }
   run.advance(sample);
   return run;
+}
+
+export function witchFlight(run, time) {
+  if (run.launchAt === null) return null;
+  const progress = clamp((time - run.launchAt) / (run.landAt - run.launchAt), 0, 1);
+  const seconds = progress * run.flightSeconds;
+  const x = run.stopX + (run.targetX - run.stopX) * progress;
+  const y = Math.max(0, run.launchHeight + run.power * WITCH_THROW_SCALE * Math.sin(run.angle * Math.PI / 180) * seconds - WITCH_GRAVITY / 2 * seconds * seconds);
+  const passed = Math.min(run.frogs, Math.max(0, Math.floor((x - WITCH_ROAD) / FROG_SPACING)));
+  return { x, y, progress, passed };
 }
 
 export function witchPose(run, time) {

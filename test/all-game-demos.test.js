@@ -100,3 +100,33 @@ test('Clock and Stationery tutorials use one success circle from their real scen
     }
   } finally { globalThis.document = previous; }
 });
+
+
+test('Witch tutorial keeps its unmeasured gauge hidden, anchors it at the edge, and displays the flight count', () => {
+  const previous = globalThis.document, priorObserver = globalThis.ResizeObserver;
+  globalThis.document = { hidden: false, createElement: () => new Element(), createElementNS: () => new Element() };
+  globalThis.ResizeObserver = class { constructor(callback) { this.callback = callback; } observe() {} disconnect() { this.disconnected = true; } };
+  try {
+    const demo = createGameDemo('witch-delivery', {}), stage = demo.stage;
+    stage.scene.clientWidth = stage.scene.clientHeight = 0;
+    stage.render(demo.plan.settings, demo.run, 0);
+    assert.equal(stage.hud.hidden, true); assert.equal(stage.speed.hidden, true);
+    stage.scene.clientWidth = 350; stage.scene.clientHeight = 240;
+    stage.resize.callback();
+    assert.equal(stage.speed.hidden, false); assert.ok(parseFloat(stage.hud.style.width) <= 142);
+    demo.advance(0, true);
+    const stop = demo.plan.presses.find(cue => cue.color === 1);
+    demo.advance(stop.at + 300, true);
+    assert.equal(stage.hud.hidden, false);
+    const edge = parseFloat(stage.roof.style.left) + parseFloat(stage.roof.style.width);
+    assert.ok(parseFloat(stage.hud.style.left) > edge && parseFloat(stage.hud.style.left) - edge < 100);
+    assert.equal(stage.speed.parentNode, stage.scene);
+    demo.advance(stop.holdUntil + 500, true);
+    assert.equal(stage.hud.hidden, true); assert.equal(stage.flightCount.hidden, false);
+    const middle = Number(stage.flightNumber.textContent);
+    demo.advance(demo.plan.completeAt + 50, true);
+    assert.ok(Number(stage.flightNumber.textContent) > middle);
+    assert.equal(Number(stage.flightNumber.textContent), demo.run.cleared);
+    demo.dispose(); assert.equal(stage.resize.disconnected, true);
+  } finally { globalThis.document = previous; globalThis.ResizeObserver = priorObserver; }
+});

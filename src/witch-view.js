@@ -1,5 +1,5 @@
 import { createWitchGauge } from './witch-gauge.js';
-import { WitchRun, replayWitch, witchPose, WITCH_ROAD, FROG_SPACING } from '../shared/witch.js';
+import { WitchRun, replayWitch, witchPose, WITCH_ROAD, FROG_SPACING, WITCH_GOAL, WITCH_GRAVITY, WITCH_THROW_SCALE, witchFlight } from '../shared/witch.js';
 import { characterPortrait } from './characters.js';
 const node = (tag, className, text) => {
   const element = document.createElement(tag); element.className = className;
@@ -19,29 +19,46 @@ export class WitchStage {
     this.village = node('div', 'witch-village'); this.village.setAttribute('aria-hidden', 'true');
     this.hud = node('div', 'witch-hud');
     this.speed = node('strong', 'witch-speed'); this.gauge = createWitchGauge();
-    this.hud.append(this.speed, this.gauge.element);
+    this.hud.append(this.gauge.element);
+    this.hud.hidden = this.speed.hidden = true;
     this.roof = node('div', 'witch-roof'); this.roof.append(node('span', 'witch-edge', 'EDGE'));
     this.actor = witchPortrait(); this.broom = witchPortrait('broom'); this.potion = witchPortrait('potion');
     this.prince = witchPortrait('prince'); this.puff = witchPortrait('puff');
     this.frogs = Array.from({ length: 42 }, () => witchPortrait('frog'));
+    this.flightCount = node('div', 'witch-flight-count'); this.flightCount.hidden = true;
+    this.flightCount.setAttribute('aria-live', 'off');
+    this.flightNumber = node('strong', ''); this.flightCount.append(this.flightNumber, node('span', '', 'frogs passed'));
     this.caption = node('strong', 'witch-caption'); this.caption.setAttribute('role', 'status');
-    this.scene.append(this.village, this.roof, ...this.frogs, this.actor, this.broom, this.potion, this.prince, this.puff, this.hud, this.caption);
+    this.scene.append(this.village, this.roof, ...this.frogs, this.actor, this.broom, this.potion, this.prince, this.puff, this.speed, this.hud, this.flightCount, this.caption);
     this.element.append(this.scene);
     this.motion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
+    if (globalThis.ResizeObserver) {
+      this.resize = new ResizeObserver(() => {
+        if (this.lastRender && this.scene.clientWidth > 0 && this.scene.clientHeight > 0) this.render(...this.lastRender);
+      });
+      this.resize.observe(this.scene);
+    }
   }
   render(round, source, time) {
+    this.lastRender = [round, source, time];
+    if (this.scene.clientWidth === 0 || this.scene.clientHeight === 0) { this.hud.hidden = this.speed.hidden = this.flightCount.hidden = true; return; }
     const run = source ? witchPose(source, time) : new WitchRun({}, time);
     const width = this.scene.clientWidth || 800, height = this.scene.clientHeight || 400;
+    const baseline = height * .1;
     const flight = run.launchAt !== null;
-    const runUnit = Math.min(width / 110, height / 80), flightUnit = Math.min(width / 140, height / 165);
+    const velocity = run.power * WITCH_THROW_SCALE;
+    const vertical = velocity * Math.sin(run.angle * Math.PI / 180);
+    const apex = (run.launchHeight || 34) + vertical * vertical / (2 * WITCH_GRAVITY);
+    const runUnit = Math.min(width / 110, height / 80), flightUnit = Math.min(width / 140, (height - baseline - 12) / Math.max(150, apex + 14));
     const zoomProgress = flight ? Math.min(1, Math.max(0, (time - run.launchAt) / 350)) : 0;
     const zoom = this.motion?.matches ? Number(flight) : 1 - (1 - zoomProgress) ** 3;
-    const unit = runUnit + (flightUnit - runUnit) * zoom, baseline = height * .1;
-    const progress = flight ? Math.max(0, Math.min(1, (time - run.launchAt) / (run.landAt - run.launchAt))) : 0;
-    const potionX = flight ? run.stopX + (run.targetX - run.stopX) * progress : run.x + 16;
-    const velocity = run.power * 1.9, flightTime = flight ? progress * run.flightSeconds : 0;
-    const potionY = flight ? Math.max(0, run.launchHeight + velocity * Math.sin(run.angle * Math.PI / 180) * flightTime - 15 * flightTime * flightTime) : 34;
-    const focus = flight ? potionX : run.x, camera = Math.max(-10, focus - width / unit * .35);
+    const unit = runUnit + (flightUnit - runUnit) * zoom;
+    const path = witchFlight(run, time);
+    const potionX = path?.x ?? run.x + 16;
+    const potionY = path?.y ?? 34;
+    this.flightCount.hidden = !['fly', 'land'].includes(run.state);
+    this.flightNumber.textContent = String(path?.passed ?? 0);
+    const focus = flight ? potionX : run.x, camera = Math.max(-30, focus - width / unit * .35);
     const place = (element, x, y, size) => {
       element.style.left = `${(x - camera) * unit}px`; element.style.bottom = `${baseline + y * unit}px`;
       element.style.width = `${size * unit}px`; element.style.height = `${size * unit}px`;
@@ -49,11 +66,16 @@ export class WitchStage {
     this.speed.textContent = `${['aim', 'fly', 'land'].includes(run.state) ? 'Run speed' : 'Speed'} ${(['aim', 'fly', 'land'].includes(run.state) ? run.power : run.speed).toFixed(1)}`;
     this.gauge.update(run.angle);
     const hudWidth = Math.min(142, Math.max(105, width * .16), Math.max(56, (height - 36) * .72));
-    this.hud.style.width = `${hudWidth}px`;
+    this.hud.style.width = this.speed.style.width = `${hudWidth}px`;
     this.speed.style.fontSize = `${Math.max(8, Math.min(15, hudWidth / 9.5))}px`;
-    this.hud.style.left = `${Math.max(8, Math.min(width - hudWidth - 8, (run.x - camera + 25) * unit))}px`;
-    this.hud.style.bottom = `${Math.max(4, Math.min(baseline + 12 * unit, height - hudWidth * 136 / 132 - 28))}px`;
-    this.hud.hidden = flight || ['fall', 'failed'].includes(run.state);
+    const edgeX = (WITCH_ROAD - camera) * unit;
+    this.hud.style.left = `${Math.max(8, Math.min(width - hudWidth - 8, edgeX + 12 * unit + 12))}px`;
+    this.hud.style.bottom = `${Math.max(4, Math.min(baseline + 14 * unit, height - hudWidth * 136 / 132 - 8))}px`;
+    this.speed.style.left = `${Math.max(8, Math.min(width - hudWidth - 8, (run.x - camera) * unit - hudWidth / 2))}px`;
+    this.speed.style.bottom = `${Math.min(height - 25, baseline + 55 * unit)}px`;
+    const hideReadings = flight || ['fall', 'failed'].includes(run.state);
+    this.hud.hidden = hideReadings || edgeX < 0 || edgeX > width - 8;
+    this.speed.hidden = hideReadings;
     const panoramaWidth = width * 2.8;
     const scroll = Math.min(panoramaWidth - width, Math.max(0, focus) * width / 110 * .3);
     this.village.style.backgroundSize = `${panoramaWidth}px auto`;
@@ -74,7 +96,7 @@ export class WitchStage {
     const landed = run.state === 'land';
     this.frogs.forEach((frog, slot) => {
       const index = first + slot, x = WITCH_ROAD + (index + 1) * FROG_SPACING;
-      frog.hidden = index > 40 || landed && index === run.cleared;
+      frog.hidden = index > (round.goal || WITCH_GOAL) || landed && index === run.cleared;
       place(frog, x - 7, 0, 14);
     });
     const rescue = run.state === 'failed' && run.failure === 'overrun';
@@ -88,9 +110,10 @@ export class WitchStage {
     this.puff.hidden = !(landed || rescue) || age < 0 || age > 950;
     this.puff.style.opacity = String(Math.max(0, 1 - age / 950));
     this.puff.style.transform = `scale(${this.motion?.matches ? 1 : .65 + Math.min(1, age / 280) * .7})`;
-    this.caption.textContent = run.failure === 'timeout' ? 'Spell time’s up!' : landed ? `${run.cleared} frogs passed!` : run.state === 'failed' || run.state === 'fall' ? 'Off the roof! Magical rescue…' : run.state === 'aim' ? 'AIM' : run.state === 'fly' ? '' : 'RUN';
+    this.caption.textContent = run.failure === 'timeout' ? 'Spell time’s up!' : landed ? '' : run.state === 'failed' || run.state === 'fall' ? 'Off the roof! Magical rescue…' : run.state === 'aim' ? 'AIM' : run.state === 'fly' ? '' : 'RUN';
     this.scene.dataset.phase = run.state;
   }
+  dispose() { this.resize?.disconnect(); }
 }
 export class WitchArena {
   constructor() {

@@ -23,6 +23,8 @@ export class WitchDemo extends ScriptedDemo {
     const plan = witchDemoPlan();
     super({ ...options, label: 'Witch’s Special Delivery demonstration', instructions: gameRules(WITCH_GAME), className: 'witch-demo', plan, createRun: (round, start) => new WitchRun(round, start) });
     this.stage = new WitchStage(); this.scene.append(this.stage.element);
+    this.stage.render(this.plan.settings, this.run, 0);
   }
+  dispose() { this.stage.dispose(); super.dispose(); }
   paint(time) { this.stage.render(this.plan.settings, this.run, time); }
 }

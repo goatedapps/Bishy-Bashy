@@ -5,8 +5,8 @@
 .witch-stage { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
 .witch-scene { flex:1; min-height:0; overflow:hidden; position:relative; isolation:isolate; background:#cdb3e6; }
 .witch-village { position:absolute; inset:0; z-index:-2; background-image:var(--image-bg-witch-village,url('/assets/optimized/bg-witch-village-049d732cba0d.webp')); background-repeat:no-repeat; }
-.witch-hud { position:absolute; z-index:8; pointer-events:none; display:flex; flex-direction:column; align-items:center; gap:5px; }
-.witch-speed { background:#25182de8; color:#fff8dd; border:2px solid #ffd34c; border-radius:6px; padding:3px 8px; font:bold clamp(11px,1.5vw,15px) ui-monospace,monospace; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.witch-hud { width:clamp(56px,16vw,142px); position:absolute; z-index:8; pointer-events:none; display:flex; flex-direction:column; align-items:center; gap:5px; }
+.witch-speed { position:absolute; z-index:8; pointer-events:none; box-sizing:border-box; text-align:center; background:#25182de8; color:#fff8dd; border:2px solid #ffd34c; border-radius:6px; padding:3px 8px; font:bold clamp(11px,1.5vw,15px) ui-monospace,monospace; white-space:nowrap; font-variant-numeric:tabular-nums; }
 .witch-angle-gauge { display:block; width:100%; height:auto; border-radius:8px; background:#201325ed; filter:drop-shadow(0 2px 2px #22102760); font-family:ui-monospace,monospace; }
 .witch-scene:after { content:''; position:absolute; inset:90% 0 0; background:#789456; z-index:-1; }
 .witch-sprite { display:block; background-image:var(--image-witch-sprites,url('/assets/optimized/witch-sprites-e7cf77989f55.webp')); background-size:300% 200%; background-repeat:no-repeat; }
@@ -36,3 +36,7 @@
 .witch-demo .instruction-demo-instructions { font-size:clamp(13px,1.7vw,18px); margin-bottom:8px; }
 .witch-demo .instruction-demo-instructions li { padding-block:6px; margin-block:3px; }
 .is-instructions #game-instructions:has(.witch-demo) #instructions-visual { flex:0 0 auto; }
+
+.witch-flight-count { position:absolute; top:42%; left:50%; transform:translate(-50%,-50%); z-index:9; pointer-events:none; text-align:center; color:#fff8db; text-shadow:0 3px #45234f,2px 0 #45234f,-2px 0 #45234f; }
+.witch-flight-count strong { display:block; font:900 clamp(38px,6vw,72px)/1 'Lilita One',system-ui,sans-serif; font-variant-numeric:tabular-nums; }
+.witch-flight-count span { display:block; margin-top:5px; font:900 clamp(12px,1.6vw,18px)/1.2 Nunito,system-ui,sans-serif; }

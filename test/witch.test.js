@@ -2,7 +2,7 @@ import { HeldInputs } from '../src/held-input.js';
 import { driveWitch as throwPotion } from './helpers/witch.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { WitchRun, WITCH_GAME, WITCH_HOLD_MS, replayWitch, witchPose } from '../shared/witch.js';
+import { WitchRun, WITCH_GAME, WITCH_HOLD_MS, replayWitch, witchPose, witchFlight } from '../shared/witch.js';
 import { GAMES, roundSettings, comparePlayers } from '../shared/games.js';
 import { RoomService } from '../server/rooms.js';
 import { resultMessage } from '../src/result-message.js';
@@ -12,7 +12,7 @@ test('alternation builds speed, stopping freezes speed, aiming holds at 90 and r
   const run = new WitchRun({}, 1000);
   assert.equal(run.tap(0, 999).type, 'ignored');
   run.tap(0, 1100); const speed = run.speed;
-  assert.equal(run.tap(0, 1200).type, 'ignored'); assert.ok(run.speed < speed);
+  assert.equal(run.tap(0, 1200).type, 'ignored'); assert.equal(run.speed, speed);
   run.tap(2, 1300); assert.ok(run.speed > speed);
   const cast = throwPotion();
   assert.equal(cast.state, 'land'); assert.equal(cast.speed, cast.power); assert.ok(cast.power > 30);
@@ -36,7 +36,7 @@ test('proofs replay independently of frame timing and reject reordered, future, 
 });
 
 test('green stops immediately anywhere before the edge, freezes speed, and begins aiming until release', () => {
-  for (const duration of [1000, 3000, 5000]) {
+  for (const duration of [500, 1500, 2500]) {
     const run = new WitchRun({}, 0);
     for (let at = 100, color = 0; at < duration; at += 100, color = 2 - color) run.tap(color, at);
     run.tap(1, duration);
@@ -149,7 +149,7 @@ test('live frame updates and frozen nonzero device clocks preserve the submitted
       for (let frame = run.at + 16; frame < at; frame += 16) run.advance(frame);
       run.tap(color, at); color = 2 - color;
     }
-    const brakeAt = run.at + 100; run.advance(brakeAt); run.tap(1, brakeAt);
+    const brakeAt = run.at; run.tap(1, brakeAt);
     const releaseAt = brakeAt + 40 / 55 * 1000;
     for (let at = run.at + 16; at < releaseAt; at += 16) run.advance(at);
     run.release(1, releaseAt);
@@ -159,4 +159,34 @@ test('live frame updates and frozen nonzero device clocks preserve the submitted
     assert.ok(replay?.done); assert.equal(replay.cleared, run.cleared);
     assert.ok(Math.abs(replay.elapsed - run.elapsed) < .001);
   }
+});
+
+
+test('speed adds every accepted alternating press without decay or the former 42-speed ceiling', () => {
+  for (const interval of [60, 120]) {
+    const run = new WitchRun({}, 0);
+    for (let i = 0; i < 20; i++) run.tap(i % 2 ? 2 : 0, 100 + i * interval);
+    assert.equal(run.speed, 80);
+    run.advance(run.at + 100); assert.equal(run.speed, 80);
+    run.tap(1, run.at); assert.equal(run.power, 80);
+  }
+  const faster = throwPotion(0, 80), typical = throwPotion(0, 100), relaxed = throwPotion(0, 120);
+  assert.ok(faster.power > typical.power && typical.power > relaxed.power);
+  assert.ok(faster.cleared > typical.cleared && typical.cleared > relaxed.cleared);
+  assert.ok(typical.cleared >= 35 && typical.cleared <= 45);
+  assert.ok(faster.cleared > 40);
+  assert.ok(typical.flightSeconds < 2);
+});
+
+test('the flight counter increases through crossed frogs and excludes the transformed landing frog', () => {
+  const run = throwPotion();
+  let previous = 0;
+  for (let i = 0; i <= 100; i++) {
+    const path = witchFlight(run, run.launchAt + (run.landAt - run.launchAt) * i / 100);
+    assert.ok(path.passed >= previous); assert.ok(path.passed <= run.cleared);
+    assert.ok(Number.isInteger(path.passed)); previous = path.passed;
+  }
+  assert.equal(previous, run.cleared);
+  assert.equal(witchFlight(run, run.landAt + 1000).passed, run.cleared);
+  assert.equal(witchFlight(new WitchRun(), 0), null);
 });
