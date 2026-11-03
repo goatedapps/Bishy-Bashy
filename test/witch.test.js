@@ -2,7 +2,7 @@ import { HeldInputs } from '../src/held-input.js';
 import { driveWitch as throwPotion } from './helpers/witch.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { WitchRun, WITCH_GAME, WITCH_HOLD_MS, replayWitch, witchPose, witchFlight } from '../shared/witch.js';
+import { WitchRun, WITCH_GAME, WITCH_HOLD_MS, replayWitch, witchPose, witchFlight, WITCH_ROAD, FROG_SPACING } from '../shared/witch.js';
 import { GAMES, roundSettings, comparePlayers } from '../shared/games.js';
 import { RoomService } from '../server/rooms.js';
 import { resultMessage } from '../src/result-message.js';
@@ -17,7 +17,7 @@ test('alternation builds speed, stopping freezes speed, aiming holds at 90 and r
   const cast = throwPotion();
   assert.equal(cast.state, 'land'); assert.equal(cast.speed, cast.power); assert.ok(cast.power > 30);
   assert.ok(Math.abs(cast.angle - 45) < .0001); assert.ok(cast.cleared > 10);
-  assert.equal(cast.targetX, 180 + (cast.cleared + 1) * 14);
+  assert.equal(cast.targetX, WITCH_ROAD + (cast.cleared + 1) * FROG_SPACING);
   const vertical = throwPotion(0, 100, 90);
   assert.ok(Math.abs(vertical.angle - 90) < .001); assert.ok(vertical.cleared < cast.cleared);
   assert.ok(throwPotion(0, 160).cleared < cast.cleared);
@@ -87,7 +87,7 @@ test('four players take authoritative turns, cannot act for each other, and rece
     f.setTime(turn.startAt + run.elapsed);
     if (i === 0) {
       service.handle(clients[1], result); assert.equal(room.players[1].result, null);
-      service.handle(clients[0], { ...result, cleared: 40 }); assert.equal(room.players[0].result, null);
+      service.handle(clients[0], { ...result, cleared: run.cleared + 1 }); assert.equal(room.players[0].result, null);
     }
     service.handle(clients[i], result); assert.ok(room.players[i].result, JSON.stringify({ i, result, errors: f.messages.filter(item => item.message.type === 'error') })); assert.equal(room.players[i].result.cleared, run.cleared);
     service.handle(clients[i], result); assert.equal(room.round.witch.index, i);
@@ -144,8 +144,8 @@ test('merged input cancellation clears the green hold without launching a potion
 test('live frame updates and frozen nonzero device clocks preserve the submitted throw proof', () => {
   for (const start of [1234.5678, 527500.12345, 5000000.7]) {
     const run = new WitchRun({}, start); let color = 0;
-    for (let at = start + 100; at < start + 4400; at += 100) {
-      if (run.x >= 167) break;
+    for (let at = start + 100; at < start + 9000; at += 100) {
+      if (run.x >= WITCH_ROAD - 14) break;
       for (let frame = run.at + 16; frame < at; frame += 16) run.advance(frame);
       run.tap(color, at); color = 2 - color;
     }
@@ -166,16 +166,16 @@ test('speed adds every accepted alternating press without decay or the former 42
   for (const interval of [60, 120]) {
     const run = new WitchRun({}, 0);
     for (let i = 0; i < 20; i++) run.tap(i % 2 ? 2 : 0, 100 + i * interval);
-    assert.equal(run.speed, 80);
-    run.advance(run.at + 100); assert.equal(run.speed, 80);
-    run.tap(1, run.at); assert.equal(run.power, 80);
+    assert.equal(run.speed, 12);
+    run.advance(run.at + 100); assert.equal(run.speed, 12);
+    run.tap(1, run.at); assert.equal(run.power, 12);
   }
   const faster = throwPotion(0, 80), typical = throwPotion(0, 100), relaxed = throwPotion(0, 120);
   assert.ok(faster.power > typical.power && typical.power > relaxed.power);
   assert.ok(faster.cleared > typical.cleared && typical.cleared > relaxed.cleared);
-  assert.ok(typical.cleared >= 35 && typical.cleared <= 45);
+  assert.ok(typical.cleared >= 45 && typical.cleared <= 55);
   assert.ok(faster.cleared > 40);
-  assert.ok(typical.flightSeconds < 2);
+  assert.ok(typical.flightSeconds > 1.8 && typical.flightSeconds < 2.2);
 });
 
 test('the flight counter increases through crossed frogs and excludes the transformed landing frog', () => {
@@ -189,4 +189,32 @@ test('the flight counter increases through crossed frogs and excludes the transf
   assert.equal(previous, run.cleared);
   assert.equal(witchFlight(run, run.landAt + 1000).passed, run.cleared);
   assert.equal(witchFlight(new WitchRun(), 0), null);
+});
+
+
+test('the 30-percent longer runway rewards fast tapping with a progressively steeper speed curve', () => {
+  assert.equal(WITCH_ROAD, 180 * 1.3);
+  const run = new WitchRun({}, 0);
+  let previousGain = 0;
+  for (let i = 0; i < 80; i++) {
+    const speed = run.speed;
+    run.tap(i % 2 ? 2 : 0, 100 + i * 40);
+    const gain = run.speed - speed;
+    assert.ok(gain > previousGain); previousGain = gain;
+    if (i === 39) assert.equal(run.speed, 40);
+    if (i === 59) assert.equal(run.speed, 84);
+  }
+  assert.equal(run.speed, 144);
+  const average = throwPotion(0, 120), fast = throwPotion(0, 60);
+  assert.ok(average.power < 90);
+  assert.ok(fast.power > average.power * 1.5);
+  assert.ok(fast.cleared > average.cleared * 2);
+});
+
+test('a speed-120 throw near the edge reaches 80 frogs at 45 degrees with a slower, readable flight', () => {
+  const run = new WitchRun({}, 0);
+  run.at = 100; run.x = WITCH_ROAD - 10; run.speed = 120;
+  run.tap(1, 100); run.release(1, 100 + 45 / 55 * 1000); run.advance(run.landAt);
+  assert.equal(run.cleared, 80);
+  assert.ok(run.flightSeconds > 2.3 && run.flightSeconds < 2.5);
 });

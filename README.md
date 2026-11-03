@@ -74,7 +74,7 @@ Players can override the endpoint in Connection settings, and invitations preser
 `render.yaml` configures the Node service with build command `npm ci && npm run build` and start command `npm start`.
 Set `ALLOWED_ORIGINS=https://goatedapps.github.io`; additional origins may be comma-separated, with no repository path or trailing slash.
 HTTPS pages require `wss://`, and the client connects at `/ws`.
-Use `/health` for the health check; it reports protocol version 34.
+Use `/health` for the health check; it reports protocol version 35.
 Deploy frontend and backend together when changing protocol requirements, and verify both deployments separately.
 Keep one server instance while rooms live in memory; restarting or redeploying the service clears rooms.
 A sleeping service may need time to wake up.

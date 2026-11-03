@@ -24,7 +24,7 @@ export class WitchStage {
     this.roof = node('div', 'witch-roof'); this.roof.append(node('span', 'witch-edge', 'EDGE'));
     this.actor = witchPortrait(); this.broom = witchPortrait('broom'); this.potion = witchPortrait('potion');
     this.prince = witchPortrait('prince'); this.puff = witchPortrait('puff');
-    this.frogs = Array.from({ length: 42 }, () => witchPortrait('frog'));
+    this.frogs = Array.from({ length: 128 }, () => witchPortrait('frog'));
     this.flightCount = node('div', 'witch-flight-count'); this.flightCount.hidden = true;
     this.flightCount.setAttribute('aria-live', 'off');
     this.flightNumber = node('strong', ''); this.flightCount.append(this.flightNumber, node('span', '', 'frogs passed'));

@@ -1,4 +1,4 @@
-import { WitchRun, WITCH_GAME } from '../shared/witch.js';
+import { WitchRun, WITCH_GAME, WITCH_ROAD } from '../shared/witch.js';
 import { WitchStage } from './witch-view.js';
 import { ScriptedDemo } from './scripted-demo.js';
 import { gameRules } from '../shared/games.js';
@@ -6,7 +6,7 @@ import { gameRules } from '../shared/games.js';
 export function witchDemoPlan() {
   const start = 900, run = new WitchRun({}, start), presses = [], cues = [];
   let at = start + 100, color = 0;
-  while (run.x < 167 && at < 14000) {
+  while (run.x < WITCH_ROAD - 14 && at < 14000) {
     run.tap(color, at); presses.push({ color, at }); cues.push({ type: 'effect', sound: ['red', 'green', 'blue'][color], at });
     color = 2 - color; at += 100; run.advance(at);
   }

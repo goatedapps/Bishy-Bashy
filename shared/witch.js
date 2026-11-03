@@ -1,18 +1,19 @@
 export const WITCH_GAME = 'witch-delivery';
 export const WITCH_DURATION_MS = 20000;
-export const WITCH_GOAL = 160;
-export const WITCH_GRAVITY = 450;
-export const WITCH_THROW_SCALE = 4.4;
-export const WITCH_ROAD = 180;
+export const WITCH_GOAL = 240;
+export const WITCH_GRAVITY = 400;
+export const WITCH_THROW_SCALE = 5.5;
+export const WITCH_ROAD = 234;
 export const FROG_SPACING = 14;
 export const WITCH_HOLD_MS = 2200;
 const ANGLE_RATE = 55;
+export const witchRunSpeed = presses => .2 * presses + .02 * presses * presses;
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 
 export class WitchRun {
   constructor(round = {}, start = 0) {
     this.start = start; this.end = start + WITCH_DURATION_MS;
-    this.at = start; this.x = 0; this.speed = 0; this.power = 0; this.angle = 0;
+    this.at = start; this.presses = 0; this.x = 0; this.speed = 0; this.power = 0; this.angle = 0;
     this.state = 'run'; this.lastColor = -1; this.lastTap = -Infinity;
     this.pressedMask = 0; this.actions = []; this.events = [];
     this.cleared = 0; this.mistakes = 0; this.done = false; this.elapsed = null;
@@ -52,7 +53,7 @@ export class WitchRun {
       this.power = this.speed; this.angle = 0; this.pressedMask = 2; this.state = 'aim';
     } else {
       if (this.state !== 'run' || time - this.lastTap < 40 || color === this.lastColor) return { type: 'ignored' };
-      this.lastColor = color; this.lastTap = time; this.speed += 4;
+      this.lastColor = color; this.lastTap = time; this.speed = witchRunSpeed(++this.presses);
     }
     this.actions.push([time - this.start, color, 0]);
     return { type: 'move' };

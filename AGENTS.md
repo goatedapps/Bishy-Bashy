@@ -14,7 +14,7 @@ Use [the gameplay reference](docs/gameplay.md) for player behavior and game-spec
 - Write each full sentence on its own physical line when substantially editing Markdown.
 - Comment only on non-obvious intent, constraints, invariants, or tradeoffs.
 - Keep the static frontend independently deployable with a configurable secure WebSocket endpoint.
-- Deploy frontend and backend together for protocol changes; current protocol is 34.
+- Deploy frontend and backend together for protocol changes; current protocol is 35.
 - Keep a single server instance while rooms live in memory.
 
 ## Game and asset requirements
@@ -49,9 +49,10 @@ Witch’s Special Delivery replaces the planned Blaster Soda Race.
 `shared/witch.js` owns deterministic running, braking, aim, and frog scoring; `server/witch-turns.js` owns shared turns and replay validation.
 Speed, angle, and frog-score displays are explicitly requested exceptions to the counter-free rule.
 Keep the cropped village scrolling and keep the speed badge beside the witch and anchor the quarter-circle angle gauge at the roof edge; green stops immediately and starts aiming.
-Every accepted alternating run press permanently adds speed, with no decay or speed cap.
+Each accepted alternating press increases speed using `0.2 × presses + 0.02 × presses²`, with no decay or speed cap.
+The runway is 234 units; calibrate a near-edge speed-120 throw at 45° to about 80 frogs and 2.4 seconds of flight.
 Keep tutorial gauges hidden before measured layout and show the live frogs-passed counter during flight.
-Protocol 34 requires `witch-turns`, `witch-instant-aim`, and `witch-cumulative-speed`; deploy both services together.
+Protocol 35 requires `witch-turns`, `witch-instant-aim`, `witch-cumulative-speed`, and `witch-power-curve`; deploy both services together.
 
 ## Remaining planned games
 
