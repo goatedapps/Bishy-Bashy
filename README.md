@@ -1,6 +1,6 @@
 # Dokidoki Dash!
 
-A four-player browser party game with 23 minigames, illustrated tutorials, and shared multiplayer rooms.
+A four-player browser party game with 24 minigames, illustrated tutorials, and shared multiplayer rooms.
 Each device controls its own player through the same red, green, and blue buttons.
 The frontend deploys independently to GitHub Pages; a separate Node WebSocket service coordinates rooms and results.
 This is an independent game with original artwork.
@@ -48,12 +48,14 @@ Choose a mode inside the room before starting a set.
 | Game Select | Choose one game and play three rounds with increasing difficulty. |
 | Party | Each rostered player locks one game in 30 seconds; play the picks in player order, including duplicates. |
 
-All 23 games are available in every mode:
-Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, Get Those Burgers Out!, Where’s Kaya, Happy Days, Stationery Master, Clock Stopper, Ladder Climber, Star Collector, Horse Speeder, and Shark Jumper.
+All 24 games are available in every mode:
+Witch’s Special Delivery, Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, Get Those Burgers Out!, Where’s Kaya, Happy Days, Stationery Master, Clock Stopper, Ladder Climber, Star Collector, Horse Speeder, and Shark Jumper.
 The common keyboard shortcuts are **1 / 2 / 3** or **J / K / L**.
 Game instructions explain each game's actions and any additional keyboard controls.
 
 Readiness resets between rounds and waits for every connected player and a fresh clock estimate.
+Witch’s Special Delivery is turn-based: alternate red/blue to run, hold green to brake and aim, then release to throw a potion over a row of frogs.
+Everyone watches the same turn, the landing frog becomes a prince, and the most frogs passed wins.
 Set placements award **10 / 7 / 4 / 1 points**, with ties sharing placement points.
 Party mode retains cumulative points, win counts, and history between cycles.
 Hiding or reloading an active game forfeits the round; a network disconnection alone allows local play and pending-result retries.
@@ -72,7 +74,7 @@ Players can override the endpoint in Connection settings, and invitations preser
 `render.yaml` configures the Node service with build command `npm ci && npm run build` and start command `npm start`.
 Set `ALLOWED_ORIGINS=https://goatedapps.github.io`; additional origins may be comma-separated, with no repository path or trailing slash.
 HTTPS pages require `wss://`, and the client connects at `/ws`.
-Use `/health` for the health check; it reports protocol version 31.
+Use `/health` for the health check; it reports protocol version 32.
 Deploy frontend and backend together when changing protocol requirements, and verify both deployments separately.
 Keep one server instance while rooms live in memory; restarting or redeploying the service clears rooms.
 A sleeping service may need time to wake up.

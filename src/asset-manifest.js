@@ -346,6 +346,16 @@ export const ASSETS = [
     "hash": "659f2799c813f01e"
   },
   {
+    "path": "assets/optimized/witch-sprites-e7cf77989f55.webp",
+    "bytes": 306984,
+    "hash": "e7cf77989f55a01c"
+  },
+  {
+    "path": "assets/optimized/bg-witch-village-049d732cba0d.webp",
+    "bytes": 73856,
+    "hash": "049d732cba0d94b1"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",

@@ -10,11 +10,11 @@ export class HeldInputs {
     this.sources.set(source, color);
     if (this.counts[color]++ === 0) this.onPress(color);
   }
-  release(source) {
+  release(source, cancelled = false) {
     const color = this.sources.get(source);
     if (color === undefined) return;
     this.sources.delete(source);
-    if (--this.counts[color] === 0) this.onRelease(color);
+    if (--this.counts[color] === 0) this.onRelease(color, cancelled);
   }
-  clear() { for (const source of [...this.sources.keys()]) this.release(source); }
+  clear() { for (const source of [...this.sources.keys()]) this.release(source, true); }
 }

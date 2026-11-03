@@ -8,6 +8,7 @@ export function resultMessage(round, local, status, elapsed, time) {
     ...(['perm-mania', 'happy-days'].includes(round.game) ? { score: run.score } : {}),
     ...(round.game === 'facial-slot-machine' ? { reelMask: run.reelMask } : {}),
     ...(Array.isArray(run.proof) ? { proof: run.proof.map(edge => [...edge]) } : {}),
+    ...(round.game === 'witch-delivery' ? { turn: local.turn, sample: Math.min(20000, Math.max(0, time - local.start)) } : {}),
     ...(round.game === 'me-find-mistake' ? { attempted: run.index } : {}),
   };
 }

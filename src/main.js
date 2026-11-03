@@ -1,3 +1,5 @@
+import { WITCH_GAME, WITCH_DURATION_MS, replayWitch } from '../shared/witch.js';
+import './witch.css';
 import { resultMessage } from './result-message.js';
 import { SHARK_GAME } from '../shared/shark.js';
 import './shark.css';
@@ -73,6 +75,7 @@ let serverUrl = params.get('server') || localStorage.getItem('bb-server') || def
 let socket, room, playerId = session?.playerId;
 let clock = new SyncedClock();
 let localRound = null;
+let witchClock = null, witchTurnKey = null, witchHeard = null;
 let navigationAction = null;
 let supportsRoomNavigation = false;
 let pending = readStored('bb-pending');
@@ -184,7 +187,7 @@ function connect() {
     }
     if (message.type === 'joined') {
       partyAudioBaseline = true;
-      if (message.protocol !== 31 || !message.capabilities?.includes('shark-jumper') || !message.capabilities?.includes('horse-speeder') || !message.capabilities?.includes('star-collector') || !message.capabilities?.includes('desk-clock') || !message.capabilities?.includes('happy-days') || !message.capabilities?.includes('kaya-shuffle') || !message.capabilities?.includes('timed-letters') || !message.capabilities?.includes('expiring-seats') || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals') || !message.capabilities?.includes('character-picker') || !message.capabilities?.includes('overlapping-coins') || !message.capabilities?.includes('party-mode') || !message.capabilities?.includes('arcade-length')) {
+      if (message.protocol !== 32 || !message.capabilities?.includes('witch-turns') || !message.capabilities?.includes('shark-jumper') || !message.capabilities?.includes('horse-speeder') || !message.capabilities?.includes('star-collector') || !message.capabilities?.includes('desk-clock') || !message.capabilities?.includes('happy-days') || !message.capabilities?.includes('kaya-shuffle') || !message.capabilities?.includes('timed-letters') || !message.capabilities?.includes('expiring-seats') || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals') || !message.capabilities?.includes('character-picker') || !message.capabilities?.includes('overlapping-coins') || !message.capabilities?.includes('party-mode') || !message.capabilities?.includes('arcade-length')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -296,6 +299,7 @@ function setupLocalRound() {
   const round = room?.round;
   const time = performance.now();
   const estimate = clock.estimate(time);
+  if (round?.game === WITCH_GAME) { synchronizeWitch(time, estimate); return; }
   if (!isRoundActive(round) || !GAMES[round.game] || localRound || !estimate || estimate.count < 3 || !round.playerIds.includes(playerId)) return;
   const start = round.startAt - estimate.offset;
   const savedResult = pending?.message.roundId === round.id ? pending.message : room.players.find(player => player.id === playerId)?.result;
@@ -318,8 +322,51 @@ function setupLocalRound() {
   synchronizeAudio();
 }
 
+function synchronizeWitch(time, estimate) {
+  const round = room.round, turn = round.witch;
+  if (!isRoundActive(round) || !turn || !estimate || estimate.count < 3) return;
+  if (witchClock?.id !== round.id) witchClock = { id: round.id, offset: estimate.offset };
+  const key = `${round.id}/${turn.index}`;
+  if (key !== witchTurnKey) {
+    heldInputs.clear(); localRound = null; lastProgressSent = 0; witchTurnKey = key;
+    audio.cancel();
+    if (turn.playerId === playerId) {
+      const saved = pending?.message.roundId === round.id ? pending.message : room.players.find(player => player.id === playerId)?.result;
+      const start = turn.startAt - witchClock.offset;
+      localRound = { id: round.id, turn: turn.index, start, end: start + WITCH_DURATION_MS, offset: witchClock.offset,
+        uncertainty: estimate.uncertainty, goDelay: null, run: createRun(round, start), done: Boolean(saved), status: saved?.status,
+        mustForfeit: sessionStorage.getItem('bb-active-round') === round.id || time >= start, hiddenDuringPlay: false };
+      sessionStorage.setItem('bb-active-round', round.id);
+    }
+  }
+  const current = room.players.find(player => player.id === turn.playerId);
+  if (current?.result && localRound && !localRound.done) {
+    localRound.done = localRound.run.done = true; localRound.status = current.result.status;
+  }
+  if (current?.result?.status === 'finished' && witchHeard !== key) {
+    witchHeard = key;
+    const run = replayWitch(turn.scene.actions, turn.scene.sample);
+    const age = time + witchClock.offset - turn.startAt - (run?.elapsed ?? 0);
+    if (run && !document.hidden && age >= -250 && age < 650) audio.play(run.state === 'land' ? 'stageComplete' : 'stageWrong', { group: 'finish' });
+  }
+  synchronizeAudio();
+}
+
+function flushWitchEvents(time) {
+  for (const event of localRound.run.events.splice(0)) {
+    if (time - event.at > 180 || document.hidden) continue;
+    audio.play(event.type, { game: WITCH_GAME, group: event.final ? 'finish' : 'effects' });
+    if (event.final) witchHeard = witchTurnKey;
+  }
+}
+
 function synchronizeAudio() {
   const round = room?.round;
+  if (round?.game === WITCH_GAME && witchClock?.id === round.id && round.witch && isRoundActive(round) && !document.hidden) {
+    const turn = round.witch;
+    audio.scheduleRound(`${round.id}/${turn.index}`, turn.startAt - witchClock.offset, turn.endAt - witchClock.offset, turn.playerId === playerId, turn.nextAt !== null, { game: WITCH_GAME });
+    return;
+  }
   if (document.hidden || !localRound || round?.phase === 'results' || localRound.done && localRound.status !== 'finished') return;
   audio.scheduleRound(localRound.id, localRound.start, localRound.end, round.playerIds[0] === playerId, localRound.done, { game: round.game, bpm: round.bpm || 128, cues: round.game === PERM_GAME ? demoCues(round.seed, round.bpm) : [] });
 }
@@ -350,6 +397,7 @@ function complete(status, elapsed = null) {
   log(status === 'finished' ? `Local finish: ${(elapsed / 1000).toFixed(3)} s.` : status === 'forfeit' ? 'Forfeited: game screen hidden or reloaded.' : 'Time expired.');
   if (status === 'finished') {
     audio.endPlayer();
+    if (room.round.game === WITCH_GAME) { flushPending(); renderRoom(); return; }
     if (room.round.game === DYNAMITE_GAME) audio.finishDynamite(localRound.id);
     else if (room.round.game === LADDER_GAME) audio.finishLadder(localRound.id);
     else audio.play(room.round.game === SLOT_GAME ? 'slotWin' : 'finish');
@@ -419,6 +467,10 @@ function enforceLifecycle(time, beforeInput = false) {
   flushSharedChoices(time);
   if (!localRound || localRound.done || room?.round?.phase === 'results' || time < localRound.start) return;
   if (localRound.mustForfeit || document.hidden || localRound.hiddenDuringPlay) complete('forfeit');
+  else if (room.round.game === WITCH_GAME) {
+    localRound.run.advance(time); flushWitchEvents(time);
+    if (localRound.run.done) complete('finished', localRound.run.elapsed);
+  }
   else if (room.round.game === LETTERS_GAME || isSharedChoice(room.round.game)) {
     if (isSharedChoice(room.round.game)) localRound.run.advance(time);
     if (time >= localRound.end && !localRound.clockEnded) { localRound.clockEnded = true; audio.endPlayer(); }
@@ -452,12 +504,13 @@ function flushHappyEvents(time) {
   for (const event of events) if (time - event.at <= 150) audio.play(event.type, { game: HAPPY_GAME, group: event.final ? 'finish' : 'effects' });
 }
 
-function releaseHeld(color) {
-  if (![STAR_GAME, HAPPY_GAME].includes(room?.round?.game) || !localRound || localRound.id !== room.round.id || localRound.done) return;
+function releaseHeld(color, cancelled = false) {
+  if (![WITCH_GAME, STAR_GAME, HAPPY_GAME].includes(room?.round?.game) || !localRound || localRound.id !== room.round.id || localRound.done) return;
   const time = performance.now();
-  localRound.run.release(color, time);
+  localRound.run.release(color, time, room.round.game === WITCH_GAME && (cancelled || document.hidden || Boolean(document.querySelector('dialog[open]'))));
+  if (room.round.game === WITCH_GAME) flushWitchEvents(time);
   if (room.round.game === STAR_GAME) flushLaneEvents(time);
-  else flushHappyEvents(time);
+  else if (room.round.game === HAPPY_GAME) flushHappyEvents(time);
   if (localRound.run.done) complete('finished', localRound.run.elapsed);
   else { view.render(room, playerId, localRound, time); updateControls(time); }
 }
@@ -471,6 +524,12 @@ function tap(color) {
   if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
   if (!buttons[color]?.disabled && room.round.game === PERM_GAME) audio.permTap(localRound.run, time, color);
   else if (!buttons[color]?.disabled && ![LADDER_GAME, HAPPY_GAME].includes(room.round.game)) audio.pressButton(room.round.game === SHARK_GAME ? 'shark' : room.round.game === HORSE_GAME ? 'horse' : room.round.game === MEALS_GAME ? 'meals' : room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay');
+  if (room.round.game === WITCH_GAME) {
+    if (buttons[color]?.disabled) return;
+    const action = localRound.run.tap(color, time);
+    if (action.type !== 'ignored') view.render(room, playerId, localRound, time);
+    return;
+  }
   const clearedBefore = localRound.run.cleared;
   const action = localRound.run.tap(color, time);
   if ([SHARK_GAME, HORSE_GAME, STAR_GAME, LADDER_GAME, MEALS_GAME, BURGER_GAME, COIN_GAME, DODGE_GAME, FIREWORK_GAME].includes(room.round.game)) flushLaneEvents(time);
@@ -511,6 +570,10 @@ function tap(color) {
 
 function sendProgress(time) {
   if (!joined || !localRound || localRound.done || time < localRound.start || time >= localRound.end || time - lastProgressSent < 250) return;
+  if (room.round.game === WITCH_GAME) {
+    if (send({ type: 'witch-progress', roundId: localRound.id, turn: localRound.turn, proof: localRound.run.proof, sample: Math.min(WITCH_DURATION_MS, time - localRound.start) })) lastProgressSent = time;
+    return;
+  }
   if (room.round.game === LETTERS_GAME) {
     const run = localRound.run;
     if (send({ type: 'letters-progress', roundId: localRound.id, index: run.index, cursor: run.cursor, typed: run.typed, sample: time - localRound.start })) lastProgressSent = time;
@@ -646,8 +709,8 @@ function prepareRoundAssets() {
 }
 
 function updateControls(time) {
-  if (![STAR_GAME, HAPPY_GAME].includes(room?.round?.game) || localRound?.done || document.hidden || document.querySelector('dialog[open]')) heldInputs.clear();
-  buttons.forEach((button, color) => button.classList.toggle('is-held', [STAR_GAME, HAPPY_GAME].includes(room?.round?.game) && Boolean(localRound?.run.pressedMask & (1 << color))));
+  if (![WITCH_GAME, STAR_GAME, HAPPY_GAME].includes(room?.round?.game) || localRound?.done || document.hidden || document.querySelector('dialog[open]')) heldInputs.clear();
+  buttons.forEach((button, color) => button.classList.toggle('is-held', [WITCH_GAME, STAR_GAME, HAPPY_GAME].includes(room?.round?.game) && Boolean(localRound?.run.pressedMask & (1 << color))));
   if (room?.set?.phase === 'party-picking') {
     const mine = room.set.choices[playerId];
     for (const button of buttons) button.disabled = Boolean(mine) || !joined || socket?.readyState !== WebSocket.OPEN || document.hidden || !room.set.pickerIds.includes(playerId);
@@ -656,12 +719,13 @@ function updateControls(time) {
   const disabled = !localRound || localRound.done || document.hidden || time < localRound.start || time >= localRound.end || time < localRound.run.blockedUntil || room?.round?.game === SHARK_GAME && localRound.run.landAt !== null || isSharedChoice(room?.round?.game) && (localRound.run.phase(time).mode !== 'play' || localRound.run.selections.has(localRound.run.phase(time).index)) || room?.round?.game === LETTERS_GAME && Boolean(localRound.run.claim) || room?.round?.phase === 'results' || room?.round?.game === PERM_GAME && localRound.run.phase(time).mode === 'watch' || room?.round?.game === MONKEY_GAME && localRound.run.phase(time).mode !== 'play' || room?.round?.game === MISTAKE_GAME && time < localRound.run.readyAt;
   for (const button of buttons) {
     const color = Number(button.dataset.color);
-    button.disabled = disabled || room?.round?.game === STAR_GAME && color === 1 || Boolean(room?.round?.game === SLOT_GAME && localRound && ((localRound.run.reelMask & (1 << color)) || time < localRound.run.blockedReels[color]));
+    button.disabled = disabled || room?.round?.game === WITCH_GAME && !['run', 'brake', 'aim'].includes(localRound?.run.state) || room?.round?.game === STAR_GAME && color === 1 || Boolean(room?.round?.game === SLOT_GAME && localRound && ((localRound.run.reelMask & (1 << color)) || time < localRound.run.blockedReels[color]));
   }
 }
 
 function animate() {
   const time = performance.now();
+  if (room?.round?.game === WITCH_GAME) synchronizeWitch(time, clock.estimate(time));
   rulesDemo?.advance(time, !document.hidden && $('rules').open);
   enforceLifecycle(time);
   const round = room?.round;
@@ -683,13 +747,18 @@ function animate() {
     const elapsed = localRound ? localRound.run.elapsed ?? Math.max(0, Math.min(time, localRound.end) - localRound.start) : 0;
     $('timer').textContent = ((['points', 'accuracy'].includes(GAMES[round.game]?.scoring) ? Math.max(0, round.duration - elapsed) : elapsed) / 1000).toFixed(2);
   } else $('timer').textContent = '00.00';
+  if (isRoundActive(round) && round.game === WITCH_GAME && round.witch && witchClock) {
+    const remaining = round.witch.startAt - witchClock.offset - time;
+    overlay = remaining > 0 ? String(Math.ceil(remaining / 1000)) : ''; small = false;
+    $('timer').textContent = (Math.max(0, round.witch.endAt - witchClock.offset - time) / 1000).toFixed(1);
+  }
   if ($('round-overlay').textContent !== overlay) $('round-overlay').textContent = overlay;
   $('round-overlay').hidden = !overlay;
   $('round-overlay').classList.toggle('small', small);
   const frozen = Boolean(localRound && !localRound.done && time < localRound.run.blockedUntil);
   const ownIndex = room?.players.findIndex(player => player.id === playerId) ?? -1;
   if (ownIndex >= 0) view.lanes[ownIndex].lane.classList.toggle('frozen', frozen);
-  if (room) view.animate(room, localRound, time, time + (clock.estimate(time)?.offset ?? Date.now() - time) - (room.round?.startAt || 0));
+  if (room) view.animate(room, localRound, time, time + (room.round?.game === WITCH_GAME && witchClock ? witchClock.offset : clock.estimate(time)?.offset ?? Date.now() - time) - (room.round?.startAt || 0));
   view.updateFeedback(room, localRound, time);
   if (room) setView.animate(room, time + (clock.estimate(time)?.offset ?? Date.now() - time));
   partyPicker.animate(time + (clock.estimate(time)?.offset ?? Date.now() - time));
@@ -717,6 +786,7 @@ function updateGameProfile() {
   const picking = room?.set?.phase === 'party-picking';
   audio.selectGame(picking ? 'party' : game);
   const themed = room && !picking && room.set?.phase !== 'selecting';
+  document.body.classList.toggle('witch-theme', Boolean(themed && game === WITCH_GAME));
   document.body.classList.toggle('totem-theme', Boolean(themed && game === TOTEM_GAME));
   document.body.classList.toggle('perm-theme', Boolean(themed && perm));
   document.body.classList.toggle('slot-theme', Boolean(themed && slots));
@@ -739,10 +809,10 @@ function updateGameProfile() {
   document.body.classList.toggle('dynamite-theme', Boolean(themed && game === DYNAMITE_GAME));
   document.body.classList.toggle('letters-theme', Boolean(themed && game === LETTERS_GAME));
   buttons.forEach((button, index) => {
-    const action = !picking && game === HORSE_GAME ? ['Move left', 'Accelerate', 'Move right'][index] : !picking && game === STAR_GAME ? ['Tilt left', 'Unused', 'Tilt right'][index] : !picking && game === STATIONERY_GAME ? STATIONERY_NAMES[index] : !picking && game === CLOCK_GAME ? 'Stop' : game === HAPPY_GAME && !picking ? HAPPY_TONES[index] : picking ? ['Down', 'Select', 'Up'][index] : game === MEALS_GAME ? ['Fries', 'Burger', 'Drink'][index] : [LADDER_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
+    const action = !picking && game === WITCH_GAME ? ['Run', 'Brake / Aim', 'Run'][index] : !picking && game === HORSE_GAME ? ['Move left', 'Accelerate', 'Move right'][index] : !picking && game === STAR_GAME ? ['Tilt left', 'Unused', 'Tilt right'][index] : !picking && game === STATIONERY_GAME ? STATIONERY_NAMES[index] : !picking && game === CLOCK_GAME ? 'Stop' : game === HAPPY_GAME && !picking ? HAPPY_TONES[index] : picking ? ['Down', 'Select', 'Up'][index] : game === MEALS_GAME ? ['Fries', 'Burger', 'Drink'][index] : [LADDER_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
     button.children[1].textContent = action;
     const label = ['Red circle', 'Green triangle', 'Blue diamond'][index];
-    button.setAttribute('aria-label', picking || [SHARK_GAME, HORSE_GAME, STAR_GAME, LADDER_GAME, STATIONERY_GAME, CLOCK_GAME, HAPPY_GAME, MEALS_GAME, COIN_GAME, DODGE_GAME, LETTERS_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? `${label}: ${action}` : label);
+    button.setAttribute('aria-label', picking || [WITCH_GAME, SHARK_GAME, HORSE_GAME, STAR_GAME, LADDER_GAME, STATIONERY_GAME, CLOCK_GAME, HAPPY_GAME, MEALS_GAME, COIN_GAME, DODGE_GAME, LETTERS_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? `${label}: ${action}` : label);
   });
   document.body.classList.toggle('coin-theme', Boolean(themed && game === COIN_GAME));
   document.body.classList.toggle('dodge-theme', Boolean(themed && game === DODGE_GAME));
@@ -883,7 +953,7 @@ for (const button of buttons) {
     event.preventDefault();
     stopLetterHold();
     const color = Number(button.dataset.color);
-    if ([STAR_GAME, HAPPY_GAME].includes(room?.round?.game)) {
+    if ([WITCH_GAME, STAR_GAME, HAPPY_GAME].includes(room?.round?.game)) {
       if (!button.disabled) { button.setPointerCapture(event.pointerId); heldInputs.press(`pointer:${event.pointerId}`, color); }
       return;
     }
@@ -896,11 +966,11 @@ for (const button of buttons) {
     };
     letterHoldTimer = setTimeout(repeat, 260);
   });
-  button.addEventListener('lostpointercapture', event => heldInputs.release(`pointer:${event.pointerId}`));
-  button.addEventListener('click', event => { if (event.detail === 0) { const color = Number(button.dataset.color); tap(color); if ([STAR_GAME, HAPPY_GAME].includes(room?.round?.game)) releaseHeld(color); } });
+  button.addEventListener('lostpointercapture', event => heldInputs.release(`pointer:${event.pointerId}`, true));
+  button.addEventListener('click', event => { if (event.detail === 0) { const color = Number(button.dataset.color); tap(color); if ([WITCH_GAME, STAR_GAME, HAPPY_GAME].includes(room?.round?.game)) releaseHeld(color); } });
 }
 document.addEventListener('pointerup', event => { stopLetterHold(); heldInputs.release(`pointer:${event.pointerId}`); });
-document.addEventListener('pointercancel', event => { stopLetterHold(); heldInputs.release(`pointer:${event.pointerId}`); });
+document.addEventListener('pointercancel', event => { stopLetterHold(); heldInputs.release(`pointer:${event.pointerId}`, true); });
 window.addEventListener('blur', () => { stopLetterHold(); heldInputs.clear(); });
 document.addEventListener('visibilitychange', () => { stopLetterHold(); heldInputs.clear(); });
 const keys = { '1': 0, j: 0, '2': 1, k: 1, '3': 2, l: 2 };
@@ -910,7 +980,7 @@ document.addEventListener('keydown', event => {
   const color = letterKey ?? keys[event.key.toLowerCase()];
   if (color === undefined) return;
   event.preventDefault();
-  if ([STAR_GAME, HAPPY_GAME].includes(room?.round?.game)) { if (!buttons[color].disabled) heldInputs.press(`key:${event.code || event.key.toLowerCase()}`, color); }
+  if ([WITCH_GAME, STAR_GAME, HAPPY_GAME].includes(room?.round?.game)) { if (!buttons[color].disabled) heldInputs.press(`key:${event.code || event.key.toLowerCase()}`, color); }
   else tap(color);
 });
 document.addEventListener('keyup', event => heldInputs.release(`key:${event.code || event.key.toLowerCase()}`));

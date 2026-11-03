@@ -1,3 +1,6 @@
+import { driveWitch } from './helpers/witch.js';
+import { WITCH_HOLD_MS } from '../shared/witch.js';
+import { resultMessage } from '../src/result-message.js';
 import { driveSharks } from './helpers/shark.js';
 import { driveHorse } from './helpers/horse.js';
 import { isSharedChoice } from '../shared/choice-round.js';
@@ -29,6 +32,16 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
   ready();
   const finish = (order = clients.map((_, index) => index), winner = 0) => {
     const round = room.round;
+    if (round.game === 'witch-delivery') {
+      for (let index = 0; index < clients.length; index++) {
+        const turn = round.witch;
+        const run = driveWitch(turn.startAt, index === winner ? 100 : 160 + index * 10);
+        time = turn.startAt + run.elapsed;
+        service.handle(clients[index], resultMessage(round, { id: round.id, turn: turn.index, start: turn.startAt, run }, 'finished', run.elapsed, time));
+        time += WITCH_HOLD_MS; service.tick();
+      }
+      return;
+    }
     if (round.game === 'type-in-letters') {
       for (let set = 0; set < clients.length; set++) {
         const claim = letterClaim(new LettersRun(round, 0));

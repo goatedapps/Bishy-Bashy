@@ -1,3 +1,4 @@
+import { WITCH_GAME, WitchRun, WITCH_DURATION_MS, WITCH_GOAL } from './witch.js';
 import { SHARK_GAME, SharkRun, SHARK_GOAL, SHARK_DURATION_MS } from './shark.js';
 import { HORSE_GAME, HorseRun, HORSE_GOAL, HORSE_DURATION_MS } from './horse.js';
 import { STAR_GAME, StarRun, STAR_DURATION_MS, STAR_GOAL } from './stars.js';
@@ -27,6 +28,7 @@ import { MEALS_GAME, MealsRun, MEALS_GOAL, MEALS_DURATION_MS } from './meals.js'
 export const COUNTDOWN_MS = 3_000;
 
 export const GAMES = Object.assign(Object.create(null), {
+  [WITCH_GAME]: { id: WITCH_GAME, title: 'Witch’s Special Delivery', subtitle: 'Run, brake, and turn a frog into a prince', sharedArena: true, turnBased: true, scoring: 'points', scoreNoun: 'frogs', duration: WITCH_DURATION_MS, goal: WITCH_GOAL },
   [SHARK_GAME]: { id: SHARK_GAME, title: 'Shark Jumper', subtitle: 'Match the shark and hop to safety', duration: SHARK_DURATION_MS, goal: SHARK_GOAL },
   [HORSE_GAME]: { id: HORSE_GAME, title: 'Horse Speeder', subtitle: 'Accelerate and weave through the field', duration: HORSE_DURATION_MS, goal: HORSE_GOAL },
   [STAR_GAME]: { id: STAR_GAME, title: 'Star Collector', subtitle: 'Tilt the maze and chase the stars', scoring: 'points', scoreNoun: 'stars', duration: STAR_DURATION_MS, goal: STAR_GOAL },
@@ -54,6 +56,7 @@ export const GAMES = Object.assign(Object.create(null), {
 
 export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') {
   const level = Math.max(1, Math.min(5, Math.trunc(difficulty) || 1));
+  if (game === WITCH_GAME) return { seed, difficulty: level, goal: WITCH_GOAL, duration: WITCH_DURATION_MS };
   if (game === SHARK_GAME) return { seed, difficulty: level, goal: SHARK_GOAL + (level - 1) * 10, duration: SHARK_DURATION_MS };
   if (game === HORSE_GAME) return { seed, difficulty: level, goal: HORSE_GOAL, duration: HORSE_DURATION_MS, spacing: 140 - (level - 1) * 10 };
   if (game === STAR_GAME) return { seed, difficulty: level, goal: STAR_GOAL, duration: STAR_DURATION_MS };
@@ -85,6 +88,7 @@ export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') 
 }
 
 export function createRun(round, localStart, timingOffset = 0) {
+  if (round.game === WITCH_GAME) return new WitchRun(round, localStart);
   if (round.game === SHARK_GAME) return new SharkRun(round, localStart);
   if (round.game === HORSE_GAME) return new HorseRun(round, localStart);
   if (round.game === STAR_GAME) return new StarRun(round, localStart);
@@ -112,6 +116,7 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game, round = {}) {
+  if (game === WITCH_GAME) return ['Alternate red and blue to run faster', 'Hold green to brake before the edge, then keep holding to aim', 'Release green to throw. Most frogs passed wins'];
   if (game === SHARK_GAME) return ['Press the button matching the next shark’s color', 'Land on each shark to turn it into safe grey stone', 'Wrong color? Climb back up and continue. Fastest wins'];
   if (game === HORSE_GAME) return ['Tap green to accelerate; stop tapping to slow down', 'Red moves left; blue moves right. Dodge slower horses', 'Reach the finish first; bumps knock down your speed'];
   if (game === STAR_GAME) return ['Hold red to tilt left; hold blue to tilt right', 'Release to level the maze; green is unused', 'Steer the car into stars; most collected in 45 seconds wins'];

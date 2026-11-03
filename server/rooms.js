@@ -1,3 +1,5 @@
+import { WITCH_GAME } from '../shared/witch.js';
+import { WitchTurns } from './witch-turns.js';
 import { SHARK_GAME, validSharkResult } from '../shared/shark.js';
 import { HORSE_GAME, validHorseResult } from '../shared/horse.js';
 import { STAR_GAME, validStarResult } from '../shared/stars.js';
@@ -81,7 +83,7 @@ export class RoomService {
     if (!returning && room.set) room.set.players.push({ id: player.id, name: player.name, characterId: player.characterId, points: 0, wins: 0 });
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 31, capabilities: ['shark-jumper', 'horse-speeder', 'star-collector', 'desk-clock', 'happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 32, capabilities: ['witch-turns', 'shark-jumper', 'horse-speeder', 'star-collector', 'desk-clock', 'happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -188,6 +190,7 @@ export class RoomService {
     if (message.type === 'letters-claim') return this.letterClaim(client, room, player, message, received);
     if (message.type === 'letters-progress') return this.letterProgress(room, player, message, received);
     if (message.type === 'shared-choice') return this.sharedChoice(client, room, player, message, received);
+    if (message.type === 'witch-progress') return this.witchProgress(room, player, message, received);
     if (message.type === 'result') return this.result(client, room, player, message, received);
     if (message.type === 'back-to-modes' || message.type === 'exit-set') {
       if (message.type === 'exit-set' && room.set?.phase !== 'complete') return;
@@ -329,10 +332,29 @@ export class RoomService {
       ...(set ? { setId: set.id, setRound: set.roundIndex + 1, totalRounds: set.plan.length } : {}),
     };
     if (set) { set.phase = 'playing'; set.nextStartAt = null; set.waitReason = null; }
+    room.witchTurns = game === WITCH_GAME ? new WitchTurns(room.round) : null;
+    if (room.witchTurns) {
+      room.round.witch = room.witchTurns.state;
+      room.round.endAt = startAt + participants.length * 26000;
+      room.round.expiresAt = room.round.endAt + GRACE_MS;
+    }
     room.lettersMatch = game === LETTERS_GAME ? new LettersMatch(room.round) : null;
     if (room.lettersMatch) room.round.letters = room.lettersMatch.state;
     room.choiceMatch = isSharedChoice(game) ? createSharedMatch(room.round, createRun(room.round, 0).stages) : null;
     if (room.choiceMatch) room.round.choice = room.choiceMatch.state;
+  }
+
+  witchProgress(room, player, message, received) {
+    if (room.round?.game !== WITCH_GAME || message.roundId !== room.round.id || !isRoundActive(room.round) || player.result || received - player.lastProgressAt < 250) return;
+    if (room.witchTurns.progress(player.id, message, received)) { player.lastProgressAt = received; this.broadcast(room); }
+  }
+
+  advanceWitch(room, now) {
+    const outcome = room.witchTurns.advance(now, room.players, room.round.departedResults);
+    room.round.witch = room.witchTurns.state;
+    if (outcome.complete) { room.round.phase = 'results'; this.settleRound(room); }
+    else if (now >= room.round.startAt) room.round.phase = 'running';
+    return outcome.changed;
   }
 
   letterClaim(client, room, player, message, received) {
@@ -427,6 +449,7 @@ export class RoomService {
   }
 
   progress(room, player, message, received) {
+    if (room.round?.game === WITCH_GAME) return;
     const round = room.round;
     if (round?.game === LETTERS_GAME || isSharedChoice(round?.game)) return;
     if (!isRoundActive(round) || !GAMES[round.game] || round.id !== message.roundId || !round.playerIds.includes(player.id) || player.result || received < round.startAt || received > round.endAt) return;
@@ -447,6 +470,13 @@ export class RoomService {
     if (!round || round.id !== message.roundId || !round.playerIds.includes(player.id)) return this.error(client, 'This result belongs to an old or unknown test.');
     if (player.result) return this.send(client, { type: 'result-ack', roundId: round.id, status: player.result.status });
     if (!isRoundActive(round)) return this.error(client, 'This round is not accepting results.');
+    if (round.game === WITCH_GAME) {
+      const result = room.witchTurns.result(player.id, message, received);
+      if (!result) return this.error(client, 'Wait for your turn and submit the original potion throw.');
+      player.result = result; player.progress.cleared = result.cleared;
+      this.send(client, { type: 'result-ack', roundId: round.id, status: result.status });
+      return this.broadcast(room);
+    }
     if (round.phase === 'results' || received > round.expiresAt) return this.error(client, 'The result submission window has closed.');
     if (received < round.startAt) return this.error(client, 'The test has not started yet.');
     if (!['finished', 'forfeit', 'timeout'].includes(message.status)) return;
@@ -493,6 +523,7 @@ export class RoomService {
   }
 
   finishIfComplete(room) {
+    if (room.round?.game === WITCH_GAME) return;
     if (room.round && room.round.playerIds.every(id => !room.players.some(p => p.id === id) || terminal(room.players.find(p => p.id === id)))) {
       room.round.phase = 'results';
       this.settleRound(room);
@@ -553,6 +584,7 @@ export class RoomService {
       }
       if (round.phase === 'instructions') { if (this.tryBeginPrepared(room)) this.broadcast(room); continue; }
       if (round.phase === 'results') { if (this.advanceSet(room)) this.broadcast(room); continue; }
+      if (round.game === WITCH_GAME) { if (this.advanceWitch(room, now)) this.broadcast(room); continue; }
       let changed = false;
       if (round.game === LETTERS_GAME) changed = this.advanceLetters(room, now);
       if (isSharedChoice(round.game)) changed = this.advanceChoices(room, now);

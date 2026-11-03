@@ -1,3 +1,5 @@
+import { driveWitch } from './helpers/witch.js';
+import { WITCH_GAME, WITCH_HOLD_MS } from '../shared/witch.js';
 import { resultMessage } from '../src/result-message.js';
 import { driveSharks } from './helpers/shark.js';
 import { driveHorse } from './helpers/horse.js';
@@ -308,7 +310,7 @@ for (const game of ['totem-shrinker', PERM_GAME]) test(`${game}: four real conne
     const waiting = receive(socket, message => message.type === 'joined');
     send(socket, { type: index ? 'join' : 'create', game, mode: 'game-select', code, name: `Player ${index + 1}` });
     const joined = await waiting;
-    assert.equal(joined.protocol, 31);
+    assert.equal(joined.protocol, 32);
     code = joined.code;
     clients.push({ socket, ...joined });
     const ready = receive(socket, message => message.type === 'state' && message.room.players.some(player => player.id === joined.playerId && player.ready));
@@ -398,7 +400,7 @@ test('real WebSocket clients can create, synchronize, and join a room', async t 
   assert.equal(state.room.players[1].name, 'Friend 1');
   assert.equal(JSON.stringify(state).includes(joined.token), false);
   const health = await fetch(`http://127.0.0.1:${port}/health`);
-  assert.deepEqual(await health.json(), { ok: true, protocol: 31, countdownMs: 3000 });
+  assert.deepEqual(await health.json(), { ok: true, protocol: 32, countdownMs: 3000 });
   const info = await fetch(`http://127.0.0.1:${port}/connection-info`);
   assert.ok(Array.isArray((await info.json()).lanUrls));
 });
@@ -446,4 +448,49 @@ for (const game of ['burger-girl','its-raining-coins','dodge-or-die']) test(`${g
     assert.deepEqual(game==='dodge-or-die'?remote.obstacle:game==='burger-girl'?remote.column:remote.wave,game==='dodge-or-die'?run.obstacle:game==='burger-girl'?run.column:run.wave);
     assert.equal(remote.launchedAt-remote.start,run.launchedAt-run.start);
   }
+});
+
+
+test('Witch delivery: four WebSocket clients watch one validated turn at a time and share final frog scores', async t => {
+  const app = await createApp(); let time = 100000;
+  app.rooms.now = () => time; app.server.listen(0, '127.0.0.1'); await once(app.server, 'listening');
+  t.after(() => app.close());
+  const url = `ws://127.0.0.1:${app.server.address().port}/ws`, clients = [], ids = [];
+  let code;
+  for (let i = 0; i < 4; i++) {
+    const socket = new WebSocket(url); await once(socket, 'open'); clients.push(socket);
+    const joined = receiveProtocol(socket, message => message.type === 'joined');
+    socket.send(JSON.stringify({ type: i ? 'join' : 'create', name: `Caster ${i + 1}`, mode: 'game-select', game: WITCH_GAME, code }));
+    const message = await joined; code = message.code; ids.push(message.playerId);
+    assert.ok(message.capabilities.includes('witch-turns'));
+  }
+  let waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set?.phase === 'instructions');
+  clients[0].send(JSON.stringify({ type: 'start' })); await waiting;
+  waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.round?.phase === 'countdown');
+  for (const socket of clients) {
+    socket.send(JSON.stringify({ type: 'sync', count: 5, rtt: 10, uncertainty: 5 }));
+    socket.send(JSON.stringify({ type: 'ready', ready: true }));
+  }
+  await waiting;
+  const room = app.rooms.rooms.get(code), round = room.round;
+  for (let i = 0; i < 4; i++) {
+    const turn = round.witch; assert.equal(turn.playerId, ids[i]);
+    time = turn.startAt + 500;
+    const snapshots = clients.map(socket => receiveProtocol(socket, message => message.type === 'state' && message.room.round?.witch?.scene.sample === 400));
+    clients[i].send(JSON.stringify({ type: 'witch-progress', roundId: round.id, turn: i, proof: [[100, 0, 0]], sample: 400 }));
+    for (const state of await Promise.all(snapshots)) assert.equal(state.room.round.witch.playerId, ids[i]);
+    const run = driveWitch(turn.startAt, 100, 45);
+    const result = resultMessage(round, { id: round.id, turn: i, start: turn.startAt, run, goDelay: 0 }, 'finished', run.elapsed, turn.startAt + run.elapsed);
+    time = turn.startAt + run.elapsed;
+    waiting = receiveProtocol(clients[i], message => message.type === 'result-ack');
+    clients[i].send(JSON.stringify(result)); await waiting;
+    assert.equal(room.players[i].result.cleared, run.cleared);
+    const next = clients.map(socket => receiveProtocol(socket, message => message.type === 'state' && (i === 3 ? message.room.round?.phase === 'results' : message.room.round?.witch?.index === i + 1)));
+    time += WITCH_HOLD_MS; app.rooms.tick();
+    for (const state of await Promise.all(next)) {
+      if (i === 3) assert.ok(state.room.players.every(player => player.result?.cleared === run.cleared));
+      else assert.equal(state.room.round.witch.playerId, ids[i + 1]);
+    }
+  }
+  assert.deepEqual(room.set.players.map(player => player.points), [10, 10, 10, 10]);
 });

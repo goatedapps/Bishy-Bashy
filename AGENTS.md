@@ -1,6 +1,6 @@
 # Dokidoki Dash!
 
-A four-device party game with 23 registered minigames and Arcade, Game Select, and Party modes.
+A four-device party game with 24 registered minigames and Arcade, Game Select, and Party modes.
 See [README.md](README.md) for setup, hosting, source ownership, and asset maintenance.
 Before changing gameplay, tutorials, audio, layout, or multiplayer, read the relevant sections of [the detailed gameplay constraints](docs/gameplay-invariants.md).
 Use [the gameplay reference](docs/gameplay.md) for player behavior and game-specific tuning.
@@ -14,7 +14,7 @@ Use [the gameplay reference](docs/gameplay.md) for player behavior and game-spec
 - Write each full sentence on its own physical line when substantially editing Markdown.
 - Comment only on non-obvious intent, constraints, invariants, or tradeoffs.
 - Keep the static frontend independently deployable with a configurable secure WebSocket endpoint.
-- Deploy frontend and backend together for protocol changes; current protocol is 31.
+- Deploy frontend and backend together for protocol changes; current protocol is 32.
 - Keep a single server instance while rooms live in memory.
 
 ## Game and asset requirements
@@ -45,8 +45,12 @@ Use [the gameplay reference](docs/gameplay.md) for player behavior and game-spec
 - Readiness does not carry between rounds; require fresh synchronization and asset readiness.
 - Clock uncertainty and GO render delay do not prove physical display synchronization.
 
+Witch’s Special Delivery replaces the planned Blaster Soda Race.
+`shared/witch.js` owns deterministic running, braking, aim, and frog scoring; `server/witch-turns.js` owns shared turns and replay validation.
+Speed, angle, and frog-score displays are explicitly requested exceptions to the counter-free rule.
+Protocol 32 requires `witch-turns`; deploy both services together.
+
 ## Remaining planned games
 
-- Blaster Soda Race — alternate buttons to accelerate.
 - Burst the Balloon — rapid presses to inflate and burst a balloon.
 - Wonder Oven — stop three matching food symbols.

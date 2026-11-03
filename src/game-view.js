@@ -1,3 +1,5 @@
+import { WITCH_GAME } from '../shared/witch.js';
+import { WitchArena } from './witch-view.js';
 import { SHARK_GAME } from '../shared/shark.js';
 import { SharkStage } from './shark-view.js';
 import { HORSE_GAME } from '../shared/horse.js';
@@ -85,6 +87,7 @@ function dancer(index, growth = 0) {
 
 export class GameView {
   constructor() {
+    this.witch = new WitchArena(); $('arena').append(this.witch.element);
     this.sharedSets = new DeskClockStage();
     $('arena').append(this.sharedSets.element);
     this.choice = new SharedChoiceStage();
@@ -153,6 +156,12 @@ export class GameView {
     const active = isRoundActive(round);
     const game = active ? round.game : room.selectedGame;
     $('arena').classList.toggle('lobby', !active);
+    this.witch.element.hidden = !active || game !== WITCH_GAME;
+    if (active && game === WITCH_GAME) {
+      this.sharedSets.element.hidden = true; this.choice.element.hidden = true; this.letters.element.hidden = true;
+      this.witch.render(room, playerId, local, time, local ? time + local.offset : this.witch.clockOffset !== undefined ? time + this.witch.clockOffset : room.round.witch?.startAt || 0);
+      $('play-view').hidden = false; $('results').hidden = true; return;
+    }
     const sharedSets = [STATIONERY_GAME, CLOCK_GAME].includes(game);
     this.sharedSets.element.hidden = !active || !sharedSets;
     if (this.sharedSets.element.hidden) this.sharedSets.dispose();
@@ -281,6 +290,7 @@ export class GameView {
   }
 
   animate(room, local, time, elapsed) {
+    if (room.round?.game === WITCH_GAME && isRoundActive(room.round)) { this.witch.render(room, this.playerId, local, time, room.round.startAt + elapsed); return; }
     if ([STATIONERY_GAME, CLOCK_GAME].includes(room.round?.game) && isRoundActive(room.round)) { this.sharedSets.render(room, this.playerId, local, time); return; }
     if (isSharedChoice(room.round?.game) && isRoundActive(room.round)) { this.choice.render(room, this.playerId, local, time); return; }
     if (room.round?.game === LETTERS_GAME && isRoundActive(room.round)) {

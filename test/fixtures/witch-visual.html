@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en"><meta charset="UTF-8"><title>Witch delivery scene checks</title>
+<link rel="stylesheet" href="/src/witch.css"><link rel="stylesheet" href="/src/characters.css">
+<style>body{margin:0;background:#eadff4;font:16px system-ui;color:#38234f}nav{padding:12px;display:flex;gap:8px;flex-wrap:wrap}button{font:inherit;padding:7px 14px}main{display:flex;gap:14px;padding:12px;align-items:start;flex-wrap:wrap}.frame{width:800px;height:500px;display:flex;background:#d9c8ed;border:2px solid #674d85}.phone{width:350px;height:460px}.witch-arena{height:100%}.witch-sprite[hidden]{display:none!important}</style>
+<nav><button data-phase="run">Run</button><button data-phase="brake">Brake</button><button data-phase="aim">Aim</button><button data-phase="fly">Flight</button><button data-phase="land">Transformation</button><button data-phase="fail">Overrun</button><button data-phase="loop">Loop</button></nav>
+<main><div class="frame" id="desktop"></div><div class="frame phone" id="phone"></div></main>
+<script type="module">
+import { WitchRun } from '/shared/witch.js';
+import { WitchArena } from '/src/witch-view.js';
+import { witchDemoPlan } from '/src/witch-demo.js';
+const plan=witchDemoPlan(), arenas=['desktop','phone'].map(id=>{const view=new WitchArena();document.getElementById(id).append(view.element);return view;});
+let phase='run',epoch=performance.now();document.querySelectorAll('[data-phase]').forEach(button=>button.addEventListener('click',()=>{phase=button.dataset.phase;epoch=performance.now()}));
+function frame(now){
+ const brake=plan.presses.find(p=>p.color===1),release=brake.holdUntil;
+ let time=phase==='loop'?(now-epoch)%plan.duration:({run:3300,brake:brake.at+700,aim:release-100,fly:release+1500,land:plan.completeAt+450,fail:10000})[phase];
+ const run=new WitchRun({},plan.start);
+ if(phase==='fail'){for(let at=1000,color=0;at<time;at+=100,color=2-color)run.tap(color,at)}
+ else for(const cue of plan.presses){if(cue.at>time)break;cue.type==='release'?run.release(cue.color,cue.at):run.tap(cue.color,cue.at)}
+ run.advance(time);
+ const players=['Sophie','Howl','Kiki','Sabrina'].map((name,i)=>({id:String(i),name,characterId:i,result:i===1?{status:'finished',cleared:24}:null}));
+ const round={id:'visual',game:'witch-delivery',startAt:plan.start,witch:{index:0,playerId:'0',startAt:plan.start,endAt:plan.start+20000,nextAt:null,scene:{actions:run.proof,sample:Math.max(0,time-plan.start)}}};
+ arenas.forEach(arena=>arena.render({round,players},'0',{turn:0,run,offset:0},time,time));
+ requestAnimationFrame(frame);
+}requestAnimationFrame(frame);
+</script></html>

@@ -1,0 +1,144 @@
+import { HeldInputs } from '../src/held-input.js';
+import { driveWitch as throwPotion } from './helpers/witch.js';
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { WitchRun, WITCH_GAME, WITCH_HOLD_MS, replayWitch, witchPose } from '../shared/witch.js';
+import { GAMES, roundSettings, comparePlayers } from '../shared/games.js';
+import { RoomService } from '../server/rooms.js';
+import { resultMessage } from '../src/result-message.js';
+import { witchDemoPlan } from '../src/witch-demo.js';
+
+test('alternation builds speed, braking preserves power, aiming holds at 90 and release lands on a frog', () => {
+  const run = new WitchRun({}, 1000);
+  assert.equal(run.tap(0, 999).type, 'ignored');
+  run.tap(0, 1100); const speed = run.speed;
+  assert.equal(run.tap(0, 1200).type, 'ignored'); assert.ok(run.speed < speed);
+  run.tap(2, 1300); assert.ok(run.speed > speed);
+  const cast = throwPotion();
+  assert.equal(cast.state, 'land'); assert.equal(cast.speed, 0); assert.ok(cast.power > 30);
+  assert.ok(Math.abs(cast.angle - 45) < .0001); assert.ok(cast.cleared > 10);
+  assert.equal(cast.targetX, 180 + (cast.cleared + 1) * 14);
+  const vertical = throwPotion(0, 100, 90);
+  assert.ok(Math.abs(vertical.angle - 90) < .001); assert.ok(vertical.cleared < cast.cleared);
+  assert.ok(throwPotion(0, 160).cleared < cast.cleared);
+});
+
+test('proofs replay independently of frame timing and reject reordered, future, rewritten, and oversized input', () => {
+  const cast = throwPotion(500000.25), proof = cast.proof;
+  const replay = replayWitch(proof, cast.elapsed);
+  assert.ok(replay); assert.equal(replay.state, cast.state); assert.equal(replay.cleared, cast.cleared);
+  assert.ok(Math.abs(replay.elapsed - cast.elapsed) < .001);
+  for (const bad of [[...proof].reverse(), [[30000, 0, 0]], Array.from({ length: 501 }, () => [0, 0, 0]), [[1, 1, 1]], [[100, 0, 0], [120, 2, 0]]]) assert.equal(replayWitch(bad, 20000), null);
+  const sample = replayWitch(proof.slice(0, 10), 1100);
+  const before = JSON.stringify(sample);
+  witchPose(sample, 1800); assert.equal(JSON.stringify(sample), before);
+  assert.ok(Buffer.byteLength(JSON.stringify({ proof: Array.from({ length: 500 }, (_, i) => [i * 40, i % 2 * 2, 0]) })) < 16384);
+});
+
+test('early release resumes running, input cancellation never throws, overruns and idle turns fail', () => {
+  const run = new WitchRun({}, 0); run.tap(0, 100); run.tap(2, 200); run.tap(1, 300); run.release(1, 310);
+  assert.equal(run.state, 'run'); assert.equal(run.launchAt, null);
+  run.tap(1, 400); run.advance(2000); assert.equal(run.state, 'aim');
+  run.release(1, 2100, true); assert.equal(run.launchAt, null); assert.equal(run.state, 'run');
+  assert.ok(replayWitch(run.proof, 2100));
+  const overrun = new WitchRun({}, 0);
+  for (let at = 100, color = 0; at < 10000 && !overrun.done; at += 100, color = 2 - color) overrun.tap(color, at);
+  overrun.advance(15000); assert.equal(overrun.state, 'failed'); assert.equal(overrun.cleared, 0);
+  const idle = new WitchRun({}, 0); idle.advance(20000); assert.equal(idle.state, 'failed');
+});
+
+function roomFixture(count = 4) {
+  let now = 1000000; const messages = [];
+  const service = new RoomService({ now: () => now, send: (client, message) => messages.push({ client, message: structuredClone(message) }) });
+  const clients = Array.from({ length: count }, () => ({}));
+  service.handle(clients[0], { type: 'create', name: 'Witch 1', mode: 'game-select', game: WITCH_GAME });
+  const room = service.rooms.get(clients[0].room);
+  clients.slice(1).forEach((client, i) => service.handle(client, { type: 'join', code: room.code, name: `Witch ${i + 2}` }));
+  service.handle(clients[0], { type: 'start' });
+  clients.forEach(client => { service.handle(client, { type: 'sync', rtt: 10, uncertainty: 5, count: 5 }); service.handle(client, { type: 'ready', ready: true }); });
+  return { service, room, clients, messages, setTime: value => { now = value; }, now: () => now };
+}
+
+test('four players take authoritative turns, cannot act for each other, and receive one score per turn', () => {
+  const f = roomFixture(); const { service, room, clients } = f;
+  assert.ok(GAMES[WITCH_GAME].turnBased); assert.equal(room.round.witch.playerId, room.players[0].id);
+  for (let i = 0; i < 4; i++) {
+    const turn = room.round.witch, run = throwPotion(turn.startAt, 100 + i * 12);
+    const local = { id: room.round.id, turn: i, run, start: turn.startAt, goDelay: 0 };
+    const result = resultMessage(room.round, local, 'finished', run.elapsed, turn.startAt + run.elapsed);
+    f.setTime(turn.startAt + run.elapsed);
+    if (i === 0) {
+      service.handle(clients[1], result); assert.equal(room.players[1].result, null);
+      service.handle(clients[0], { ...result, cleared: 40 }); assert.equal(room.players[0].result, null);
+    }
+    service.handle(clients[i], result); assert.ok(room.players[i].result, JSON.stringify({ i, result, errors: f.messages.filter(item => item.message.type === 'error') })); assert.equal(room.players[i].result.cleared, run.cleared);
+    service.handle(clients[i], result); assert.equal(room.round.witch.index, i);
+    f.setTime(f.now() + WITCH_HOLD_MS - 1); service.tick(); assert.equal(room.round.witch.index, i);
+    f.setTime(f.now() + 1); service.tick();
+  }
+  assert.equal(room.round.phase, 'results'); assert.equal(room.set.history.length, 1);
+  const ranked = [...room.players].sort((a, b) => comparePlayers(a, b, WITCH_GAME));
+  assert.ok(ranked[0].result.cleared >= ranked[3].result.cleared);
+  for (const player of room.players) {
+    const better = room.players.filter(other => other.result.cleared > player.result.cleared).length;
+    assert.equal(room.set.players.find(member => member.id === player.id).points, [10, 7, 4, 1][better]);
+  }
+});
+
+test('progress is bounded and append-only; timeouts, departures, and stale turns cannot stall the sequence', () => {
+  const f = roomFixture(3); const { room, service, clients } = f;
+  const turn = room.round.witch;
+  f.setTime(turn.startAt + 500);
+  const progress = { type: 'witch-progress', roundId: room.round.id, turn: 0, proof: [[100, 0, 0]], sample: 400 };
+  service.handle(clients[1], progress); assert.equal(turn.scene.sample, 0);
+  service.handle(clients[0], progress); assert.equal(turn.scene.sample, 400);
+  f.setTime(f.now() + 250);
+  service.handle(clients[0], { ...progress, proof: [[100, 2, 0]], sample: 600 }); assert.equal(turn.scene.sample, 400);
+  service.handle(clients[1], { type: 'leave' });
+  f.setTime(turn.endAt + 1000); service.tick(); assert.equal(room.players[0].result.status, 'timeout');
+  f.setTime(f.now() + WITCH_HOLD_MS); service.tick(); assert.equal(room.round.witch.index, 2);
+  service.handle(clients[0], { ...progress, sample: 800 }); assert.equal(room.round.witch.scene.sample, 0);
+});
+
+test('the tutorial performs a complete throw and transformation using the actual gameplay model', () => {
+  const plan = witchDemoPlan(), run = new WitchRun({}, plan.start);
+  for (const cue of plan.presses) cue.type === 'release' ? run.release(cue.color, cue.at) : run.tap(cue.color, cue.at);
+  run.advance(plan.completeAt); assert.equal(run.state, 'land'); assert.ok(run.cleared > 0);
+  assert.equal(plan.cues.filter(cue => cue.type === 'complete').length, 1);
+  assert.ok(plan.presses.find(cue => cue.holdUntil));
+  assert.equal(roundSettings(WITCH_GAME, 1).duration, 20000);
+});
+
+
+test('merged input cancellation clears the green hold without launching a potion', () => {
+  const run = new WitchRun({}, 0);
+  let time = 100;
+  const held = new HeldInputs(color => run.tap(color, time), (color, cancelled) => run.release(color, time, cancelled));
+  run.tap(0, 0); run.tap(2, 80);
+  held.press('pointer:1', 1); held.press('key:k', 1);
+  time = 1500; run.advance(time); assert.equal(run.state, 'aim');
+  held.release('pointer:1'); assert.equal(run.pressedMask, 2);
+  held.clear(); assert.equal(run.pressedMask, 0); assert.equal(run.launchAt, null);
+  assert.ok(replayWitch(run.proof, time));
+});
+
+
+test('live frame updates and frozen nonzero device clocks preserve the submitted throw proof', () => {
+  for (const start of [1234.5678, 527500.12345, 5000000.7]) {
+    const run = new WitchRun({}, start); let color = 0;
+    for (let at = start + 100; at < start + 4400; at += 100) {
+      if (run.x + run.speed * run.speed / 44 >= 173) break;
+      for (let frame = run.at + 16; frame < at; frame += 16) run.advance(frame);
+      run.tap(color, at); color = 2 - color;
+    }
+    const brakeAt = run.at + 100; run.advance(brakeAt); run.tap(1, brakeAt);
+    const releaseAt = brakeAt + run.speed / 22 * 1000 + 40 / 55 * 1000;
+    for (let at = run.at + 16; at < releaseAt; at += 16) run.advance(at);
+    run.release(1, releaseAt);
+    for (let at = releaseAt + 16; at < run.landAt; at += 16) run.advance(at);
+    run.advance(run.landAt + 16);
+    const replay = replayWitch(run.proof, run.at - start);
+    assert.ok(replay?.done); assert.equal(replay.cleared, run.cleared);
+    assert.ok(Math.abs(replay.elapsed - run.elapsed) < .001);
+  }
+});
