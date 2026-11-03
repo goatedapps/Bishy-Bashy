@@ -492,6 +492,11 @@ export const ASSETS = [
     "hash": "bb08279f242e5be1"
   },
   {
+    "path": "audio/Witch-special-delivery.voice.mp3",
+    "bytes": 50791,
+    "hash": "7963848e94c261f2"
+  },
+  {
     "path": "audio/horse-speeder-voice.mp3",
     "bytes": 39506,
     "hash": "fab13d280c26c5b5"

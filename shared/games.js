@@ -116,7 +116,7 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game, round = {}) {
-  if (game === WITCH_GAME) return ['Alternate red and blue to run faster', 'Hold green to brake before the edge, then keep holding to aim', 'Release green to throw. Most frogs passed wins'];
+  if (game === WITCH_GAME) return ['Alternate red and blue to run faster', 'Hold green anywhere before the edge to stop and aim', 'Release green to throw. Most frogs passed wins'];
   if (game === SHARK_GAME) return ['Press the button matching the next shark’s color', 'Land on each shark to turn it into safe grey stone', 'Wrong color? Climb back up and continue. Fastest wins'];
   if (game === HORSE_GAME) return ['Tap green to accelerate; stop tapping to slow down', 'Red moves left; blue moves right. Dodge slower horses', 'Reach the finish first; bumps knock down your speed'];
   if (game === STAR_GAME) return ['Hold red to tilt left; hold blue to tilt right', 'Release to level the maze; green is unused', 'Steer the car into stars; most collected in 45 seconds wins'];

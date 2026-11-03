@@ -110,7 +110,7 @@ test('Type in Letters: three real clients share targets and pointers, award ever
   }
 });
 
-for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-select', 'totem-shrinker', 3], ['game-select', PERM_GAME, 3], ['game-select', SLOT_GAME, 3], ['game-select', FIREWORK_GAME, 3], ['game-select', MONKEY_GAME, 3], ['game-select', JUMP_GAME, 3], ['game-select', BURGER_GAME, 3], ['game-select', MISTAKE_GAME, 3], ['game-select', DICE_GAME, 3], ['game-select', FACING_GAME, 3], ['game-select', COIN_GAME, 3], ['game-select', DODGE_GAME, 3], ['game-select', 'dynamite-spark', 3], ['game-select', 'get-those-burgers-out', 3], ['game-select', 'wheres-kaya', 3], ['game-select', 'happy-days', 3], ['game-select', 'stationery-master', 3], ['game-select', 'clock-stopper', 3], ['game-select', 'ladder-climber', 3], ['game-select', 'star-collector', 3], ['game-select', 'horse-speeder', 3], ['game-select', 'shark-jumper', 3]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
+for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-select', WITCH_GAME, 3], ['game-select', 'totem-shrinker', 3], ['game-select', PERM_GAME, 3], ['game-select', SLOT_GAME, 3], ['game-select', FIREWORK_GAME, 3], ['game-select', MONKEY_GAME, 3], ['game-select', JUMP_GAME, 3], ['game-select', BURGER_GAME, 3], ['game-select', MISTAKE_GAME, 3], ['game-select', DICE_GAME, 3], ['game-select', FACING_GAME, 3], ['game-select', COIN_GAME, 3], ['game-select', DODGE_GAME, 3], ['game-select', 'dynamite-spark', 3], ['game-select', 'get-those-burgers-out', 3], ['game-select', 'wheres-kaya', 3], ['game-select', 'happy-days', 3], ['game-select', 'stationery-master', 3], ['game-select', 'clock-stopper', 3], ['game-select', 'ladder-climber', 3], ['game-select', 'star-collector', 3], ['game-select', 'horse-speeder', 3], ['game-select', 'shark-jumper', 3]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
   const app = await createApp();
   let time = 1_000_000;
   app.rooms.now = () => time;
@@ -133,6 +133,10 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
   send(clients[0], { type: 'start' });
   let state = (await waiting).room;
   if (mode === 'arcade') {
+    const liveRoom = app.rooms.rooms.get(code);
+    liveRoom.set.plan = [WITCH_GAME, 'totem-shrinker', PERM_GAME, SLOT_GAME, FIREWORK_GAME];
+    app.rooms.prepareRound(liveRoom);
+    state = app.rooms.snapshot(liveRoom);
     assert.equal(state.set.phase, 'selecting');
     time = state.set.selectionEndAt;
     waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.phase === 'instructions');
@@ -149,7 +153,17 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
     const round = state.round;
     assert.equal(round.difficulty, mode === 'arcade' ? 1 : index + 1);
     if (mode === 'game-select') assert.equal(round.game, game);
-    if (round.game === LETTERS_GAME) {
+    if (round.game === WITCH_GAME) {
+      for (let player = 0; player < clients.length; player++) {
+        const turn = state.round.witch, run = driveWitch(turn.startAt, 100, [45, 25, 15, 0][player]);
+        time = turn.startAt + run.elapsed;
+        const ack = receiveProtocol(clients[player], message => message.type === 'result-ack');
+        send(clients[player], resultMessage(round, { id: round.id, turn: player, start: turn.startAt, run, goDelay: 0 }, 'finished', run.elapsed, time));
+        await ack;
+        const advanced = receiveProtocol(clients[0], message => message.type === 'state' && (player === clients.length - 1 ? message.room.set.history.length === index + 1 : message.room.round.witch.index === player + 1));
+        time += WITCH_HOLD_MS; app.rooms.tick(); state = (await advanced).room;
+      }
+    } else if (round.game === LETTERS_GAME) {
       let current = round;
       for (let set = 0; set < clients.length; set++) {
         const claim = letterClaim(new LettersRun(current, 0));
@@ -310,7 +324,7 @@ for (const game of ['totem-shrinker', PERM_GAME]) test(`${game}: four real conne
     const waiting = receive(socket, message => message.type === 'joined');
     send(socket, { type: index ? 'join' : 'create', game, mode: 'game-select', code, name: `Player ${index + 1}` });
     const joined = await waiting;
-    assert.equal(joined.protocol, 32);
+    assert.equal(joined.protocol, 33);
     code = joined.code;
     clients.push({ socket, ...joined });
     const ready = receive(socket, message => message.type === 'state' && message.room.players.some(player => player.id === joined.playerId && player.ready));
@@ -400,7 +414,7 @@ test('real WebSocket clients can create, synchronize, and join a room', async t 
   assert.equal(state.room.players[1].name, 'Friend 1');
   assert.equal(JSON.stringify(state).includes(joined.token), false);
   const health = await fetch(`http://127.0.0.1:${port}/health`);
-  assert.deepEqual(await health.json(), { ok: true, protocol: 32, countdownMs: 3000 });
+  assert.deepEqual(await health.json(), { ok: true, protocol: 33, countdownMs: 3000 });
   const info = await fetch(`http://127.0.0.1:${port}/connection-info`);
   assert.ok(Array.isArray((await info.json()).lanUrls));
 });

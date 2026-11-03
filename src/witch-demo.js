@@ -6,13 +6,13 @@ import { gameRules } from '../shared/games.js';
 export function witchDemoPlan() {
   const start = 900, run = new WitchRun({}, start), presses = [], cues = [];
   let at = start + 100, color = 0;
-  while (run.x + run.speed * run.speed / 44 < 173 && at < 14000) {
-    run.tap(color, at); presses.push({ color, at }); cues.push({ type: 'effect', sound: 'gameplayPress', at });
+  while (run.x < 167 && at < 14000) {
+    run.tap(color, at); presses.push({ color, at }); cues.push({ type: 'effect', sound: ['red', 'green', 'blue'][color], at });
     color = 2 - color; at += 100; run.advance(at);
   }
-  const releaseAt = at + run.speed / 22 * 1000 + 45 / 55 * 1000;
+  const releaseAt = at + 45 / 55 * 1000;
   presses.push({ color: 1, at, holdUntil: releaseAt }); run.tap(1, at);
-  cues.push({ type: 'effect', sound: 'gameplayPress', at });
+  cues.push({ type: 'effect', sound: 'green', at });
   presses.push({ type: 'release', color: 1, at: releaseAt }); run.release(1, releaseAt);
   cues.push({ type: 'effect', sound: 'witchLaunch', at: releaseAt });
   const completeAt = run.landAt; cues.push({ type: 'complete', at: completeAt });

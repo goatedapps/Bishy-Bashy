@@ -54,7 +54,7 @@ The common keyboard shortcuts are **1 / 2 / 3** or **J / K / L**.
 Game instructions explain each game's actions and any additional keyboard controls.
 
 Readiness resets between rounds and waits for every connected player and a fresh clock estimate.
-Witch’s Special Delivery is turn-based: alternate red/blue to run, hold green to brake and aim, then release to throw a potion over a row of frogs.
+Witch’s Special Delivery is turn-based: alternate red/blue to run, hold green to stop and aim, then release to throw a potion over a row of frogs.
 Everyone watches the same turn, the landing frog becomes a prince, and the most frogs passed wins.
 Set placements award **10 / 7 / 4 / 1 points**, with ties sharing placement points.
 Party mode retains cumulative points, win counts, and history between cycles.
@@ -74,7 +74,7 @@ Players can override the endpoint in Connection settings, and invitations preser
 `render.yaml` configures the Node service with build command `npm ci && npm run build` and start command `npm start`.
 Set `ALLOWED_ORIGINS=https://goatedapps.github.io`; additional origins may be comma-separated, with no repository path or trailing slash.
 HTTPS pages require `wss://`, and the client connects at `/ws`.
-Use `/health` for the health check; it reports protocol version 32.
+Use `/health` for the health check; it reports protocol version 33.
 Deploy frontend and backend together when changing protocol requirements, and verify both deployments separately.
 Keep one server instance while rooms live in memory; restarting or redeploying the service clears rooms.
 A sleeping service may need time to wake up.

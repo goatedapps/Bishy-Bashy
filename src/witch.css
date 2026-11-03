@@ -3,9 +3,11 @@
 .witch-arena { display:flex; flex-direction:column; flex:1; min-height:0; width:100%; color:#38234f; }
 .witch-turn-heading { flex-shrink:0; text-align:center; font:clamp(15px,2vw,22px) 'Lilita One',sans-serif; margin:5px; }
 .witch-stage { display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden; }
-.witch-counters { display:flex; justify-content:center; gap:14px; flex-shrink:0; padding:4px; }
-.witch-counters strong { background:#fff8dc; border:2px solid #543869; border-radius:12px; padding:5px 14px; font-variant-numeric:tabular-nums; }
-.witch-scene { flex:1; min-height:0; overflow:hidden; position:relative; isolation:isolate; background:var(--image-bg-witch-village,url('/assets/optimized/bg-witch-village-049d732cba0d.webp')) center/cover; }
+.witch-scene { flex:1; min-height:0; overflow:hidden; position:relative; isolation:isolate; background:#cdb3e6; }
+.witch-village { position:absolute; inset:0; z-index:-2; background-image:var(--image-bg-witch-village,url('/assets/optimized/bg-witch-village-049d732cba0d.webp')); background-repeat:no-repeat; }
+.witch-hud { position:absolute; z-index:8; pointer-events:none; display:flex; flex-direction:column; align-items:center; gap:5px; }
+.witch-speed { background:#25182de8; color:#fff8dd; border:2px solid #ffd34c; border-radius:6px; padding:3px 8px; font:bold clamp(11px,1.5vw,15px) ui-monospace,monospace; white-space:nowrap; font-variant-numeric:tabular-nums; }
+.witch-angle-gauge { display:block; width:100%; height:auto; border-radius:8px; background:#201325ed; filter:drop-shadow(0 2px 2px #22102760); font-family:ui-monospace,monospace; }
 .witch-scene:after { content:''; position:absolute; inset:90% 0 0; background:#789456; z-index:-1; }
 .witch-sprite { display:block; background-image:var(--image-witch-sprites,url('/assets/optimized/witch-sprites-e7cf77989f55.webp')); background-size:300% 200%; background-repeat:no-repeat; }
 .witch-scene>.witch-sprite { position:absolute; pointer-events:none; }
@@ -28,9 +30,7 @@
 .game-art>.witch-witch { width:90%; height:90%; position:absolute; left:0; bottom:0; }
 .game-art>.witch-frog { width:38%; height:38%; position:absolute; right:0; bottom:0; }
 .witch-demo .instruction-demo-scene { background:#d9c8ed; display:flex; height:clamp(220px,35vh,340px); }
-.witch-demo .witch-counters { font-size:11px; gap:5px; }
-.witch-demo .witch-counters strong { padding:3px 8px; }
-@media(max-width:500px) { .witch-seat { grid-template-columns:22px minmax(0,1fr); padding:1px; } .witch-seat>.character-portrait { width:22px; height:28px; } .witch-seat-name,.witch-seat>strong { font-size:10px; } .witch-counters { font-size:12px; } }
+@media(max-width:500px) { .witch-seat { grid-template-columns:22px minmax(0,1fr); padding:1px; } .witch-seat>.character-portrait { width:22px; height:28px; } .witch-seat-name,.witch-seat>strong { font-size:10px; } }
 
 .witch-demo .instruction-demo-guide { justify-content:flex-start; }
 .witch-demo .instruction-demo-instructions { font-size:clamp(13px,1.7vw,18px); margin-bottom:8px; }

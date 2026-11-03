@@ -1151,3 +1151,16 @@ test('Ladder reuses Diuup and layers trophy audio once at the same timestamp thr
   audio.endPlayer(); assert.ok(voices.every(voice => !voice.stopped));
   audio.setEnabled(false); assert.ok(voices.every(voice => voice.stopped));
 });
+
+
+test('Witch run presses use the corresponding colored hits and preload the supplied selection voice', async () => {
+  const { audio, requests } = setup();
+  audio.selectGame('witch-delivery'); await audio.unlock();
+  audio.pressButton('witch', 0); audio.pressButton('witch', 2); audio.pressButton('witch', 1);
+  assert.deepEqual([...audio.voices].map(voice => voice.id), ['red', 'blue', 'green']);
+  assert.ok(![...audio.voices].some(voice => voice.id === 'gameplayPress'));
+  assert.equal(ARCADE_VOICE_FILES['witch-delivery'], 'Witch-special-delivery.voice.mp3');
+  assert.ok(requests.some(url => url.includes('Witch-special-delivery.voice.mp3')));
+  audio.setEnabled(false); audio.pressButton('witch', 0);
+  assert.equal([...audio.voices].filter(voice => !voice.stopped).length, 0);
+});

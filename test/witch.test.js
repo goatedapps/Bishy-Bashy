@@ -8,14 +8,14 @@ import { RoomService } from '../server/rooms.js';
 import { resultMessage } from '../src/result-message.js';
 import { witchDemoPlan } from '../src/witch-demo.js';
 
-test('alternation builds speed, braking preserves power, aiming holds at 90 and release lands on a frog', () => {
+test('alternation builds speed, stopping freezes speed, aiming holds at 90 and release lands on a frog', () => {
   const run = new WitchRun({}, 1000);
   assert.equal(run.tap(0, 999).type, 'ignored');
   run.tap(0, 1100); const speed = run.speed;
   assert.equal(run.tap(0, 1200).type, 'ignored'); assert.ok(run.speed < speed);
   run.tap(2, 1300); assert.ok(run.speed > speed);
   const cast = throwPotion();
-  assert.equal(cast.state, 'land'); assert.equal(cast.speed, 0); assert.ok(cast.power > 30);
+  assert.equal(cast.state, 'land'); assert.equal(cast.speed, cast.power); assert.ok(cast.power > 30);
   assert.ok(Math.abs(cast.angle - 45) < .0001); assert.ok(cast.cleared > 10);
   assert.equal(cast.targetX, 180 + (cast.cleared + 1) * 14);
   const vertical = throwPotion(0, 100, 90);
@@ -35,12 +35,30 @@ test('proofs replay independently of frame timing and reject reordered, future, 
   assert.ok(Buffer.byteLength(JSON.stringify({ proof: Array.from({ length: 500 }, (_, i) => [i * 40, i % 2 * 2, 0]) })) < 16384);
 });
 
-test('early release resumes running, input cancellation never throws, overruns and idle turns fail', () => {
+test('green stops immediately anywhere before the edge, freezes speed, and begins aiming until release', () => {
+  for (const duration of [1000, 3000, 5000]) {
+    const run = new WitchRun({}, 0);
+    for (let at = 100, color = 0; at < duration; at += 100, color = 2 - color) run.tap(color, at);
+    run.tap(1, duration);
+    const position = run.x, speed = run.speed;
+    assert.equal(run.state, 'aim'); assert.equal(run.angle, 0);
+    run.advance(duration + 500);
+    assert.equal(run.x, position); assert.equal(run.speed, speed); assert.equal(run.power, speed);
+    assert.equal(run.angle, 27.5);
+    assert.equal(run.tap(0, duration + 600).type, 'ignored');
+    run.release(1, duration + 800); assert.equal(run.state, 'fly');
+    assert.ok(replayWitch(run.proof, duration + 800));
+  }
+});
+
+test('explicit release throws immediately; cancellation never throws; overruns and idle turns fail', () => {
   const run = new WitchRun({}, 0); run.tap(0, 100); run.tap(2, 200); run.tap(1, 300); run.release(1, 310);
-  assert.equal(run.state, 'run'); assert.equal(run.launchAt, null);
-  run.tap(1, 400); run.advance(2000); assert.equal(run.state, 'aim');
-  run.release(1, 2100, true); assert.equal(run.launchAt, null); assert.equal(run.state, 'run');
-  assert.ok(replayWitch(run.proof, 2100));
+  assert.equal(run.state, 'fly'); assert.equal(run.launchAt, 310);
+  const cancelled = new WitchRun({}, 0); cancelled.tap(0, 100); cancelled.tap(1, 200);
+  cancelled.release(1, 300, true); assert.equal(cancelled.launchAt, null); assert.equal(cancelled.state, 'run');
+  assert.equal(cancelled.angle, 0);
+  cancelled.tap(1, 300); assert.equal(cancelled.angle, 0);
+  assert.ok(replayWitch(cancelled.proof, 300));
   const overrun = new WitchRun({}, 0);
   for (let at = 100, color = 0; at < 10000 && !overrun.done; at += 100, color = 2 - color) overrun.tap(color, at);
   overrun.advance(15000); assert.equal(overrun.state, 'failed'); assert.equal(overrun.cleared, 0);
@@ -127,12 +145,12 @@ test('live frame updates and frozen nonzero device clocks preserve the submitted
   for (const start of [1234.5678, 527500.12345, 5000000.7]) {
     const run = new WitchRun({}, start); let color = 0;
     for (let at = start + 100; at < start + 4400; at += 100) {
-      if (run.x + run.speed * run.speed / 44 >= 173) break;
+      if (run.x >= 167) break;
       for (let frame = run.at + 16; frame < at; frame += 16) run.advance(frame);
       run.tap(color, at); color = 2 - color;
     }
     const brakeAt = run.at + 100; run.advance(brakeAt); run.tap(1, brakeAt);
-    const releaseAt = brakeAt + run.speed / 22 * 1000 + 40 / 55 * 1000;
+    const releaseAt = brakeAt + 40 / 55 * 1000;
     for (let at = run.at + 16; at < releaseAt; at += 16) run.advance(at);
     run.release(1, releaseAt);
     for (let at = releaseAt + 16; at < run.landAt; at += 16) run.advance(at);
