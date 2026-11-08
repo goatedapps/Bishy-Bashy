@@ -373,7 +373,7 @@ test('instructions reuse the gesture-authorized media element on first entry and
   audio.setMenuScreen(true, true, 'round');
   assert.ok(audio.podium.voice);
   audio.podium.voice.source.onended();
-  assert.equal(media.src, '/audio/Background-ActionRock.mp3');
+  assert.equal(media.src, '/audio/Background-Christmas.mp3');
   assert.equal(media.currentTime, 20);
   audio.setMenuScreen(true, true, null, 'instructions');
   assert.equal(media.currentTime, 2);
@@ -595,7 +595,7 @@ test('menu track streams after unlock, survives menu changes, and yields to roun
   assert.equal(media.plays, 0);
   await audio.unlock();
   assert.equal(media.plays, 1);
-  assert.equal(media.src, '/audio/Background-ActionRock.mp3');
+  assert.equal(media.src, '/audio/Background-Christmas.mp3');
   assert.equal(media.loop, true);
   assert.equal(context.media, media);
   assert.ok(!requests.some(url => url.endsWith('.mp3')));

@@ -99,7 +99,7 @@ Physical phone audio and touch latency still need playtesting.
 
 ## Music and sound
 
-Menus, game selection, intermissions, and standings loop the user-supplied `public/audio/Background-ActionRock.mp3` through the existing music volume and mute controls.
+Menus, game selection, intermissions, and standings loop the user-supplied `public/audio/Background-Christmas.mp3` through the existing music volume and mute controls.
 The illustrated instructions screen uses `public/audio/game-instructions.mp3` instead, with each track retaining its playback position when paused.
 The instructions track has a +6 dB playback boost through the existing music volume control to compensate for its softer recording.
 Both tracks play after a user gesture and pause for the round countdown and gameplay, with Action Rock returning on transition screens after the podium cue.

@@ -747,9 +747,9 @@ export const ASSETS = [
     "hash": "bc3ba4bc52c5ee66"
   },
   {
-    "path": "audio/Background-ActionRock.mp3",
-    "bytes": 5672940,
-    "hash": "4432053375f76064"
+    "path": "audio/Background-Christmas.mp3",
+    "bytes": 7766703,
+    "hash": "f0dd307291ef20d5"
   },
   {
     "path": "audio/game-instructions.mp3",

@@ -103,7 +103,7 @@ Burger catches and correct picture answers use `Ding.mp3`, including final succe
 `scripts/audio/arcade.js` maps supplied voice files (Me Find Mistake uses `me-find-mistake.mp3`); preload them, let voice/applause tails finish across the same round's instructions, and cancel on navigation, mute, or interruption without replaying stale selections.
 Coin catches, cleared obstacles, dice, and direction successes also reuse `Ding.mp3`; Facing turn cues use `flip.mp3` with bounded local-clock lookahead and cancellation on replay, mute, interruption, or finish.
 Perm phrase growth and complete Monkey sequences use `Ding.mp3` once per successful stage, including the final stage; individual response inputs retain their existing cues.
-Menu and transition screens stream `public/audio/Background-ActionRock.mp3` through the music bus; pause it for countdown/gameplay and previews, preserving its position and existing mute/ownership settings.
+Menu and transition screens stream `public/audio/Background-Christmas.mp3` through the music bus; pause it for countdown/gameplay and previews, preserving its position and existing mute/ownership settings.
 Menu tracks reuse one gesture-authorized media element and retain separate playback positions to support first-entry playback on tablets.
 The illustrated instructions screen streams `game-instructions.mp3` instead; pause the previous track before switching and preserve each track's position.
 Post-game podiums play `podium-winner.mp3` once per round before menu music resumes; preserve deduplication across redraws and cancel the cue on navigation, mute, or interruption.
