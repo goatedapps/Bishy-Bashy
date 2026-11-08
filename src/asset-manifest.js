@@ -276,9 +276,9 @@ export const ASSETS = [
     "hash": "e3affd59de9b18e5"
   },
   {
-    "path": "assets/optimized/stationery-sprites-5eeaa3167a57.webp",
-    "bytes": 78876,
-    "hash": "5eeaa3167a573e64"
+    "path": "assets/optimized/stationery-sprites-b65ec022a929.webp",
+    "bytes": 74776,
+    "hash": "b65ec022a92988cc"
   },
   {
     "path": "assets/optimized/clock-dial-c3a615c9559a.webp",

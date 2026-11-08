@@ -1,5 +1,22 @@
 # Stationery Master and Clock Stopper artwork
 
+## Stationery color update
+
+The built-in ImageGen tool edited `stationery-sprites.png` on 2026-11-08.
+The red pencil, green eraser, and blue sharpener match the three control buttons and remain in their original atlas cells.
+Run `python scripts/optimize-images.py stationery-sprites` to regenerate the runtime sheet.
+
+> Edit the supplied transparent 2×2 Stationery Master sprite sheet.
+> Change the yellow painted shaft of the top-left wooden pencil to unmistakable warm red (bright vermilion red on the broad face, lighter red glossy highlights, deep crimson shaded facets).
+> Make the top-left pencil's small attached eraser cap red as well, keeping the silver ferrule, natural wood tip and graphite tip intact.
+> Change the pink rubber on the top-right rectangular eraser to unmistakable fresh leaf green (medium vibrant green face, mint-green highlights and deep green shade), keeping the cream end and existing outlines.
+> Preserve each item's exact shape, size, angle, shading style and placement in its existing cell.
+> Keep the bottom-left blue sharpener, its silver blade and screw exactly as shown.
+> Keep the bottom-right quadrant fully empty.
+> Preserve the original transparent background, four equally sized quadrants, and all spacing so no pixels of any item cross the cell boundaries.
+> Do not add items, shadows outside the existing objects, outlines outside the original silhouettes, text, or decorations.
+> This is a tightly scoped color edit to a gameplay sprite atlas.
+
 ## Cluttered desk update
 
 Created with the built-in imagegen tool on 2026-11-01.
@@ -29,7 +46,7 @@ The four masters total 5,996,558 bytes; optimized delivery images total 272,664 
 ## Stationery sprites
 
 Master: `stationery-sprites.png`.
-Delivery: `../../public/assets/optimized/stationery-sprites-5eeaa3167a57.webp`.
+Delivery: `../../public/assets/optimized/stationery-sprites-b65ec022a929.webp`.
 Prompt:
 
 > Use case: stylized-concept.
