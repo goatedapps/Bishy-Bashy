@@ -28,6 +28,8 @@ import { FACING_GAME } from '../shared/facing.js';
 import { LETTERS_GAME, LettersRun, LETTERS_PACKET_MS } from '../shared/letters.js';
 import { SESAME_GAME } from '../shared/sesame.js';
 import { dialCode } from './helpers/sesame.js';
+import { BALLOON_GAME, BALLOON_POP_MS } from '../shared/balloon.js';
+import { pumpBalloon } from './helpers/balloon.js';
 
 function receiveProtocol(socket, predicate) {
   return new Promise((resolve, reject) => {
@@ -112,7 +114,7 @@ test('Type in Letters: three real clients share targets and pointers, award ever
   }
 });
 
-for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-select', WITCH_GAME, 3], ['game-select', SESAME_GAME, 3], ['game-select', 'totem-shrinker', 3], ['game-select', PERM_GAME, 3], ['game-select', SLOT_GAME, 3], ['game-select', FIREWORK_GAME, 3], ['game-select', MONKEY_GAME, 3], ['game-select', JUMP_GAME, 3], ['game-select', BURGER_GAME, 3], ['game-select', MISTAKE_GAME, 3], ['game-select', DICE_GAME, 3], ['game-select', FACING_GAME, 3], ['game-select', COIN_GAME, 3], ['game-select', DODGE_GAME, 3], ['game-select', 'dynamite-spark', 3], ['game-select', 'get-those-burgers-out', 3], ['game-select', 'wheres-kaya', 3], ['game-select', 'happy-days', 3], ['game-select', 'stationery-master', 3], ['game-select', 'clock-stopper', 3], ['game-select', 'ladder-climber', 3], ['game-select', 'star-collector', 3], ['game-select', 'horse-speeder', 3], ['game-select', 'shark-jumper', 3]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
+for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-select', WITCH_GAME, 3], ['game-select', SESAME_GAME, 3], ['game-select', BALLOON_GAME, 3], ['game-select', 'totem-shrinker', 3], ['game-select', PERM_GAME, 3], ['game-select', SLOT_GAME, 3], ['game-select', FIREWORK_GAME, 3], ['game-select', MONKEY_GAME, 3], ['game-select', JUMP_GAME, 3], ['game-select', BURGER_GAME, 3], ['game-select', MISTAKE_GAME, 3], ['game-select', DICE_GAME, 3], ['game-select', FACING_GAME, 3], ['game-select', COIN_GAME, 3], ['game-select', DODGE_GAME, 3], ['game-select', 'dynamite-spark', 3], ['game-select', 'get-those-burgers-out', 3], ['game-select', 'wheres-kaya', 3], ['game-select', 'happy-days', 3], ['game-select', 'stationery-master', 3], ['game-select', 'clock-stopper', 3], ['game-select', 'ladder-climber', 3], ['game-select', 'star-collector', 3], ['game-select', 'horse-speeder', 3], ['game-select', 'shark-jumper', 3]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
   const app = await createApp();
   let time = 1_000_000;
   app.rooms.now = () => time;
@@ -165,11 +167,12 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
         const advanced = receiveProtocol(clients[0], message => message.type === 'state' && (player === clients.length - 1 ? message.room.set.history.length === index + 1 : message.room.round.witch.index === player + 1));
         time += WITCH_HOLD_MS; app.rooms.tick(); state = (await advanced).room;
       }
-    } else if (round.game === SESAME_GAME) {
-      const runs = clients.map((_, place) => dialCode(createRun(round, 0), 100 + place * 150));
+    } else if ([SESAME_GAME, BALLOON_GAME].includes(round.game)) {
+      const drive = round.game === BALLOON_GAME ? pumpBalloon : dialCode;
+      const runs = clients.map((_, place) => drive(createRun(round, 0), 100 + place * 150));
       time = round.startAt + runs.at(-1).elapsed + 100;
       const results = runs.map(run => resultMessage(round, { id: round.id, run, goDelay: 0 }, 'finished', run.elapsed, run.elapsed));
-      const rejected = receiveProtocol(clients[0], message => message.type === 'error' && message.message.includes('dial history'));
+      const rejected = receiveProtocol(clients[0], message => message.type === 'error' && message.message.includes(round.game === BALLOON_GAME ? 'pump history' : 'dial history'));
       send(clients[0], { ...results[0], elapsed: results[0].elapsed - 1 });
       await rejected;
       waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.history.length === index + 1);
@@ -177,6 +180,14 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
         const ack = receiveProtocol(clients[place], message => message.type === 'result-ack' && message.roundId === round.id);
         send(clients[place], results[place]);
         await ack;
+      }
+      if (round.game === BALLOON_GAME) {
+        const liveRoom = app.rooms.rooms.get(code);
+        time += BALLOON_POP_MS - 1;
+        app.rooms.tick();
+        assert.equal(liveRoom.set.history.length, index);
+        time++;
+        app.rooms.tick();
       }
       state = (await waiting).room;
     } else if (round.game === LETTERS_GAME) {
@@ -340,7 +351,7 @@ for (const game of ['totem-shrinker', PERM_GAME]) test(`${game}: four real conne
     const waiting = receive(socket, message => message.type === 'joined');
     send(socket, { type: index ? 'join' : 'create', game, mode: 'game-select', code, name: `Player ${index + 1}` });
     const joined = await waiting;
-    assert.equal(joined.protocol, 37);
+    assert.equal(joined.protocol, 38);
     code = joined.code;
     clients.push({ socket, ...joined });
     const ready = receive(socket, message => message.type === 'state' && message.room.players.some(player => player.id === joined.playerId && player.ready));
@@ -430,7 +441,7 @@ test('real WebSocket clients can create, synchronize, and join a room', async t 
   assert.equal(state.room.players[1].name, 'Friend 1');
   assert.equal(JSON.stringify(state).includes(joined.token), false);
   const health = await fetch(`http://127.0.0.1:${port}/health`);
-  assert.deepEqual(await health.json(), { ok: true, protocol: 37, countdownMs: 3000 });
+  assert.deepEqual(await health.json(), { ok: true, protocol: 38, countdownMs: 3000 });
   const info = await fetch(`http://127.0.0.1:${port}/connection-info`);
   assert.ok(Array.isArray((await info.json()).lanUrls));
 });

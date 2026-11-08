@@ -1,0 +1,38 @@
+.balloon-theme .arena,.balloon-demo .instruction-demo-scene {
+  background:#f2e5cf var(--image-bg-balloon-workshop,url('/assets/optimized/bg-balloon-workshop-73e4aa7ae481.webp')) center / cover;
+}
+.balloon-stage {
+  position:absolute; inset:0; overflow:hidden; container-type:size;
+  --pump-size:min(62cqw,29cqh,112px);
+  --balloon-size:min(88cqw,64cqh,290px);
+  --balloon-bottom:max(21%,var(--pump-size));
+  --pop-bottom:calc(var(--balloon-bottom) + var(--balloon-size) / 2);
+}
+.balloon-sprite {
+  display:block; aspect-ratio:1;
+  background-image:var(--image-balloon-sprites,url('/assets/optimized/balloon-sprites-cb038e2522ef.webp')); background-size:200% 100%; background-repeat:no-repeat;
+}
+.balloon-body { background-position:0 center; }
+.balloon-pump { background-position:100% center; }
+.balloon-stage>.balloon-sprite { position:absolute; left:50%; translate:-50% 0; transform-origin:center 91%; }
+.balloon-stage>.balloon-body { width:var(--balloon-size); bottom:var(--balloon-bottom); }
+.balloon-stage>.balloon-pump { width:var(--pump-size); bottom:2%; }
+.balloon-pop {
+  position:absolute; bottom:var(--pop-bottom); transform:translateY(50%); width:100%; text-align:center;
+  color:#a32953; font:clamp(16px,30cqw,60px)/1 'Lilita One',system-ui;
+  text-shadow:0 2px #fff4dc,2px 0 #fff4dc,-2px 0 #fff4dc;
+}
+.balloon-rays { position:absolute; inset:0; pointer-events:none; }
+.balloon-ray {
+  position:absolute; left:50%; bottom:var(--pop-bottom); width:clamp(4px,7cqw,16px); aspect-ratio:2/1;
+  border-radius:70% 22%; background:#e34568;
+  transform:translate(-50%,50%) rotate(var(--angle)) translateY(calc(-1 * min(var(--burst-travel),95px)));
+}
+.balloon-ray:nth-child(even) { background:#ebaa33; }
+.balloon-theme .lane-finish-badge { top:6px; }
+.balloon-theme .lane.finished .tower-zone::after { content:none; }
+.is-playing.balloon-theme .lane>.base,.is-playing.balloon-theme .seat-status:empty { display:none; }
+.art-burst-the-balloon { background:#f8e1a9; }
+.game-art>.balloon-sprite { position:absolute; width:88%; top:6%; left:6%; }
+.balloon-demo .instruction-demo-scene { min-height:180px; }
+.balloon-demo .instruction-demo-instructions li { padding-block:6px; margin-block:4px; }

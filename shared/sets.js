@@ -6,6 +6,7 @@ import { MONKEY_GAME } from './monkeys.js';
 import { JUMP_GAME } from './jump.js';
 import { LETTERS_GAME } from './letters.js';
 import { SESAME_GAME } from './sesame.js';
+import { BALLOON_GAME } from './balloon.js';
 
 export const ARCADE_LENGTH = 5;
 export const PARTY_PICK_MS = 30_000;
@@ -54,6 +55,7 @@ export function setStandings(players) {
 }
 
 export function roundDetail(round) {
+  if (round.game === BALLOON_GAME) return 'Alternate pumps · Fastest pop wins';
   if (round.game === SESAME_GAME) return 'Eight digits · Fastest wins';
   if (round.game === 'witch-delivery') return 'Take turns · Most frogs passed wins';
   if (round.game === 'shark-jumper') return 'Match the sharks · Fastest wins';

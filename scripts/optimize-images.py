@@ -14,6 +14,7 @@ sizes = {'witch-sprites': 1536, 'bg-witch-village': 1280, 'shark-wave': 1024, 's
          'jump-meat': 256, 'burger-chef-chibi': 512, 'burger-ingredients': 768, 'odd-pictures': 1024,
          'dice-jester': 512, 'facing-duck': 512, 'facing-duck-back': 512, 'coin-raccoon': 512, 'dodge-fox': 512,
          'home-landscape-motion': 1672, 'sesame-phone': 768, 'bg-sesame-exchange': 1280,
+         'balloon-sprites': 768, 'bg-balloon-workshop': 960,
          **{f'bg-{name}': 1280 for name in [
              'totem-temple', 'perm-stage', 'slots-studio', 'monkey-jungle', 'jump-valley',
              'burger-kitchen', 'mistake-gallery', 'dice-carnival', 'facing-airfield',

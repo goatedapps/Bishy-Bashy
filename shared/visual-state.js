@@ -2,6 +2,7 @@ import { STAR_GOAL, STAR_MAX_DEPTH } from './stars.js';
 import { createRun } from './games.js';
 
 const SCHEMAS = {
+  'burst-the-balloon': {},
   'shark-jumper': { jumpAt: 'time', landAt: 'nullableTime', fallAt: 'time', blockedUntil: 'time' },
   'horse-speeder': { distance: 'horseDistance', speed: 'horseSpeed', position: 'column', moveFrom: 'horseLane', moveAt: 'time', index: 'index', lastThrust: 'time', stumbleUntil: 'time' },
   'star-collector': { x: 'starX', y: 'starY', vx: 'starVelocity', vy: 'starVelocity', tilt: 'starTilt', pressedMask: 'starMask', collected: 'starStates' },

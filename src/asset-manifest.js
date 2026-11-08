@@ -366,6 +366,16 @@ export const ASSETS = [
     "hash": "ac48d2faf62a55e6"
   },
   {
+    "path": "assets/optimized/balloon-sprites-cb038e2522ef.webp",
+    "bytes": 30576,
+    "hash": "cb038e2522efcb25"
+  },
+  {
+    "path": "assets/optimized/bg-balloon-workshop-73e4aa7ae481.webp",
+    "bytes": 59268,
+    "hash": "73e4aa7ae4815b29"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",

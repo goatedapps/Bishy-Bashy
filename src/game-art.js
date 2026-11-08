@@ -1,4 +1,5 @@
 import { witchPortrait } from './witch-view.js';
+import { balloonPortrait } from './balloon-view.js';
 import { sharkPortrait, sharkPlatform } from './shark-view.js';
 import { horsePortrait } from './horse-view.js';
 import { starPortrait } from './stars-view.js';
@@ -29,6 +30,7 @@ export function gameArt(game) {
   const art = node('span', `game-art art-${game}`);
   art.setAttribute('aria-hidden', 'true');
   if (game === 'witch-delivery') art.append(witchPortrait(), witchPortrait('frog'));
+  else if (game === 'burst-the-balloon') art.append(balloonPortrait());
   else if (game === 'open-sesame') art.append(node('span', 'sesame-phone-portrait'));
   else if (game === 'shark-jumper') art.append(sharkPlatform('red').element, sharkPortrait());
   else if (game === 'horse-speeder') art.append(horsePortrait('poster'));
@@ -70,7 +72,11 @@ export function ruleVisual(game) {
   const first = node('div', 'rule-example');
   const second = node('div', 'rule-example');
   let label;
-  if (game === 'open-sesame') {
+  if (game === 'burst-the-balloon') {
+    first.append(gameArt(game), node('strong', '', 'Pump up the balloon'));
+    second.append(shapes([0, 2], 'tutorial-buttons'), node('strong', '', 'Alternate red and blue'));
+    label = 'Alternate red and blue to inflate the balloon. Fastest pop wins.';
+  } else if (game === 'open-sesame') {
     first.append(gameArt(game), node('strong', '', 'Dial the eight-digit code'));
     second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Left · Select · Right'));
     label = 'Move around the dial with red and blue. Press green to enter the highlighted digit. Fastest to finish wins.';
