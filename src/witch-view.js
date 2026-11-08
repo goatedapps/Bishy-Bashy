@@ -82,7 +82,8 @@ export class WitchStage {
     this.village.style.backgroundPosition = `${-scroll}px bottom`;
     this.roof.style.left = `${-camera * unit}px`; this.roof.style.width = `${WITCH_ROAD * unit}px`;
     this.roof.style.bottom = `${baseline - 6 * unit}px`; this.roof.style.height = `${16 * unit}px`;
-    const stepping = run.state === 'run' && !this.motion?.matches && Math.floor(time / Math.max(65, 200 - run.speed * 3)) % 2;
+    const stepping = run.state === 'run' && run.speed > 0 && !this.motion?.matches &&
+      (run.presses + Math.floor((time - run.lastTap) / Math.max(65, 200 - run.speed * 3))) % 2 === 1;
     this.actor.className = `witch-sprite witch-witch${stepping ? ' witch-stride' : ''}`;
     const fall = ['fall', 'failed'].includes(run.state) ? Math.min(1, Math.max(0, (time - (run.landAt || time) + 900) / 900)) : 0;
     place(this.actor, run.x - 22, 10 - fall * 35, 44);
@@ -148,7 +149,9 @@ export class WitchArena {
         seat.element.replaceChildren(characterPortrait(player.characterId), seat.name, seat.score); seat.character = player.characterId;
       }
       seat.element.classList.toggle('active', player?.id === turn.playerId);
-      seat.name.textContent = player?.name || 'Open spot';
+      const own = Boolean(player && player.id === playerId);
+      seat.element.classList.toggle('you', own);
+      seat.name.textContent = player ? own ? `You · ${player.name}` : player.name : 'Open spot';
       seat.score.textContent = !player ? '—' : player.result ? player.result.status === 'finished' ? `${player.result.cleared} frogs` : 'No throw' : player.id === turn.playerId ? 'Playing' : 'Waiting';
     });
   }

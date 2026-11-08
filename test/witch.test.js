@@ -23,6 +23,18 @@ test('alternation builds speed, stopping freezes speed, aiming holds at 90 and r
   assert.ok(throwPotion(0, 160).cleared < cast.cleared);
 });
 
+test('the first accepted press starts visible forward travel with the original throw power', () => {
+  const run = new WitchRun();
+  run.advance(100);
+  assert.equal(run.x, 0);
+  run.tap(0, 100);
+  run.advance(225);
+  assert.equal(run.x, 1);
+  run.tap(1, 225);
+  assert.equal(run.power, .22);
+  assert.equal(replayWitch(run.proof, 225).x, run.x);
+});
+
 test('proofs replay independently of frame timing and reject reordered, future, rewritten, and oversized input', () => {
   const cast = throwPotion(500000.25), proof = cast.proof;
   const replay = replayWitch(proof, cast.elapsed);
@@ -173,7 +185,7 @@ test('speed adds every accepted alternating press without decay or the former 42
   const faster = throwPotion(0, 80), typical = throwPotion(0, 100), relaxed = throwPotion(0, 120);
   assert.ok(faster.power > typical.power && typical.power > relaxed.power);
   assert.ok(faster.cleared > typical.cleared && typical.cleared > relaxed.cleared);
-  assert.ok(typical.cleared >= 45 && typical.cleared <= 55);
+  assert.ok(typical.cleared >= 55 && typical.cleared <= 65);
   assert.ok(faster.cleared > 40);
   assert.ok(typical.flightSeconds > 1.8 && typical.flightSeconds < 2.2);
 });
@@ -192,8 +204,8 @@ test('the flight counter increases through crossed frogs and excludes the transf
 });
 
 
-test('the 30-percent longer runway rewards fast tapping with a progressively steeper speed curve', () => {
-  assert.equal(WITCH_ROAD, 180 * 1.3);
+test('the longer runway rewards fast tapping with a progressively steeper speed curve', () => {
+  assert.equal(WITCH_ROAD, 270);
   const run = new WitchRun({}, 0);
   let previousGain = 0;
   for (let i = 0; i < 80; i++) {
@@ -206,7 +218,7 @@ test('the 30-percent longer runway rewards fast tapping with a progressively ste
   }
   assert.equal(run.speed, 144);
   const average = throwPotion(0, 120), fast = throwPotion(0, 60);
-  assert.ok(average.power < 90);
+  assert.ok(average.power < 100);
   assert.ok(fast.power > average.power * 1.5);
   assert.ok(fast.cleared > average.cleared * 2);
 });

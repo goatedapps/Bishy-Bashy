@@ -246,7 +246,9 @@ test('disconnected seats expire at 30 seconds, retain accepted results, and allo
   const newcomer = room.players.at(-1);
   assert.equal(round.playerIds.includes(newcomer.id), false);
   service.handle(replacement, { type: 'select-character', characterId: 2 });
-  assert.equal(newcomer.characterId, 2);
+  assert.equal(newcomer.characterId, null);
+  service.handle(replacement, { type: 'select-character', characterId: departed.characterId });
+  assert.equal(newcomer.characterId, departed.characterId);
   assert.ok(room.set.players.some(player => player.id === newcomer.id));
 });
 

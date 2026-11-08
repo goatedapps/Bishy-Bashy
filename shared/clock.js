@@ -53,10 +53,11 @@ export class ClockMatch {
         const choice = this.choices.get(`${id}/${stage.index}`);
         return [id, choice ? Math.round(choice.elapsed - stage.targetAt) : null];
       }));
-      const ranked = this.round.playerIds.filter(id => errors[id] !== null).sort((a, b) => Math.abs(errors[a]) - Math.abs(errors[b]));
-      const awards = Object.fromEntries(this.round.playerIds.map(id => [id, ranked.includes(id) ? CLOCK_POINTS[ranked.findIndex(other => Math.abs(errors[other]) === Math.abs(errors[id]))] : 0]));
+      const correctIds = this.round.playerIds.filter(id => errors[id] !== null && Math.abs(errors[id]) <= stage.puzzle.period * .08);
+      const awards = Object.fromEntries(this.round.playerIds.map(id => [
+        id, correctIds.includes(id) ? CLOCK_POINTS[correctIds.filter(other => Math.abs(errors[other]) < Math.abs(errors[id])).length] : 0,
+      ]));
       this.round.playerIds.forEach(id => { this.state.scores[id] += awards[id]; });
-      const correctIds = ranked.filter(id => Math.abs(errors[id]) <= stage.puzzle.period * .08);
       this.state.results.push({ index: stage.index, at: stage.answerEnd + CHOICE_GRACE_MS, errors, awards, correctIds });
       changed = true;
     }

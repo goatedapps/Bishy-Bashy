@@ -76,7 +76,7 @@ export function ruleVisual(game) {
   } else if (game === 'clock-stopper') {
     first.append(gameArt(game), node('strong', '', 'Watch the first full turn'));
     second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Any button stops your clock'));
-    label = 'Press any button when the minute hand first returns to 12. Closest stops earn the most points.';
+    label = 'Press any button when the minute hand first returns to 12. Only accurate stops earn points.';
   } else if (game === 'happy-days') {
     first.append(gameArt(game), node('strong', '', 'Match bars at the line'));
     second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Hold long bars through their tails'));

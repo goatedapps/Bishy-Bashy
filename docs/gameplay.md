@@ -230,7 +230,7 @@ The original generated festival background remains in `archive/artwork/fireworks
 Its prompt is preserved in [Fireworks artwork notes](../archive/artwork/fireworks-artwork.md).
 `src/firework-view.js` and `src/fireworks.css` draw the colored rocket arcs and burst particles.
 Each rocket reuses `Fireworks.mp3` at its scheduled local launch, skipping stale launches after interruptions.
-Frontend and room service must deploy together with protocol 35.
+Frontend and room service must deploy together with protocol 36.
 
 ## Play Mimicking Monkeys
 
@@ -262,7 +262,7 @@ Audio scheduling checks do not establish physical speaker latency or subjective 
 
 The original generated character lives in `archive/artwork/mimicking-monkey.png`, with its prompt preserved in [artwork notes](../archive/artwork/monkeys-artwork.md).
 The leafy stage, shape cues, and response indicators live in `src/monkey-view.js` and `src/monkeys.css`.
-Deploy frontend and room service together to make the new catalog entry available; protocol 35 carries current scene snapshots and the announcement gate.
+Deploy frontend and room service together to make the new catalog entry available; protocol 36 carries current scene snapshots and the announcement gate.
 
 ## Play Jump for the Meat
 
@@ -374,7 +374,7 @@ The matching reverse-side duck exposes a prominent left-pointing bill while reta
 Both shared choice games accept bounded clock-stamped answers with an 80 ms transport grace after each deadline and acknowledge retries privately.
 The server locks the first valid answer, keeps pending choices out of broadcasts, settles each set once, and owns final scores.
 Missing an answer never pauses the common schedule, and disconnecting does not discard an accepted answer.
-Deploy frontend and backend together with **protocol 35**, including `shared-choices` and `mistake-points` capabilities.
+Deploy frontend and backend together with **protocol 36**, including `shared-choices` and `mistake-points` capabilities.
 
 ## Play Happy Days
 
@@ -406,7 +406,7 @@ The supplied `happy-days-voice.mp3` announces the game, and the newly supplied `
 Happy Days is available in Arcade, Game Select, and Party, with a looping cat-paw tutorial that demonstrates both tapping and holding.
 `shared/happy.js` owns the chart and scoring; `src/held-input.js` owns input-source lifetime; `src/happy-view.js` and `src/happy.css` render the three-column boards.
 The server validates full-duration results, consistent note totals, and bounded accuracy scores; note snapshots are cosmetic and never judge remote input.
-Deploy frontend and room service together with protocol 35 and the `happy-days` capability.
+Deploy frontend and room service together with protocol 36 and the `happy-days` capability.
 [Original artwork prompts and audio analysis](../archive/artwork/happy-days-artwork.md) record the generated masters and supplied music provenance.
 
 ## Play Ladder Climber
@@ -422,7 +422,7 @@ The fastest player to reach the trophy wins within a 45-second deadline; trophy 
 The illustrated course scrolls smoothly with paused GSAP tweens following each player’s local or published scene, with reduced-motion support and no progress counters.
 The game is available in Arcade, Game Select, and Party, and its cat-paw tutorial demonstrates two ladders.
 The supplied `ladder-climber-voice.mp3` announces its selection.
-Deploy frontend and server together with protocol 35.
+Deploy frontend and server together with protocol 36.
 [Artwork masters and prompts](../archive/artwork/ladder-artwork.md) record the original illustrations.
 These initial input and recovery timings remain provisional pending phone play feedback.
 
@@ -446,14 +446,16 @@ Gameplay hides the top instructions and time counters.
 Each set previews the clock for 800 ms, then starts its minute hand at 12 at a constant speed.
 One revolution shrinks evenly from 1200 ms in the first set to 500 ms in the last.
 Inputs open halfway through the first revolution and close halfway through the next, preventing an immediate stop at the starting position.
-Rank each set by the absolute millisecond error from the first return to 12; award 10, 7, 4, and 1 points, with equal errors sharing a place and missing stops scoring zero.
+Stops within 8% of a full revolution from the first return to 12 qualify for points, including in solo play.
+Rank qualifying stops by absolute millisecond error and award 10, 7, 4, and 1 points, with equal errors sharing a place.
+Stops outside that window and missing stops score zero.
 The server ranks local stop timestamps rather than packet arrival order and acknowledges immutable first answers.
 Each player sees their stopped hand, early/late error, and earned points before the next set.
 All four player columns remain visible, including grey placeholders for open seats.
 
 Both games join Arcade, Game Select, and Party, with original optimized illustrations and looping cat-paw tutorials using their real gameplay renderers.
 Game announcements use the supplied `stationery-master-voice.mp3` and `clock-stopper-voice.mp3` clips.
-Deploy frontend and room service together with protocol 35 and the `desk-clock` capability.
+Deploy frontend and room service together with protocol 36 and the `desk-clock` capability.
 [Artwork masters and prompts](../archive/artwork/desk-clock-artwork.md) record the generated assets.
 
 ## Play Where’s Kaya
@@ -473,7 +475,7 @@ Correct answers play `Ding.mp3` and the large yellow circle in the player’s sc
 The generated dog, kitten, blanket, and cozy Singapore home artwork also appear in its poster and looping cat-paw tutorial.
 Reduced motion removes decorative vertical crossing arcs while retaining the horizontal movement needed to track Kaya.
 The game is available in Arcade, Game Select, and Party.
-Deploy frontend and backend together with protocol 35 and `kaya-shuffle`.
+Deploy frontend and backend together with protocol 36 and `kaya-shuffle`.
 [Artwork masters and generation prompts](../archive/artwork/kaya-artwork.md) document the original illustrations.
 
 ## Play It's Raining Coins
@@ -545,7 +547,7 @@ Disconnection preserves accepted points; hiding or reloading still forfeits unde
 `src/letters-view.js` and `src/letters.css` render the shared arena, numbered player pointers, entered letters, scores, and result symbols.
 [Type in Letters artwork notes](../archive/artwork/letters-artwork.md) retain the built-in image-generation prompt and optimized background provenance.
 The selection announcement plays the supplied `type-in-letters-voice.mp3` with the existing applause, using the shared preload and announcement lifecycle.
-Deploy frontend and room service together with **protocol 35** and the `shared-letters` capability.
+Deploy frontend and room service together with **protocol 36** and the `shared-letters` capability.
 The word deadlines, initial repeat interval, transport grace, and feedback duration are provisional tuning values checked by deterministic tests and browser play, pending device playtests.
 
 ## Backgrounds, set feedback, and Game Select announcements
@@ -661,7 +663,7 @@ The final clear time includes the last item's landing and appears above CLEAR at
 The fastest completion wins, with a 45-second deadline.
 [Artwork notes](../archive/artwork/meals-artwork.md) retain the original restaurant background prompt and master.
 Both new games are available in Game Select and Arcade.
-Deploy frontend and server together with protocol 35 and the `dynamite-meals` capability.
+Deploy frontend and server together with protocol 36 and the `dynamite-meals` capability.
 These initial input and animation timings remain provisional pending physical phone playtests.
 
 Both games use original generated food and dynamite sprites in gameplay, game posters, and the illustrated rules.
@@ -681,7 +683,7 @@ Arcade plays 15 Me Find Mistake boards with a 45-second deadline, eight Facing W
 Fireworks keeps its opening seven sets and adds three more five-rocket sets at the existing final-set speed.
 Game Select retains its existing counts and difficulty progression.
 Facing keeps the full three-second answer window in every added set, with all clients following the same extended schedule.
-Deploy frontend and server together with protocol 35 so every device follows the scheduled set count.
+Deploy frontend and server together with protocol 36 so every device follows the scheduled set count.
 These longer Arcade counts are initial tuning values pending play feedback.
 
 Meal input immediately reserves an available slot, including when several items are already falling in that column.
@@ -696,10 +698,11 @@ Dice retains 21 throws and eases its final speed to an 800 ms answer window, wit
 
 After creating or joining a room, choose one of sixteen original cute characters before continuing to mode selection.
 The selected character appears in lobby seats and podiums and stays attached to that player through reconnects and across the set.
+Each room member chooses a different character, with disconnected players retaining their choice while their seat is reserved.
 The selection screen uses sixteen individually optimized transparent sprites extracted from the retained generated master.
 [Character artwork notes](../archive/artwork/party-characters.md) preserve the prompt and delivery details.
 Coins and Facial Slot Machine use bounded player panels whose dimensions remain independent of the current round's contents; Slots also clears its cached portrait frames when a new round begins.
-Deploy frontend and backend together with protocol 35, including `character-picker` and `overlapping-coins` capabilities.
+Deploy frontend and backend together with protocol 36, including `character-picker` and `overlapping-coins` capabilities.
 
 The catch target is 36 coins so the overlapping launch schedule increases pressure without halving the race length.
 
@@ -711,6 +714,7 @@ Unused or offline columns are greyed out.
 Game lists loop in both directions, with the current choice highlighted.
 Each player has 30 seconds to choose from the full catalog using touch/scroll, the list's arrow keys and Enter, or the shared red Down, green Select, and blue Up buttons.
 Only your own column can be controlled on your device.
+Your column is gold and marked You.
 Each locked choice plays the supplied `Ding.mp3` and bursts into sparkles; missing choices are assigned randomly by the server at the deadline.
 The server holds the completed selections for 900 ms so the last lock effect can finish, with a static confirmation for reduced motion.
 The group plays one round of every selected game in player order, including repeated picks.
@@ -719,7 +723,7 @@ After everyone's picks have been played, each connected player may choose **Cont
 Continue opens fresh 30-second choices once everyone agrees, retaining points, cumulative leadership, first-place game-win counts, and round history.
 Disconnected friends have a 15-second reconnect window before the remaining players can continue.
 Set IDs and cycle numbers prevent delayed pick or Continue messages from affecting a later selection.
-Frontend and server must deploy together for protocol 35 with `party-mode` and `arcade-length` capabilities.
+Frontend and server must deploy together for protocol 36 with `party-mode` and `arcade-length` capabilities.
 
 Invitation links and QR codes containing a valid room code disable Create room so invited guests join the intended room.
 Protocol 18 requires `timed-letters` and `expiring-seats`; deploy the frontend and room service together.
@@ -793,7 +797,7 @@ Wall impacts use the supplied `car-bump.mp3`, pickups use `Ding.mp3`, and select
 Held pointer and keyboard sources release on cancellation, focus loss, dialogs, and round changes.
 The original illustration masters and generation prompts are recorded in `archive/artwork/star-artwork.md`.
 Optimized sprite and background downloads total approximately 244 KB.
-Deploy frontend and room service together with protocol 35 and the `star-collector` capability.
+Deploy frontend and room service together with protocol 36 and the `star-collector` capability.
 
 ## Horse Speeder
 
@@ -839,7 +843,7 @@ Reduced motion uses discrete jumps and a recovery pose while retaining the same 
 The animated cat-paw tutorial demonstrates correct jumps, a wrong color, and recovery using the real model and renderer.
 Original masters and prompts live in `archive/artwork/shark-artwork.md`; optimized sprite, background, and foreground-wave delivery totals approximately 426 KB.
 The game is available in Arcade, Game Select, and Party, with shared controls and no jump counter or progress bar.
-Deploy frontend and backend together with protocol 35 and the `shark-jumper` capability.
+Deploy frontend and backend together with protocol 36 and the `shark-jumper` capability.
 
 Render deploys the multiplayer room service; GitHub Pages deploys the playable frontend through the separate Deploy website to GitHub Pages workflow.
 A successful Render deployment can coexist with a failed Pages test job, leaving the public game on the previous graphics and controls.
@@ -869,7 +873,8 @@ The real-model cat-paw tutorial demonstrates the complete run, held stop/aim, re
 Original generated artwork and exact prompts live in [the artwork archive](../archive/artwork/witch-artwork.md).
 Gameplay and tutorial presses reuse the matching hit-red.wav, hit-green.wav, and hit-blue.wav sounds; Plop marks launch, Ding marks a successful transformation, and Wrong marks a failed throw.
 Game selection uses the supplied `Witch-special-delivery.voice.mp3` with the existing selection and applause cues.
-Physics tuning uses a 234-unit runway (30% longer), speed `0.2 × presses + 0.02 × presses²`, no speed cap or decay, 55°/s aim, 14-unit frog spacing, 5.5× launch velocity, and 400-unit/s² gravity.
+Physics tuning uses a 270-unit runway, speed `0.2 × presses + 0.02 × presses²`, 55°/s aim, 14-unit frog spacing, 5.5× launch velocity, and 400-unit/s² gravity.
+The first accepted press starts forward travel at a minimum pace of 8 units per second, while throw power follows the uncapped quadratic speed.
 At a near-edge 45° release, speed 120 reaches 80 frogs in about 2.4 seconds.
-Reference model runs at 120 ms per press reach speed 84 and about 40 frogs, while 60 ms presses reach speed 134 and about 99 frogs.
+Reference model runs at 120 ms per press reach speed 92 and about 48 frogs, while 60 ms presses reach speed 147 and about 119 frogs.
 These are tuning references rather than measured player averages; a 240-frog validation bound leaves room for exceptionally fast legal runs.

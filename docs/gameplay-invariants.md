@@ -156,6 +156,7 @@ Totem Shrinker, Dodge or Die, and Mimicking Monkeys hide their bottom counters, 
 Shared Facing/Dice layouts explicitly place their heading, demonstration, options, and scores in grid rows; the scores stay in the final bottom row even while options are hidden.
 
 `shared/characters.js` defines sixteen generated player characters; fresh create/join clients choose one before mode selection, and the server validates and preserves `characterId` across reconnects and set standings.
+Each character can belong to one current room member, including disconnected members whose seats are reserved.
 `src/characters.js` and `src/characters.css` own the character grid; use the chosen portraits in lobby seats and podiums, keeping minigame protagonist art unchanged.
 Coins requires 36 catches and resolves the earliest outstanding pair on a fixed spawn schedule with no recovery pause, renders up to three overlapping pairs, and derives an immutable per-pair schedule from round start and index so remote snapshots cannot resize or restart the rain.
 Coins and Slots fill fixed-size player-panel containers; never let reel contents, completion state or cached previous-round sizes determine panel height, and reset slot portrait caches on round changes.
@@ -204,7 +205,7 @@ Dynamite wire previews must use the shared seeded sequence even without a player
 `src/kaya-view.js` renders one dog, two copies of the same kitten, and three copies of the same opaque blanket; animate swaps from the shared round clock and never expose the dog during covered phases.
 Use supplied `card-move.mp3` once per shuffle with the common bounded cue scheduler; score and reveal through `ChoiceMatch`, with one Ding and the common large result circle for each correct player.
 Kaya is in Arcade, Game Select, Party, and the animated cat-paw tutorial catalog; reduced motion removes the crossing arcs while preserving the essential horizontal tracking movement.
-The handshake and health endpoint report protocol 35 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
+The handshake and health endpoint report protocol 36 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
 
 `shared/happy.js` owns Happy Days’ seeded 57-note arrangements on the supplied recording’s 145 BPM grid, 17 hold notes, and 30-second duration.
 Judge both press and release edges at ±55 ms for Perfect (1000 points) and ±140 ms for Good (500 points); a failed edge scores zero for that note, and holding early never collects future notes.
@@ -220,7 +221,8 @@ Happy Days must render the same chart on the frozen round clock before GO and be
 Red/green/blue increment pencil/eraser/sharpener counters from zero through six, wrapping back to zero; all three exact counts earn one point at settlement.
 Validate monotonic bounded action proofs and acknowledge their revision so stale acknowledgements cannot discard newer counter updates; allow 500 ms transport grace and reveal targets only after settlement.
 `shared/clock.js` owns ten shared clock sets, targeting hours 1–10 with constant per-set revolutions decreasing from 1200 to 500 ms.
-Accept any button between half and one-and-a-half revolutions; rank absolute local stop error, sharing ties and awarding 10/7/4/1 points independently of packet arrival order.
+Accept any button between half and one-and-a-half revolutions and award points only within 8% of a full revolution from the target.
+Rank qualifying stops by absolute local error, sharing ties and awarding 10/7/4/1 points independently of packet arrival order.
 `shared/shared-match.js` selects the authoritative match model; `src/desk-clock-view.js` renders the common desk, fixed four player counters, and individually stopped clocks using the same scene in cat-paw tutorials.
 Both new games use supplied Punch/Ding/Wrong cues, original optimized art, and the common three controls; Clock results display points rather than correct-set counts.
 
@@ -230,6 +232,7 @@ Stationery proofs remain bounded by the window and 40 ms per-color input guard, 
 Use the supplied `stationery-master-voice.mp3` and `clock-stopper-voice.mp3` through the shared game announcement bank.
 
 Every gameplay player column ends with the compact `src/player-footer.js` identity row using the chosen character and name; replace duplicate top labels to preserve vertical space, and keep empty-seat labels visible.
+Use gold and a visible You label to distinguish the local column in gameplay and Party selection.
 Stationery begins each set with a two-second GSAP throw sequence, seeking a paused timeline from shared elapsed time with 80 ms launches and 500 ms flights; counting opens only after all items land, retaining the 8-to-5-second answer windows.
 Reduced motion shows each landed item without flight, and round changes or navigation kill the old timeline; the tutorial uses the same renderer and input gates.
 
@@ -258,14 +261,14 @@ Hold red/blue to tilt left/right, release to level with momentum, and keep green
 `src/stars-view.js` rotates each maze and follows its car; peer smoothing must never run physics or award pickups.
 Use supplied `car-bump.mp3` once per distinct impact and `Ding.mp3` once per star, preserving collected stars after collisions.
 The catalog, looping cat-paw demo, illustrated assets, and supplied `star-collector-voice.mp3` cover all three set modes.
-The protocol 35 handshake requires `star-collector`; deploy frontend and backend together.
+The protocol 36 handshake requires `star-collector`; deploy frontend and backend together.
 
 Horse Speeder uses `shared/horse.js` for a 3200-unit race, 120 Hz speed/distance simulation, seeded moving traffic, and validated finish proofs within a 60-second deadline.
 Red/blue move left/right in 180 ms; green taps add speed with a 100 ms guard, coasting slows down, and bumps reduce speed without losing distance or blocking steering.
 Keep a safe lane in every traffic row and enough maximum-speed spacing for two lane changes plus reaction time; Game Select narrows row spacing from 140 to 120 across its three rounds.
 `src/horse-view.js` renders bounded perspective traffic, rear-view gallop poses, the finish banner, and accepted clear times; keep gameplay free of speedometers, counters, and progress bars.
 Overtakes and the finish use Ding, every gameplay/tutorial press uses `horse-gallop.mp3`, and horse collisions use `Punch-button.mp3`; the supplied `horse-speeder-voice.mp3` announces selection, and future horse-specific sounds must also be supplied.
-Protocol 35 requires `horse-speeder`, and bounded result proofs fit the 16 KiB WebSocket limit; deploy frontend and backend together.
+Protocol 36 requires `horse-speeder`, and bounded result proofs fit the 16 KiB WebSocket limit; deploy frontend and backend together.
 
 Shark Jumper uses `shared/shark.js` for a seeded color-matching zigzag climb: press the next shark’s color, jump for 240 ms, and turn it grey only after landing.
 The protagonist is a cute puppy; wrong colors cause a fall and one-second climb-back onto the last safe shark without losing completed jumps.
@@ -273,7 +276,7 @@ Use `plop.mp3` once at jump takeoff and `shark-splash.mp3` once at the 220 ms wa
 `src/shark-view.js` keeps eight bounded shark slots, authored jump/fall/climb motion, discrete reduced-motion states, and published remote timing without advancing peer gameplay.
 Start Arcade with 30 sharks and Game Select with 30/40/50 across its rounds; rank the final scheduled landing within 45 seconds and validate bounded jump histories on the server.
 Include the real recovery in the cat-paw tutorial; keep the common controls and omit gameplay counters and progress bars.
-Protocol 35 requires `shark-jumper`; deploy frontend and backend together.
+Protocol 36 requires `shark-jumper`; deploy frontend and backend together.
 
 `src/result-message.js` builds the actual client finish payload and includes any run-owned replay proof automatically; exercise this builder in Shark Jumper server and WebSocket regression tests.
 Shark Jumper masks submerged sprite pixels using the wave alpha, then displays only a feathered foam crest; never overlay opaque rectangular water strips or leave body parts visible below the waterline.
@@ -294,7 +297,8 @@ Use `shared/witch.js` for local inputs and server replay; freeze the round clock
 `server/witch-turns.js` owns active-player identity, per-turn start/deadline, append-only proof validation, and the transformation hold.
 Only the active player accepts inputs or submits a result; duplicate accepted results acknowledge without advancing or awarding twice.
 Scores count frogs passed, excluding the transformed landing frog; equal counts share placement.
-Use a 234-unit runway and quadratic speed growth from the total accepted alternating press count, with no decay or speed cap.
+Use a 270-unit runway and quadratic speed growth from the total accepted alternating press count, with no decay or speed cap.
+Once the first press is accepted, forward travel uses a minimum pace of 8 units per second while throw power uses the quadratic speed.
 A near-edge speed-120 throw at 45° reaches about 80 frogs; leave headroom above that target.
 Green instantly stops translation and freezes speed before the edge; aim starts immediately and launches only on an explicit green release.
 Clear merged pointer/keyboard holds on cancellation; dialog/focus cancellation cancels the hold without throwing.
@@ -302,4 +306,4 @@ Display the requested speed, angle, and four-player frog scores; keep controls s
 Spectator rendering uses isolated cosmetic copies and never changes an authoritative run or awards results.
 Use the same real model and artwork in the looping cat-paw tutorial.
 Artwork masters and prompts live in `archive/artwork/`; delivered images total approximately 381 KB.
-The protocol 35 handshake requires `witch-turns`, `witch-instant-aim`, `witch-cumulative-speed`, and `witch-power-curve`; deploy frontend and backend together.
+The protocol 36 handshake requires `witch-turns`, `witch-instant-aim`, `witch-cumulative-speed`, and `witch-power-curve`; deploy frontend and backend together.

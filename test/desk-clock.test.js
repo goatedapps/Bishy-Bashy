@@ -123,6 +123,18 @@ test('Clock ranks stop-time error rather than packet order, shares tied places, 
   assert.equal(stop('a', -10, 100), true);
 });
 
+test('Clock solo stops must meet the same accuracy window as multiplayer stops', () => {
+  const round = { ...settings(CLOCK_GAME), playerIds: ['a'] }, stages = clockStages(round);
+  const match = new ClockMatch(round, stages);
+  for (const [index, error, points] of [[0, 97, 0], [1, -89, 10]]) {
+    const stage = stages[index], elapsed = stage.targetAt + error;
+    assert.equal(match.choose('a', { index, color: 1, elapsed }, elapsed), true);
+    match.advance(stage.answerEnd + 80);
+    assert.equal(match.state.results[index].awards.a, points);
+    assert.deepEqual(match.state.results[index].correctIds, points ? ['a'] : []);
+  }
+});
+
 for (const game of [STATIONERY_GAME, CLOCK_GAME]) test(`${game}: server owns scores, acknowledges valid inputs, and rejects forged finish reports`, () => {
   let time = 100000;
   const messages = [], clients = [{}, {}];

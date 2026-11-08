@@ -5,7 +5,7 @@ import { HORSE_GAME, validHorseResult } from '../shared/horse.js';
 import { STAR_GAME, validStarResult } from '../shared/stars.js';
 import { createSharedMatch } from '../shared/shared-match.js';
 import { HAPPY_GAME, validHappyScore } from '../shared/happy.js';
-import { validCharacter } from '../shared/characters.js';
+import { CHARACTERS, validCharacter } from '../shared/characters.js';
 import { sanitizeVisual } from '../shared/visual-state.js';
 import { randomBytes, randomUUID, randomInt } from 'node:crypto';
 import { TOTEM_GAME } from '../shared/totem.js';
@@ -78,12 +78,15 @@ export class RoomService {
     player.requiresAssets = message.assetGates === true;
     player.requiresAnnouncement = message.announceGates === true;
     player.assetRound = null;
-    if (!returning) { player.characterId = message.characterGate === true ? null : room.players.length % 16; room.players.push(player); }
+    if (!returning) {
+      player.characterId = message.characterGate === true ? null : CHARACTERS.findIndex((_, id) => !room.players.some(member => member.characterId === id));
+      room.players.push(player);
+    }
     if (!returning && room.replacementSeats) room.replacementSeats--;
     if (!returning && room.set) room.set.players.push({ id: player.id, name: player.name, characterId: player.characterId, points: 0, wins: 0 });
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 35, capabilities: ['witch-power-curve', 'witch-cumulative-speed', 'witch-instant-aim', 'witch-turns', 'shark-jumper', 'horse-speeder', 'star-collector', 'desk-clock', 'happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 36, capabilities: ['witch-power-curve', 'witch-cumulative-speed', 'witch-instant-aim', 'witch-turns', 'shark-jumper', 'horse-speeder', 'star-collector', 'desk-clock', 'happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -118,6 +121,9 @@ export class RoomService {
     if (message.type === 'select-character') {
       if (!validCharacter(message.characterId)) return;
       if ((room.set && room.set.phase !== 'complete' || room.round && isRoundActive(room.round)) && (validCharacter(player.characterId) || room.round?.playerIds.includes(player.id))) return;
+      if (room.players.some(member => member !== player && member.characterId === message.characterId)) {
+        return this.error(client, 'That character is already taken. Choose another.');
+      }
       player.characterId = message.characterId; player.ready = false;
       const member = room.set?.players.find(member => member.id === player.id);
       if (member) member.characterId = player.characterId;

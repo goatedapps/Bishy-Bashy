@@ -19,7 +19,8 @@ export class PartyPicker {
     this.lanes = [];
     this.resize = new ResizeObserver(() => {
       for (const lane of this.lanes) {
-        lane.list.style.setProperty('--pick-padding', `${Math.max(0, (lane.list.clientHeight - 70) / 2)}px`);
+        lane.list.style.setProperty('--pick-padding-start', `${Math.max(0, (lane.list.clientHeight - lane.rows[0].offsetHeight) / 2)}px`);
+        lane.list.style.setProperty('--pick-padding-end', `${Math.max(0, (lane.list.clientHeight - lane.rows.at(-1).offsetHeight) / 2)}px`);
         this.go(lane, this.games.length + lane.index, true);
       }
     });
@@ -58,7 +59,7 @@ export class PartyPicker {
         panel.style.setProperty('--player-color', ['#ff617b', '#71d99a', '#65c9f1', '#c69af3'][index]);
         panel.setAttribute('aria-label', player ? `${player.name}'s game choice` : `Player ${index + 1}: Open spot`);
         const header = node('header', 'party-player');
-        header.append(player ? characterPortrait(player.characterId) : node('span', 'party-empty-avatar', '○'), node('strong', '', player ? player.name + (own ? ' · You' : '') : 'Open spot'));
+        header.append(player ? characterPortrait(player.characterId) : node('span', 'party-empty-avatar', '○'), node('strong', '', player ? own ? `You · ${player.name}` : player.name : 'Open spot'));
         const window = node('div', 'party-list-window');
         const list = node('div', 'party-game-list');
         list.setAttribute('role', 'listbox'); list.setAttribute('aria-label', player ? `${player.name}'s games` : 'No player');

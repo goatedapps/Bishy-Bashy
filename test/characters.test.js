@@ -11,6 +11,9 @@ test('character selection gates starting a room, validates choices and persists 
  service.handle(host,{type:'start'});assert.equal(room.set,null);
  for(const characterId of [-1,16,1.1,'2',NaN])service.handle(host,{type:'select-character',characterId});assert.equal(room.players[0].characterId,null);
  service.handle(host,{type:'select-character',characterId:15});service.handle(host,{type:'start'});assert.equal(room.set,null);
+ service.handle(guest,{type:'select-character',characterId:15});
+ assert.equal(room.players[1].characterId,null);
+ assert.match(messages.at(-1).message.message,/already taken/);
  service.handle(guest,{type:'select-character',characterId:3});
  assert.deepEqual(service.snapshot(room).players.map(p=>p.characterId),[15,3]);
  service.handle(host,{type:'start'});assert.deepEqual(room.set.players.map(p=>p.characterId),[15,3]);

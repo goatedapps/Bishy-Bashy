@@ -12,7 +12,7 @@ export class PlayerFooter {
     this.element.hidden = !player;
     if (!player) return;
     setCharacter(this.avatar, player.characterId);
-    this.name.textContent = `${player.name}${own ? ' · You' : ''}`;
+    this.name.textContent = own ? `You · ${player.name}` : player.name;
     this.element.setAttribute('title', this.name.textContent);
   }
 }

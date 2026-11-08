@@ -15,11 +15,11 @@
 .is-empty .party-game-row { opacity:.3; }
 .is-empty .party-player,.is-empty .party-pick-status { opacity:.65; }
 .party-empty-avatar { display:grid; place-items:center; width:54px; height:54px; font-size:40px; }
-.party-pick-lane.you { outline:3px solid #fffdf5; outline-offset:3px; }
+.party-pick-lane.you:not(.is-empty) { background:var(--own-player-color); }
 .party-player { display:flex; align-items:center; justify-content:center; gap:8px; padding:8px; min-height:72px; text-align:center; }
 .party-player .character-portrait { width:54px; }
 .party-player strong { overflow-wrap:anywhere; }
-.party-game-list { position:relative; padding-block:var(--pick-padding,0px); overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; scrollbar-width:thin; background:#fffdf5b8; }
+.party-game-list { position:relative; padding-block:var(--pick-padding-start,0px) var(--pick-padding-end,0px); overflow-y:auto; overflow-x:hidden; overscroll-behavior:contain; scrollbar-width:thin; background:#fffdf5b8; }
 .party-list-window { position:relative; flex:1; min-height:0; overflow:hidden; }
 .party-lock-sparkles { position:absolute; z-index:20; pointer-events:none; }
 .party-lock-sparkles i { position:absolute; left:-12px; top:-12px; font:26px/1 system-ui; text-shadow:0 0 7px currentColor; }
@@ -60,7 +60,7 @@ body.party-picking { display:flex; flex-direction:column; height:var(--viewport-
   .party-player { flex-direction:column; gap:0; padding:4px; font-size:11px; }
   .party-player .character-portrait { width:40px; }
   .party-empty-avatar { width:40px; height:40px; font-size:32px; }
-  .party-game-row { margin:0 2px; padding:3px; gap:3px; flex-direction:column; justify-content:center; text-align:center; font-size:11px; }
+  .party-game-row { height:auto; min-height:76px; margin:0 2px; padding:3px; gap:3px; flex-direction:column; justify-content:center; text-align:center; font-size:11px; }
   .party-game-row .game-art { width:32px; height:32px; flex:0 0 32px; }
   .party-game-row .game-art>.firework-badge { font-size:28px; }
   .party-pick-status { font-size:11px; padding:12px 2px; }

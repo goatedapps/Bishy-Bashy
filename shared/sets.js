@@ -59,7 +59,7 @@ export function roundDetail(round) {
   if (round.game === 'star-collector') return '45 seconds · Most stars wins';
   if (round.game === 'ladder-climber') return 'Climb to the trophy · Fastest wins';
   if (round.game === 'stationery-master') return 'Count the desk · Match all three totals';
-  if (round.game === 'clock-stopper') return 'Closest stops earn the most points';
+  if (round.game === 'clock-stopper') return 'Only accurate stops earn points';
   if (round.game === 'happy-days') return '30 seconds · Best accuracy score wins';
   if (round.game === 'wheres-kaya') return 'Find Kaya · Most correct wins';
   if (round.game === 'dynamite-spark') return 'Reach the dynamite · Fastest wins';

@@ -3,10 +3,11 @@ export const WITCH_DURATION_MS = 20000;
 export const WITCH_GOAL = 240;
 export const WITCH_GRAVITY = 400;
 export const WITCH_THROW_SCALE = 5.5;
-export const WITCH_ROAD = 234;
+export const WITCH_ROAD = 270;
 export const FROG_SPACING = 14;
 export const WITCH_HOLD_MS = 2200;
 const ANGLE_RATE = 55;
+const MIN_RUN_PACE = 8;
 export const witchRunSpeed = presses => .2 * presses + .02 * presses * presses;
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 
@@ -24,9 +25,10 @@ export class WitchRun {
     const until = Math.min(time, this.end);
     const seconds = Math.max(0, until - this.at) / 1000;
     if (this.state === 'run') {
-      const distance = this.speed * seconds;
+      const pace = this.speed > 0 ? Math.max(MIN_RUN_PACE, this.speed) : 0;
+      const distance = pace * seconds;
       if (this.x + distance >= WITCH_ROAD) {
-        const crossing = (WITCH_ROAD - this.x) / this.speed;
+        const crossing = (WITCH_ROAD - this.x) / pace;
         this.x = WITCH_ROAD; this.state = 'fall'; this.failure = 'overrun'; this.speed = 0;
         this.landAt = this.at + crossing * 1000 + 900;
       } else { this.x += distance; }
