@@ -520,6 +520,7 @@ Finish within 25 seconds.
 The fastest four finishers earn 10, 7, 4, and 1 set points, with equal times sharing a place.
 Unfinished balloons earn zero.
 The game is available in Arcade, Game Select, and Party.
+Game selection plays the supplied `burst-the-balloon-voice.mp3` with applause.
 The [artwork archive](../archive/artwork/balloon-artwork.md) contains the balloon, pump, and workshop artwork and their generation prompts.
 
 ## Play Open Sesame
@@ -533,6 +534,7 @@ The eighth correct digit stops your timer.
 Fastest completion earns 10 set points, followed by 7, 4, and 1.
 Equal finish times share a place, and unfinished codes earn zero.
 Each Arcade, Game Select, or Party round uses one code.
+Game selection plays the supplied `open-sesame-voice.mp3` with applause.
 The [artwork archive](../archive/artwork/sesame-artwork.md) contains the original phone and telephone exchange artwork and generation prompts.
 
 ## Play Type in Letters

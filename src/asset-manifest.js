@@ -512,6 +512,16 @@ export const ASSETS = [
     "hash": "bb08279f242e5be1"
   },
   {
+    "path": "audio/burst-the-balloon-voice.mp3",
+    "bytes": 43268,
+    "hash": "f3064ac1cdbe1083"
+  },
+  {
+    "path": "audio/open-sesame-voice.mp3",
+    "bytes": 43268,
+    "hash": "ba16a93772293fc8"
+  },
+  {
     "path": "audio/Witch-special-delivery.voice.mp3",
     "bytes": 50791,
     "hash": "7963848e94c261f2"

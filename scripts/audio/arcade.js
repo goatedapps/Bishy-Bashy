@@ -1,4 +1,6 @@
 export const ARCADE_VOICE_FILES = {
+  'burst-the-balloon': 'burst-the-balloon-voice.mp3',
+  'open-sesame': 'open-sesame-voice.mp3',
   'witch-delivery': 'Witch-special-delivery.voice.mp3',
   'horse-speeder': 'horse-speeder-voice.mp3',
   'star-collector': 'star-collector-voice.mp3',

@@ -181,10 +181,10 @@ test('incorrect sets use the supplied Wrong cue while correct sets use Ding', as
   assert.equal(requests.filter(url => url.includes('wrong.mp3')).length, 1);
 });
 
-test('Game Select announces once and waits for both voice and applause to actually end', async () => {
-  const { audio } = setup();
+for (const game of ['totem-shrinker', 'burst-the-balloon', 'open-sesame']) test(`Game Select announces ${game} once and waits for voice and applause to end`, async () => {
+  const { audio, requests } = setup();
   await audio.unlock();
-  const game = 'totem-shrinker';
+  assert.ok(requests.some(url => url.includes(`/${game}-voice.mp3?`)));
   assert.equal(audio.announceGame('set-one', game), false);
   const voices = [...audio.voices].filter(voice => voice.group === 'announcement');
   assert.deepEqual(voices.map(voice => voice.id), [`gameVoice:${game}`, 'applause']);
