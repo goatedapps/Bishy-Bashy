@@ -356,6 +356,16 @@ export const ASSETS = [
     "hash": "049d732cba0d94b1"
   },
   {
+    "path": "assets/optimized/sesame-phone-a97815b35756.webp",
+    "bytes": 95566,
+    "hash": "a97815b357563425"
+  },
+  {
+    "path": "assets/optimized/bg-sesame-exchange-ac48d2faf62a.webp",
+    "bytes": 143794,
+    "hash": "ac48d2faf62a55e6"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",

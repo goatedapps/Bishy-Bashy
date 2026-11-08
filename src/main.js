@@ -45,6 +45,8 @@ import './meals.css';
 import { DYNAMITE_GAME } from '../shared/dynamite.js';
 import './dynamite.css';
 import { LETTERS_GAME } from '../shared/letters.js';
+import { SESAME_GAME } from '../shared/sesame.js';
+import './sesame.css';
 import './letters.css';
 import './shared-choice.css';
 import { isSharedChoice } from '../shared/choice-round.js';
@@ -187,7 +189,7 @@ function connect() {
     }
     if (message.type === 'joined') {
       partyAudioBaseline = true;
-      if (message.protocol !== 36 || !message.capabilities?.includes('witch-power-curve') || !message.capabilities?.includes('witch-cumulative-speed') || !message.capabilities?.includes('witch-instant-aim') || !message.capabilities?.includes('witch-turns') || !message.capabilities?.includes('shark-jumper') || !message.capabilities?.includes('horse-speeder') || !message.capabilities?.includes('star-collector') || !message.capabilities?.includes('desk-clock') || !message.capabilities?.includes('happy-days') || !message.capabilities?.includes('kaya-shuffle') || !message.capabilities?.includes('timed-letters') || !message.capabilities?.includes('expiring-seats') || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals') || !message.capabilities?.includes('character-picker') || !message.capabilities?.includes('overlapping-coins') || !message.capabilities?.includes('party-mode') || !message.capabilities?.includes('arcade-length')) {
+      if (message.protocol !== 37 || !message.capabilities?.includes(SESAME_GAME) || !message.capabilities?.includes('witch-power-curve') || !message.capabilities?.includes('witch-cumulative-speed') || !message.capabilities?.includes('witch-instant-aim') || !message.capabilities?.includes('witch-turns') || !message.capabilities?.includes('shark-jumper') || !message.capabilities?.includes('horse-speeder') || !message.capabilities?.includes('star-collector') || !message.capabilities?.includes('desk-clock') || !message.capabilities?.includes('happy-days') || !message.capabilities?.includes('kaya-shuffle') || !message.capabilities?.includes('timed-letters') || !message.capabilities?.includes('expiring-seats') || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals') || !message.capabilities?.includes('character-picker') || !message.capabilities?.includes('overlapping-coins') || !message.capabilities?.includes('party-mode') || !message.capabilities?.includes('arcade-length')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -400,6 +402,7 @@ function complete(status, elapsed = null) {
     if (room.round.game === WITCH_GAME) { flushPending(); renderRoom(); return; }
     if (room.round.game === DYNAMITE_GAME) audio.finishDynamite(localRound.id);
     else if (room.round.game === LADDER_GAME) audio.finishLadder(localRound.id);
+    else if (room.round.game === SESAME_GAME) audio.play('stageComplete', { group: 'finish' });
     else audio.play(room.round.game === SLOT_GAME ? 'slotWin' : 'finish');
   } else {
     audio.stopRound();
@@ -523,7 +526,7 @@ function tap(color) {
   enforceLifecycle(time, true);
   if (!localRound || localRound.done || document.hidden || document.querySelector('dialog[open]') || room?.round?.phase === 'results') return;
   if (!buttons[color]?.disabled && room.round.game === PERM_GAME) audio.permTap(localRound.run, time, color);
-  else if (!buttons[color]?.disabled && ![LADDER_GAME, HAPPY_GAME].includes(room.round.game)) audio.pressButton(room.round.game === WITCH_GAME ? 'witch' : room.round.game === SHARK_GAME ? 'shark' : room.round.game === HORSE_GAME ? 'horse' : room.round.game === MEALS_GAME ? 'meals' : room.round.game === JUMP_GAME ? 'jump' : room.round.game === LETTERS_GAME ? 'letters' : 'gameplay', color);
+  else if (!buttons[color]?.disabled && ![LADDER_GAME, HAPPY_GAME].includes(room.round.game)) audio.pressButton(room.round.game === WITCH_GAME ? 'witch' : room.round.game === SHARK_GAME ? 'shark' : room.round.game === HORSE_GAME ? 'horse' : room.round.game === MEALS_GAME ? 'meals' : room.round.game === JUMP_GAME ? 'jump' : [LETTERS_GAME, SESAME_GAME].includes(room.round.game) ? 'letters' : 'gameplay', color);
   if (room.round.game === WITCH_GAME) {
     if (buttons[color]?.disabled) return;
     const action = localRound.run.tap(color, time);
@@ -563,7 +566,8 @@ function tap(color) {
     else if ([MISTAKE_GAME, DICE_GAME, FACING_GAME].includes(room.round.game)) audio.play('hit', { color, game: room.round.game });
     complete('finished', action.elapsed);
   }
-  else if (room.round.game !== PERM_GAME && action.type !== 'drop' && action.type !== 'move' && !completedSequence && !(room.round.game === FIREWORK_GAME && action.type === 'mistake')) audio.play(action.type, { color, progress: localRound.run.cleared / room.round.goal, game: room.round.game });
+  else if (room.round.game === SESAME_GAME && action.type === 'mistake') audio.play('stageWrong');
+  else if (room.round.game !== PERM_GAME && !['drop', 'move', 'digit'].includes(action.type) && !completedSequence && !(room.round.game === FIREWORK_GAME && action.type === 'mistake')) audio.play(action.type, { color, progress: localRound.run.cleared / room.round.goal, game: room.round.game });
   view.render(room, playerId, localRound, time);
   updateControls(time);
 }
@@ -808,11 +812,12 @@ function updateGameProfile() {
   document.body.classList.toggle('ladder-theme', Boolean(themed && game === LADDER_GAME));
   document.body.classList.toggle('dynamite-theme', Boolean(themed && game === DYNAMITE_GAME));
   document.body.classList.toggle('letters-theme', Boolean(themed && game === LETTERS_GAME));
+  document.body.classList.toggle('sesame-theme', Boolean(themed && game === SESAME_GAME));
   buttons.forEach((button, index) => {
-    const action = !picking && game === WITCH_GAME ? ['Run', 'Stop / Aim', 'Run'][index] : !picking && game === HORSE_GAME ? ['Move left', 'Accelerate', 'Move right'][index] : !picking && game === STAR_GAME ? ['Tilt left', 'Unused', 'Tilt right'][index] : !picking && game === STATIONERY_GAME ? STATIONERY_NAMES[index] : !picking && game === CLOCK_GAME ? 'Stop' : game === HAPPY_GAME && !picking ? HAPPY_TONES[index] : picking ? ['Down', 'Select', 'Up'][index] : game === MEALS_GAME ? ['Fries', 'Burger', 'Drink'][index] : [LADDER_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
+    const action = !picking && game === WITCH_GAME ? ['Run', 'Stop / Aim', 'Run'][index] : !picking && game === HORSE_GAME ? ['Move left', 'Accelerate', 'Move right'][index] : !picking && game === STAR_GAME ? ['Tilt left', 'Unused', 'Tilt right'][index] : !picking && game === STATIONERY_GAME ? STATIONERY_NAMES[index] : !picking && game === CLOCK_GAME ? 'Stop' : game === HAPPY_GAME && !picking ? HAPPY_TONES[index] : picking ? ['Down', 'Select', 'Up'][index] : game === SESAME_GAME ? ['Left', 'Select', 'Right'][index] : game === MEALS_GAME ? ['Fries', 'Burger', 'Drink'][index] : [LADDER_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
     button.children[1].textContent = action;
     const label = ['Red circle', 'Green triangle', 'Blue diamond'][index];
-    button.setAttribute('aria-label', picking || [WITCH_GAME, SHARK_GAME, HORSE_GAME, STAR_GAME, LADDER_GAME, STATIONERY_GAME, CLOCK_GAME, HAPPY_GAME, MEALS_GAME, COIN_GAME, DODGE_GAME, LETTERS_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? `${label}: ${action}` : label);
+    button.setAttribute('aria-label', picking || [WITCH_GAME, SHARK_GAME, HORSE_GAME, STAR_GAME, LADDER_GAME, STATIONERY_GAME, CLOCK_GAME, HAPPY_GAME, MEALS_GAME, COIN_GAME, DODGE_GAME, LETTERS_GAME, SESAME_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? `${label}: ${action}` : label);
   });
   document.body.classList.toggle('coin-theme', Boolean(themed && game === COIN_GAME));
   document.body.classList.toggle('dodge-theme', Boolean(themed && game === DODGE_GAME));
@@ -976,8 +981,8 @@ document.addEventListener('visibilitychange', () => { stopLetterHold(); heldInpu
 const keys = { '1': 0, j: 0, '2': 1, k: 1, '3': 2, l: 2 };
 document.addEventListener('keydown', event => {
   if (event.repeat && !(room?.round?.game === LETTERS_GAME && ['1', '3', 'j', 'l', 'ArrowLeft', 'ArrowRight'].includes(event.key)) || event.ctrlKey || event.metaKey || event.altKey || document.querySelector('dialog[open]') || ['INPUT', 'TEXTAREA', 'SELECT'].includes(event.target.tagName)) return;
-  const letterKey = [STAR_GAME, LETTERS_GAME].includes(room?.round?.game) ? { ArrowLeft: 0, Enter: 1, ArrowRight: 2 }[event.key] : undefined;
-  const color = letterKey ?? keys[event.key.toLowerCase()];
+  const directionKey = [STAR_GAME, LETTERS_GAME, SESAME_GAME].includes(room?.round?.game) ? { ArrowLeft: 0, Enter: 1, ArrowRight: 2 }[event.key] : undefined;
+  const color = directionKey ?? keys[event.key.toLowerCase()];
   if (color === undefined) return;
   event.preventDefault();
   if ([WITCH_GAME, STAR_GAME, HAPPY_GAME].includes(room?.round?.game)) { if (!buttons[color].disabled) heldInputs.press(`key:${event.code || event.key.toLowerCase()}`, color); }

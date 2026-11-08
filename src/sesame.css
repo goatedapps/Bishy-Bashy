@@ -1,0 +1,54 @@
+.sesame-theme.is-playing #player-lanes { display:none; }
+.sesame-arena,.sesame-demo .instruction-demo-scene {
+  background:#40746c var(--image-bg-sesame-exchange,url('/assets/optimized/bg-sesame-exchange-ac48d2faf62a.webp')) center / cover;
+}
+.sesame-arena { width:100%; flex:1; min-height:0; display:flex; flex-direction:column; gap:5px; padding:6px; }
+.sesame-dial { flex:1; min-height:0; width:100%; display:flex; flex-direction:column; align-items:center; }
+.sesame-code { display:flex; gap:clamp(3px,1vw,8px); padding:5px; border:2px solid #432c42; border-radius:12px; background:#37273c; }
+.sesame-slot {
+  display:grid; place-items:center; width:clamp(20px,6vw,42px); height:clamp(23px,6vh,42px);
+  border:2px solid transparent; border-radius:6px; background:#fff3db; color:#432c42;
+  font:clamp(14px,4vw,28px)/1 'Lilita One',system-ui;
+}
+.sesame-slot.is-next { border-color:#995b1e; background:#ffe260; }
+.sesame-slot.is-entered { background:#a9ebbb; color:#17422b; box-shadow:inset 0 -3px #347356; }
+.sesame-slot.is-wrong { background:#b62d49; color:white; border:2px dashed #fff3db; }
+.sesame-phone-space { width:100%; flex:1; min-height:0; display:grid; place-items:center; container-type:size; }
+.sesame-phone {
+  width:min(96cqw,98cqh,430px); aspect-ratio:1; position:relative; container-type:inline-size;
+  background:var(--image-sesame-phone,url('/assets/optimized/sesame-phone-a97815b35756.webp')) center / contain no-repeat;
+}
+.sesame-phone::before {
+  content:''; position:absolute; left:49.6%; top:38.8%; width:8.5%; aspect-ratio:1;
+  transform:translate(-50%,-50%); border-radius:50%; background:radial-gradient(circle at 40% 35%,#f2d28e,#b68337);
+}
+.sesame-key {
+  position:absolute; transform:translate(-50%,-50%); width:8.7%; aspect-ratio:1; display:grid; place-items:center;
+  border-radius:50%; color:#432c42; background:transparent;
+  font:clamp(10px,7.5cqw,32px)/1 'Lilita One',system-ui;
+  transition:background-color 100ms ease-out,scale 110ms ease-out;
+}
+.sesame-key.is-selected {
+  background:#ffe260; color:#382647; border:2px solid #382647; outline:2px solid #fff8e9;
+  scale:1.12; z-index:1;
+}
+.sesame-key.is-wrong { background:#b62d49; color:white; }
+.sesame-selection { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.sesame-players { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; }
+.sesame-player { display:flex; flex-direction:column; align-items:center; gap:2px; min-width:0; padding:3px; border:2px solid #432c42; border-radius:9px; background:#fff3dbe8; }
+.sesame-player.you { border-color:var(--own-player-color); }
+.sesame-player.is-empty { background:#d9d4d0; }
+.sesame-player-status { color:#432c42; font:900 clamp(10px,2.4vw,16px)/1.2 ui-monospace,monospace; text-align:center; }
+.sesame-player .player-footer { margin-top:auto; }
+.art-open-sesame { background:#c4e2d8; }
+.sesame-phone-portrait { position:absolute; inset:5%; background:var(--image-sesame-phone,url('/assets/optimized/sesame-phone-a97815b35756.webp')) center / contain no-repeat; }
+.sesame-demo .instruction-demo-scene { display:flex; padding:5px; }
+.sesame-demo .sesame-slot { width:min(9.5cqw,34px); height:clamp(18px,5vh,33px); font-size:clamp(10px,8cqw,22px); }
+.sesame-demo .sesame-code { gap:min(1.5cqw,3px); padding:3px; }
+@media (max-width:500px) {
+  .sesame-demo.instruction-demo { grid-template-columns:minmax(0,1fr); grid-template-rows:180px auto; min-height:0; }
+  #rules .sesame-demo.instruction-demo { height:auto; }
+  .is-instructions #game-instructions:has(.sesame-demo) #instructions-visual { flex:0 0 auto; }
+  .sesame-demo .instruction-demo-instructions li { padding-block:5px; margin-block:3px; }
+}
+@media (prefers-reduced-motion:reduce) { .sesame-key { transition:none; } }

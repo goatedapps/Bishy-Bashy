@@ -1,4 +1,5 @@
 import { WitchDemo } from './witch-demo.js';
+import { SesameDemo } from './sesame-demo.js';
 import { TotemDemo } from './totem-demo.js';
 import { PermDemo } from './perm-demo.js';
 import { SlotsDemo } from './slots-demo.js';
@@ -7,6 +8,7 @@ import { MonkeysDemo } from './monkeys-demo.js';
 import { RemainingDemo, REMAINING_DEMO_GAMES } from './remaining-demos.js';
 
 export function createGameDemo(game, options) {
+  if (game === 'open-sesame') return new SesameDemo(options);
   if (game === 'witch-delivery') return new WitchDemo(options);
   if (game === 'totem-shrinker') return new TotemDemo(options);
   if (game === 'perm-mania') return new PermDemo(options);

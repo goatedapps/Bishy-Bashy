@@ -13,6 +13,8 @@ import { GAMES, createRun, roundSettings } from '../shared/games.js';
 import { PERM_GAME, PermRun, demoCues } from '../shared/perm.js';
 import { TotemRun } from '../shared/totem.js';
 import { createSetPlan, awardRound, setStandings, INTERMISSION_MS } from '../shared/sets.js';
+import { SESAME_GAME } from '../shared/sesame.js';
+import { dialCode } from './helpers/sesame.js';
 
 function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}) {
   let time = 1_000_000;
@@ -32,6 +34,15 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
   ready();
   const finish = (order = clients.map((_, index) => index), winner = 0) => {
     const round = room.round;
+    if (round.game === SESAME_GAME) {
+      const runs = clients.map((_, index) => dialCode(createRun(round, 0), index === winner ? 100 : 300 + index * 150));
+      time = round.startAt + Math.max(...runs.map(run => run.elapsed)) + 100;
+      for (const index of order) {
+        const run = runs[index];
+        service.handle(clients[index], resultMessage(round, { id: round.id, run, goDelay: 0 }, 'finished', run.elapsed, run.elapsed));
+      }
+      return;
+    }
     if (round.game === 'witch-delivery') {
       for (let index = 0; index < clients.length; index++) {
         const turn = round.witch;

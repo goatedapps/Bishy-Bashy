@@ -29,6 +29,7 @@ export function gameArt(game) {
   const art = node('span', `game-art art-${game}`);
   art.setAttribute('aria-hidden', 'true');
   if (game === 'witch-delivery') art.append(witchPortrait(), witchPortrait('frog'));
+  else if (game === 'open-sesame') art.append(node('span', 'sesame-phone-portrait'));
   else if (game === 'shark-jumper') art.append(sharkPlatform('red').element, sharkPortrait());
   else if (game === 'horse-speeder') art.append(horsePortrait('poster'));
   else if (game === 'star-collector') art.append(starPortrait('poster'));
@@ -69,7 +70,11 @@ export function ruleVisual(game) {
   const first = node('div', 'rule-example');
   const second = node('div', 'rule-example');
   let label;
-  if (game === 'stationery-master') {
+  if (game === 'open-sesame') {
+    first.append(gameArt(game), node('strong', '', 'Dial the eight-digit code'));
+    second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Left · Select · Right'));
+    label = 'Move around the dial with red and blue. Press green to enter the highlighted digit. Fastest to finish wins.';
+  } else if (game === 'stationery-master') {
     first.append(gameArt(game), node('strong', '', 'Count the desk'));
     second.append(shapes([0, 1, 2], 'tutorial-buttons'), node('strong', '', 'Pencil · Eraser · Sharpener'));
     label = 'Count each item on the desk, then tap its button that many times before the timer ends.';

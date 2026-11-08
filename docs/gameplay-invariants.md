@@ -64,7 +64,7 @@ Readiness never carries across a round or instructions screen, and countdowns re
 `shared/games.js` defines the three-second countdown for both room scheduling and the single `countdown.mp3` cue; resume at the current offset, preserve its tail past GO, and avoid layering the old GO cue.
 The host may configure modes and games only outside an active set, resetting readiness; new guests must wait until the set finishes.
 Game Select increases Totem blocks from 30 to 50 and Perm tempo from 128 to 144 BPM across three rounds.
-Every device displays all four lanes, except shared Letters, Dice, Facing, Kaya, Stationery, and Clock arenas; each device controls its own player only.
+Every device displays all four lanes, except shared Letters, Sesame, Dice, Facing, Kaya, Stationery, and Clock arenas; each device controls its own player only.
 Keep the arena overlay above all character and effect layers, and show an explicit completion badge on every finished player lane.
 `shared/visual-state.js` publishes bounded scene snapshots at 4 Hz and maps round-relative timestamps to each viewer's clock; projections never advance gameplay or award results.
 `src/viewport.js` and `src/viewport.css` fit the active arena and shared controls inside the visual viewport, with controls outside the arena and instructions keeping Ready visible.
@@ -186,7 +186,7 @@ Facial Slot Machine, Fireworks Craze, and Mimicking Monkeys use the common loopi
 `src/scripted-demo.js` owns their bounded input/cue timelines and hidden-screen pause; keep tutorial simulations isolated from real rounds and skip stale sounds.
 Slots demonstrates all three row locks, Fireworks demonstrates the first three-rocket set with one rocket of each color, and Monkeys watches and copies one two-color sequence.
 
-All 24 registered games now have animated How to play demos; keep the shared cat-paw artwork and delete obsolete human-finger assets rather than carrying both.
+All 25 registered games have animated How to play demos; keep the shared cat-paw artwork and delete obsolete human-finger assets rather than carrying both.
 `src/remaining-demos.js` owns the remaining ten isolated examples and their real scene renderers; short jump/wire examples demonstrate progress without pretending to finish the full game.
 Monkeys shows generated red-apple, green-pear, and blue-ball holding poses for the current cue, with a smaller centered character and no corner symbols; neutral poses during gaps must not reveal a future item.
 Optimize only selected new image names when appropriate with `python scripts/optimize-images.py NAME...`, retaining new masters and prompts while avoiding unrelated asset changes.
@@ -205,7 +205,7 @@ Dynamite wire previews must use the shared seeded sequence even without a player
 `src/kaya-view.js` renders one dog, two copies of the same kitten, and three copies of the same opaque blanket; animate swaps from the shared round clock and never expose the dog during covered phases.
 Use supplied `card-move.mp3` once per shuffle with the common bounded cue scheduler; score and reveal through `ChoiceMatch`, with one Ding and the common large result circle for each correct player.
 Kaya is in Arcade, Game Select, Party, and the animated cat-paw tutorial catalog; reduced motion removes the crossing arcs while preserving the essential horizontal tracking movement.
-The handshake and health endpoint report protocol 36 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
+The handshake and health endpoint report protocol 37 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
 
 `shared/happy.js` owns Happy Days’ seeded 57-note arrangements on the supplied recording’s 145 BPM grid, 17 hold notes, and 30-second duration.
 Judge both press and release edges at ±55 ms for Perfect (1000 points) and ±140 ms for Good (500 points); a failed edge scores zero for that note, and holding early never collects future notes.
@@ -261,14 +261,14 @@ Hold red/blue to tilt left/right, release to level with momentum, and keep green
 `src/stars-view.js` rotates each maze and follows its car; peer smoothing must never run physics or award pickups.
 Use supplied `car-bump.mp3` once per distinct impact and `Ding.mp3` once per star, preserving collected stars after collisions.
 The catalog, looping cat-paw demo, illustrated assets, and supplied `star-collector-voice.mp3` cover all three set modes.
-The protocol 36 handshake requires `star-collector`; deploy frontend and backend together.
+The protocol 37 handshake requires `star-collector`; deploy frontend and backend together.
 
 Horse Speeder uses `shared/horse.js` for a 3200-unit race, 120 Hz speed/distance simulation, seeded moving traffic, and validated finish proofs within a 60-second deadline.
 Red/blue move left/right in 180 ms; green taps add speed with a 100 ms guard, coasting slows down, and bumps reduce speed without losing distance or blocking steering.
 Keep a safe lane in every traffic row and enough maximum-speed spacing for two lane changes plus reaction time; Game Select narrows row spacing from 140 to 120 across its three rounds.
 `src/horse-view.js` renders bounded perspective traffic, rear-view gallop poses, the finish banner, and accepted clear times; keep gameplay free of speedometers, counters, and progress bars.
 Overtakes and the finish use Ding, every gameplay/tutorial press uses `horse-gallop.mp3`, and horse collisions use `Punch-button.mp3`; the supplied `horse-speeder-voice.mp3` announces selection, and future horse-specific sounds must also be supplied.
-Protocol 36 requires `horse-speeder`, and bounded result proofs fit the 16 KiB WebSocket limit; deploy frontend and backend together.
+Protocol 37 requires `horse-speeder`, and bounded result proofs fit the 16 KiB WebSocket limit; deploy frontend and backend together.
 
 Shark Jumper uses `shared/shark.js` for a seeded color-matching zigzag climb: press the next shark’s color, jump for 240 ms, and turn it grey only after landing.
 The protagonist is a cute puppy; wrong colors cause a fall and one-second climb-back onto the last safe shark without losing completed jumps.
@@ -276,7 +276,7 @@ Use `plop.mp3` once at jump takeoff and `shark-splash.mp3` once at the 220 ms wa
 `src/shark-view.js` keeps eight bounded shark slots, authored jump/fall/climb motion, discrete reduced-motion states, and published remote timing without advancing peer gameplay.
 Start Arcade with 30 sharks and Game Select with 30/40/50 across its rounds; rank the final scheduled landing within 45 seconds and validate bounded jump histories on the server.
 Include the real recovery in the cat-paw tutorial; keep the common controls and omit gameplay counters and progress bars.
-Protocol 36 requires `shark-jumper`; deploy frontend and backend together.
+Protocol 37 requires `shark-jumper`; deploy frontend and backend together.
 
 `src/result-message.js` builds the actual client finish payload and includes any run-owned replay proof automatically; exercise this builder in Shark Jumper server and WebSocket regression tests.
 Shark Jumper masks submerged sprite pixels using the wave alpha, then displays only a feathered foam crest; never overlay opaque rectangular water strips or leave body parts visible below the waterline.
@@ -306,4 +306,13 @@ Display the requested speed, angle, and four-player frog scores; keep controls s
 Spectator rendering uses isolated cosmetic copies and never changes an authoritative run or awards results.
 Use the same real model and artwork in the looping cat-paw tutorial.
 Artwork masters and prompts live in `archive/artwork/`; delivered images total approximately 381 KB.
-The protocol 36 handshake requires `witch-turns`, `witch-instant-aim`, `witch-cumulative-speed`, and `witch-power-curve`; deploy frontend and backend together.
+The protocol 37 handshake requires `witch-turns`, `witch-instant-aim`, `witch-cumulative-speed`, and `witch-power-curve`; deploy frontend and backend together.
+
+## Open Sesame
+
+`shared/sesame.js` owns the seeded eight-digit code, wrapping rotary cursor, 40 ms input guard, and 30-second deadline.
+Accept the next digit only and preserve the correct prefix on a mistake.
+Rank completed codes by replay-verified elapsed time, with the common placement points and ties.
+Keep the dial shared in layout but local in control, and show all four player identities and accepted times on narrow screens.
+Use the live dial renderer in the isolated cat-paw tutorial, supplied Diuup for presses, Wrong for misses, and one Ding for the completed code.
+Deploy the frontend and backend together with protocol 37 and the `open-sesame` capability.

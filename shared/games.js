@@ -20,6 +20,7 @@ import { MISTAKE_GAME, MistakeRun, MISTAKE_GOAL, MISTAKE_DURATION_MS } from './m
 import { DICE_GAME, DiceRun, DICE_GOAL, DICE_DURATION_MS } from './dice.js';
 import { FACING_GAME, FacingRun, FACING_GOAL, FACING_DURATION_MS, facingDuration } from './facing.js';
 import { LETTERS_GAME, LettersRun, LETTERS_DURATION_MS } from './letters.js';
+import { SESAME_GAME, SesameRun, SESAME_GOAL, SESAME_DURATION_MS } from './sesame.js';
 
 import { DYNAMITE_GAME, DynamiteRun, DYNAMITE_GOAL, DYNAMITE_DURATION_MS } from './dynamite.js';
 
@@ -28,6 +29,7 @@ import { MEALS_GAME, MealsRun, MEALS_GOAL, MEALS_DURATION_MS } from './meals.js'
 export const COUNTDOWN_MS = 3_000;
 
 export const GAMES = Object.assign(Object.create(null), {
+  [SESAME_GAME]: { id: SESAME_GAME, title: 'Open Sesame', subtitle: 'Dial the eight-digit code', sharedArena: true, duration: SESAME_DURATION_MS, goal: SESAME_GOAL },
   [WITCH_GAME]: { id: WITCH_GAME, title: 'Witch’s Special Delivery', subtitle: 'Run, brake, and turn a frog into a prince', sharedArena: true, turnBased: true, scoring: 'points', scoreNoun: 'frogs', duration: WITCH_DURATION_MS, goal: WITCH_GOAL },
   [SHARK_GAME]: { id: SHARK_GAME, title: 'Shark Jumper', subtitle: 'Match the shark and hop to safety', duration: SHARK_DURATION_MS, goal: SHARK_GOAL },
   [HORSE_GAME]: { id: HORSE_GAME, title: 'Horse Speeder', subtitle: 'Accelerate and weave through the field', duration: HORSE_DURATION_MS, goal: HORSE_GOAL },
@@ -68,6 +70,7 @@ export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') 
   if (game === MEALS_GAME) return { seed, difficulty: level, goal: MEALS_GOAL, duration: MEALS_DURATION_MS };
   if (game === DYNAMITE_GAME) return { seed, difficulty: level, goal: DYNAMITE_GOAL, duration: DYNAMITE_DURATION_MS };
   if (game === LETTERS_GAME) return { seed, difficulty: level, goal: 0, duration: LETTERS_DURATION_MS };
+  if (game === SESAME_GAME) return { seed, difficulty: level, goal: SESAME_GOAL, duration: SESAME_DURATION_MS };
   if (game === COIN_GAME) return { seed, difficulty: level, goal: COIN_GOAL, duration: COIN_DURATION_MS, fallMs: mode === 'arcade' ? 1200 : 1300 - (level - 1) * 80, spawnMs: mode === 'arcade' ? 700 : 720 - (level - 1) * 40 };
   if (game === DODGE_GAME) return { seed, difficulty: level, goal: DODGE_GOAL + level - 1, duration: DODGE_DURATION_MS, approachMs: 1350 - (level - 1) * 100 };
   if (game === DICE_GAME) return { seed, difficulty: level, goal: DICE_GOAL, duration: DICE_DURATION_MS };
@@ -100,6 +103,7 @@ export function createRun(round, localStart, timingOffset = 0) {
   if (round.game === MEALS_GAME) return new MealsRun(round, localStart);
   if (round.game === DYNAMITE_GAME) return new DynamiteRun(round, localStart);
   if (round.game === LETTERS_GAME) return new LettersRun(round, localStart);
+  if (round.game === SESAME_GAME) return new SesameRun(round, localStart);
   if (round.game === COIN_GAME) return new CoinRun(round, localStart);
   if (round.game === DODGE_GAME) return new DodgeRun(round, localStart);
   if (round.game === DICE_GAME) return new DiceRun(round, localStart);
@@ -128,6 +132,7 @@ export function gameRules(game, round = {}) {
   if (game === MEALS_GAME) return ['Fill the empty slots to complete each meal', 'Red = fries, green = burger, blue = drink', 'Serve all eight meals as fast as you can'];
   if (game === DYNAMITE_GAME) return ['Match the wire colour with the same button', 'Tap four sections per colour; clear all 13 groups', 'Reach the dynamite first; wrong colours briefly pause the spark'];
   if (game === LETTERS_GAME) return ['Red moves left, blue moves right, green enters a letter', 'Finish the three letters before time runs out to earn a point; choose ⌫ to erase', 'Everyone who finishes scores; each new word has less time'];
+  if (game === SESAME_GAME) return ['Red moves left around the dial. Blue moves right.', 'Press green to enter the highlighted digit.', 'A wrong digit leaves your code in place. Finish all eight digits first.'];
   if (game === COIN_GAME) return ['Catch gold coins and avoid cracked purple coins', 'Red = left, green = middle, blue = right'];
   if (game === DODGE_GAME) return ['Move into gaps between walls. Red - Move left. Blue - Move right', 'Press green to jump over low hurdles'];
   if (game === DICE_GAME) return ['Pick the highest of the three shared dice', 'Red = left, green = middle, blue = right', '21 throws get faster; most correct wins'];

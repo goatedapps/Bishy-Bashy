@@ -5,6 +5,7 @@ import { FIREWORK_GAME } from './fireworks.js';
 import { MONKEY_GAME } from './monkeys.js';
 import { JUMP_GAME } from './jump.js';
 import { LETTERS_GAME } from './letters.js';
+import { SESAME_GAME } from './sesame.js';
 
 export const ARCADE_LENGTH = 5;
 export const PARTY_PICK_MS = 30_000;
@@ -53,6 +54,7 @@ export function setStandings(players) {
 }
 
 export function roundDetail(round) {
+  if (round.game === SESAME_GAME) return 'Eight digits · Fastest wins';
   if (round.game === 'witch-delivery') return 'Take turns · Most frogs passed wins';
   if (round.game === 'shark-jumper') return 'Match the sharks · Fastest wins';
   if (round.game === 'horse-speeder') return 'Race to the finish · Fastest wins';

@@ -39,6 +39,8 @@ import { FACING_GAME } from '../shared/facing.js';
 import { diceMascot, duckPortrait } from './dice-facing-view.js';
 import { LETTERS_GAME } from '../shared/letters.js';
 import { LettersStage } from './letters-view.js';
+import { SESAME_GAME } from '../shared/sesame.js';
+import { SesameArena } from './sesame-view.js';
 import { SharedChoiceStage } from './shared-choice-view.js';
 import { isSharedChoice } from '../shared/choice-round.js';
 
@@ -94,6 +96,8 @@ export class GameView {
     $('arena').append(this.choice.element);
     this.letters = new LettersStage();
     $('arena').append(this.letters.element);
+    this.sesame = new SesameArena();
+    $('arena').append(this.sesame.element);
     this.feedback = new GameFeedback();
     this.remoteRuns = new RemoteRuns();
     this.lanes = Array.from({ length: 4 }, (_, index) => {
@@ -156,6 +160,7 @@ export class GameView {
     const active = isRoundActive(round);
     const game = active ? round.game : room.selectedGame;
     $('arena').classList.toggle('lobby', !active);
+    this.sesame.element.hidden = !active || game !== SESAME_GAME;
     this.witch.element.hidden = !active || game !== WITCH_GAME;
     if (active && game === WITCH_GAME) {
       this.sharedSets.element.hidden = true; this.choice.element.hidden = true; this.letters.element.hidden = true;
@@ -167,6 +172,11 @@ export class GameView {
     if (this.sharedSets.element.hidden) this.sharedSets.dispose();
     this.choice.element.hidden = !active || !isSharedChoice(game) || sharedSets;
     this.letters.element.hidden = !active || game !== LETTERS_GAME;
+    if (active && game === SESAME_GAME) {
+      this.sesame.render(room, playerId, local, time);
+      $('play-view').hidden = false; $('results').hidden = true;
+      return;
+    }
     if (active && sharedSets) {
       this.sharedSets.render(room, playerId, local, time);
       $('play-view').hidden = false; $('results').hidden = true;
@@ -290,6 +300,7 @@ export class GameView {
   }
 
   animate(room, local, time, elapsed) {
+    if (room.round?.game === SESAME_GAME && isRoundActive(room.round)) { this.sesame.render(room, this.playerId, local, time); return; }
     if (room.round?.game === WITCH_GAME && isRoundActive(room.round)) { this.witch.render(room, this.playerId, local, time, room.round.startAt + elapsed); return; }
     if ([STATIONERY_GAME, CLOCK_GAME].includes(room.round?.game) && isRoundActive(room.round)) { this.sharedSets.render(room, this.playerId, local, time); return; }
     if (isSharedChoice(room.round?.game) && isRoundActive(room.round)) { this.choice.render(room, this.playerId, local, time); return; }

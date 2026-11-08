@@ -13,6 +13,7 @@ import { COUNTDOWN_MS, GAMES, roundSettings, isRoundActive, createRun } from '..
 import { PERM_GAME } from '../shared/perm.js';
 import { SLOT_GAME, validReelMask } from '../shared/slots.js';
 import { LETTERS_GAME, LettersMatch, LETTERS_PACKET_MS } from '../shared/letters.js';
+import { SESAME_GAME, validSesameResult } from '../shared/sesame.js';
 import { isSharedChoice } from '../shared/choice-round.js';
 import { MISTAKE_GAME } from '../shared/mistake.js';
 import { MODES, INTERMISSION_MS, WHEEL_SPIN_MS, REEL_HOLD_MS, GAME_ANNOUNCEMENT_MS, PARTY_PICK_MS, PARTY_LOCK_HOLD_MS, arcadeLength, createSetPlan, awardRound } from '../shared/sets.js';
@@ -86,7 +87,7 @@ export class RoomService {
     if (!returning && room.set) room.set.players.push({ id: player.id, name: player.name, characterId: player.characterId, points: 0, wins: 0 });
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 36, capabilities: ['witch-power-curve', 'witch-cumulative-speed', 'witch-instant-aim', 'witch-turns', 'shark-jumper', 'horse-speeder', 'star-collector', 'desk-clock', 'happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: 37, capabilities: [SESAME_GAME, 'witch-power-curve', 'witch-cumulative-speed', 'witch-instant-aim', 'witch-turns', 'shark-jumper', 'horse-speeder', 'star-collector', 'desk-clock', 'happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -494,6 +495,7 @@ export class RoomService {
     if (elapsedRace && message.status === 'finished' && (message.cleared !== round.goal || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || message.mistakes > 1000)) return this.error(client, 'Complete every match before submitting a result.');
     if (round.game === MISTAKE_GAME && message.status === 'finished' && (!Number.isInteger(message.cleared) || message.cleared < player.progress.cleared || !Number.isInteger(message.mistakes) || message.mistakes < player.progress.mistakes || !Number.isInteger(message.attempted) || message.attempted !== message.cleared + message.mistakes || message.attempted > round.goal || message.attempted < 0 || message.elapsed < round.duration && message.attempted !== round.goal || message.elapsed === round.duration && received < round.endAt - 250)) return this.error(client, 'Report the completed picture boards and correct answers.');
     if (round.game === SHARK_GAME && message.status === 'finished' && !validSharkResult(round, message)) return this.error(client, 'Complete the shark path and report a valid jump history.');
+    if (round.game === SESAME_GAME && message.status === 'finished' && !validSesameResult(round, message)) return this.error(client, 'Complete the code and report a valid dial history.');
     if (round.game === HORSE_GAME && message.status === 'finished' && !validHorseResult(round, message)) return this.error(client, 'Complete the race and report a valid driving history.');
     if (round.game === STAR_GAME && message.status === 'finished' && (received < round.endAt - 250 || message.cleared < player.progress.cleared || !validStarResult(round, message))) return this.error(client, 'Finish the 45-second round and report the collected stars.');
     if (round.game === HAPPY_GAME && message.status === 'finished' && (received < round.endAt - 250 || message.elapsed !== round.duration || message.cleared < player.progress.cleared || message.mistakes < player.progress.mistakes || !validHappyScore(round, message, true))) return this.error(client, 'Wait for the music to finish and report the judged notes and accuracy score.');

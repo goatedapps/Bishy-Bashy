@@ -30,10 +30,11 @@ test('Arcade roulette and selection include the complete catalog at every catalo
     assert.ok(createSetPlan('arcade', null, () => 0, catalog).every(id => eligible.includes(id)));
     assert.deepEqual(createSetPlan('game-select', catalog.at(-1)), Array(3).fill(catalog.at(-1)));
   }
-  assert.equal(Object.keys(GAMES).length, 24);
+  assert.equal(Object.keys(GAMES).length, 25);
   assert.equal(arcadeGameIds().length, Object.keys(GAMES).length);
   assert.deepEqual(arcadeGameIds(), Object.keys(GAMES));
   assert.ok(arcadeGameIds().includes('type-in-letters'));
+  assert.ok(arcadeGameIds().includes('open-sesame'));
   assert.ok(arcadeGameIds().includes('dynamite-spark'));
   assert.ok(arcadeGameIds().includes('get-those-burgers-out'));
   assert.ok(arcadeGameIds().includes('its-raining-coins'));

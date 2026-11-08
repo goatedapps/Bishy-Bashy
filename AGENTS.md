@@ -1,6 +1,6 @@
 # Dokidoki Dash!
 
-A four-device party game with 24 registered minigames and Arcade, Game Select, and Party modes.
+A four-device party game with 25 registered minigames and Arcade, Game Select, and Party modes.
 See [README.md](README.md) for setup, hosting, source ownership, and asset maintenance.
 Before changing gameplay, tutorials, audio, layout, or multiplayer, read the relevant sections of [the detailed gameplay constraints](docs/gameplay-invariants.md).
 Use [the gameplay reference](docs/gameplay.md) for player behavior and game-specific tuning.
@@ -14,7 +14,7 @@ Use [the gameplay reference](docs/gameplay.md) for player behavior and game-spec
 - Write each full sentence on its own physical line when substantially editing Markdown.
 - Comment only on non-obvious intent, constraints, invariants, or tradeoffs.
 - Keep the static frontend independently deployable with a configurable secure WebSocket endpoint.
-- Deploy frontend and backend together for protocol changes; current protocol is 36.
+- Deploy frontend and backend together for protocol changes; current protocol is 37.
 - Keep a single server instance while rooms live in memory.
 
 ## Game and asset requirements
@@ -53,7 +53,10 @@ Each accepted alternating press increases speed using `0.2 × presses + 0.02 × 
 The 270-unit runway uses a minimum movement pace of 8 units per second after the first accepted press, with throw power still based on the quadratic speed.
 Calibrate a near-edge speed-120 throw at 45° to about 80 frogs and 2.4 seconds of flight.
 Keep tutorial gauges hidden before measured layout and show the live frogs-passed counter during flight.
-Protocol 36 requires `witch-turns`, `witch-instant-aim`, `witch-cumulative-speed`, and `witch-power-curve`; deploy both services together.
+Protocol 37 requires `witch-turns`, `witch-instant-aim`, `witch-cumulative-speed`, and `witch-power-curve`; deploy both services together.
+
+Open Sesame uses one seeded eight-digit code per round and ranks replay-validated completion times.
+Keep the rotary dial readable on phones and retain accepted digits after a wrong selection.
 
 ## Remaining planned games
 
