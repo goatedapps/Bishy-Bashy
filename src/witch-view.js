@@ -102,11 +102,16 @@ export class WitchStage {
     });
     const rescue = run.state === 'failed' && run.failure === 'overrun';
     const age = landed || rescue ? time - run.landAt : Infinity;
-    place(this.prince, run.targetX - 18, 0, 36);
     this.prince.hidden = !landed || age < 180;
-    this.prince.style.opacity = String(Math.min(1, Math.max(0, (age - 180) / 220)));
-    const pop = this.motion?.matches ? 1 : 1 + .25 * Math.sin(Math.min(1, age / 700) * Math.PI);
-    this.prince.style.transform = `scale(${pop})`;
+    if (landed) {
+      const landingX = (run.targetX - camera) * unit;
+      const pop = this.motion?.matches ? 1 : 1 + .25 * Math.sin(Math.min(1, age / 700) * Math.PI);
+      const edgeClearance = 2 * Math.min(landingX, width - landingX) / pop;
+      const princeSize = Math.min(width * .28, height * .46, edgeClearance) / unit;
+      place(this.prince, run.targetX - princeSize / 2, 0, princeSize);
+      this.prince.style.opacity = String(Math.min(1, Math.max(0, (age - 180) / 220)));
+      this.prince.style.transform = `scale(${pop})`;
+    }
     place(this.puff, (rescue ? run.x : run.targetX) - 25, -2, 50);
     this.puff.hidden = !(landed || rescue) || age < 0 || age > 950;
     this.puff.style.opacity = String(Math.max(0, 1 - age / 950));

@@ -53,7 +53,7 @@ import './letters.css';
 import './shared-choice.css';
 import { isSharedChoice } from '../shared/choice-round.js';
 import { GAMES, createRun, roundSettings, isRoundActive, gameRules } from '../shared/games.js';
-import { MODES, roundDetail, arcadeLength } from '../shared/sets.js';
+import { MODES, arcadeLength } from '../shared/sets.js';
 import { GameView } from './game-view.js';
 import { SetView } from './set-view.js';
 import { GameAudio } from './audio.js';
@@ -675,7 +675,6 @@ function renderRoom() {
   $('ready').hidden = !gate;
   $('start').hidden = playerId !== room.hostId || Boolean(room.set);
   $('control-deck').hidden = room.set?.phase === 'party-picking' ? !room.set.pickerIds.includes(playerId) : !active || !room.round.playerIds.includes(playerId);
-  $('round-label').textContent = active ? room.set ? roundDetail(room.round) : `Round ${room.testNumber}` : 'Lobby';
   view.render(room, playerId, localRound, performance.now());
   setView.render(room, playerId);
   lobbyMotion.render(room);

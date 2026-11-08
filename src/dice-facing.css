@@ -56,10 +56,9 @@
 .podium-seat>.die-portrait { width:80px; padding:12px; margin:auto auto 12px; }
 .podium-seat>.direction-duck { width:90px; margin:auto; }
 .podium-seat>.dice-mascot { width:90px; margin:auto; }
-.dice-theme .match-hud>strong,.facing-theme .match-hud>strong { display:flex; align-items:center; gap:7px; }
-.dice-theme .match-hud>strong:before,.facing-theme .match-hud>strong:before { content:''; display:block; width:42px; height:42px; flex-shrink:0; background:center / contain no-repeat; }
-.dice-theme .match-hud>strong:before { background-image:var(--image-dice-jester,url('/assets/optimized/dice-jester-0db45dfe5886.webp')); }
-.facing-theme .match-hud>strong:before { background-image:var(--image-facing-duck,url('/assets/optimized/facing-duck-ccbad1c0ed63.webp')); }
+:is(.dice-theme,.facing-theme) .match-hud::before { content:''; grid-area:1 / 1; width:42px; height:42px; background:center / contain no-repeat; }
+.dice-theme .match-hud::before { background-image:var(--image-dice-jester,url('/assets/optimized/dice-jester-0db45dfe5886.webp')); }
+.facing-theme .match-hud::before { background-image:var(--image-facing-duck,url('/assets/optimized/facing-duck-ccbad1c0ed63.webp')); }
 @keyframes die-roll { from { transform:rotate(-12deg) scale(.92); } to { transform:rotate(12deg) scale(1.02); } }
 @media(max-width:620px) {
   .dice-theme .tower-zone,.facing-theme .tower-zone { --tower-height:clamp(235px,calc(100dvh - 465px),320px); }
@@ -72,7 +71,7 @@
   .facing-phase,.facing-cue { font-size:14px; }
   .facing-options { font-size:11px; gap:3px; }
   .facing-card { border-width:2px; }
-  .dice-theme .match-hud>strong:before,.facing-theme .match-hud>strong:before { width:30px; height:30px; }
+  :is(.dice-theme,.facing-theme) .match-hud::before { width:30px; height:30px; }
   .tutorial-dice { gap:4px; }
   .tutorial-dice .die-portrait { width:29px; padding:4px; }
 }

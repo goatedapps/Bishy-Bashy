@@ -1,12 +1,5 @@
 import { GAMES, comparePlayers } from './games.js';
 import { PERM_GAME } from './perm.js';
-import { SLOT_GAME } from './slots.js';
-import { FIREWORK_GAME } from './fireworks.js';
-import { MONKEY_GAME } from './monkeys.js';
-import { JUMP_GAME } from './jump.js';
-import { LETTERS_GAME } from './letters.js';
-import { SESAME_GAME } from './sesame.js';
-import { BALLOON_GAME } from './balloon.js';
 
 export const ARCADE_LENGTH = 5;
 export const PARTY_PICK_MS = 30_000;
@@ -52,32 +45,4 @@ export function awardRound(players, game) {
 export function setStandings(players) {
   const sorted = [...players].sort((a, b) => b.points - a.points);
   return sorted.map(player => ({ ...player, placement: sorted.findIndex(other => other.points === player.points) + 1 }));
-}
-
-export function roundDetail(round) {
-  if (round.game === BALLOON_GAME) return 'Alternate pumps · Fastest pop wins';
-  if (round.game === SESAME_GAME) return 'Eight digits · Fastest wins';
-  if (round.game === 'witch-delivery') return 'Take turns · Most frogs passed wins';
-  if (round.game === 'shark-jumper') return 'Match the sharks · Fastest wins';
-  if (round.game === 'horse-speeder') return 'Race to the finish · Fastest wins';
-  if (round.game === 'star-collector') return '45 seconds · Most stars wins';
-  if (round.game === 'ladder-climber') return 'Climb to the trophy · Fastest wins';
-  if (round.game === 'stationery-master') return 'Count the desk · Match all three totals';
-  if (round.game === 'clock-stopper') return 'Only accurate stops earn points';
-  if (round.game === 'happy-days') return '30 seconds · Best accuracy score wins';
-  if (round.game === 'wheres-kaya') return 'Find Kaya · Most correct wins';
-  if (round.game === 'dynamite-spark') return 'Reach the dynamite · Fastest wins';
-  if (round.game === 'get-those-burgers-out') return 'Serve the meals · Fastest wins';
-  if (round.game === 'type-in-letters') return '30 seconds · Most points wins';
-  if (round.game === 'its-raining-coins') return `${round.goal} coins · Speed ${round.difficulty}`;
-  if (round.game === 'dodge-or-die') return `${round.goal} obstacles · Speed ${round.difficulty}`;
-  if (round.game === 'dice-dice-more-dice') return `${round.goal} throws · ${round.duration / 1000} seconds`;
-  if (round.game === 'facing-which-way') return `${round.goal} sets · Most correct wins`;
-  if (round.game === 'burger-girl') return `${round.goal / 4} burgers · Speed ${round.difficulty}`;
-  if (round.game === 'me-find-mistake') return `${round.goal} pictures · Most correct wins`;
-  if (round.game === JUMP_GAME) return `Reach the meat · Speed ${round.difficulty}`;
-  if (round.game === MONKEY_GAME) return `${round.goal} stages · ${round.goal + 1} moves`;
-  if (round.game === FIREWORK_GAME) return `${round.goal} sets · Speed ${round.difficulty}`;
-  if (round.game === SLOT_GAME) return `3 reels · Speed ${round.difficulty}`;
-  return round.game === PERM_GAME ? `${round.bpm} BPM` : `${round.blockCount} blocks`;
 }

@@ -672,6 +672,11 @@ export const ASSETS = [
     "hash": "6792a5ec788e4179"
   },
   {
+    "path": "audio/balloon-burst.mp3",
+    "bytes": 33792,
+    "hash": "92603cff765fc602"
+  },
+  {
     "path": "audio/plop.mp3",
     "bytes": 15058,
     "hash": "8aa543a3d4115c08"

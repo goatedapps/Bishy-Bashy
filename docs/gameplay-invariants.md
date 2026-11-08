@@ -83,6 +83,7 @@ Choose modes and games inside the room, with a short explanation visible on each
 Use the shared `src/game-art.js` artwork for the home cast, game posters, and illustrated rules.
 `src/game-carousel.js` and `src/game-carousel.css` own Game Select's searchable looping horizontal poster carousel; settle host input before configuring, follow authoritative selections on guests, and cancel carousel motion outside the lobby.
 Keep game instructions short and focused on the action and buttons; use only as many points as needed.
+Keep rule summaries in How to play and out of the gameplay header.
 `src/instruction-sequence.js` pauses 1400 ms after the heading, then 700 ms after the artwork and 850 ms between instruction lines, with `how-to-play.mp3` for the heading and `Punch-button.mp3` for later steps.
 Avoid hidden-tab reveal catch-up and enable Ready only after the last line and selected audio bank are ready.
 The host's Back to modes action resets the shared set while keeping the room; confirm if a round has begun or scores exist.
@@ -304,6 +305,7 @@ Green instantly stops translation and freezes speed before the edge; aim starts 
 Clear merged pointer/keyboard holds on cancellation; dialog/focus cancellation cancels the hold without throwing.
 Display the requested speed, angle, and four-player frog scores; keep controls shared and stationary.
 Spectator rendering uses isolated cosmetic copies and never changes an authoritative run or awards results.
+Size the transformed prince to the scene and center him on the landing frog, even when a high throw zooms the camera out.
 Use the same real model and artwork in the looping cat-paw tutorial.
 Artwork masters and prompts live in `archive/artwork/`; delivered images total approximately 381 KB.
 The protocol 38 handshake requires `witch-turns`, `witch-instant-aim`, `witch-cumulative-speed`, and `witch-power-curve`; deploy frontend and backend together.
@@ -323,6 +325,8 @@ Deploy the frontend and backend together with protocol 38 and the `open-sesame` 
 Either pump button can start and repeating one has no effect on inflation or timing.
 Publish cosmetic inflation at no more than 4 Hz and show a pop only after completion.
 The server acknowledges a valid finish immediately and holds the last pop for 550 ms before settling standings.
-Use the shared control deck with green disabled, supplied Diuup for accepted pumps, and supplied Plop and one Ding for the burst.
+Center the POP label and burst particles over the balloon at every lane width.
+Use the shared control deck with green disabled and supplied Diuup for accepted pumps.
+Play `balloon-burst.mp3` with one Ding at the burst.
 Use the live balloon renderer in the isolated cat-paw tutorial and retain discrete growth and the pop label under reduced motion.
 Deploy frontend and backend together with protocol 38 and the `burst-the-balloon` capability.
