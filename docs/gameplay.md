@@ -434,7 +434,7 @@ Each press increments that player’s matching counter, wrapping from six to zer
 Counters reset each set, and all three counts must match to earn one point.
 Each set starts with a two-second sequence that tosses the items onto the desk one by one; the counting window opens after they land.
 The GSAP animation follows the shared clock and skips flight motion under reduced motion.
-Six sets allow 8, 7.4, 6.8, 6.2, 5.6, and 5 seconds, followed by a short answer reveal.
+Four sets allow 8, 7.4, 6.8, and 6.2 seconds to answer, with a short reveal after each set.
 The server validates bounded input traces and monotonic retries, allows 500 ms for the final counter update, and owns all scores.
 Targets stay hidden until settlement; repeated or delayed updates cannot roll counters back or award a set twice.
 

@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { StationeryRun, StationeryMatch, stationeryStages, STATIONERY_GAME, STATIONERY_WINDOWS_MS } from '../shared/stationery.js';
+import { StationeryRun, StationeryMatch, stationeryStages, STATIONERY_GAME } from '../shared/stationery.js';
 import { ClockRun, ClockMatch, clockStages, clockPeriod, CLOCK_GAME } from '../shared/clock.js';
 import { createRun, roundSettings, GAMES } from '../shared/games.js';
 import { RoomService } from '../server/rooms.js';
@@ -12,12 +12,16 @@ function counterActions(stage, counts = stage.puzzle.counts) {
   return counts.flatMap((count, color) => Array.from({ length: count }, () => { const action = [color, at]; at += 80; return action; }));
 }
 
-test('Stationery has six shrinking seeded desks, exact 1–6 object counts, and distinct bounded scatter positions', () => {
+test('Stationery has four shrinking seeded desks, exact 1–6 object counts, and distinct bounded scatter positions', () => {
   const round = settings(STATIONERY_GAME), stages = stationeryStages(round);
-  assert.equal(stages.length, 6);
-  assert.deepEqual(STATIONERY_WINDOWS_MS, [8000, 7400, 6800, 6200, 5600, 5000]);
-  assert.deepEqual(stages.map(stage => stage.answerEnd - stage.answerAt), STATIONERY_WINDOWS_MS);
+  assert.equal(round.goal, 4);
+  assert.equal(round.duration, 42000);
+  assert.deepEqual(stages.map(stage => stage.answerEnd - stage.answerAt), [8000, 7400, 6800, 6200]);
   assert.equal(stages.at(-1).endsAt, round.duration);
+  const previouslyScheduled = stationeryStages({ ...round, goal: 6, duration: 59400 });
+  assert.deepEqual(previouslyScheduled.slice(0, 4), stages);
+  assert.equal(previouslyScheduled.length, 6);
+  assert.equal(previouslyScheduled.at(-1).endsAt, 59400);
   assert.deepEqual(stages, stationeryStages(round));
   assert.notDeepEqual(stages, stationeryStages({ ...round, seed: 456 }));
   for (const stage of stages) {

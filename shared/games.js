@@ -137,7 +137,7 @@ export function gameRules(game, round = {}) {
   if (game === DYNAMITE_GAME) return ['Match the wire colour with the same button', 'Tap four sections per colour; clear all 13 groups', 'Reach the dynamite first; wrong colours briefly pause the spark'];
   if (game === LETTERS_GAME) return ['Red moves left, blue moves right, green enters a letter', 'Finish the three letters before time runs out to earn a point; choose ⌫ to erase', 'Everyone who finishes scores; each new word has less time'];
   if (game === SESAME_GAME) return ['Red moves left around the dial. Blue moves right.', 'Press green to enter the highlighted digit.', 'A wrong digit leaves your code in place. Finish all eight digits first.'];
-  if (game === BALLOON_GAME) return ['Alternate red and blue to pump up your balloon.', 'Pressing the same color again adds no air.', 'Pop your balloon as fast as you can.'];
+  if (game === BALLOON_GAME) return ['Alternate red and blue to pump up your balloon.', 'Pop your balloon as fast as you can.'];
   if (game === COIN_GAME) return ['Catch gold coins and avoid cracked purple coins', 'Red = left, green = middle, blue = right'];
   if (game === DODGE_GAME) return ['Move into gaps between walls. Red - Move left. Blue - Move right', 'Press green to jump over low hurdles'];
   if (game === DICE_GAME) return ['Pick the highest of the three shared dice', 'Red = left, green = middle, blue = right', '21 throws get faster; most correct wins'];

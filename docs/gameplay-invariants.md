@@ -218,7 +218,8 @@ The Happy Days cat-paw tutorial includes release events and keeps the paw down t
 
 Happy Days must render the same chart on the frozen round clock before GO and before a peer’s first snapshot, preserving negative countdown elapsed time instead of drawing time-zero placeholders.
 
-`shared/stationery.js` owns six seeded shared desks with 1–6 of each item and 8/7.4/6.8/6.2/5.6/5-second count windows.
+`shared/stationery.js` schedules four seeded shared desks with 1–6 of each item and 8/7.4/6.8/6.2-second count windows.
+The stage generator follows the room's published goal, including six-set rounds scheduled by older servers.
 Red/green/blue increment pencil/eraser/sharpener counters from zero through six, wrapping back to zero; all three exact counts earn one point at settlement.
 Validate monotonic bounded action proofs and acknowledge their revision so stale acknowledgements cannot discard newer counter updates; allow 500 ms transport grace and reveal targets only after settlement.
 `shared/clock.js` owns ten shared clock sets, targeting hours 1–10 with constant per-set revolutions decreasing from 1200 to 500 ms.
@@ -234,7 +235,8 @@ Use the supplied `stationery-master-voice.mp3` and `clock-stopper-voice.mp3` thr
 
 Every gameplay player column ends with the compact `src/player-footer.js` identity row using the chosen character and name; replace duplicate top labels to preserve vertical space, and keep empty-seat labels visible.
 Use gold and a visible You label to distinguish the local column in gameplay and Party selection.
-Stationery begins each set with a two-second GSAP throw sequence, seeking a paused timeline from shared elapsed time with 80 ms launches and 500 ms flights; counting opens only after all items land, retaining the 8-to-5-second answer windows.
+Stationery begins each set with a two-second GSAP throw sequence, seeking a paused timeline from shared elapsed time with 80 ms launches and 500 ms flights.
+Counting opens only after all items land.
 Reduced motion shows each landed item without flight, and round changes or navigation kill the old timeline; the tutorial uses the same renderer and input gates.
 
 `shared/ladder.js` owns ten seeded ladders with 3–6 rungs each, changing left/middle/right positions, a 100 ms step guard, 250 ms wrong-position recovery, and 180 ms ladder handoffs.

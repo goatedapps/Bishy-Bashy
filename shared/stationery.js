@@ -3,14 +3,15 @@ import { seededIndex } from './seeded-index.js';
 
 export const STATIONERY_GAME = 'stationery-master';
 export const STATIONERY_WINDOWS_MS = [8000, 7400, 6800, 6200, 5600, 5000];
-export const STATIONERY_GOAL = 6;
+export const STATIONERY_GOAL = 4;
 export const STATIONERY_MAX_COUNT = 6;
 export const STATIONERY_THROW_MS = 500;
 export const STATIONERY_THROW_STAGGER_MS = 80;
 export const STATIONERY_INTRO_MS = 2000;
 export const STATIONERY_GRACE_MS = 500;
 export const STATIONERY_REVEAL_MS = 900;
-export const STATIONERY_DURATION_MS = STATIONERY_WINDOWS_MS.reduce((sum, window) => sum + STATIONERY_INTRO_MS + window + STATIONERY_GRACE_MS + STATIONERY_REVEAL_MS, 0);
+export const STATIONERY_DURATION_MS = STATIONERY_WINDOWS_MS.slice(0, STATIONERY_GOAL)
+  .reduce((sum, window) => sum + STATIONERY_INTRO_MS + window + STATIONERY_GRACE_MS + STATIONERY_REVEAL_MS, 0);
 export const STATIONERY_NAMES = ['Pencil', 'Eraser', 'Sharpener'];
 
 export function stationeryStages(round) {
