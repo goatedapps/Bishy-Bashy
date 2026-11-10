@@ -92,3 +92,17 @@ Keep visible inflation tied to accepted presses and allow the final pop to displ
 - **Dragon Daycare** — Settle baby dragons before they set the nursery curtains on fire.
   Red feeds, green fans, and blue burps, with puffed cheeks and glowing nostrils showing when smoke builds up.
   Full, cool, comfortable dragons fall asleep, and the player who settles the most wins.
+- **Possum Parcel Panic** — Rearrange each row of three parcels to match its delivery slip.
+  Red swaps the left pair, blue swaps the right pair, and green ships the row.
+  Race through the slips using as few swaps as possible.
+- **Who Ate the Moon?** — Three creatures give statements about a missing bite of moon, and exactly one statement is true.
+  Read the clues and press red, green, or blue to accuse the corresponding suspect.
+  Solve the most cases to win.
+- **Pie, Parry, Panic!** — Duel a pastry chef across a kitchen counter.
+  Red throws a pie, green raises a tray to block, and blue fakes a throw to draw an early block.
+  A blocked pie leaves the thrower open to a counter, and the first chef to land three hits wins.
+- **Exact Change, Please!** — Pay a lunar vending machine exactly using red for one credit, green for four, and blue for six.
+  Use as few coins as possible for each price, and start the payment over if you go above it.
+- **One Bot Too Few** — A repair robot must hold a floor switch and reach a door across the room.
+  Red and blue move the robot, and green rewinds the room while leaving behind a copy that repeats the previous moves.
+  Use the copy to hold the switch while you race through the door.
