@@ -74,3 +74,7 @@ Keep visible inflation tied to accepted presses and allow the final pop to displ
   The exact fit seals the leak and advances to the next gap, while a wrong block bounces out and costs time.
   The fastest player to seal every gap wins.
   [Arcade reference at 11:10](https://www.youtube.com/watch?v=Qpjyn7jUpEA&t=670s)
+- **Sushi Switchboard** — Customers at a sushi counter order dishes made up of one or two named menu items.
+  Each menu item is listed in exactly one of the red, green, or blue buckets.
+  Look up each requested item and press the button for its bucket to fill that part of the order.
+  Serve two-item orders in either order, pressing the same button twice if both items are in the same bucket.
