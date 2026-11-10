@@ -69,3 +69,8 @@ Keep visible inflation tied to accepted presses and allow the final pop to displ
   Each button press shoots and shatters exactly one bottle of the matching color, releasing its weather back into the sky.
 - **Ant Air Mail** — Ant couriers deliver tiny letters by paper plane, and the camera pulls back over the colony as each new plane flies to a farther burrow.
   Route each progressively smaller plane by where its pointed nose faces, using red for left, green for down, and blue for right.
+- **Dam Good Fit** — A beaver crew races to repair a leaky dam by plugging a series of jagged gaps with wooden blocks.
+  Each gap has three candidate blocks, and pressing red, green, or blue drops the corresponding block into place.
+  The exact fit seals the leak and advances to the next gap, while a wrong block bounces out and costs time.
+  The fastest player to seal every gap wins.
+  [Arcade reference at 11:10](https://www.youtube.com/watch?v=Qpjyn7jUpEA&t=670s)
