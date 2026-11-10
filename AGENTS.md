@@ -63,9 +63,9 @@ Keep visible inflation tied to accepted presses and allow the final pop to displ
 
 ## Remaining planned games
 
-- **Pinch Perfect** — A stage magician catches falling wands between two fingertips.
-  Each wand falls horizontally, and players tap any button as it passes between the fingertips to pinch it in midair.
-- **Scrap Shot** — At a robot repair shop, a mechanic holds up her trays of faulty red, green, and blue fuses for blaster practice.
-  Each button press shoots exactly one fuse of the matching color, even when several of that color are on display.
-- **Signal Shrink** — A space telescope picks up a series of C-shaped signals that get smaller as their beacon recedes.
-  Players match the gap direction on each signal, using red for left, green for down, and blue for right.
+- **Satay Snag** — A night-market cook flips hot dogs off the grill, and they fall back down horizontally.
+  Tap any button when a hot dog lines up with the satay stick to jab it through one end and catch it midair.
+- **Bottled Weather** — A rooftop weather witch holds up trays of glass bottles packed with red lightning, green gusts, and blue rain.
+  Each button press shoots and shatters exactly one bottle of the matching color, releasing its weather back into the sky.
+- **Ant Air Mail** — Ant couriers deliver tiny letters by paper plane, and the camera pulls back over the colony as each new plane flies to a farther burrow.
+  Route each progressively smaller plane by where its pointed nose faces, using red for left, green for down, and blue for right.
