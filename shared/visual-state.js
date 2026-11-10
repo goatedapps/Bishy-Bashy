@@ -1,7 +1,11 @@
 import { STAR_GOAL, STAR_MAX_DEPTH } from './stars.js';
 import { createRun } from './games.js';
+import { ANT_GAME, SATAY_GAME, WEATHER_GAME } from './market-games.js';
 
 const SCHEMAS = {
+  [SATAY_GAME]: { index: 'index', launchedAt: 'time', blockedUntil: 'time' },
+  [WEATHER_GAME]: { index: 'index', bottleMask: 'bottles', blockedUntil: 'time' },
+  [ANT_GAME]: { blockedUntil: 'time' },
   'burst-the-balloon': {},
   'shark-jumper': { jumpAt: 'time', landAt: 'nullableTime', fallAt: 'time', blockedUntil: 'time' },
   'horse-speeder': { distance: 'horseDistance', speed: 'horseSpeed', position: 'column', moveFrom: 'horseLane', moveAt: 'time', index: 'index', lastThrust: 'time', stumbleUntil: 'time' },
@@ -75,6 +79,11 @@ export function sanitizeVisual(round, visual, receivedElapsed) {
     }
     if (type === 'rocketMask') {
       if (!number(value, 0, 31, true)) return null;
+      fields[key] = value;
+      continue;
+    }
+    if (type === 'bottles') {
+      if (!number(value, 0, 63, true) || fields.index >= round.goal) return null;
       fields[key] = value;
       continue;
     }

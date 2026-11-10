@@ -1,0 +1,76 @@
+.market-scene-satay-snag, .satay-snag-theme { --market-bg:var(--image-bg-satay-market,url('/assets/optimized/bg-satay-market-f89ed8d9aec1.webp')); }
+.market-scene-bottled-weather, .bottled-weather-theme { --market-bg:var(--image-bg-weather-rooftop,url('/assets/optimized/bg-weather-rooftop-8acbe4b0daa8.webp')); }
+.market-scene-ant-air-mail, .ant-air-mail-theme { --market-bg:var(--image-bg-ant-mail,url('/assets/optimized/bg-ant-mail-2784ae1a8159.webp')); }
+
+:is(.satay-snag-theme,.bottled-weather-theme,.ant-air-mail-theme) .arena {
+  background:#253052 var(--market-bg) center / cover no-repeat;
+}
+.market-stage, .market-scene { position:absolute; inset:0; overflow:hidden; }
+.market-stage { container-type:size; }
+.market-scene, .market-portrait { background:#253052 var(--market-bg) center / cover no-repeat; }
+.market-sprite { display:block; aspect-ratio:1; background-repeat:no-repeat; }
+.market-sausage, .market-skewer { background-image:var(--image-satay-sprites,url('/assets/optimized/satay-sprites-a2793b03a18f.webp')); background-size:200% 200%; }
+.market-sausage { background-position:0 0; }
+.market-skewer { background-position:100% 0; }
+.market-bottle-0, .market-bottle-1, .market-bottle-2, .market-witch {
+  background-image:var(--image-weather-sprites,url('/assets/optimized/weather-sprites-9d1877fb29a0.webp')); background-size:200% 200%;
+}
+.market-bottle-0 { background-position:0 0; }
+.market-bottle-1 { background-position:100% 0; }
+.market-bottle-2 { background-position:0 100%; }
+.market-witch { background-position:100% 100%; }
+.market-plane { background:var(--image-ant-plane,url('/assets/optimized/ant-plane-bfeff5c1669c.webp')) center / contain no-repeat; }
+
+.market-scene-satay-snag>.market-sprite { position:absolute; translate:-50% -50%; }
+.market-scene-satay-snag>.market-sausage { width:min(51cqw,240px); left:36%; }
+.market-scene-satay-snag>.market-skewer { width:min(40cqw,188px); left:80%; top:64%; }
+
+.weather-trays {
+  position:absolute; left:50%; bottom:4%; translate:-50% 0; aspect-ratio:1;
+  width:min(94cqw,58cqh,290px);
+}
+.weather-trays>.market-witch { position:absolute; inset:0; }
+.weather-trays>.market-sprite:not(.market-witch) {
+  position:absolute; left:var(--tray-x); bottom:calc(47% + var(--slot) * 23%);
+  width:31%; translate:-50% 0;
+}
+.weather-burst { position:absolute; bottom:calc(62% + var(--slot) * 23%); width:0; height:0; color:#ffe85a; }
+.weather-release-1 { color:#9cffb9; }
+.weather-release-2 { color:#85d8ff; }
+.weather-fragment {
+  position:absolute; width:clamp(4px,7cqw,17px); height:clamp(2px,3cqw,8px);
+  transform:rotate(var(--angle)) translateX(min(var(--burst-travel),72px));
+  background:currentColor; border-radius:5% 90% 25% 60%; box-shadow:0 0 8px currentColor;
+}
+.weather-fragment:nth-child(even) { color:#ffffed; }
+.weather-release-0 .weather-fragment { clip-path:polygon(32% 0,100% 0,64% 38%,100% 38%,0 100%,37% 51%,0 51%); }
+.weather-release-1 .weather-fragment { background:none; border-top:3px solid currentColor; border-radius:60%; }
+.weather-release-2 .weather-fragment { width:clamp(3px,4cqw,12px); height:clamp(5px,9cqw,18px); border-radius:15% 55% 55% 55%; }
+
+.ant-ground { position:absolute; inset:0; background:var(--market-bg) center / cover no-repeat; }
+.market-scene-ant-air-mail>.market-plane {
+  position:absolute; translate:-50% -50%;
+  width:calc(max(76px,min(70cqw,40cqh,180px)) * var(--plane-size,1));
+  filter:drop-shadow(0 2px 3px #071b27c9);
+}
+.market-response {
+  position:absolute; left:50%; top:21%; translate:-50% -50%; pointer-events:none;
+  font:clamp(20px,25cqw,65px)/1 'Lilita One',system-ui;
+  color:#fff279; text-shadow:0 2px 3px #19213a,0 0 5px #1d1930;
+}
+.market-response.market-wrong { color:#ff7b8e; }
+.market-demo .instruction-demo-scene { min-height:180px; }
+.market-demo .instruction-demo-instructions li { padding-block:6px; margin-block:4px; }
+:is(.satay-snag-theme,.bottled-weather-theme,.ant-air-mail-theme) .lane.finished .tower-zone::after { content:none; }
+:is(.satay-snag-theme,.bottled-weather-theme,.ant-air-mail-theme) .lane-finish-badge { top:6px; }
+.is-playing:is(.satay-snag-theme,.bottled-weather-theme,.ant-air-mail-theme) :is(.lane>.base,.seat-status:empty) { display:none; }
+
+.game-art:has(.market-portrait) { position:relative; }
+.market-portrait { display:block; position:absolute; inset:0; overflow:hidden; border-radius:inherit; }
+.market-portrait>.market-sprite { position:absolute; translate:-50% -50%; }
+.market-portrait>.market-sausage { top:50%; left:43%; width:70%; rotate:-15deg; }
+.market-portrait>.market-skewer { top:57%; left:66%; width:69%; rotate:-15deg; }
+.market-portrait>.market-witch { top:59%; left:50%; width:88%; }
+.market-portrait>.market-bottle-0 { top:41%; left:19%; width:35%; rotate:-12deg; }
+.market-portrait>.market-bottle-2 { top:39%; left:82%; width:35%; rotate:12deg; }
+.market-portrait>.market-plane { top:48%; left:52%; width:67%; rotate:35deg; }

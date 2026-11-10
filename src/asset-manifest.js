@@ -376,6 +376,36 @@ export const ASSETS = [
     "hash": "73e4aa7ae4815b29"
   },
   {
+    "path": "assets/optimized/satay-sprites-a2793b03a18f.webp",
+    "bytes": 41000,
+    "hash": "a2793b03a18fbf2c"
+  },
+  {
+    "path": "assets/optimized/weather-sprites-9d1877fb29a0.webp",
+    "bytes": 166284,
+    "hash": "9d1877fb29a07e0b"
+  },
+  {
+    "path": "assets/optimized/ant-plane-bfeff5c1669c.webp",
+    "bytes": 15000,
+    "hash": "bfeff5c1669c36d9"
+  },
+  {
+    "path": "assets/optimized/bg-satay-market-f89ed8d9aec1.webp",
+    "bytes": 76556,
+    "hash": "f89ed8d9aec12bc7"
+  },
+  {
+    "path": "assets/optimized/bg-weather-rooftop-8acbe4b0daa8.webp",
+    "bytes": 95110,
+    "hash": "8acbe4b0daa82b6c"
+  },
+  {
+    "path": "assets/optimized/bg-ant-mail-2784ae1a8159.webp",
+    "bytes": 135198,
+    "hash": "2784ae1a81592f1b"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",

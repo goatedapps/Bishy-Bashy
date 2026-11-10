@@ -22,6 +22,7 @@ import { FACING_GAME, FacingRun, FACING_GOAL, FACING_DURATION_MS, facingDuration
 import { LETTERS_GAME, LettersRun, LETTERS_DURATION_MS } from './letters.js';
 import { SESAME_GAME, SesameRun, SESAME_GOAL, SESAME_DURATION_MS } from './sesame.js';
 import { BALLOON_GAME, BalloonRun, BALLOON_GOAL, BALLOON_DURATION_MS } from './balloon.js';
+import { ANT_GAME, MARKET_GAMES, MARKET_SETTINGS, SATAY_GAME, WEATHER_GAME, createMarketRun, marketSettings } from './market-games.js';
 
 import { DYNAMITE_GAME, DynamiteRun, DYNAMITE_GOAL, DYNAMITE_DURATION_MS } from './dynamite.js';
 
@@ -56,10 +57,14 @@ export const GAMES = Object.assign(Object.create(null), {
   [LETTERS_GAME]: { id: LETTERS_GAME, title: 'Type in Letters', subtitle: 'Complete each word before time runs out', sharedArena: true, scoring: 'points', duration: LETTERS_DURATION_MS, goal: 0 },
   [DYNAMITE_GAME]: { id: DYNAMITE_GAME, title: 'Dynamite Spark', subtitle: 'Race the spark down the wire', duration: DYNAMITE_DURATION_MS, goal: DYNAMITE_GOAL },
   [MEALS_GAME]: { id: MEALS_GAME, title: 'Get Those Burgers Out!', subtitle: 'Fill every slot and serve eight meals', goal: MEALS_GOAL, duration: MEALS_DURATION_MS },
+  [SATAY_GAME]: { id: SATAY_GAME, title: 'Satay Snag', subtitle: 'Skewer falling hot dogs midair', ...MARKET_SETTINGS[SATAY_GAME] },
+  [WEATHER_GAME]: { id: WEATHER_GAME, title: 'Bottled Weather', subtitle: 'Free the weather one bottle at a time', ...MARKET_SETTINGS[WEATHER_GAME] },
+  [ANT_GAME]: { id: ANT_GAME, title: 'Ant Air Mail', subtitle: 'Route tiny paper planes to their burrows', ...MARKET_SETTINGS[ANT_GAME] },
 });
 
 export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') {
   const level = Math.max(1, Math.min(5, Math.trunc(difficulty) || 1));
+  if (MARKET_GAMES.includes(game)) return marketSettings(game, seed, level);
   if (game === WITCH_GAME) return { seed, difficulty: level, goal: WITCH_GOAL, duration: WITCH_DURATION_MS };
   if (game === SHARK_GAME) return { seed, difficulty: level, goal: SHARK_GOAL + (level - 1) * 10, duration: SHARK_DURATION_MS };
   if (game === HORSE_GAME) return { seed, difficulty: level, goal: HORSE_GOAL, duration: HORSE_DURATION_MS, spacing: 140 - (level - 1) * 10 };
@@ -108,6 +113,7 @@ export function createRun(round, localStart, timingOffset = 0) {
   if (round.game === LETTERS_GAME) return new LettersRun(round, localStart);
   if (round.game === SESAME_GAME) return new SesameRun(round, localStart);
   if (round.game === BALLOON_GAME) return new BalloonRun(round, localStart);
+  if (MARKET_GAMES.includes(round.game)) return createMarketRun(round, localStart);
   if (round.game === COIN_GAME) return new CoinRun(round, localStart);
   if (round.game === DODGE_GAME) return new DodgeRun(round, localStart);
   if (round.game === DICE_GAME) return new DiceRun(round, localStart);
@@ -124,6 +130,9 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game, round = {}) {
+  if (game === SATAY_GAME) return ['Watch the hot dog fall toward the skewer.', 'Tap any button when they line up. Catch eight as fast as you can.'];
+  if (game === WEATHER_GAME) return ['Match each bottle to its button. One press breaks one bottle.', 'Clear both trays to get a fresh set. Finish all six sets first.'];
+  if (game === ANT_GAME) return ['Look where the paper plane’s nose points.', 'Red sends it left, green down, and blue right. Route all twelve first.'];
   if (game === WITCH_GAME) return ['Alternate red and blue to run faster', 'Hold green anywhere before the edge to stop and aim', 'Release green to throw. Most frogs passed wins'];
   if (game === SHARK_GAME) return ['Press the button matching the next shark’s color', 'Land on each shark to turn it into safe grey stone', 'Wrong color? Climb back up and continue. Fastest wins'];
   if (game === HORSE_GAME) return ['Tap green to accelerate; stop tapping to slow down', 'Red moves left; blue moves right. Dodge slower horses', 'Reach the finish first; bumps knock down your speed'];

@@ -2,6 +2,8 @@ import { WITCH_GAME } from '../shared/witch.js';
 import { WitchArena } from './witch-view.js';
 import { BALLOON_GAME } from '../shared/balloon.js';
 import { BalloonStage } from './balloon-view.js';
+import { MARKET_GAMES } from '../shared/market-games.js';
+import { MarketStage } from './market-view.js';
 import { SHARK_GAME } from '../shared/shark.js';
 import { SharkStage } from './shark-view.js';
 import { HORSE_GAME } from '../shared/horse.js';
@@ -52,7 +54,7 @@ import { DynamiteStage, dynamitePortrait } from './dynamite-view.js';
 import { MEALS_GAME } from '../shared/meals.js';
 import { MealsStage, mealPortrait } from './meals-view.js';
 
-const STAGES = { [BALLOON_GAME]: 'balloon', [SHARK_GAME]: 'shark', [HORSE_GAME]: 'horse', [STAR_GAME]: 'stars', 'ladder-climber': 'ladder', [HAPPY_GAME]: 'happy', [MEALS_GAME]: 'meals', [DYNAMITE_GAME]: 'dynamite', [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake' };
+const STAGES = { ...Object.fromEntries(MARKET_GAMES.map(game => [game, 'market'])), [BALLOON_GAME]: 'balloon', [SHARK_GAME]: 'shark', [HORSE_GAME]: 'horse', [STAR_GAME]: 'stars', 'ladder-climber': 'ladder', [HAPPY_GAME]: 'happy', [MEALS_GAME]: 'meals', [DYNAMITE_GAME]: 'dynamite', [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake' };
 
 const SHAPES = ['●', '▲', '◆'];
 const $ = id => document.getElementById(id);
@@ -123,12 +125,13 @@ export class GameView {
       const happy = new HappyStage();
       const dynamite = new DynamiteStage();
       const balloon = new BalloonStage();
+      const market = new MarketStage();
       const meals = new MealsStage();
       const burger = new BurgerStage();
       const mistake = new MistakeStage();
       const coins = new CoinStage();
       const dodge = new DodgeStage();
-      zone.append(balloon.element, shark.element, horse.element, stars.element, ladder.element, happy.element, meals.element, dynamite.element, tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element, burger.element, mistake.element, coins.element, dodge.element);
+      zone.append(market.element, balloon.element, shark.element, horse.element, stars.element, ladder.element, happy.element, meals.element, dynamite.element, tower, avatar, slots.cabinet, fireworks.element, monkeys.element, jump.element, burger.element, mistake.element, coins.element, dodge.element);
       const effects = node('div', 'game-feedback');
       effects.setAttribute('aria-hidden', 'true');
       const ring = node('span', 'feedback-ring');
@@ -146,7 +149,7 @@ export class GameView {
       const footer = new PlayerFooter();
       lane.append(name, finishBadge, zone, node('div', 'base'), remaining, progress, status, stageResult, footer.element);
       $('player-lanes').append(lane);
-      return { balloon, shark, horse, stars, ladder, footer, happy, meals, dynamite, lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, coins, dodge, remaining, progress, fill, status, effects, ring, particles, towerKey: '' };
+      return { market, balloon, shark, horse, stars, ladder, footer, happy, meals, dynamite, lane, name, finishBadge, stageResult, tower, avatar, slots, fireworks, monkeys, jump, burger, mistake, coins, dodge, remaining, progress, fill, status, effects, ring, particles, towerKey: '' };
     });
     this.pips = Array.from({ length: 8 }, (_, index) => {
       const pip = node('span', 'beat-dot');
@@ -198,7 +201,8 @@ export class GameView {
       return;
     }
     const balloon = game === BALLOON_GAME;
-    const hideCounters = balloon || [FIREWORK_GAME, SHARK_GAME, HORSE_GAME, STAR_GAME, LADDER_GAME, HAPPY_GAME, 'totem-shrinker', PERM_GAME, DODGE_GAME, MONKEY_GAME, JUMP_GAME, MEALS_GAME, DYNAMITE_GAME].includes(game);
+    const market = MARKET_GAMES.includes(game);
+    const hideCounters = balloon || market || [FIREWORK_GAME, SHARK_GAME, HORSE_GAME, STAR_GAME, LADDER_GAME, HAPPY_GAME, 'totem-shrinker', PERM_GAME, DODGE_GAME, MONKEY_GAME, JUMP_GAME, MEALS_GAME, DYNAMITE_GAME].includes(game);
     const perm = game === PERM_GAME;
     const slots = game === SLOT_GAME;
     const fireworks = game === FIREWORK_GAME;
@@ -219,7 +223,7 @@ export class GameView {
       const shownRun = active ? this.projectPlayer(round, player, local, own)?.run : null;
       const cleared = ownRun ? ownRun.run.cleared : player?.progress?.cleared || 0;
       const status = player?.result || (ownRun?.done ? { status: ownRun.status, elapsed: ownRun.run.elapsed, cleared, score: ownRun.run.score || 0 } : null);
-      const frozen = shownRun && !shownRun.done && time < shownRun.blockedUntil;
+      const frozen = !market && shownRun && !shownRun.done && time < shownRun.blockedUntil;
       const stageFeedback = shownRun?.stageFeedback || ([DICE_GAME, MISTAKE_GAME].includes(game) && shownRun?.feedback ? { correct: shownRun.feedback.kind === 'hit', at: shownRun.feedback.at } : null);
       const stageAge = stageFeedback ? time - stageFeedback.at : Infinity;
       elements.stageResult.hidden = !active || !player || document.hidden || stageAge < 0 || stageAge >= (mistake ? 260 : game === MEALS_GAME ? 300 : 650);
@@ -227,11 +231,12 @@ export class GameView {
       elements.stageResult.setAttribute('aria-label', stageFeedback?.correct ? 'Correct set' : 'Wrong set');
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.finishBadge.hidden = !active || status?.status !== 'finished';
-      const finishLabel = balloon ? `${((status?.elapsed || 0) / 1000).toFixed(3)} s` : game === SHARK_GAME || game === HORSE_GAME || jump || game === DYNAMITE_GAME || game === MEALS_GAME ? `${((status?.elapsed || 0) / 1000).toFixed(2)} s\nCLEAR!` : game === STAR_GAME ? `${cleared} stars` : perm || mistake || game === HAPPY_GAME ? '✓ Finished' : '✓ Cleared!';
+      const finishLabel = balloon ? `${((status?.elapsed || 0) / 1000).toFixed(3)} s` : market || game === SHARK_GAME || game === HORSE_GAME || jump || game === DYNAMITE_GAME || game === MEALS_GAME ? `${((status?.elapsed || 0) / 1000).toFixed(2)} s\nCLEAR!` : game === STAR_GAME ? `${cleared} stars` : perm || mistake || game === HAPPY_GAME ? '✓ Finished' : '✓ Cleared!';
       if (elements.finishBadge.textContent !== finishLabel) elements.finishBadge.textContent = finishLabel;
       elements.finishBadge.setAttribute('aria-live', own ? 'off' : 'polite');
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';
-      elements.tower.hidden = balloon || game === SHARK_GAME || game === HORSE_GAME || game === STAR_GAME || game === LADDER_GAME || game === HAPPY_GAME || game === MEALS_GAME || game === DYNAMITE_GAME || perm || slots || fireworks || monkeys || jump || burger || mistake || dice || facing || game === COIN_GAME || game === DODGE_GAME;
+      elements.tower.hidden = balloon || market || game === SHARK_GAME || game === HORSE_GAME || game === STAR_GAME || game === LADDER_GAME || game === HAPPY_GAME || game === MEALS_GAME || game === DYNAMITE_GAME || perm || slots || fireworks || monkeys || jump || burger || mistake || dice || facing || game === COIN_GAME || game === DODGE_GAME;
+      elements.market.element.hidden = !active || !market;
       elements.balloon.element.hidden = !balloon;
       elements.avatar.hidden = !perm;
       elements.slots.cabinet.hidden = !slots;
@@ -282,7 +287,7 @@ export class GameView {
       }
       elements.fill.style.width = `${active && player ? (mistake ? shownRun?.index ?? player.progress?.visual?.fields.index ?? cleared : cleared) / round.goal * 100 : 0}%`;
       const score = ownRun?.run.score ?? player?.progress?.score ?? 0;
-      elements.status.textContent = !player ? 'Waiting to join' : !player.connected ? 'Reconnecting…' : active ? status ? (jump || balloon) && status.status === 'finished' ? '' : resultLabel(status, perm, false, game === STAR_GAME ? 'stars' : mistake) : frozen ? 'Oops!' : perm ? `${score.toLocaleString()} pts` : '' : player.ready ? '✓ Ready' : player.sync?.count >= 3 ? (player.id === room.hostId ? 'Host' : 'Not ready') : 'Syncing…';
+      elements.status.textContent = !player ? 'Waiting to join' : !player.connected ? 'Reconnecting…' : active ? status ? (jump || balloon || market) && status.status === 'finished' ? '' : resultLabel(status, perm, false, game === STAR_GAME ? 'stars' : mistake) : frozen ? 'Oops!' : perm ? `${score.toLocaleString()} pts` : '' : player.ready ? '✓ Ready' : player.sync?.count >= 3 ? (player.id === room.hostId ? 'Host' : 'Not ready') : 'Syncing…';
     });
     this.updateFeedback(room, local, time);
     const hasResults = round?.phase === 'results';
@@ -292,7 +297,7 @@ export class GameView {
   }
 
   updateFeedback(room, local, time) {
-    if (room?.round?.game === BALLOON_GAME || GAMES[room?.round?.game]?.sharedArena) { this.feedback.clear(); return; }
+    if (room?.round?.game === BALLOON_GAME || MARKET_GAMES.includes(room?.round?.game) || GAMES[room?.round?.game]?.sharedArena) { this.feedback.clear(); return; }
     const lane = room && this.lanes.find(elements => elements.lane.classList.contains('you'));
     this.feedback.update(room?.round, local, lane, time);
   }

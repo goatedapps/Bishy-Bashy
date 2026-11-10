@@ -1,6 +1,6 @@
 # Dokidoki Dash!
 
-A four-device party game with 26 registered minigames and Arcade, Game Select, and Party modes.
+A four-device party game with 29 registered minigames and Arcade, Game Select, and Party modes.
 See [README.md](README.md) for setup, hosting, source ownership, and asset maintenance.
 Before changing gameplay, tutorials, audio, layout, or multiplayer, read the relevant sections of [the detailed gameplay constraints](docs/gameplay-invariants.md).
 Use [the gameplay reference](docs/gameplay.md) for player behavior and game-specific tuning.
@@ -14,7 +14,7 @@ Use [the gameplay reference](docs/gameplay.md) for player behavior and game-spec
 - Write each full sentence on its own physical line when substantially editing Markdown.
 - Comment only on non-obvious intent, constraints, invariants, or tradeoffs.
 - Keep the static frontend independently deployable with a configurable secure WebSocket endpoint.
-- Deploy frontend and backend together for protocol changes; current protocol is 38.
+- Deploy frontend and backend together for protocol changes; current protocol is 39.
 - Keep a single server instance while rooms live in memory.
 
 ## Game and asset requirements
@@ -53,7 +53,7 @@ Each accepted alternating press increases speed using `0.2 × presses + 0.02 × 
 The 270-unit runway uses a minimum movement pace of 8 units per second after the first accepted press, with throw power still based on the quadratic speed.
 Calibrate a near-edge speed-120 throw at 45° to about 80 frogs and 2.4 seconds of flight.
 Keep tutorial gauges hidden before measured layout and show the live frogs-passed counter during flight.
-Protocol 38 requires `witch-turns`, `witch-instant-aim`, `witch-cumulative-speed`, and `witch-power-curve`; deploy both services together.
+The handshake requires `witch-turns`, `witch-instant-aim`, `witch-cumulative-speed`, and `witch-power-curve`.
 
 Open Sesame uses one seeded eight-digit code per round and ranks replay-validated completion times.
 Keep the rotary dial readable on phones and retain accepted digits after a wrong selection.
@@ -61,14 +61,11 @@ Keep the rotary dial readable on phones and retain accepted digits after a wrong
 Burst the Balloon counts 60 alternating red and blue presses and ranks replay-validated pop times.
 Keep visible inflation tied to accepted presses and allow the final pop to display before standings.
 
+Satay Snag, Bottled Weather, and Ant Air Mail share replay validation in `shared/market-games.js` and a real-scene tutorial renderer in `src/market-view.js`.
+Preserve the catch window, one-bottle-per-press rule, and shrinking plane silhouette across screen sizes.
+
 ## Remaining planned games
 
-- **Satay Snag** — A night-market cook flips hot dogs off the grill, and they fall back down horizontally.
-  Tap any button when a hot dog lines up with the satay stick to jab it through one end and catch it midair.
-- **Bottled Weather** — A rooftop weather witch holds up trays of glass bottles packed with red lightning, green gusts, and blue rain.
-  Each button press shoots and shatters exactly one bottle of the matching color, releasing its weather back into the sky.
-- **Ant Air Mail** — Ant couriers deliver tiny letters by paper plane, and the camera pulls back over the colony as each new plane flies to a farther burrow.
-  Route each progressively smaller plane by where its pointed nose faces, using red for left, green for down, and blue for right.
 - **Dam Good Fit** — A beaver crew races to repair a leaky dam by plugging a series of jagged gaps with wooden blocks.
   Each gap has three candidate blocks, and pressing red, green, or blue drops the corresponding block into place.
   The exact fit seals the leak and advances to the next gap, while a wrong block bounces out and costs time.

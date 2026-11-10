@@ -17,6 +17,8 @@ import { SESAME_GAME } from '../shared/sesame.js';
 import { dialCode } from './helpers/sesame.js';
 import { BALLOON_GAME, BALLOON_POP_MS } from '../shared/balloon.js';
 import { pumpBalloon } from './helpers/balloon.js';
+import { MARKET_FINISH_HOLD_MS, MARKET_GAMES } from '../shared/market-games.js';
+import { driveMarket } from './helpers/market-games.js';
 
 function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}) {
   let time = 1_000_000;
@@ -36,6 +38,16 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
   ready();
   const finish = (order = clients.map((_, index) => index), winner = 0) => {
     const round = room.round;
+    if (MARKET_GAMES.includes(round.game)) {
+      const runs = clients.map((_, index) => driveMarket(round, { delay: (index === winner ? 0 : index < winner ? index + 1 : index) * 25 }));
+      time = round.startAt + Math.max(...runs.map(run => run.elapsed)) + 100;
+      for (const index of order) {
+        const run = runs[index];
+        service.handle(clients[index], resultMessage(round, { id: round.id, run, goDelay: 0 }, 'finished', run.elapsed, run.elapsed));
+      }
+      time += MARKET_FINISH_HOLD_MS; service.tick();
+      return;
+    }
     if ([SESAME_GAME, BALLOON_GAME].includes(round.game)) {
       const drive = round.game === BALLOON_GAME ? pumpBalloon : dialCode;
       const runs = clients.map((_, index) => drive(createRun(round, 0), index === winner ? 100 : 300 + index * 150));

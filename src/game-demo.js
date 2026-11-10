@@ -1,6 +1,8 @@
 import { WitchDemo } from './witch-demo.js';
 import { SesameDemo } from './sesame-demo.js';
 import { BalloonDemo } from './balloon-demo.js';
+import { MarketDemo } from './market-demo.js';
+import { MARKET_GAMES } from '../shared/market-games.js';
 import { TotemDemo } from './totem-demo.js';
 import { PermDemo } from './perm-demo.js';
 import { SlotsDemo } from './slots-demo.js';
@@ -9,6 +11,7 @@ import { MonkeysDemo } from './monkeys-demo.js';
 import { RemainingDemo, REMAINING_DEMO_GAMES } from './remaining-demos.js';
 
 export function createGameDemo(game, options) {
+  if (MARKET_GAMES.includes(game)) return new MarketDemo(game, options);
   if (game === 'burst-the-balloon') return new BalloonDemo(options);
   if (game === 'open-sesame') return new SesameDemo(options);
   if (game === 'witch-delivery') return new WitchDemo(options);

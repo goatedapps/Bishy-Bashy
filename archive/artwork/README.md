@@ -1,6 +1,6 @@
 # Original artwork archive
 
-This folder retains the 74 original PNG masters and their generation prompts/provenance.
+This folder retains the original PNG masters and their generation prompts.
 It is outside Vite's `public/` directory and is not copied into the published website.
 Historical source sheets and earlier versions are intentionally retained alongside current masters.
 

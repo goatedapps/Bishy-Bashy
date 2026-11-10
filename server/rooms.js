@@ -15,6 +15,8 @@ import { SLOT_GAME, validReelMask } from '../shared/slots.js';
 import { LETTERS_GAME, LettersMatch, LETTERS_PACKET_MS } from '../shared/letters.js';
 import { SESAME_GAME, validSesameResult } from '../shared/sesame.js';
 import { BALLOON_GAME, BALLOON_POP_MS, validBalloonResult } from '../shared/balloon.js';
+import { MARKET_FINISH_HOLD_MS, MARKET_GAMES, validMarketResult } from '../shared/market-games.js';
+import { PROTOCOL_VERSION } from '../shared/protocol.js';
 import { isSharedChoice } from '../shared/choice-round.js';
 import { MISTAKE_GAME } from '../shared/mistake.js';
 import { MODES, INTERMISSION_MS, WHEEL_SPIN_MS, REEL_HOLD_MS, GAME_ANNOUNCEMENT_MS, PARTY_PICK_MS, PARTY_LOCK_HOLD_MS, arcadeLength, createSetPlan, awardRound } from '../shared/sets.js';
@@ -88,7 +90,7 @@ export class RoomService {
     if (!returning && room.set) room.set.players.push({ id: player.id, name: player.name, characterId: player.characterId, points: 0, wins: 0 });
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: 38, capabilities: [BALLOON_GAME, SESAME_GAME, 'witch-power-curve', 'witch-cumulative-speed', 'witch-instant-aim', 'witch-turns', 'shark-jumper', 'horse-speeder', 'star-collector', 'desk-clock', 'happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: PROTOCOL_VERSION, capabilities: [...MARKET_GAMES, BALLOON_GAME, SESAME_GAME, 'witch-power-curve', 'witch-cumulative-speed', 'witch-instant-aim', 'witch-turns', 'shark-jumper', 'horse-speeder', 'star-collector', 'desk-clock', 'happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -468,6 +470,7 @@ export class RoomService {
     if (round.game === PERM_GAME && (!Number.isInteger(message.score) || message.score < 0 || message.score > round.maxScore)) return;
     if (round.game === SLOT_GAME && (!validReelMask(message.reelMask, cleared) || (message.reelMask & player.progress.reelMask) !== player.progress.reelMask)) return;
     const visual = sanitizeVisual(round, message.visual, received - round.startAt);
+    if (MARKET_GAMES.includes(round.game) && (cleared === round.goal || visual?.done)) return;
     if (visual && visual.sample < (player.progress.visual?.sample ?? -1)) return;
     player.progress = { cleared, mistakes, ...(visual ? { visual } : player.progress.visual ? { visual: player.progress.visual } : {}), ...(round.game === SLOT_GAME ? { reelMask: message.reelMask } : {}), ...([PERM_GAME, HAPPY_GAME].includes(round.game) ? { score: message.score } : {}) };
     player.lastProgressAt = received;
@@ -499,6 +502,7 @@ export class RoomService {
     if (round.game === SHARK_GAME && message.status === 'finished' && !validSharkResult(round, message)) return this.error(client, 'Complete the shark path and report a valid jump history.');
     if (round.game === SESAME_GAME && message.status === 'finished' && !validSesameResult(round, message)) return this.error(client, 'Complete the code and report a valid dial history.');
     if (round.game === BALLOON_GAME && message.status === 'finished' && (message.mistakes !== 0 || !validBalloonResult(round, message))) return this.error(client, 'Pop the balloon and report a valid pump history.');
+    if (MARKET_GAMES.includes(round.game) && message.status === 'finished' && !validMarketResult(round, message)) return this.error(client, 'Complete the race and report a valid input history.');
     if (round.game === HORSE_GAME && message.status === 'finished' && !validHorseResult(round, message)) return this.error(client, 'Complete the race and report a valid driving history.');
     if (round.game === STAR_GAME && message.status === 'finished' && (received < round.endAt - 250 || message.cleared < player.progress.cleared || !validStarResult(round, message))) return this.error(client, 'Finish the 45-second round and report the collected stars.');
     if (round.game === HAPPY_GAME && message.status === 'finished' && (received < round.endAt - 250 || message.elapsed !== round.duration || message.cleared < player.progress.cleared || message.mistakes < player.progress.mistakes || !validHappyScore(round, message, true))) return this.error(client, 'Wait for the music to finish and report the judged notes and accuracy score.');
@@ -528,7 +532,10 @@ export class RoomService {
     if ([PERM_GAME, HAPPY_GAME].includes(round.game) && message.status === 'finished') player.progress = { cleared, mistakes: message.mistakes, score: message.score };
     const visual = sanitizeVisual(round, message.visual, received - round.startAt);
     if (visual && visual.sample >= (player.progress.visual?.sample ?? -1)) player.progress = { ...player.progress, cleared, mistakes: player.result.mistakes ?? player.progress.mistakes, visual };
-    if (round.game === BALLOON_GAME && message.status === 'finished') round.balloonRevealUntil = received + BALLOON_POP_MS;
+    if (message.status === 'finished') {
+      if (round.game === BALLOON_GAME) round.finishRevealUntil = received + BALLOON_POP_MS;
+      if (MARKET_GAMES.includes(round.game)) round.finishRevealUntil = received + MARKET_FINISH_HOLD_MS;
+    }
     this.send(client, { type: 'result-ack', roundId: round.id, status: player.result.status });
     this.finishIfComplete(room);
     this.broadcast(room);
@@ -536,7 +543,7 @@ export class RoomService {
 
   finishIfComplete(room) {
     const round = room.round;
-    if (!round || round.game === WITCH_GAME || this.now() < (round.balloonRevealUntil ?? 0)) return false;
+    if (!round || round.game === WITCH_GAME || this.now() < (round.finishRevealUntil ?? 0)) return false;
     if (round.playerIds.every(id => !room.players.some(p => p.id === id) || terminal(room.players.find(p => p.id === id)))) {
       round.phase = 'results';
       this.settleRound(room);
@@ -600,14 +607,14 @@ export class RoomService {
       if (round.phase === 'instructions') { if (this.tryBeginPrepared(room)) this.broadcast(room); continue; }
       if (round.phase === 'results') { if (this.advanceSet(room)) this.broadcast(room); continue; }
       if (round.game === WITCH_GAME) { if (this.advanceWitch(room, now)) this.broadcast(room); continue; }
-      if (round.game === BALLOON_GAME && round.balloonRevealUntil && this.finishIfComplete(room)) { this.broadcast(room); continue; }
+      if (round.finishRevealUntil && this.finishIfComplete(room)) { this.broadcast(room); continue; }
       let changed = false;
       if (round.game === LETTERS_GAME) changed = this.advanceLetters(room, now);
       if (isSharedChoice(round.game)) changed = this.advanceChoices(room, now);
       if (round.phase === 'results') { this.broadcast(room); continue; }
       if (now >= round.startAt && round.phase === 'countdown') { round.phase = 'running'; changed = true; }
       if (now >= round.endAt && round.phase === 'running') { round.phase = 'collecting'; changed = true; }
-      if (now >= Math.max(round.expiresAt, round.balloonRevealUntil ?? 0)) {
+      if (now >= Math.max(round.expiresAt, round.finishRevealUntil ?? 0)) {
         room.players.forEach(player => { if (round.playerIds.includes(player.id) && !player.result) player.result = { status: 'missing', elapsed: null, reason: 'No result received before the deadline' }; });
         round.phase = 'results';
         this.settleRound(room);
