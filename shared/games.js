@@ -22,7 +22,7 @@ import { FACING_GAME, FacingRun, FACING_GOAL, FACING_DURATION_MS, facingDuration
 import { LETTERS_GAME, LettersRun, LETTERS_DURATION_MS } from './letters.js';
 import { SESAME_GAME, SesameRun, SESAME_GOAL, SESAME_DURATION_MS } from './sesame.js';
 import { BALLOON_GAME, BalloonRun, BALLOON_GOAL, BALLOON_DURATION_MS } from './balloon.js';
-import { ANT_GAME, MARKET_GAMES, MARKET_SETTINGS, SATAY_GAME, WEATHER_GAME, createMarketRun, marketSettings } from './market-games.js';
+import { ANT_GAME, MARKET_GAMES, MARKET_SETTINGS, SATAY_GAME, POTION_GAME, createMarketRun, marketSettings } from './market-games.js';
 
 import { DYNAMITE_GAME, DynamiteRun, DYNAMITE_GOAL, DYNAMITE_DURATION_MS } from './dynamite.js';
 
@@ -58,8 +58,8 @@ export const GAMES = Object.assign(Object.create(null), {
   [DYNAMITE_GAME]: { id: DYNAMITE_GAME, title: 'Dynamite Spark', subtitle: 'Race the spark down the wire', duration: DYNAMITE_DURATION_MS, goal: DYNAMITE_GOAL },
   [MEALS_GAME]: { id: MEALS_GAME, title: 'Get Those Burgers Out!', subtitle: 'Fill every slot and serve eight meals', goal: MEALS_GOAL, duration: MEALS_DURATION_MS },
   [SATAY_GAME]: { id: SATAY_GAME, title: 'Satay Snag', subtitle: 'Skewer falling hot dogs midair', ...MARKET_SETTINGS[SATAY_GAME] },
-  [WEATHER_GAME]: { id: WEATHER_GAME, title: 'Bottled Weather', subtitle: 'Free the weather one bottle at a time', ...MARKET_SETTINGS[WEATHER_GAME] },
-  [ANT_GAME]: { id: ANT_GAME, title: 'Ant Air Mail', subtitle: 'Route tiny paper planes to their burrows', ...MARKET_SETTINGS[ANT_GAME] },
+  [POTION_GAME]: { id: POTION_GAME, title: 'Glamour Brew', subtitle: 'Brew a makeover one potion at a time', ...MARKET_SETTINGS[POTION_GAME] },
+  [ANT_GAME]: { id: ANT_GAME, title: 'Ant Air Mail', subtitle: 'Guide a paper plane across the colony', ...MARKET_SETTINGS[ANT_GAME] },
 });
 
 export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') {
@@ -130,9 +130,9 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game, round = {}) {
-  if (game === SATAY_GAME) return ['Watch the hot dog fall toward the skewer.', 'Tap any button when they line up. Catch eight as fast as you can.'];
-  if (game === WEATHER_GAME) return ['Match each bottle to its button. One press breaks one bottle.', 'Clear both trays to get a fresh set. Finish all six sets first.'];
-  if (game === ANT_GAME) return ['Look where the paper plane’s nose points.', 'Red sends it left, green down, and blue right. Route all twelve first.'];
+  if (game === SATAY_GAME) return ['Watch the hot dog fall toward the skewer.', 'Tap any button right as they line up. Catch ten as fast as you can.'];
+  if (game === POTION_GAME) return ['Match each potion to its button. One press breaks one bottle.', 'Clear both trays to change the witch. Complete ten sets for her final look.'];
+  if (game === ANT_GAME) return ['Follow one paper plane as it climbs over the colony.', 'At each waypoint, match its nose. Red is left, green down, and blue right.'];
   if (game === WITCH_GAME) return ['Alternate red and blue to run faster', 'Hold green anywhere before the edge to stop and aim', 'Release green to throw. Most frogs passed wins'];
   if (game === SHARK_GAME) return ['Press the button matching the next shark’s color', 'Land on each shark to turn it into safe grey stone', 'Wrong color? Climb back up and continue. Fastest wins'];
   if (game === HORSE_GAME) return ['Tap green to accelerate; stop tapping to slow down', 'Red moves left; blue moves right. Dodge slower horses', 'Reach the finish first; bumps knock down your speed'];

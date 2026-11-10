@@ -1,40 +1,40 @@
 import { seededIndex } from './seeded-index.js';
 
 export const SATAY_GAME = 'satay-snag';
-export const WEATHER_GAME = 'bottled-weather';
+export const POTION_GAME = 'glamour-brew';
 export const ANT_GAME = 'ant-air-mail';
-export const MARKET_GAMES = Object.freeze([SATAY_GAME, WEATHER_GAME, ANT_GAME]);
+export const MARKET_GAMES = Object.freeze([SATAY_GAME, POTION_GAME, ANT_GAME]);
 export const MARKET_FINISH_HOLD_MS = 550;
 export const MARKET_SETTINGS = Object.freeze({
-  [SATAY_GAME]: { goal: 8, duration: 30_000 },
-  [WEATHER_GAME]: { goal: 6, duration: 30_000 },
+  [SATAY_GAME]: { goal: 10, duration: 30_000 },
+  [POTION_GAME]: { goal: 10, duration: 30_000 },
   [ANT_GAME]: { goal: 12, duration: 25_000 },
 });
 export const MARKET_CONTROLS = Object.freeze({
   [SATAY_GAME]: ['Skewer', 'Skewer', 'Skewer'],
-  [WEATHER_GAME]: ['Lightning', 'Wind', 'Rain'],
+  [POTION_GAME]: ['Heart', 'Herb', 'Moon'],
   [ANT_GAME]: ['Left', 'Down', 'Right'],
 });
 
 const INPUT_GAP_US = 75_000;
 const FIRST_DROP_MS = 350;
 const NEXT_DROP_MS = 340;
-export const WEATHER_REFILL_MS = 340;
-export const ANT_ROUTE_MS = 240;
+export const POTION_REFILL_MS = 440;
+export const ANT_LEG_MS = 480;
 const MISTAKE_MS = 420;
 const COLORS = [0, 1, 2];
 
 export function marketSettings(game, seed, difficulty) {
   return { seed, difficulty, ...MARKET_SETTINGS[game],
-    ...(game === SATAY_GAME ? { catchWindow: 128 - 12 * (difficulty - 1) } : {}) };
+    ...(game === SATAY_GAME ? { catchWindow: 76 - 11 * (difficulty - 1) } : {}) };
 }
 
 export function satayDropMs(round, index) {
   const pick = seededIndex((round.seed + Math.imul(index, 0x9e3779b9)) >>> 0);
-  return 900 + pick(241) - (round.difficulty - 1) * 38;
+  return 690 + pick(181) - (round.difficulty - 1) * 32;
 }
 
-export function weatherWaves(round) {
+export function potionWaves(round) {
   const pick = seededIndex(round.seed);
   return Array.from({ length: round.goal }, (_, index) => {
     const left = pick(3);
@@ -46,14 +46,26 @@ export function weatherWaves(round) {
   });
 }
 
-export function antDirections(round) {
+export const ANT_STEPS = [[-1, 0], [0, 1], [1, 0]];
+
+export function antCourse(round) {
   const pick = seededIndex(round.seed);
   const directions = [];
+  const waypoints = [[0, 0]];
   for (let index = 0; index < round.goal; index++) {
     const last = directions.at(-1);
-    directions.push(index > 1 && last === directions.at(-2) ? (last + 1 + pick(2)) % 3 : pick(3));
+    const [x, y] = waypoints.at(-1);
+    const options = COLORS.filter(color => {
+      if (index > 1 && color === last && color === directions.at(-2)) return false;
+      if (last !== 1 && last !== undefined && color === 2 - last) return false;
+      return Math.abs(x + ANT_STEPS[color][0]) <= 2;
+    });
+    const color = options[pick(options.length)];
+    const [dx, dy] = ANT_STEPS[color];
+    directions.push(color);
+    waypoints.push([x + dx, y + dy]);
   }
-  return directions;
+  return { directions, waypoints };
 }
 
 class MarketRun {
@@ -137,10 +149,10 @@ export class SatayRun extends MarketRun {
   }
 }
 
-export class WeatherRun extends MarketRun {
+export class PotionRun extends MarketRun {
   constructor(round, start) {
     super(round, start);
-    this.sequence = weatherWaves(round);
+    this.sequence = potionWaves(round);
     this.index = 0;
     this.bottleMask = this.sequence[0].mask;
     this.blockedUntil = start + 450;
@@ -162,9 +174,9 @@ export class WeatherRun extends MarketRun {
     }
     this.bottleMask ^= 1 << (31 - Math.clz32(stack));
     this.feedback = { kind: 'burst', at: time, color };
-    this.events.push({ type: 'weatherBurst', at: time, preserveTail: this.cleared + 1 === this.round.goal && this.bottleMask === 0 });
+    this.events.push({ type: 'potionBurst', at: time, preserveTail: this.cleared + 1 === this.round.goal && this.bottleMask === 0 });
     if (this.bottleMask !== 0) return 'move';
-    this.blockedUntil = time + WEATHER_REFILL_MS;
+    this.blockedUntil = time + POTION_REFILL_MS;
     return 'clear';
   }
 }
@@ -172,20 +184,22 @@ export class WeatherRun extends MarketRun {
 export class AntRun extends MarketRun {
   constructor(round, start) {
     super(round, start);
-    this.sequence = antDirections(round);
+    const { directions, waypoints } = antCourse(round);
+    this.sequence = directions;
+    this.waypoints = waypoints;
     this.blockedUntil = start + 450;
   }
 
   resolve(color, time) {
     const correct = color === this.sequence[this.cleared];
-    this.blockedUntil = time + (correct ? ANT_ROUTE_MS : MISTAKE_MS);
+    this.blockedUntil = time + (correct ? ANT_LEG_MS : MISTAKE_MS);
     if (!correct) return this.miss(time, color);
     this.feedback = { kind: 'clear', at: time, color };
     return 'clear';
   }
 }
 
-const RUNS = { [SATAY_GAME]: SatayRun, [WEATHER_GAME]: WeatherRun, [ANT_GAME]: AntRun };
+const RUNS = { [SATAY_GAME]: SatayRun, [POTION_GAME]: PotionRun, [ANT_GAME]: AntRun };
 
 export function createMarketRun(round, start) {
   return new RUNS[round.game](round, start);

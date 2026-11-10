@@ -1,10 +1,10 @@
 import { STAR_GOAL, STAR_MAX_DEPTH } from './stars.js';
 import { createRun } from './games.js';
-import { ANT_GAME, SATAY_GAME, WEATHER_GAME } from './market-games.js';
+import { ANT_GAME, SATAY_GAME, POTION_GAME } from './market-games.js';
 
 const SCHEMAS = {
   [SATAY_GAME]: { index: 'index', launchedAt: 'time', blockedUntil: 'time' },
-  [WEATHER_GAME]: { index: 'index', bottleMask: 'bottles', blockedUntil: 'time' },
+  [POTION_GAME]: { index: 'index', bottleMask: 'bottles', blockedUntil: 'time' },
   [ANT_GAME]: { blockedUntil: 'time' },
   'burst-the-balloon': {},
   'shark-jumper': { jumpAt: 'time', landAt: 'nullableTime', fallAt: 'time', blockedUntil: 'time' },

@@ -1,7 +1,8 @@
 # Satay Snag, Bottled Weather, and Ant Air Mail artwork
 
 The built-in ImageGen tool generated the six retained PNG masters.
-Regenerate their runtime WebPs with `python scripts/optimize-images.py satay-sprites weather-sprites ant-plane bg-satay-market bg-weather-rooftop bg-ant-mail`.
+Regenerate the Satay Snag and Ant Air Mail WebPs with `python scripts/optimize-images.py satay-sprites ant-plane bg-satay-market bg-ant-mail`.
+The Bottled Weather masters are historical because [Glamour Brew](glamour-brew-artwork.md) replaced that game.
 
 ## bg-satay-market.png
 

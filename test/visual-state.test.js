@@ -95,7 +95,7 @@ test('played states reconstruct feedback and active phases for every lane-based 
     else if(game==='dynamite-spark')run.tap(run.sequence[0],time);
     else if(game==='burst-the-balloon')run.tap(0,time);
     else if(game==='satay-snag'){time=run.catchAt;run.tap(0,time);}
-    else if(game==='bottled-weather'){time=run.blockedUntil;run.tap(run.sequence[0].colors[0],time);}
+    else if(game==='glamour-brew'){time=run.blockedUntil;run.tap(run.sequence[0].colors[0],time);}
     else if(game==='ant-air-mail'){time=run.blockedUntil;run.tap(run.sequence[0],time);}
     else if(game==='totem-shrinker')run.tap(run.sequence[0],time);
     else if(game==='perm-mania'){time=run.start+run.notes[0].at;run.tap(0,time);}

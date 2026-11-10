@@ -1,11 +1,11 @@
 import { GAMES, gameRules, roundSettings } from '../shared/games.js';
-import { ANT_GAME, MARKET_CONTROLS, SATAY_GAME, WEATHER_GAME, createMarketRun } from '../shared/market-games.js';
+import { ANT_GAME, MARKET_CONTROLS, SATAY_GAME, POTION_GAME, createMarketRun } from '../shared/market-games.js';
 import { MarketStage } from './market-view.js';
 import { ScriptedDemo } from './scripted-demo.js';
 
 function demoPlan(game, round) {
   const difficulty = round?.difficulty ?? 1;
-  const settings = { ...roundSettings(game, 5, difficulty), game, goal: game === WEATHER_GAME ? 2 : 3 };
+  const settings = { ...roundSettings(game, 5, difficulty), game, goal: game === POTION_GAME ? 2 : 3 };
   const start = 550;
   const run = createMarketRun(settings, start);
   const presses = [];
@@ -23,7 +23,7 @@ function demoPlan(game, round) {
       run.advance(run.nextAt ?? start);
       press(index, run.catchAt);
     }
-  } else if (game === WEATHER_GAME) {
+  } else if (game === POTION_GAME) {
     let at = start + 700;
     for (let wave = 0; wave < settings.goal; wave++) {
       run.advance(at);

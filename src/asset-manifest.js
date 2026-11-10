@@ -381,11 +381,6 @@ export const ASSETS = [
     "hash": "a2793b03a18fbf2c"
   },
   {
-    "path": "assets/optimized/weather-sprites-9d1877fb29a0.webp",
-    "bytes": 166284,
-    "hash": "9d1877fb29a07e0b"
-  },
-  {
     "path": "assets/optimized/ant-plane-bfeff5c1669c.webp",
     "bytes": 15000,
     "hash": "bfeff5c1669c36d9"
@@ -396,14 +391,24 @@ export const ASSETS = [
     "hash": "f89ed8d9aec12bc7"
   },
   {
-    "path": "assets/optimized/bg-weather-rooftop-8acbe4b0daa8.webp",
-    "bytes": 95110,
-    "hash": "8acbe4b0daa82b6c"
-  },
-  {
     "path": "assets/optimized/bg-ant-mail-2784ae1a8159.webp",
     "bytes": 135198,
     "hash": "2784ae1a81592f1b"
+  },
+  {
+    "path": "assets/optimized/glamour-stages-495837bc36c5.webp",
+    "bytes": 334198,
+    "hash": "495837bc36c5710a"
+  },
+  {
+    "path": "assets/optimized/glamour-props-c57f41ddf94a.webp",
+    "bytes": 89444,
+    "hash": "c57f41ddf94aa2e3"
+  },
+  {
+    "path": "assets/optimized/bg-glamour-apothecary-69ef8bd80f13.webp",
+    "bytes": 57406,
+    "hash": "69ef8bd80f13207f"
   },
   {
     "path": "audio/hit-red.wav",

@@ -14,7 +14,7 @@ Use [the gameplay reference](docs/gameplay.md) for player behavior and game-spec
 - Write each full sentence on its own physical line when substantially editing Markdown.
 - Comment only on non-obvious intent, constraints, invariants, or tradeoffs.
 - Keep the static frontend independently deployable with a configurable secure WebSocket endpoint.
-- Deploy frontend and backend together for protocol changes; current protocol is 39.
+- Deploy frontend and backend together for protocol changes; current protocol is 40.
 - Keep a single server instance while rooms live in memory.
 
 ## Game and asset requirements
@@ -61,8 +61,8 @@ Keep the rotary dial readable on phones and retain accepted digits after a wrong
 Burst the Balloon counts 60 alternating red and blue presses and ranks replay-validated pop times.
 Keep visible inflation tied to accepted presses and allow the final pop to display before standings.
 
-Satay Snag, Bottled Weather, and Ant Air Mail share replay validation in `shared/market-games.js` and a real-scene tutorial renderer in `src/market-view.js`.
-Preserve the catch window, one-bottle-per-press rule, and shrinking plane silhouette across screen sizes.
+Satay Snag, Glamour Brew, and Ant Air Mail share replay validation in `shared/market-games.js` and a real-scene tutorial renderer in `src/market-view.js`.
+Keep Satay at ten tighter catches, advance Glamour Brew's illustrated look once per cleared set, and keep Ant Air Mail's courier continuous between waypoints.
 
 ## Remaining planned games
 
