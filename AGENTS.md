@@ -78,3 +78,17 @@ Keep visible inflation tied to accepted presses and allow the final pop to displ
   Each menu item is listed in exactly one of the red, green, or blue buckets.
   Look up each requested item and press the button for its bucket to fill that part of the order.
   Serve two-item orders in either order, pressing the same button twice if both items are in the same bucket.
+- **Mole Metro** — Each button toggles one of three track switches in an underground railway.
+  Route moving trains to their pictured stations without collisions, and deliver the most passengers to win.
+- **Goblin Garage Sale** — Bid on odd treasures using red for one coin, green for two, or blue for three.
+  Bids reveal together, everyone pays their bid, and the highest bidder wins the item unless the top bid is tied, in which case the goblin keeps it.
+  Build the most valuable haul from a limited purse.
+- **Ghost Lens** — Photograph shy ghosts in a haunted hotel.
+  Red rings a bell to lure them out, blue ducks behind the reception desk, and green snaps a photo.
+  Rare poses score more, but a ghost vanishes if it catches you watching.
+- **Crab Crane** — Fish cargo out of a rocking harbor with a swinging claw.
+  Red reels the claw in, blue lowers it, and green toggles the grip.
+  Lift crates out of the water and release them over the dock to land the most cargo.
+- **Dragon Daycare** — Settle baby dragons before they set the nursery curtains on fire.
+  Red feeds, green fans, and blue burps, with puffed cheeks and glowing nostrils showing when smoke builds up.
+  Full, cool, comfortable dragons fall asleep, and the player who settles the most wins.
