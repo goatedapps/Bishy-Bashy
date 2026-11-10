@@ -63,4 +63,9 @@ Keep visible inflation tied to accepted presses and allow the final pop to displ
 
 ## Remaining planned games
 
-- Wonder Oven — stop three matching food symbols.
+- **Pinch Perfect** — A stage magician catches falling wands between two fingertips.
+  Each wand falls horizontally, and players tap any button as it passes between the fingertips to pinch it in midair.
+- **Scrap Shot** — At a robot repair shop, a mechanic holds up her trays of faulty red, green, and blue fuses for blaster practice.
+  Each button press shoots exactly one fuse of the matching color, even when several of that color are on display.
+- **Signal Shrink** — A space telescope picks up a series of C-shaped signals that get smaller as their beacon recedes.
+  Players match the gap direction on each signal, using red for left, green for down, and blue for right.
