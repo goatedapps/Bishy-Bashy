@@ -48,7 +48,7 @@ import { LETTERS_GAME } from '../shared/letters.js';
 import { SESAME_GAME } from '../shared/sesame.js';
 import { BALLOON_GAME } from '../shared/balloon.js';
 import { MARKET_CONTROLS, MARKET_GAMES, POTION_GAME } from '../shared/market-games.js';
-import { METRO_GAME, WORKSHOP_CONTROLS, WORKSHOP_GAMES } from '../shared/workshop-games.js';
+import { DAM_GAME, METRO_GAME, WORKSHOP_CONTROLS, WORKSHOP_GAMES, WORKSHOP_LANES } from '../shared/workshop-games.js';
 import './workshop-games.css';
 import { PROTOCOL_VERSION } from '../shared/protocol.js';
 import './market-games.css';
@@ -56,7 +56,7 @@ import './balloon.css';
 import './sesame.css';
 import './letters.css';
 import './shared-choice.css';
-import { isSharedChoice } from '../shared/choice-round.js';
+import { CHOICE_GRACE_MS, isSharedChoice } from '../shared/choice-round.js';
 import { GAMES, createRun, roundSettings, isRoundActive, gameRules } from '../shared/games.js';
 import { MODES, arcadeLength } from '../shared/sets.js';
 import { GameView } from './game-view.js';
@@ -77,8 +77,10 @@ const readStored = key => { try { return JSON.parse(sessionStorage.getItem(key))
 const params = new URLSearchParams(location.search);
 const inviteOnly = /^[A-Z2-9]{6}$/i.test(params.get('room') || '');
 const session = readStored('bb-session');
-const REPLAY_LANES = [...MARKET_GAMES, ...WORKSHOP_GAMES];
-const REPLAY_CONTROLS = { ...MARKET_CONTROLS, ...WORKSHOP_CONTROLS };
+const REPLAY_LANES = [...MARKET_GAMES, ...WORKSHOP_LANES];
+const THEMED_LANES = [...MARKET_GAMES, ...WORKSHOP_GAMES];
+const GAME_CONTROLS = { ...MARKET_CONTROLS, ...WORKSHOP_CONTROLS };
+const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const hostedServer = import.meta.env.VITE_SERVER_URL?.trim();
 const isGitHubPages = location.hostname.endsWith('.github.io');
 const defaultServer = hostedServer || (isGitHubPages ? '' : `${location.protocol === 'https:' ? 'wss:' : 'ws:'}//${location.host}`);
@@ -199,7 +201,7 @@ function connect() {
     }
     if (message.type === 'joined') {
       partyAudioBaseline = true;
-      if (message.protocol !== PROTOCOL_VERSION || !REPLAY_LANES.every(game => message.capabilities?.includes(game)) || !message.capabilities?.includes(BALLOON_GAME) || !message.capabilities?.includes(SESAME_GAME) || !message.capabilities?.includes('witch-power-curve') || !message.capabilities?.includes('witch-cumulative-speed') || !message.capabilities?.includes('witch-instant-aim') || !message.capabilities?.includes('witch-turns') || !message.capabilities?.includes('shark-jumper') || !message.capabilities?.includes('horse-speeder') || !message.capabilities?.includes('star-collector') || !message.capabilities?.includes('desk-clock') || !message.capabilities?.includes('happy-days') || !message.capabilities?.includes('kaya-shuffle') || !message.capabilities?.includes('timed-letters') || !message.capabilities?.includes('expiring-seats') || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals') || !message.capabilities?.includes('character-picker') || !message.capabilities?.includes('overlapping-coins') || !message.capabilities?.includes('party-mode') || !message.capabilities?.includes('arcade-length')) {
+      if (message.protocol !== PROTOCOL_VERSION || !THEMED_LANES.every(game => message.capabilities?.includes(game)) || !message.capabilities?.includes(BALLOON_GAME) || !message.capabilities?.includes(SESAME_GAME) || !message.capabilities?.includes('witch-power-curve') || !message.capabilities?.includes('witch-cumulative-speed') || !message.capabilities?.includes('witch-instant-aim') || !message.capabilities?.includes('witch-turns') || !message.capabilities?.includes('shark-jumper') || !message.capabilities?.includes('horse-speeder') || !message.capabilities?.includes('star-collector') || !message.capabilities?.includes('desk-clock') || !message.capabilities?.includes('happy-days') || !message.capabilities?.includes('kaya-shuffle') || !message.capabilities?.includes('timed-letters') || !message.capabilities?.includes('expiring-seats') || !message.capabilities?.includes('arcade-reel') || !message.capabilities?.includes('asset-readiness') || !message.capabilities?.includes('coins-dodge') || !message.capabilities?.includes('live-gameplay-v2') || !message.capabilities?.includes('set-exit') || !message.capabilities?.includes('firework-sets') || !message.capabilities?.includes('game-announcements') || !message.capabilities?.includes('game-picker-screen') || !message.capabilities?.includes('shared-letters') || !message.capabilities?.includes('shared-choices') || !message.capabilities?.includes('mistake-points') || !message.capabilities?.includes('dynamite-meals') || !message.capabilities?.includes('character-picker') || !message.capabilities?.includes('overlapping-coins') || !message.capabilities?.includes('party-mode') || !message.capabilities?.includes('arcade-length')) {
         intentionalClose = true; joining = false; entryRequest = null; connection.close();
         notice('The multiplayer server needs the new game update. Try again after it has deployed.');
         return;
@@ -460,14 +462,19 @@ function synchronizeLetters() {
 function synchronizeChoices() {
   if (!isSharedChoice(room?.round?.game) || !localRound) return;
   localRound.run.sync(room.round.choice, playerId);
-  const latest = room.round.choice?.results.at(-1);
-  if (latest && localRound.heardChoice !== latest.index) {
-    localRound.heardChoice = latest.index;
-    const age = performance.now() - localRound.start - latest.at;
-    if (!document.hidden && !localRound.mustForfeit && !localRound.done && age >= 0 && age < 650) audio.play(latest.correctIds.includes(playerId) ? 'stageComplete' : 'stageWrong');
-  }
+  playChoiceReveal(performance.now());
   const result = room.players.find(player => player.id === playerId)?.result;
   if (result) { localRound.done = localRound.run.done = true; localRound.status = result.status; localRound.run.elapsed = result.elapsed; }
+}
+
+function playChoiceReveal(time) {
+  const latest = room.round.choice?.results.at(-1);
+  if (!latest || localRound.heardChoice === latest.index) return;
+  const age = time - localRound.start - latest.at;
+  const delay = room.round.game === DAM_GAME && !reducedMotion.matches ? CHOICE_GRACE_MS + 250 : 0;
+  if (age < delay) return;
+  localRound.heardChoice = latest.index;
+  if (!document.hidden && !localRound.mustForfeit && !localRound.done && age < (room.round.game === DAM_GAME ? delay + 420 : 650)) audio.play(latest.correctIds.includes(playerId) ? 'stageComplete' : 'stageWrong');
 }
 
 function flushSharedChoices(time) {
@@ -491,7 +498,10 @@ function enforceLifecycle(time, beforeInput = false) {
     if (localRound.run.done) complete('finished', localRound.run.elapsed);
   }
   else if (room.round.game === LETTERS_GAME || isSharedChoice(room.round.game)) {
-    if (isSharedChoice(room.round.game)) localRound.run.advance(time);
+    if (isSharedChoice(room.round.game)) {
+      localRound.run.advance(time);
+      if (room.round.game === DAM_GAME) playChoiceReveal(time);
+    }
     if (time >= localRound.end && !localRound.clockEnded) { localRound.clockEnded = true; audio.endPlayer(); }
   }
   else if (room.round.game === HAPPY_GAME) {
@@ -665,7 +675,7 @@ function updateMetrics() {
   else if (room.set?.phase === 'party-picking') status = '';
   else if (room.gameChoosing) status = '';
   else if (idle) status = playerId === room.hostId ? 'Start the set when your friends have joined.' : 'Waiting for the host to start.';
-  else if (gate) status = wait > 0 ? `Waiting ${Math.ceil(wait / 1000)}s for a friend to reconnect…` : !estimate || estimate.count < 3 ? 'Synchronizing clocks…' : mine?.ready ? 'Waiting for everyone to be ready…' : 'Tap Ready when you’re set.';
+  else if (gate) status = wait > 0 ? `Waiting ${Math.ceil(wait / 1000)}s for a friend to reconnect…` : !estimate || estimate.count < 3 ? 'Synchronizing clocks…' : mine?.ready ? 'Waiting for everyone to be ready…' : '';
   else if (['intermission', 'selecting'].includes(room.set?.phase)) status = '';
   else if (localRound?.done) status = 'Waiting for the other players…';
   $('lobby-status').textContent = status;
@@ -844,12 +854,12 @@ function updateGameProfile() {
   document.body.classList.toggle('letters-theme', Boolean(themed && game === LETTERS_GAME));
   document.body.classList.toggle('sesame-theme', Boolean(themed && game === SESAME_GAME));
   document.body.classList.toggle('balloon-theme', Boolean(themed && game === BALLOON_GAME));
-  for (const laneGame of REPLAY_LANES) document.body.classList.toggle(`${laneGame}-theme`, Boolean(themed && game === laneGame));
+  for (const laneGame of THEMED_LANES) document.body.classList.toggle(`${laneGame}-theme`, Boolean(themed && game === laneGame));
   buttons.forEach((button, index) => {
-    const action = !picking && game === WITCH_GAME ? ['Run', 'Stop / Aim', 'Run'][index] : !picking && game === HORSE_GAME ? ['Move left', 'Accelerate', 'Move right'][index] : !picking && game === STAR_GAME ? ['Tilt left', 'Unused', 'Tilt right'][index] : !picking && game === STATIONERY_GAME ? STATIONERY_NAMES[index] : !picking && game === CLOCK_GAME ? 'Stop' : game === HAPPY_GAME && !picking ? HAPPY_TONES[index] : picking ? ['Down', 'Select', 'Up'][index] : REPLAY_LANES.includes(game) ? REPLAY_CONTROLS[game][index] : game === BALLOON_GAME ? ['Pump', 'Unused', 'Pump'][index] : game === SESAME_GAME ? ['Left', 'Select', 'Right'][index] : game === MEALS_GAME ? ['Fries', 'Burger', 'Drink'][index] : [LADDER_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
+    const action = !picking && game === WITCH_GAME ? ['Run', 'Stop / Aim', 'Run'][index] : !picking && game === HORSE_GAME ? ['Move left', 'Accelerate', 'Move right'][index] : !picking && game === STAR_GAME ? ['Tilt left', 'Unused', 'Tilt right'][index] : !picking && game === STATIONERY_GAME ? STATIONERY_NAMES[index] : !picking && game === CLOCK_GAME ? 'Stop' : game === HAPPY_GAME && !picking ? HAPPY_TONES[index] : picking ? ['Down', 'Select', 'Up'][index] : THEMED_LANES.includes(game) ? GAME_CONTROLS[game][index] : game === BALLOON_GAME ? ['Pump', 'Unused', 'Pump'][index] : game === SESAME_GAME ? ['Left', 'Select', 'Right'][index] : game === MEALS_GAME ? ['Fries', 'Burger', 'Drink'][index] : [LADDER_GAME, DICE_GAME, FACING_GAME, KAYA_GAME].includes(game) ? ['Left', 'Middle', 'Right'][index] : game === LETTERS_GAME ? ['Left', 'Enter', 'Right'][index] : game === DODGE_GAME ? ['Left', 'Jump', 'Right'][index] : game === COIN_GAME ? ['Left', 'Middle', 'Right'][index] : ['Red', 'Green', 'Blue'][index];
     button.children[1].textContent = action;
     const label = ['Red circle', 'Green triangle', 'Blue diamond'][index];
-    button.setAttribute('aria-label', picking || [WITCH_GAME, SHARK_GAME, HORSE_GAME, STAR_GAME, LADDER_GAME, STATIONERY_GAME, CLOCK_GAME, HAPPY_GAME, MEALS_GAME, COIN_GAME, DODGE_GAME, LETTERS_GAME, SESAME_GAME, BALLOON_GAME, DICE_GAME, FACING_GAME, KAYA_GAME, ...REPLAY_LANES].includes(game) ? `${label}: ${action}` : label);
+    button.setAttribute('aria-label', picking || [WITCH_GAME, SHARK_GAME, HORSE_GAME, STAR_GAME, LADDER_GAME, STATIONERY_GAME, CLOCK_GAME, HAPPY_GAME, MEALS_GAME, COIN_GAME, DODGE_GAME, LETTERS_GAME, SESAME_GAME, BALLOON_GAME, DICE_GAME, FACING_GAME, KAYA_GAME, ...THEMED_LANES].includes(game) ? `${label}: ${action}` : label);
   });
   document.body.classList.toggle('coin-theme', Boolean(themed && game === COIN_GAME));
   document.body.classList.toggle('dodge-theme', Boolean(themed && game === DODGE_GAME));

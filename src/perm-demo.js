@@ -92,7 +92,7 @@ export class PermDemo {
     const current = [...presses].reverse().find(cue => time >= cue.at - 200) || presses[0];
     const age = time - current.at;
     this.buttons.forEach((button, index) => button.classList.toggle('pressed', index === current.color && age >= 0 && age < 150));
-    this.hand.style.left = `calc(${(current.color + .5) * 100 / 3}% - 36px)`;
+    this.hand.style.left = `${(current.color + .5) * 100 / 3}%`;
     this.hand.style.opacity = !complete && time >= presses[0].at - 200 ? '1' : '0';
     const handY = age < 0 ? 14 * Math.min(1, -age / 200) ** 3 : age < 150 ? 4 : 14;
     this.hand.style.transform = `translateY(${this.motion?.matches ? 0 : handY}px)`;

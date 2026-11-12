@@ -27,6 +27,9 @@ In row one, draw salmon nigiri, tuna nigiri, and shrimp nigiri.
 In row two, draw egg nigiri, glazed eel nigiri, and cucumber maki.
 In row three, draw avocado maki, salmon roe gunkan, and an inari tofu pouch.
 
+The customer sprite uses a transparent cutout of a cheerful seated human in a teal cardigan and mustard scarf, looking upward with a hand raised as if ordering.
+Use the same hand-painted gouache, strong plum outlines, and silhouette readable at 60 pixels, with empty padding and no table, text, bubble, or external shadows.
+
 ## Mole Metro
 
 Generate a square 2×2 sheet with no gutters or text in bright hand-painted chibi arcade style with dark plum outlines.

@@ -23,7 +23,7 @@ import { LETTERS_GAME, LettersRun, LETTERS_DURATION_MS } from './letters.js';
 import { SESAME_GAME, SesameRun, SESAME_GOAL, SESAME_DURATION_MS } from './sesame.js';
 import { BALLOON_GAME, BalloonRun, BALLOON_GOAL, BALLOON_DURATION_MS } from './balloon.js';
 import { ANT_GAME, MARKET_GAMES, MARKET_SETTINGS, SATAY_GAME, POTION_GAME, createMarketRun, marketSettings } from './market-games.js';
-import { DAM_GAME, SUSHI_GAME, METRO_GAME, WORKSHOP_GAMES, WORKSHOP_SETTINGS, createWorkshopRun, workshopSettings } from './workshop-games.js';
+import { DAM_GAME, SUSHI_GAME, METRO_GAME, WORKSHOP_GAMES, WORKSHOP_SETTINGS, DamRun, createWorkshopRun, workshopSettings } from './workshop-games.js';
 
 import { DYNAMITE_GAME, DynamiteRun, DYNAMITE_GOAL, DYNAMITE_DURATION_MS } from './dynamite.js';
 
@@ -61,7 +61,7 @@ export const GAMES = Object.assign(Object.create(null), {
   [SATAY_GAME]: { id: SATAY_GAME, title: 'Satay Snag', subtitle: 'Skewer falling hot dogs midair', ...MARKET_SETTINGS[SATAY_GAME] },
   [POTION_GAME]: { id: POTION_GAME, title: 'Glamour Brew', subtitle: 'Brew a makeover one potion at a time', ...MARKET_SETTINGS[POTION_GAME] },
   [ANT_GAME]: { id: ANT_GAME, title: 'Ant Air Mail', subtitle: 'Guide a paper plane across the colony', ...MARKET_SETTINGS[ANT_GAME] },
-  [DAM_GAME]: { id: DAM_GAME, title: 'Dam Good Fit', subtitle: 'Match jagged blocks and plug the leaks', ...WORKSHOP_SETTINGS[DAM_GAME] },
+  [DAM_GAME]: { id: DAM_GAME, title: 'Dam Good Fit', subtitle: 'Match jagged blocks before time runs out', sharedArena: true, scoring: 'points', scoreNoun: 'repairs', ...WORKSHOP_SETTINGS[DAM_GAME] },
   [SUSHI_GAME]: { id: SUSHI_GAME, title: 'Sushi Switchboard', subtitle: 'Look up the menu and serve the order', ...WORKSHOP_SETTINGS[SUSHI_GAME] },
   [METRO_GAME]: { id: METRO_GAME, title: 'Mole Metro', subtitle: 'Flip the switches and deliver passengers', scoring: 'points', scoreNoun: 'passengers', ...WORKSHOP_SETTINGS[METRO_GAME] },
 });
@@ -119,6 +119,7 @@ export function createRun(round, localStart, timingOffset = 0) {
   if (round.game === SESAME_GAME) return new SesameRun(round, localStart);
   if (round.game === BALLOON_GAME) return new BalloonRun(round, localStart);
   if (MARKET_GAMES.includes(round.game)) return createMarketRun(round, localStart);
+  if (round.game === DAM_GAME) return new DamRun(round, localStart);
   if (WORKSHOP_GAMES.includes(round.game)) return createWorkshopRun(round, localStart);
   if (round.game === COIN_GAME) return new CoinRun(round, localStart);
   if (round.game === DODGE_GAME) return new DodgeRun(round, localStart);
@@ -137,8 +138,8 @@ export const isRoundActive = round => Boolean(round && ['countdown', 'running', 
 
 export function gameRules(game, round = {}) {
   if (game === SATAY_GAME) return ['Watch the hot dog fall toward the skewer.', 'Tap any button right as they line up.'];
-  if (game === DAM_GAME) return ['Look at the shape of the leak.', 'Press the matching block’s button. A wrong block bounces out.'];
-  if (game === SUSHI_GAME) return ['Find each requested item on the colored menu.', 'Press its color. For two items, either order works. Tap twice if both share a color.'];
+  if (game === DAM_GAME) return ['Match the block to the leak. Your first press locks it in.', 'Answers reveal together. Most repairs across eight sets wins.'];
+  if (game === SUSHI_GAME) return ['Find each requested item on the menu and press its color.', 'Serve two items in either order. Tap twice if they share a color.'];
   if (game === METRO_GAME) return ['Match train and station symbols. Avoid occupied stations.', 'Red flips entry. Green flips the left fork. Blue flips the right.'];
   if (game === POTION_GAME) return ['Match each potion to its button. One press breaks one bottle.', 'Clear both trays to change the witch. Complete ten sets for her final look.'];
   if (game === ANT_GAME) return ['Follow one paper plane as it climbs over the colony.', 'At each waypoint, match its nose. Red is left, green down, and blue right.'];
@@ -154,7 +155,7 @@ export function gameRules(game, round = {}) {
   if (game === MEALS_GAME) return ['Fill the empty slots to complete each meal', 'Red = fries, green = burger, blue = drink', 'Serve all eight meals as fast as you can'];
   if (game === DYNAMITE_GAME) return ['Match the wire colour with the same button', 'Tap four sections per colour; clear all 13 groups', 'Reach the dynamite first; wrong colours briefly pause the spark'];
   if (game === LETTERS_GAME) return ['Red moves left, blue moves right, green enters a letter', 'Finish the three letters before time runs out to earn a point; choose ⌫ to erase', 'Everyone who finishes scores; each new word has less time'];
-  if (game === SESAME_GAME) return ['Red moves left around the dial. Blue moves right.', 'Press green to enter the highlighted digit.', 'A wrong digit leaves your code in place. Finish all eight digits first.'];
+  if (game === SESAME_GAME) return ['Red moves left, blue right. Green enters the digit.', 'Wrong digits leave your code intact. Finish all eight first.'];
   if (game === BALLOON_GAME) return ['Alternate red and blue to pump up your balloon.', 'Pop your balloon as fast as you can.'];
   if (game === COIN_GAME) return ['Catch gold coins and avoid cracked purple coins', 'Red = left, green = middle, blue = right'];
   if (game === DODGE_GAME) return ['Move into gaps between walls. Red - Move left. Blue - Move right', 'Press green to jump over low hurdles'];

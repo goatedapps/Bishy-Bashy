@@ -3,6 +3,9 @@ import { KAYA_GAME } from '../shared/kaya.js';
 import { KayaScene } from './kaya-view.js';
 import { diePortrait, setDie, duckPortrait, facingMoveLabel } from './dice-facing-view.js';
 import { FACING_GAME } from '../shared/facing.js';
+import { CHOICE_GRACE_MS } from '../shared/choice-round.js';
+import { DAM_GAME } from '../shared/workshop-games.js';
+import { DamScene } from './workshop-view.js';
 
 const SHAPES = ['●', '▲', '◆'];
 const node = (tag, className, text) => {
@@ -51,6 +54,8 @@ export class SharedChoiceStage {
     this.card.append(this.duck, this.flap);
     this.kaya = new KayaScene();
     this.demo.append(this.card, this.kaya.element);
+    this.dam = new DamScene();
+    this.dam.element.hidden = true;
     this.options = node('div', 'shared-options');
     this.optionCards = Array.from({ length: 3 }, (_, color) => {
       const card = node('div', `shared-option option-${color}`);
@@ -64,7 +69,7 @@ export class SharedChoiceStage {
       return { card, die, duck, players, shadow };
     });
     this.players = node('div', 'shared-choice-players');
-    this.element.append(this.header, this.demo, this.options, this.players);
+    this.element.append(this.header, this.demo, this.options, this.dam.element, this.players);
     this.motion = globalThis.matchMedia?.('(prefers-reduced-motion: reduce)');
     this.rows = [];
   }
@@ -74,6 +79,7 @@ export class SharedChoiceStage {
     if (!run || !round.choice) return;
     const facing = round.game === FACING_GAME;
     const kaya = round.game === KAYA_GAME;
+    const dam = round.game === DAM_GAME;
     const phase = run.phase(time), stage = phase.stage, puzzle = stage.puzzle;
     const roster = (room.set?.players || room.players).filter(player => round.playerIds.includes(player.id));
     const rosterKey = `${round.id}/${roster.map(player => player.id).join('/')}`;
@@ -93,7 +99,7 @@ export class SharedChoiceStage {
       });
       this.players.replaceChildren(...this.rows.map(row => row.card));
     }
-    this.element.className = `shared-choice-stage ${kaya ? 'shared-kaya' : facing ? 'shared-facing' : 'shared-dice'}`;
+    this.element.className = `shared-choice-stage ${dam ? 'shared-dam' : kaya ? 'shared-kaya' : facing ? 'shared-facing' : 'shared-dice'}`;
     const result = time - run.start >= stage.answerEnd ? round.choice.results.find(result => result.index === phase.index) : null;
     const canAnswer = phase.mode === 'play';
     const revealed = phase.mode === 'reveal' || phase.mode === 'done';
@@ -103,7 +109,12 @@ export class SharedChoiceStage {
     this.card.hidden = !facing;
     this.kaya.element.hidden = !kaya;
     this.demo.hidden = !kaya && (!facing || canAnswer || revealed);
-    this.options.hidden = kaya || facing && !canAnswer && !revealed;
+    this.options.hidden = dam || kaya || facing && !canAnswer && !revealed;
+    this.dam.element.hidden = !dam;
+    if (dam) {
+      const age = time - run.start - stage.answerEnd - CHOICE_GRACE_MS;
+      this.dam.render(puzzle, result ? result.choices[playerId] : run.selections.get(phase.index)?.color, result, Math.max(0, age), !this.motion?.matches);
+    }
     if (kaya) {
       this.title.textContent = canAnswer ? "Where's Kaya?" : revealed ? 'There’s Kaya!' : phase.mode === 'look' ? 'Remember Kaya' : 'Follow the blankets';
       this.clock.textContent = canAnswer ? `${Math.max(0, (run.start + stage.answerEnd - time) / 1000).toFixed(1)} s` : phase.mode === 'wait' ? 'Get ready' : '';
@@ -152,7 +163,7 @@ export class SharedChoiceStage {
     });
     const feedbackResult = [...round.choice.results].reverse().find(entry => {
       const age = time - run.start - entry.at;
-      return age >= 0 && age < 650;
+      return age >= (dam && !this.motion?.matches ? CHOICE_GRACE_MS + 250 : 0) && age < (dam ? 880 : 650);
     });
     roster.forEach((player, index) => {
       const row = this.rows[index], member = room.players.find(member => member.id === player.id);

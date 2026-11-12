@@ -4,8 +4,8 @@ import { BALLOON_GAME } from '../shared/balloon.js';
 import { BalloonStage } from './balloon-view.js';
 import { MARKET_GAMES } from '../shared/market-games.js';
 import { MarketStage } from './market-view.js';
-import { METRO_GAME, WORKSHOP_GAMES } from '../shared/workshop-games.js';
-import { WorkshopStage } from './workshop-view.js';
+import { METRO_GAME, SUSHI_GAME, sushiMenu, WORKSHOP_LANES } from '../shared/workshop-games.js';
+import { SushiMenu, WorkshopStage } from './workshop-view.js';
 import { SHARK_GAME } from '../shared/shark.js';
 import { SharkStage } from './shark-view.js';
 import { HORSE_GAME } from '../shared/horse.js';
@@ -56,7 +56,7 @@ import { DynamiteStage, dynamitePortrait } from './dynamite-view.js';
 import { MEALS_GAME } from '../shared/meals.js';
 import { MealsStage, mealPortrait } from './meals-view.js';
 
-const STAGES = { ...Object.fromEntries(WORKSHOP_GAMES.map(game => [game, 'workshop'])), ...Object.fromEntries(MARKET_GAMES.map(game => [game, 'market'])), [BALLOON_GAME]: 'balloon', [SHARK_GAME]: 'shark', [HORSE_GAME]: 'horse', [STAR_GAME]: 'stars', 'ladder-climber': 'ladder', [HAPPY_GAME]: 'happy', [MEALS_GAME]: 'meals', [DYNAMITE_GAME]: 'dynamite', [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake' };
+const STAGES = { ...Object.fromEntries(WORKSHOP_LANES.map(game => [game, 'workshop'])), ...Object.fromEntries(MARKET_GAMES.map(game => [game, 'market'])), [BALLOON_GAME]: 'balloon', [SHARK_GAME]: 'shark', [HORSE_GAME]: 'horse', [STAR_GAME]: 'stars', 'ladder-climber': 'ladder', [HAPPY_GAME]: 'happy', [MEALS_GAME]: 'meals', [DYNAMITE_GAME]: 'dynamite', [COIN_GAME]: 'coins', [DODGE_GAME]: 'dodge', [BURGER_GAME]: 'burger', [MISTAKE_GAME]: 'mistake' };
 
 const SHAPES = ['●', '▲', '◆'];
 const $ = id => document.getElementById(id);
@@ -104,6 +104,7 @@ export class GameView {
     $('arena').append(this.letters.element);
     this.sesame = new SesameArena();
     $('arena').append(this.sesame.element);
+    this.sushiMenu = new SushiMenu($('sushi-shared-menu'));
     this.feedback = new GameFeedback();
     this.remoteRuns = new RemoteRuns();
     this.lanes = Array.from({ length: 4 }, (_, index) => {
@@ -170,6 +171,11 @@ export class GameView {
     const game = active ? round.game : room.selectedGame;
     $('arena').classList.toggle('lobby', !active);
     this.sesame.element.hidden = !active || game !== SESAME_GAME;
+    this.sushiMenu.element.hidden = !active || game !== SUSHI_GAME;
+    if (!this.sushiMenu.element.hidden && this.sushiRound !== round.id) {
+      this.sushiRound = round.id;
+      this.sushiMenu.render(sushiMenu(round));
+    }
     this.witch.element.hidden = !active || game !== WITCH_GAME;
     if (active && game === WITCH_GAME) {
       this.sharedSets.element.hidden = true; this.choice.element.hidden = true; this.letters.element.hidden = true;
@@ -205,7 +211,7 @@ export class GameView {
     }
     const balloon = game === BALLOON_GAME;
     const market = MARKET_GAMES.includes(game);
-    const workshop = WORKSHOP_GAMES.includes(game);
+    const workshop = WORKSHOP_LANES.includes(game);
     const replayLane = market || workshop;
     const hideCounters = balloon || replayLane || [FIREWORK_GAME, SHARK_GAME, HORSE_GAME, STAR_GAME, LADDER_GAME, HAPPY_GAME, 'totem-shrinker', PERM_GAME, DODGE_GAME, MONKEY_GAME, JUMP_GAME, MEALS_GAME, DYNAMITE_GAME].includes(game);
     const perm = game === PERM_GAME;
@@ -303,7 +309,7 @@ export class GameView {
   }
 
   updateFeedback(room, local, time) {
-    if (room?.round?.game === BALLOON_GAME || MARKET_GAMES.includes(room?.round?.game) || WORKSHOP_GAMES.includes(room?.round?.game) || GAMES[room?.round?.game]?.sharedArena) { this.feedback.clear(); return; }
+    if (room?.round?.game === BALLOON_GAME || MARKET_GAMES.includes(room?.round?.game) || WORKSHOP_LANES.includes(room?.round?.game) || GAMES[room?.round?.game]?.sharedArena) { this.feedback.clear(); return; }
     const lane = room && this.lanes.find(elements => elements.lane.classList.contains('you'));
     this.feedback.update(room?.round, local, lane, time);
   }

@@ -1,5 +1,5 @@
 import { GAMES, gameRules, roundSettings } from '../shared/games.js';
-import { DAM_GAME, METRO_GAME, METRO_ARRIVAL_MS, METRO_ENTRY_MS, METRO_FORK_MS, SUSHI_GAME, WORKSHOP_CONTROLS, createWorkshopRun } from '../shared/workshop-games.js';
+import { METRO_GAME, METRO_ARRIVAL_MS, METRO_ENTRY_MS, METRO_FORK_MS, SUSHI_GAME, WORKSHOP_CONTROLS, createWorkshopRun } from '../shared/workshop-games.js';
 import { ScriptedDemo } from './scripted-demo.js';
 import { WorkshopStage } from './workshop-view.js';
 
@@ -24,13 +24,7 @@ export function workshopDemoPlan(game, difficulty = 1) {
     if (action.type === 'finished') cues.push({ type: 'complete', at });
   };
 
-  if (game === DAM_GAME) {
-    press((run.sequence[0].correct + 1) % 3, start + 750);
-    for (const [index, puzzle] of run.sequence.entries()) press(puzzle.correct, start + 1600 + 1000 * index);
-    const landing = run.sealAt;
-    run.advance(landing);
-    cues.push({ type: 'complete', at: landing });
-  } else if (game === SUSHI_GAME) {
+  if (game === SUSHI_GAME) {
     let at = start + 650;
     for (const order of run.sequence) {
       for (const item of [...order].reverse()) {

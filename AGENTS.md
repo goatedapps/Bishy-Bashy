@@ -14,7 +14,7 @@ Use [the gameplay reference](docs/gameplay.md) for player behavior and game-spec
 - Write each full sentence on its own physical line when substantially editing Markdown.
 - Comment only on non-obvious intent, constraints, invariants, or tradeoffs.
 - Keep the static frontend independently deployable with a configurable secure WebSocket endpoint.
-- Deploy frontend and backend together for protocol changes; current protocol is 42.
+- Deploy frontend and backend together for protocol changes; current protocol is 43.
 - Keep a single server instance while rooms live in memory.
 
 ## Game and asset requirements
@@ -27,9 +27,10 @@ Use [the gameplay reference](docs/gameplay.md) for player behavior and game-spec
 - Use `Ding.mp3` once per meaningful success, including the final success where applicable.
 - Keep audio playback in `src/audio.js`, require a user gesture, provide visual equivalents, and honor mute and lifecycle cancellation.
 - Use the same three buttons and shared fixed control bar in every game.
+- Use one shared gameplay screen or four equal-width player lanes at every viewport size.
 - Keep gameplay free of decorative bases, counters, totals, and progress bars unless explicitly requested; retain the round timer, essential target slots, and accepted final time.
 - Every How to play screen uses an isolated looping mini-demo with actual game artwork, concise rules, the shared buttons, and the illustrated cat paw.
-- Let tutorial content keep its natural height inside the scrollable card so instructions, controls, and player readiness stay separate during rotation.
+- Fit the complete tutorial, player readiness, and Ready button in the viewport when space allows, with scrolling available for shorter viewports and enlarged text.
 - Honor reduced motion and hidden-screen pausing without replaying stale cues.
 
 ## Timing and multiplayer invariants
@@ -66,7 +67,8 @@ Keep visible inflation tied to accepted presses and allow the final pop to displ
 Satay Snag, Glamour Brew, and Ant Air Mail share replay validation in `shared/market-games.js` and a real-scene tutorial renderer in `src/market-view.js`.
 Keep Satay at ten tighter catches, advance Glamour Brew's illustrated look once per cleared set, and keep Ant Air Mail's courier continuous between waypoints.
 
-Dam Good Fit, Sushi Switchboard, and Mole Metro share replay validation in `shared/workshop-games.js` and use the real gameplay scenes in their tutorials.
+Dam Good Fit uses eight shared, first-answer-locked puzzles with progressively shorter timers.
+Sushi Switchboard and Mole Metro share replay validation in `shared/workshop-games.js`.
 Keep menu and switch labels readable on phones, and rank Mole Metro by delivered passengers.
 
 ## Remaining planned games

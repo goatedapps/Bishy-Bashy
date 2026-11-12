@@ -4,7 +4,8 @@ import { BalloonDemo } from './balloon-demo.js';
 import { MarketDemo } from './market-demo.js';
 import { WorkshopDemo } from './workshop-demo.js';
 import { MARKET_GAMES } from '../shared/market-games.js';
-import { WORKSHOP_GAMES } from '../shared/workshop-games.js';
+import { DamDemo } from './dam-demo.js';
+import { DAM_GAME, WORKSHOP_LANES } from '../shared/workshop-games.js';
 import { TotemDemo } from './totem-demo.js';
 import { PermDemo } from './perm-demo.js';
 import { SlotsDemo } from './slots-demo.js';
@@ -13,7 +14,8 @@ import { MonkeysDemo } from './monkeys-demo.js';
 import { RemainingDemo, REMAINING_DEMO_GAMES } from './remaining-demos.js';
 
 export function createGameDemo(game, options) {
-  if (WORKSHOP_GAMES.includes(game)) return new WorkshopDemo(game, options);
+  if (game === DAM_GAME) return new DamDemo(options);
+  if (WORKSHOP_LANES.includes(game)) return new WorkshopDemo(game, options);
   if (MARKET_GAMES.includes(game)) return new MarketDemo(game, options);
   if (game === 'burst-the-balloon') return new BalloonDemo(options);
   if (game === 'open-sesame') return new SesameDemo(options);

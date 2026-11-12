@@ -35,20 +35,11 @@
 .is-locked .party-pick-status { background:#3b214d; color:#fffdf5; }
 .party-game-list:focus-visible { outline:4px solid #3b214d; outline-offset:-4px; }
 .party-picking #set-progress,.party-picking #play-view,.party-picking #submission-status { display:none!important; }
-html:has(body.party-picking) { overflow:hidden; }
-body.party-picking { display:flex; flex-direction:column; height:var(--viewport-height,100dvh); min-height:0; overflow:hidden; }
-.party-picking .game-top { width:100%; margin:0 auto; padding-top:8px; flex-shrink:0; }
-.party-picking main { display:flex; flex-direction:column; flex:1; min-height:0; width:100%; margin:0 auto; padding-bottom:12px!important; }
-.party-picking .game-title { font-size:clamp(25px,4vw,40px); margin:4px 0 8px; flex-shrink:0; }
-.party-picking #room-view { display:flex; flex-direction:column; flex:1; min-height:0; }
-.party-picking .room-toolbar { margin-bottom:8px; flex-shrink:0; }
 .party-picking #party-picker { display:flex; flex-direction:column; flex:1; min-height:0; }
 .party-picking .party-pick-columns { flex:1; min-height:0; }
 .party-picking .party-pick-lane { display:flex; flex-direction:column; min-height:0; }
 .party-picking .party-player,.party-picking .party-pick-status { flex-shrink:0; }
 .party-picking .party-game-list { height:100%; min-height:0; }
-.party-picking #control-deck { position:static; transform:none; flex-shrink:0; align-self:center; margin:0 0 calc(10px + env(safe-area-inset-bottom,0px)); padding:10px 16px 14px; }
-.party-picking #control-deck .hit-button { height:66px; }
 .party-picking #lobby-status:empty { display:none; }
 @media(max-width:620px) {
   .mode-picker { gap:7px; }
@@ -68,3 +59,13 @@ body.party-picking { display:flex; flex-direction:column; height:var(--viewport-
   .party-pick-timer { width:50px; height:50px; font-size:28px; }
 }
 body.in-room #arena .round-overlay.small { color:#3b214d; background:#fffdf5; text-shadow:none; }
+
+@media(max-height:650px) {
+  .party-pick-heading { gap:8px; margin:4px 0; }
+  .party-pick-heading h2 { font-size:clamp(18px,3vw,28px); }
+  .party-pick-timer { width:36px; height:36px; border-width:2px; font-size:22px; }
+  .party-pick-help { margin-bottom:6px; font-size:12px; }
+  .party-player { min-height:30px; padding:3px; font-size:12px; }
+  .party-player .character-portrait,.party-empty-avatar { width:30px; height:30px; font-size:23px; }
+  .party-pick-status { min-height:0; padding:4px 2px; font-size:11px; }
+}

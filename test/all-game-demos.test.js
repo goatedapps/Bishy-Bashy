@@ -90,13 +90,11 @@ test('a restored workshop finish renders without transient feedback from the ori
   const previous = globalThis.document;
   globalThis.document = { hidden: false, createElement: () => new Element() };
   try {
-    for (const game of ['dam-good-fit', 'sushi-switchboard']) {
-      const demo = createGameDemo(game);
-      demo.run.done = true;
-      demo.run.cleared = demo.plan.settings.goal;
-      demo.paint(demo.plan.completeAt);
-      assert.match(demo.stage.element.getAttribute('aria-label'), /sealed|served/);
-    }
+    const demo = createGameDemo('sushi-switchboard');
+    demo.run.done = true;
+    demo.run.cleared = demo.plan.settings.goal;
+    demo.paint(demo.plan.completeAt);
+    assert.match(demo.stage.element.getAttribute('aria-label'), /served/);
   } finally { globalThis.document = previous; }
 });
 

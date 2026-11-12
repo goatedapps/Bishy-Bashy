@@ -69,7 +69,7 @@ export class TotemDemo {
     });
     this.buttons.forEach((button, index) => button.classList.toggle('pressed', frame.pressed && index === frame.color));
     this.lines.forEach((line, index) => line.classList.toggle('demo-active', index === Number(frame.age >= 900 && frame.age < 2100)));
-    this.hand.style.left = `calc(${(frame.color + .5) * 100 / 3}% - 36px)`;
+    this.hand.style.left = `${(frame.color + .5) * 100 / 3}%`;
     this.hand.style.transform = `translateY(${frame.handY}px)`;
     this.hand.style.opacity = frame.hand ? '1' : '0';
   }

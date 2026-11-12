@@ -1,13 +1,12 @@
 import { STAR_GOAL, STAR_MAX_DEPTH } from './stars.js';
 import { createRun } from './games.js';
 import { ANT_GAME, SATAY_GAME, POTION_GAME } from './market-games.js';
-import { DAM_GAME, METRO_GAME, SUSHI_GAME, METRO_CRASH, METRO_STATIONS } from './workshop-games.js';
+import { METRO_GAME, SUSHI_GAME, METRO_CRASH, METRO_STATIONS } from './workshop-games.js';
 
 const SCHEMAS = {
   [SATAY_GAME]: { index: 'index', launchedAt: 'time', blockedUntil: 'time' },
   [POTION_GAME]: { index: 'index', bottleMask: 'bottles', blockedUntil: 'time' },
   [ANT_GAME]: { blockedUntil: 'time' },
-  [DAM_GAME]: {},
   [SUSHI_GAME]: { servedMask: 'sushiMask' },
   [METRO_GAME]: { switches: 'mask', routes: 'metroRoutes' },
   'burst-the-balloon': {},

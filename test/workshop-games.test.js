@@ -1,10 +1,11 @@
+import { CHOICE_GRACE_MS, ChoiceMatch } from '../shared/choice-round.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GAMES, comparePlayers, createRun, roundSettings } from '../shared/games.js';
 import { captureVisual, sanitizeVisual } from '../shared/visual-state.js';
 import {
-  DAM_GAME, DAM_FALL_MS, DAM_RETRY_MS, METRO_GAME, METRO_ARRIVAL_MS, METRO_CRASH, METRO_ENTRY_MS,
-  METRO_FORK_MS, METRO_PASSENGERS, SUSHI_GAME, SUSHI_ITEMS, WORKSHOP_GAMES, damPuzzles, validWorkshopResult,
+  DAM_GAME, METRO_GAME, METRO_ARRIVAL_MS, METRO_CRASH, METRO_ENTRY_MS,
+  METRO_FORK_MS, METRO_PASSENGERS, SUSHI_GAME, SUSHI_ITEMS, WORKSHOP_LANES, damPuzzles, validWorkshopResult,
 } from '../shared/workshop-games.js';
 import { workshopDemoPlan } from '../src/workshop-demo.js';
 import { driveWorkshop } from './helpers/workshop-games.js';
@@ -20,26 +21,35 @@ test('every dam gap has exactly one fit and two distinct wrong blocks', () => {
   }
 });
 
-test('Dam Good Fit keeps the same leak after a bounce and judges a repair at landing', () => {
-  const round = settings(DAM_GAME);
-  const run = createRun(round, 5432.1234);
-  const correct = run.sequence[0].correct;
-  const wrongAt = run.blockedUntil;
-  assert.equal(run.tap((correct + 1) % 3, wrongAt).type, 'mistake');
-  assert.equal(run.cleared, 0);
-  assert.equal(run.tap(correct, wrongAt + DAM_RETRY_MS - 1).type, 'ignored');
-  const dropAt = wrongAt + DAM_RETRY_MS;
-  assert.equal(run.tap(correct, dropAt).type, 'move');
-  run.advance(dropAt + DAM_FALL_MS - .001);
-  assert.equal(run.cleared, 0);
-  run.advance(dropAt + DAM_FALL_MS);
-  assert.equal(run.cleared, 1);
-  assert.equal(run.events.filter(event => event.type === 'stageComplete').length, 1);
-  const finished = driveWorkshop(round, { start: 5432.1234, delay: .127 });
-  assert.equal(finished.elapsed, finished.proof.at(-1)[1] / 1000 + DAM_FALL_MS);
-  assert.ok(validWorkshopResult(round, finished));
-  const extended = [...finished.proof, [0, (finished.elapsed + 400) * 1000]];
-  assert.equal(validWorkshopResult(round, { ...finished, proof: extended }), false);
+test('Dam Good Fit locks the first answer and reveals every seat together after the deadline', () => {
+  for (let level = 1; level <= 5; level++) {
+    const round = { ...settings(DAM_GAME, 123, level), playerIds: ['one', 'two', 'three'] };
+    const run = createRun(round, 0);
+    const match = new ChoiceMatch(round, run.stages);
+    assert.equal(run.stages.length, 8);
+    assert.equal(run.stages.at(-1).endsAt, round.duration);
+    let prior = Infinity;
+    for (const stage of run.stages) {
+      const window = stage.answerEnd - stage.answerAt;
+      assert.ok(window < prior);
+      prior = window;
+      const elapsed = stage.answerAt + 10;
+      const color = stage.puzzle.answer;
+      assert.equal(run.tap(color, elapsed).type, 'choice');
+      assert.equal(run.tap((color + 1) % 3, elapsed + 2).type, 'ignored');
+      const choice = run.selections.get(stage.index);
+      assert.equal(match.choose('one', choice, elapsed), true);
+      assert.equal(match.choose('one', { ...choice, color: (color + 1) % 3 }, elapsed), false);
+      assert.equal(match.choose('two', { ...choice, color: (color + 1) % 3 }, elapsed), true);
+      assert.equal(match.advance(stage.answerEnd - 1), false);
+      assert.equal(match.state.results.length, stage.index);
+      assert.equal(match.advance(stage.answerEnd + CHOICE_GRACE_MS), true);
+      const result = match.state.results.at(-1);
+      assert.deepEqual(result.choices, { one: color, two: (color + 1) % 3, three: null });
+      assert.deepEqual(result.correctIds, ['one']);
+    }
+    assert.deepEqual(match.state.scores, { one: 8, two: 0, three: 0 });
+  }
 });
 
 test('Sushi Switchboard supports both item orders and repeated colors, preserving a partial order after a miss', () => {
@@ -106,14 +116,14 @@ test('Mole Metro has a collision-free solution at every difficulty and ranks pas
   }
 });
 
-test('the three tutorials demonstrate their mechanics through the same run model and cue one Ding per success', () => {
-  for (const game of WORKSHOP_GAMES) for (let level = 1; level <= 5; level++) {
+test('Sushi and Metro tutorials use their gameplay models and cue one Ding per success', () => {
+  for (const game of WORKSHOP_LANES) for (let level = 1; level <= 5; level++) {
     const plan = workshopDemoPlan(game, level);
     const run = createRun(plan.settings, plan.start);
     for (const { color, at } of plan.presses) assert.notEqual(run.tap(color, at).type, 'ignored', game);
     run.advance?.(plan.completeAt);
     assert.equal(run.cleared, game === METRO_GAME ? plan.settings.trainCount * METRO_PASSENGERS : plan.settings.goal, game);
     assert.equal(plan.cues.filter(cue => cue.type === 'complete').length, 3, game);
-    assert.equal(run.mistakes, game === DAM_GAME ? 1 : 0);
+    assert.equal(run.mistakes, 0);
   }
 });

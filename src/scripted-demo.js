@@ -53,7 +53,7 @@ export class ScriptedDemo {
     const age = time - cue.at;
     const heldFor = cue.holdUntil === undefined ? 180 : cue.holdUntil - cue.at;
     this.buttons.forEach((button, index) => button.classList.toggle('pressed', index === cue.color && age >= 0 && age < heldFor));
-    this.hand.style.left = `calc(${(cue.color + .5) * 100 / 3}% - 36px)`;
+    this.hand.style.left = `${(cue.color + .5) * 100 / 3}%`;
     this.hand.style.opacity = time >= cue.at - 300 && age < heldFor + 170 ? '1' : '0';
     const handY = age < 0 ? 20 * Math.min(1, -age / 300) ** 3 : age < heldFor ? 4 : 20;
     this.hand.style.transform = `translateY(${this.motion?.matches ? 0 : handY}px)`;

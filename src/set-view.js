@@ -68,6 +68,7 @@ export class SetView {
     $('set-progress').textContent = set.mode === 'party' ? `Party · Game ${set.roundIndex - set.cycleStart + 1} of ${set.pickerIds.length}` : `${MODES[set.mode].title} · ${set.mode === 'arcade' ? 'Game' : 'Round'} ${set.roundIndex + 1} of ${set.plan.length}`;
     if (instructions) {
       if (this.instructionSequence.key !== room.round.id) {
+        $('game-instructions').scrollTop = 0;
         this.instructionDemo?.dispose?.();
         this.instructionDemo = createGameDemo(room.round.game, { ...this.demoCallbacks, round: room.round });
         $('instructions-visual').replaceChildren(this.instructionDemo?.element || ruleVisual(room.round.game));

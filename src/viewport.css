@@ -1,11 +1,13 @@
-html:has(body.is-playing),html:has(body.is-instructions) { overflow:hidden; }
-body.is-playing,body.is-instructions { display:flex; flex-direction:column; height:var(--viewport-height,100dvh); min-height:0; overflow:hidden; }
-:is(.is-playing,.is-instructions) .game-top { width:100%; margin:0 auto; padding-top:8px; flex-shrink:0; }
-:is(.is-playing,.is-instructions) main { display:flex; flex-direction:column; flex:1; min-height:0; width:100%; margin:0 auto; padding-bottom:8px!important; }
-:is(.is-playing,.is-instructions) .game-title { font-size:clamp(25px,4vw,40px); margin:4px 0 8px; flex-shrink:0; }
-:is(.is-playing,.is-instructions) #room-view { display:flex; flex-direction:column; flex:1; min-height:0; }
-:is(.is-playing,.is-instructions) .room-toolbar { margin-bottom:8px; flex-shrink:0; }
-:is(.is-playing,.is-instructions) .set-progress { margin-bottom:8px; flex-shrink:0; }
+html:has(body:is(.is-playing,.is-instructions,.party-picking)) { overflow:hidden; overflow:clip; overscroll-behavior:none; }
+body:is(.is-playing,.is-instructions,.party-picking) { display:flex; flex-direction:column; height:100vh; height:100dvh; min-width:0; min-height:0; padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) 0 env(safe-area-inset-left,0px); overflow:hidden; overflow:clip; -webkit-text-size-adjust:100%; }
+:is(.is-playing,.is-instructions,.party-picking) .game-top { width:100%; margin:0 auto; padding-top:8px; flex-shrink:0; }
+:is(.is-playing,.is-instructions,.party-picking) main { display:flex; flex-direction:column; flex:1; min-width:0; min-height:0; width:100%; margin:0 auto; padding-bottom:8px!important; }
+:is(.is-playing,.is-instructions,.party-picking) .game-title { font-size:clamp(25px,4vw,40px); margin:4px 0 8px; flex-shrink:0; }
+:is(.is-playing,.is-instructions,.party-picking) #room-view { display:flex; flex-direction:column; flex:1; min-width:0; min-height:0; }
+:is(.is-playing,.is-instructions,.party-picking) .room-toolbar { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:3px 6px; margin-bottom:8px; flex-shrink:0; }
+:is(.is-playing,.is-instructions,.party-picking) .room-toolbar .room-pill { justify-self:start; }
+:is(.is-playing,.is-instructions,.party-picking) #reconnect-countdown { grid-column:1/-1; grid-row:2; overflow-wrap:anywhere; }
+:is(.is-playing,.is-instructions,.party-picking) .set-progress { margin-bottom:8px; flex-shrink:0; }
 .is-playing #play-view { display:flex; flex-direction:column; flex:1; min-height:0; }
 .is-playing .match-hud { padding-block:7px; flex-shrink:0; }
 .is-playing .arena { display:flex; flex-direction:column; flex:1; min-height:0; }
@@ -17,13 +19,14 @@ body.is-playing,body.is-instructions { display:flex; flex-direction:column; heig
 .is-playing .remaining { margin-block:5px 3px; }
 .is-playing .seat-status { margin-block:4px 0; min-height:14px; }
 .is-playing #lobby-status { font-size:11px; margin:4px 0 0; }
-.is-playing #control-deck { position:static; transform:none; flex-shrink:0; align-self:center; margin:0 0 calc(10px + env(safe-area-inset-bottom,0px)); padding:10px 16px 14px; }
-.is-playing #control-deck .hit-button { height:66px; }
+:is(.is-playing,.party-picking) #control-deck { position:static; transform:none; flex-shrink:0; align-self:center; margin:0 0 calc(10px + env(safe-area-inset-bottom,0px)); padding:10px 16px 14px; }
+:is(.is-playing,.party-picking) #control-deck .hit-button { height:66px; }
 .is-instructions #game-instructions { display:flex; flex-direction:column; width:100%; flex:1; min-height:0; overflow:auto; margin-bottom:0; padding-block:16px; }
 .is-instructions #game-instructions #instructions-title { align-self:center; margin:6px 0 22px; }
 .is-instructions #instructions-list { margin-bottom:10px; }
 .is-instructions .ready-actions { flex-shrink:0; margin:10px 0 0; }
-@media(max-height:650px) { :is(.is-playing,.is-instructions) .game-top .brand { font-size:21px; } :is(.is-playing,.is-instructions) .icon-button { width:34px; height:34px; } .is-playing #control-deck .hit-button { height:52px; } .is-playing .game-title { font-size:25px; margin-block:2px 4px; } .is-playing .room-toolbar { margin-bottom:4px; } .is-playing .set-progress { padding-block:3px; margin-bottom:4px; } .is-playing .remaining { font-size:12px; } }
+.is-instructions main { padding-bottom:calc(8px + env(safe-area-inset-bottom,0px))!important; }
+@media(max-height:650px) { :is(.is-playing,.is-instructions,.party-picking) .game-top .brand { font-size:21px; } :is(.is-playing,.is-instructions,.party-picking) .icon-button { width:34px; height:34px; } :is(.is-playing,.party-picking) #control-deck .hit-button { height:52px; } .is-playing .game-title { font-size:25px; margin-block:2px 4px; } .is-playing .room-toolbar { margin-bottom:4px; } .is-playing .set-progress { padding-block:3px; margin-bottom:4px; } .is-playing .remaining { font-size:12px; } }
 @media(max-height:760px) {
   .is-instructions .game-title { font-size:30px; }
   .is-instructions #game-instructions { padding:10px 18px; }
@@ -39,7 +42,7 @@ body.is-playing,body.is-instructions { display:flex; flex-direction:column; heig
   .is-instructions .ready-players { margin-top:8px; }
 }
 
-.is-instructions #ready-players { margin-top:auto; padding-top:16px; }
+.is-instructions #ready-players { margin-top:auto; padding-top:10px; }
 .is-instructions #game-instructions > * { flex-shrink:0; }
 
 .is-playing:is(.totem-theme,.dodge-theme,.monkey-theme) .lane { padding-bottom:0; }
@@ -52,3 +55,40 @@ body.is-playing,body.is-instructions { display:flex; flex-direction:column; heig
 .is-playing:is(.coin-theme,.slot-theme) .tower-zone { flex:1 1 0; height:0; min-height:0; container-type:size; }
 .is-playing.coin-theme .coin-stage,.is-playing.slot-theme .slot-cabinet { position:absolute; inset:0; width:100%; height:100%; min-height:0; }
 .is-playing.slot-theme .slot-cabinet { --face-size:min(90px,calc((100cqh - 66px) / 3)); grid-template-rows:repeat(3,minmax(0,1fr)); }
+
+#control-deck,#control-deck .hit-button { touch-action:none; user-select:none; -webkit-user-select:none; }
+
+@media(max-width:700px), (max-height:720px) {
+  .is-instructions #game-instructions { flex:0 1 auto; margin:0 auto; padding:9px 12px; }
+  .is-instructions #game-instructions #instructions-title { font-size:clamp(23px,6vw,31px); margin:2px 0 12px; }
+  .is-instructions .ready-actions { margin-top:7px; }
+  .is-instructions .ready-actions button { padding:8px 17px; min-height:42px; font-size:16px; }
+  .is-instructions #lobby-status { margin:8px auto 2px; font-size:11px; }
+  .is-instructions #ready-players { display:grid; grid-auto-flow:column; grid-auto-columns:minmax(0,1fr); gap:4px; padding-top:5px; }
+  .is-instructions #ready-players .ready-chip { padding:3px 4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:10px; }
+}
+
+@media(max-height:540px) {
+  :is(.is-playing,.is-instructions,.party-picking) .game-top { padding-top:4px; }
+  :is(.is-playing,.is-instructions,.party-picking) .game-top .brand { font-size:18px; }
+  :is(.is-playing,.is-instructions,.party-picking) .game-top .icon-button { width:29px; height:29px; font-size:17px; }
+  :is(.is-playing,.is-instructions,.party-picking) .game-title { font-size:23px; margin:2px 0 4px; }
+  :is(.is-playing,.is-instructions,.party-picking) .room-toolbar { margin-bottom:4px; }
+  :is(.is-playing,.is-instructions,.party-picking) .room-pill { padding-block:4px; }
+  :is(.is-playing,.is-instructions) .set-progress { padding-block:2px; margin-bottom:4px; }
+  :is(.is-playing,.party-picking) #control-deck { padding:4px 10px 6px; margin-bottom:calc(4px + env(safe-area-inset-bottom,0px)); }
+  :is(.is-playing,.party-picking) #control-deck .hit-button { height:40px; }
+  .is-playing .match-hud { padding-block:3px; min-height:0; }
+  .is-playing .match-hud .timer { font-size:23px; }
+}
+
+@media(max-height:500px) and (min-width:651px) {
+  :is(.is-playing,.is-instructions,.party-picking) .game-title { position:absolute; top:4px; inset-inline:24%; margin:0; }
+  :is(.is-playing,.is-instructions,.party-picking) .room-toolbar { margin-top:5px; }
+}
+
+@media(max-width:360px) {
+  :is(.is-playing,.is-instructions,.party-picking) .room-toolbar .room-pill { padding-inline:6px; gap:4px; }
+  :is(.is-playing,.is-instructions,.party-picking) .room-navigation { gap:1px; }
+  :is(.is-playing,.is-instructions,.party-picking) .room-navigation .text-button { padding-inline:4px; }
+}

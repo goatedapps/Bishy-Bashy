@@ -461,6 +461,11 @@ export const ASSETS = [
     "hash": "7d9d70f4bb4cdd19"
   },
   {
+    "path": "assets/optimized/sushi-customer-f41bbfc9e22b.webp",
+    "bytes": 25216,
+    "hash": "f41bbfc9e22b877f"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",

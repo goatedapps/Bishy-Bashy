@@ -80,7 +80,7 @@ test('delivery manifest verifies every asset and compressed WAVs retain exact sa
     }
   }
   const art = ASSETS.filter(asset => asset.path.endsWith('.webp'));
-  assert.equal(art.length, 92);
+  assert.equal(art.length, 93);
   assert.equal(art.filter(asset => asset.path.includes('/bg-')).length, 31);
   assert.ok(art.reduce((sum, asset) => sum + asset.bytes, 0) < 8_000_000);
 });

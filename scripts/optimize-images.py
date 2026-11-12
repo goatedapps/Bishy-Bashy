@@ -18,7 +18,7 @@ sizes = {'witch-sprites': 1536, 'bg-witch-village': 1280, 'shark-wave': 1024, 's
          'satay-sprites': 960, 'ant-plane': 384,
          'bg-satay-market': 960, 'bg-ant-mail': 960,
          'bg-dam-worksite': 768, 'dam-cover': 512, 'dam-wood': 384, 'dam-water': 384,
-         'bg-sushi-counter': 768, 'sushi-cover': 512, 'sushi-items': 768,
+         'bg-sushi-counter': 768, 'sushi-cover': 512, 'sushi-items': 768, 'sushi-customer': 320,
          'bg-metro-cavern': 768, 'metro-cover': 512, 'metro-train': 256,
          'glamour-stages': 1024, 'glamour-props': 768, 'bg-glamour-apothecary': 960,
          **{f'bg-{name}': 1280 for name in [

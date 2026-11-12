@@ -1,4 +1,4 @@
-import { WORKSHOP_FINISH_HOLD_MS, WORKSHOP_GAMES } from '../shared/workshop-games.js';
+import { WORKSHOP_FINISH_HOLD_MS, WORKSHOP_LANES } from '../shared/workshop-games.js';
 import { driveWorkshop } from './helpers/workshop-games.js';
 import { driveWitch } from './helpers/witch.js';
 import { WITCH_HOLD_MS } from '../shared/witch.js';
@@ -40,7 +40,7 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
   ready();
   const finish = (order = clients.map((_, index) => index), winner = 0) => {
     const round = room.round;
-    if (WORKSHOP_GAMES.includes(round.game)) {
+    if (WORKSHOP_LANES.includes(round.game)) {
       const runs = clients.map((_, index) => {
         const place = index === winner ? 0 : index < winner ? index + 1 : index;
         return driveWorkshop(round, { delay: place * 80, misses: place });

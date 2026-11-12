@@ -1,4 +1,5 @@
-import { DAM_GAME, DAM_FALL_MS, DAM_SETTLE_MS, METRO_GAME, METRO_ARRIVAL_MS, METRO_ARRIVED, METRO_CRASH, METRO_DWELL_MS,
+import { gsap } from 'gsap';
+import { METRO_GAME, METRO_ARRIVAL_MS, METRO_ARRIVED, METRO_CRASH, METRO_DWELL_MS,
   METRO_ENTRY_MS, METRO_FORK_MS, METRO_STATIONS, METRO_WRONG, SUSHI_GAME, SUSHI_ITEMS, SUSHI_SERVE_MS,
   createWorkshopRun, damOutline, metroStation } from '../shared/workshop-games.js';
 
@@ -11,6 +12,8 @@ const SWITCHES = [[50, 31], [28, 57], [72, 57]];
 const STATIONS = [[11, 85], [34, 85], [66, 85], [89, 85]];
 const SUCCESS = '○';
 const FAILURE = '×';
+const orderIn = gsap.parseEase('back.out(1.6)');
+const settle = gsap.parseEase('power2.out');
 
 const unit = value => Math.max(0, Math.min(1, value));
 const lerp = (from, to, fraction) => from + (to - from) * fraction;
@@ -26,13 +29,16 @@ const position = (element, [x, y]) => {
 };
 const angle = (from, to) => Math.atan2(to[1] - from[1], (to[0] - from[0]) * BOARD_RATIO);
 
-class DamScene {
+export class DamScene {
   constructor() {
     this.element = node('div', 'workshop-scene dam-scene');
     this.gap = node('div', 'dam-piece dam-gap');
     this.drop = node('div', 'dam-piece dam-drop');
+    this.spray = node('div', 'dam-spray');
+    this.spray.setAttribute('aria-hidden', 'true');
+    for (let index = 0; index < 8; index++) this.spray.append(node('i', ''));
     this.target = node('div', 'dam-target');
-    this.target.append(this.gap, this.drop);
+    this.target.append(this.gap, this.drop, this.spray);
     const bank = node('div', 'dam-choices');
     this.choices = BUTTON_SHAPES.map((shape, color) => {
       const card = node('div', `dam-choice workshop-color-${color}`);
@@ -41,36 +47,42 @@ class DamScene {
       bank.append(card);
       return { card, piece };
     });
-    this.element.append(this.target, bank);
+    this.status = node('strong', 'dam-status');
+    this.element.append(this.target, bank, this.status);
   }
 
-  render(run, age, motion) {
-    const final = run.cleared === run.round.goal;
-    const sealed = final || run.feedback?.kind === 'clear' && age < DAM_SETTLE_MS;
-    const dropping = run.feedback?.kind === 'hit';
-    const failed = run.feedback?.kind === 'miss' && age < 540;
-    const index = sealed ? run.cleared - 1 : run.cleared;
-    const puzzle = run.sequence[index];
-    const color = final ? puzzle.correct : run.feedback?.color;
+  render(puzzle, selected, result, age, motion) {
     if (puzzle !== this.puzzle) {
       this.puzzle = puzzle;
       this.gap.style.clipPath = damOutline(puzzle.profile);
       this.choices.forEach(({ piece }, index) => { piece.style.clipPath = damOutline(puzzle.choices[index]); });
     }
+    const dropping = Boolean(result);
+    const landed = dropping && (!motion || age >= 250);
     this.choices.forEach(({ card }, index) => {
-      card.classList.toggle('is-selected', index === color && (sealed || failed || dropping));
-      card.classList.toggle('is-wrong', index === color && failed);
+      card.classList.toggle('is-selected', selected === index);
+      card.classList.toggle('is-answer', landed && result.answer === index);
+      card.classList.toggle('is-wrong', landed && selected === index && result.answer !== index);
     });
-    this.gap.classList.toggle('is-flowing', motion && !sealed);
-    this.drop.hidden = !sealed && !failed && !dropping;
-    if (!this.drop.hidden) {
-      this.drop.style.clipPath = damOutline(puzzle.choices[color]);
-      const fall = unit(age / DAM_FALL_MS);
-      const bounce = failed ? Math.sin(Math.PI * unit((age - DAM_FALL_MS) / 360)) : 0;
-      this.drop.style.transform = motion ? `translateY(${-160 * (1 - fall ** 2) - 76 * bounce}%) rotate(${failed ? 15 * bounce : 0}deg)` : '';
-      this.drop.style.opacity = failed && motion ? String(1 - unit((age - 320) / 210)) : '1';
+    this.gap.classList.toggle('is-flowing', motion && !landed);
+    this.gap.hidden = landed;
+    this.drop.hidden = !dropping;
+    if (dropping) {
+      this.drop.style.clipPath = damOutline(puzzle.choices[result.answer]);
+      const fall = motion ? unit(age / 250) : 1;
+      const recoil = motion ? Math.sin(Math.PI * unit((age - 250) / 150)) : 0;
+      this.drop.style.transform = `translateY(${-145 * (1 - fall ** 2) - recoil * 7}%) scale(${1 + recoil * .065},${1 - recoil * .11})`;
     }
-    return sealed ? 'Leak sealed' : failed ? 'The block did not fit' : 'Choose the block that matches the leak';
+    const spray = unit((age - 250) / 330);
+    this.spray.hidden = !motion || !landed || spray >= 1;
+    if (!this.spray.hidden) [...this.spray.children].forEach((drop, index) => {
+      const direction = index < 4 ? -1 : 1;
+      drop.style.transform = `translate(${direction * (25 + index % 4 * 15) * settle(spray)}px,${-Math.sin(Math.PI * spray) * (15 + index % 4 * 5)}px) scale(${1 - spray * .5})`;
+      drop.style.opacity = String(1 - spray);
+    });
+    const label = landed ? 'Leak sealed' : dropping ? 'Revealing' : selected === undefined ? '' : 'Locked in';
+    if (this.status.textContent !== label) this.status.textContent = label;
+    this.status.hidden = !label;
   }
 }
 
@@ -81,25 +93,38 @@ function sushiIcon(item) {
   return icon;
 }
 
+export class SushiMenu {
+  constructor(element = node('div', 'sushi-menu')) {
+    this.element = element;
+  }
+
+  render(menu) {
+    if (menu === this.source) return;
+    this.source = menu;
+    this.element.replaceChildren(...menu.map((items, color) => {
+      const row = node('div', `sushi-bucket workshop-color-${color}`);
+      row.setAttribute('aria-label', `${BUTTON_COLORS[color]} menu`);
+      row.append(node('span', 'workshop-mark', BUTTON_SHAPES[color]),
+        ...items.map(item => node('span', 'sushi-menu-item', SUSHI_ITEMS[item])));
+      return row;
+    }));
+  }
+}
+
 class SushiScene {
   constructor() {
     this.element = node('div', 'workshop-scene sushi-scene');
     this.ticket = node('div', 'sushi-ticket');
-    this.menu = node('div', 'sushi-menu');
-    this.element.append(this.ticket, this.menu);
+    this.menu = new SushiMenu();
+    this.customer = node('div', 'sushi-customer');
+    this.customer.setAttribute('aria-hidden', 'true');
+    const counter = node('div', 'sushi-counter');
+    counter.append(this.ticket, this.customer);
+    this.element.append(this.menu.element, counter);
   }
 
-  render(run, age, motion) {
-    if (run.menu !== this.menuSource) {
-      this.menuSource = run.menu;
-      this.menu.replaceChildren(...run.menu.map((items, color) => {
-        const row = node('div', `sushi-bucket workshop-color-${color}`);
-        row.setAttribute('aria-label', `${BUTTON_COLORS[color]} menu`);
-        row.append(node('span', 'workshop-mark', BUTTON_SHAPES[color]),
-          ...items.map(item => node('span', 'sushi-menu-item', SUSHI_ITEMS[item])));
-        return row;
-      }));
-    }
+  render(run, age, motion, time) {
+    this.menu.render(run.menu);
     const complete = run.cleared === run.round.goal || run.feedback?.kind === 'clear' && age < SUSHI_SERVE_MS;
     const index = complete ? run.cleared - 1 : run.cleared;
     const order = run.sequence[index];
@@ -115,7 +140,12 @@ class SushiScene {
       }));
     }
     this.ticket.classList.toggle('is-served', complete);
-    this.ticket.style.translate = complete && motion ? `0 ${-6 * Math.sin(Math.PI * unit(age / SUSHI_SERVE_MS))}%` : '';
+    const entrance = !run.feedback ? unit((time - run.start) / 250) :
+      !complete && run.feedback.kind === 'clear' ? unit((age - SUSHI_SERVE_MS) / 250) : 1;
+    const cheers = complete && motion ? Math.sin(Math.PI * unit(age / SUSHI_SERVE_MS)) : 0;
+    const reveal = motion ? orderIn(entrance) : 1;
+    this.ticket.style.transform = `translateY(${(1 - reveal) * 18 - cheers * 7}%) scale(${.82 + reveal * .18 + cheers * .035})`;
+    this.customer.style.transform = `translateY(${-cheers * 8}%) rotate(${cheers * 5}deg)`;
     return complete ? 'Order served' : `Order: ${order.map((item, slot) => SUSHI_ITEMS[item] + (served & (1 << slot) ? ' served' : '')).join(', ')}`;
   }
 }
@@ -211,7 +241,7 @@ class MetroScene {
   }
 }
 
-const SCENES = { [DAM_GAME]: DamScene, [SUSHI_GAME]: SushiScene, [METRO_GAME]: MetroScene };
+const SCENES = { [SUSHI_GAME]: SushiScene, [METRO_GAME]: MetroScene };
 
 export class WorkshopStage {
   constructor() {
@@ -241,7 +271,7 @@ export class WorkshopStage {
     const sample = run || this.preview;
     const age = time - (sample.feedback?.at ?? -Infinity);
     const motion = !this.motion?.matches;
-    const label = round.game === METRO_GAME ? this.scene.render(sample, run ? time : -1, motion, terminal) : this.scene.render(sample, age, motion);
+    const label = round.game === METRO_GAME ? this.scene.render(sample, run ? time : -1, motion, terminal) : this.scene.render(sample, age, motion, time);
     if (label !== this.label) {
       this.label = label;
       this.element.setAttribute('aria-label', label);

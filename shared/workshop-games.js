@@ -1,10 +1,12 @@
+import { ChoiceRun } from './choice-round.js';
 import { seededIndex } from './seeded-index.js';
 import { ReplayLaneRun, replayLane } from './replay-lane.js';
 
 export const DAM_GAME = 'dam-good-fit';
 export const SUSHI_GAME = 'sushi-switchboard';
 export const METRO_GAME = 'mole-metro';
-export const WORKSHOP_GAMES = [DAM_GAME, SUSHI_GAME, METRO_GAME];
+export const WORKSHOP_LANES = [SUSHI_GAME, METRO_GAME];
+export const WORKSHOP_GAMES = [DAM_GAME, ...WORKSHOP_LANES];
 export const WORKSHOP_FINISH_HOLD_MS = 550;
 export const WORKSHOP_CONTROLS = {
   [DAM_GAME]: ['Left block', 'Middle block', 'Right block'],
@@ -12,16 +14,17 @@ export const WORKSHOP_CONTROLS = {
   [METRO_GAME]: ['Entry switch', 'Left switch', 'Right switch'],
 };
 
-export const DAM_SETTLE_MS = 420;
-export const DAM_FALL_MS = 180;
-export const DAM_RETRY_MS = 560;
+export const DAM_SETS = 8;
+export const DAM_REVEAL_MS = 900;
+const damWindow = (index, difficulty) => 5200 - 470 * index - 150 * (difficulty - 1);
+const damDuration = difficulty => Array.from({ length: DAM_SETS }, (_, index) => damWindow(index, difficulty) + DAM_REVEAL_MS).reduce((total, duration) => total + duration, 0);
 export const SUSHI_SERVE_MS = 440;
 export const SUSHI_RETRY_MS = 360;
 export const SUSHI_ITEMS = ['Salmon', 'Tuna', 'Shrimp', 'Egg', 'Eel', 'Cucumber', 'Avocado', 'Roe', 'Inari'];
 
 export const METRO_TRAINS = 12;
 export const METRO_PASSENGERS = 3;
-export const METRO_STATIONS = ['★', '♥', '☾', '✿'];
+export const METRO_STATIONS = ['â˜…', 'â™¥', 'â˜¾', 'âœ¿'];
 export const METRO_ENTRY_MS = 1_600;
 export const METRO_FORK_MS = 3_000;
 export const METRO_ARRIVAL_MS = 4_650;
@@ -35,14 +38,14 @@ const metroHeadway = difficulty => 2_200 - 130 * (difficulty - 1);
 const metroDuration = (count, headway) => METRO_FIRST_MS + (count - 1) * headway + METRO_ARRIVAL_MS + 700;
 
 export const WORKSHOP_SETTINGS = {
-  [DAM_GAME]: { goal: 8, duration: 30_000 },
+  [DAM_GAME]: { goal: DAM_SETS, duration: damDuration(1) },
   [SUSHI_GAME]: { goal: 10, duration: 36_000 },
   [METRO_GAME]: { goal: METRO_TRAINS * METRO_PASSENGERS, duration: metroDuration(METRO_TRAINS, metroHeadway(1)) },
 };
 
 export function workshopSettings(game, seed, difficulty) {
   const settings = { seed, difficulty, ...WORKSHOP_SETTINGS[game] };
-  if (game === DAM_GAME) settings.goal += difficulty - 1;
+  if (game === DAM_GAME) settings.duration = damDuration(difficulty);
   if (game === METRO_GAME) {
     settings.trainCount = METRO_TRAINS;
     settings.headway = metroHeadway(difficulty);
@@ -100,29 +103,19 @@ export function sushiOrders(round, menu) {
   });
 }
 
-export class DamRun extends ReplayLaneRun {
+export function damStages(round, window = index => damWindow(index, round.difficulty)) {
+  let startsAt = 0;
+  return damPuzzles(round).map(({ correct, ...puzzle }, index) => {
+    const answerEnd = startsAt + window(index);
+    const stage = { index, startsAt, answerAt: startsAt, answerEnd, endsAt: answerEnd + DAM_REVEAL_MS, puzzle: { ...puzzle, answer: correct } };
+    startsAt = stage.endsAt;
+    return stage;
+  });
+}
+
+export class DamRun extends ChoiceRun {
   constructor(round, start) {
-    super(round, start);
-    this.sequence = damPuzzles(round);
-    this.blockedUntil = start + 250;
-    this.sealAt = null;
-  }
-
-  advance(time) {
-    if (this.done || this.sealAt === null || this.offsetUs(this.sealAt) > this.offsetUs(Math.min(time, this.end))) return;
-    const at = this.sealAt;
-    this.sealAt = null;
-    this.feedback.kind = 'clear';
-    this.clear(at);
-  }
-
-  resolve(color, time) {
-    const correct = color === this.sequence[this.cleared].correct;
-    this.blockedUntil = time + (correct ? DAM_SETTLE_MS : DAM_RETRY_MS);
-    if (!correct) return this.miss(time, color);
-    this.feedback = { kind: 'hit', at: time, color };
-    this.sealAt = time + DAM_FALL_MS;
-    return 'move';
+    super(round, start, damStages(round));
   }
 }
 
@@ -220,7 +213,7 @@ export class MetroRun extends ReplayLaneRun {
   }
 }
 
-const RUNS = { [DAM_GAME]: DamRun, [SUSHI_GAME]: SushiRun, [METRO_GAME]: MetroRun };
+const RUNS = { [SUSHI_GAME]: SushiRun, [METRO_GAME]: MetroRun };
 
 export function createWorkshopRun(round, start) {
   return new RUNS[round.game](round, start);
@@ -230,6 +223,5 @@ export function validWorkshopResult(round, { proof, cleared, elapsed, mistakes }
   const replay = replayLane(round, proof, createWorkshopRun);
   if (!replay) return false;
   if (round.game === METRO_GAME) replay.advance(round.duration);
-  if (round.game === DAM_GAME && Number.isFinite(elapsed)) replay.advance(elapsed);
   return replay.done && replay.cleared === cleared && replay.elapsed === elapsed && replay.mistakes === mistakes;
 }

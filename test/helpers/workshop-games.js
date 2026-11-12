@@ -1,5 +1,5 @@
 import { createRun } from '../../shared/games.js';
-import { DAM_GAME, METRO_GAME, METRO_ENTRY_MS, METRO_FORK_MS } from '../../shared/workshop-games.js';
+import { METRO_GAME, METRO_ENTRY_MS, METRO_FORK_MS } from '../../shared/workshop-games.js';
 
 export function driveWorkshop(round, { start = 0, delay = 0, misses = 0 } = {}) {
   const run = createRun(round, start);
@@ -15,11 +15,6 @@ export function driveWorkshop(round, { start = 0, delay = 0, misses = 0 } = {}) 
       if ((run.switches >> color & 1) !== direction) run.tap(color, at);
     }
     run.advance(run.end);
-  } else if (round.game === DAM_GAME) {
-    for (const puzzle of run.sequence) {
-      run.tap(puzzle.correct, run.blockedUntil + delay);
-      run.advance(run.sealAt);
-    }
   } else {
     for (const order of run.sequence) {
       let at = run.blockedUntil + delay;
