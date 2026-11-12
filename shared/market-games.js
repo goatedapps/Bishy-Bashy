@@ -1,4 +1,5 @@
 import { seededIndex } from './seeded-index.js';
+import { ReplayLaneRun, replayLane } from './replay-lane.js';
 
 export const SATAY_GAME = 'satay-snag';
 export const POTION_GAME = 'glamour-brew';
@@ -16,7 +17,6 @@ export const MARKET_CONTROLS = Object.freeze({
   [ANT_GAME]: ['Left', 'Down', 'Right'],
 });
 
-const INPUT_GAP_US = 75_000;
 const FIRST_DROP_MS = 350;
 const NEXT_DROP_MS = 340;
 export const POTION_REFILL_MS = 440;
@@ -68,52 +68,7 @@ export function antCourse(round) {
   return { directions, waypoints };
 }
 
-class MarketRun {
-  constructor(round, start) {
-    this.round = round;
-    this.start = start;
-    this.end = start + round.duration;
-    this.cleared = 0;
-    this.mistakes = 0;
-    this.done = false;
-    this.elapsed = null;
-    this.feedback = null;
-    this.blockedUntil = start;
-    this.events = [];
-    this.proof = [];
-  }
-
-  offsetUs(time) { return Math.round((time - this.start) * 1000); }
-
-  tap(color, time) {
-    if (this.done || !COLORS.includes(color) || !Number.isFinite(time) || time < this.start) return { type: 'ignored' };
-    const elapsedUs = this.offsetUs(time);
-    time = this.start + elapsedUs / 1000;
-    if (elapsedUs >= this.round.duration * 1000) return { type: 'ignored' };
-    this.advance?.(time);
-    const previous = this.proof.at(-1);
-    if (elapsedUs < this.offsetUs(this.blockedUntil) || previous && elapsedUs - previous[1] < INPUT_GAP_US) return { type: 'ignored' };
-    this.proof.push([color, elapsedUs]);
-    const type = this.resolve(color, time);
-    if (type !== 'clear') return { type };
-    if (++this.cleared < this.round.goal) {
-      this.events.push({ type: 'stageComplete', at: time });
-      return { type };
-    }
-    this.done = true;
-    this.elapsed = elapsedUs / 1000;
-    return { type: 'finished', elapsed: this.elapsed };
-  }
-
-  miss(time, color) {
-    this.mistakes++;
-    this.feedback = { kind: 'miss', at: time, ...(color === undefined ? {} : { color }) };
-    this.events.push({ type: 'stageWrong', at: time });
-    return 'mistake';
-  }
-}
-
-export class SatayRun extends MarketRun {
+export class SatayRun extends ReplayLaneRun {
   constructor(round, start) {
     super(round, start);
     this.index = 0;
@@ -149,7 +104,7 @@ export class SatayRun extends MarketRun {
   }
 }
 
-export class PotionRun extends MarketRun {
+export class PotionRun extends ReplayLaneRun {
   constructor(round, start) {
     super(round, start);
     this.sequence = potionWaves(round);
@@ -181,7 +136,7 @@ export class PotionRun extends MarketRun {
   }
 }
 
-export class AntRun extends MarketRun {
+export class AntRun extends ReplayLaneRun {
   constructor(round, start) {
     super(round, start);
     const { directions, waypoints } = antCourse(round);
@@ -206,11 +161,6 @@ export function createMarketRun(round, start) {
 }
 
 export function validMarketResult(round, { proof, elapsed, mistakes }) {
-  if (!Array.isArray(proof) || proof.length > Math.ceil(round.duration * 1000 / INPUT_GAP_US)) return false;
-  const replay = createMarketRun(round, 0);
-  for (const entry of proof) {
-    if (!Array.isArray(entry) || entry.length !== 2 || !Number.isSafeInteger(entry[1]) ||
-        replay.tap(entry[0], entry[1] / 1000).type === 'ignored') return false;
-  }
-  return replay.done && replay.elapsed === elapsed && replay.mistakes === mistakes;
+  const replay = replayLane(round, proof, createMarketRun);
+  return Boolean(replay?.done && replay.elapsed === elapsed && replay.mistakes === mistakes);
 }

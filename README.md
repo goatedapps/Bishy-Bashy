@@ -1,6 +1,6 @@
 # Dokidoki Dash!
 
-A four-player browser party game with 29 minigames, illustrated tutorials, and shared multiplayer rooms.
+A four-player browser party game with 32 minigames, illustrated tutorials, and shared multiplayer rooms.
 Each device controls its own player through the same red, green, and blue buttons.
 The frontend deploys independently to GitHub Pages; a separate Node WebSocket service coordinates rooms and results.
 This is an independent game with original artwork.
@@ -48,8 +48,8 @@ Choose a mode inside the room before starting a set.
 | Game Select | Choose one game and play three rounds with increasing difficulty. |
 | Party | Each rostered player locks one game in 30 seconds; play the picks in player order, including duplicates. |
 
-All 29 games are available in every mode:
-Burst the Balloon, Open Sesame, Witch’s Special Delivery, Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, Get Those Burgers Out!, Where’s Kaya, Happy Days, Stationery Master, Clock Stopper, Ladder Climber, Star Collector, Horse Speeder, Shark Jumper, Satay Snag, Glamour Brew, and Ant Air Mail.
+All 32 games are available in every mode:
+Burst the Balloon, Open Sesame, Witch’s Special Delivery, Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, Get Those Burgers Out!, Where’s Kaya, Happy Days, Stationery Master, Clock Stopper, Ladder Climber, Star Collector, Horse Speeder, Shark Jumper, Satay Snag, Glamour Brew, Ant Air Mail, Dam Good Fit, Sushi Switchboard, and Mole Metro.
 The common keyboard shortcuts are **1 / 2 / 3** or **J / K / L**.
 Game instructions explain each game's actions and any additional keyboard controls.
 
@@ -59,6 +59,7 @@ Everyone watches the same turn, the landing frog becomes a prince, and the most 
 Open Sesame is a simultaneous race to dial one shared eight-digit code using red and blue to move and green to select.
 Burst the Balloon is a simultaneous race to pop a balloon by alternating red and blue.
 Satay Snag races to catch ten hot dogs, Glamour Brew transforms a witch across ten potion sets, and Ant Air Mail follows one paper plane through twelve turns.
+Dam Good Fit races to seal a beaver dam, Sushi Switchboard races to serve menu orders, and Mole Metro scores passengers delivered across a branching railway.
 Set placements award **10 / 7 / 4 / 1 points**, with ties sharing placement points.
 Party mode retains cumulative points, win counts, and history between cycles.
 Final standings stay open until every player still in the room chooses Exit.
@@ -78,7 +79,7 @@ Players can override the endpoint in Connection settings, and invitations preser
 `render.yaml` configures the Node service with build command `npm ci && npm run build` and start command `npm start`.
 Set `ALLOWED_ORIGINS=https://goatedapps.github.io`; additional origins may be comma-separated, with no repository path or trailing slash.
 HTTPS pages require `wss://`, and the client connects at `/ws`.
-Use `/health` for the health check; it reports protocol version 41.
+Use `/health` for the health check; it reports protocol version 42.
 Deploy frontend and backend together when changing protocol requirements, and verify both deployments separately.
 Keep one server instance while rooms live in memory; restarting or redeploying the service clears rooms.
 A sleeping service may need time to wake up.

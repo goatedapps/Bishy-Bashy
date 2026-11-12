@@ -1,6 +1,7 @@
 import { witchPortrait } from './witch-view.js';
 import { balloonPortrait } from './balloon-view.js';
 import { MARKET_GAMES } from '../shared/market-games.js';
+import { WORKSHOP_GAMES } from '../shared/workshop-games.js';
 import { marketPortrait } from './market-view.js';
 import { sharkPortrait, sharkPlatform } from './shark-view.js';
 import { horsePortrait } from './horse-view.js';
@@ -31,6 +32,7 @@ const node = (tag, className, text) => {
 export function gameArt(game) {
   const art = node('span', `game-art art-${game}`);
   art.setAttribute('aria-hidden', 'true');
+  if (WORKSHOP_GAMES.includes(game)) return art;
   if (game === 'witch-delivery') art.append(witchPortrait(), witchPortrait('frog'));
   else if (MARKET_GAMES.includes(game)) art.append(marketPortrait(game));
   else if (game === 'burst-the-balloon') art.append(balloonPortrait());

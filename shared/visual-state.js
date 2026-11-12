@@ -1,11 +1,15 @@
 import { STAR_GOAL, STAR_MAX_DEPTH } from './stars.js';
 import { createRun } from './games.js';
 import { ANT_GAME, SATAY_GAME, POTION_GAME } from './market-games.js';
+import { DAM_GAME, METRO_GAME, SUSHI_GAME, METRO_CRASH, METRO_STATIONS } from './workshop-games.js';
 
 const SCHEMAS = {
   [SATAY_GAME]: { index: 'index', launchedAt: 'time', blockedUntil: 'time' },
   [POTION_GAME]: { index: 'index', bottleMask: 'bottles', blockedUntil: 'time' },
   [ANT_GAME]: { blockedUntil: 'time' },
+  [DAM_GAME]: {},
+  [SUSHI_GAME]: { servedMask: 'sushiMask' },
+  [METRO_GAME]: { switches: 'mask', routes: 'metroRoutes' },
   'burst-the-balloon': {},
   'shark-jumper': { jumpAt: 'time', landAt: 'nullableTime', fallAt: 'time', blockedUntil: 'time' },
   'horse-speeder': { distance: 'horseDistance', speed: 'horseSpeed', position: 'column', moveFrom: 'horseLane', moveAt: 'time', index: 'index', lastThrust: 'time', stumbleUntil: 'time' },
@@ -84,6 +88,16 @@ export function sanitizeVisual(round, visual, receivedElapsed) {
     }
     if (type === 'bottles') {
       if (!number(value, 0, 63, true) || fields.index >= round.goal) return null;
+      fields[key] = value;
+      continue;
+    }
+    if (type === 'metroRoutes') {
+      if (!Array.isArray(value) || value.length !== round.trainCount || !value.every(route => number(route, -1, METRO_CRASH + METRO_STATIONS.length - 1, true))) return null;
+      fields[key] = [...value];
+      continue;
+    }
+    if (type === 'sushiMask') {
+      if (!number(value, 0, 2, true)) return null;
       fields[key] = value;
       continue;
     }

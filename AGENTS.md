@@ -1,6 +1,6 @@
 # Dokidoki Dash!
 
-A four-device party game with 29 registered minigames and Arcade, Game Select, and Party modes.
+A four-device party game with 32 registered minigames and Arcade, Game Select, and Party modes.
 See [README.md](README.md) for setup, hosting, source ownership, and asset maintenance.
 Before changing gameplay, tutorials, audio, layout, or multiplayer, read the relevant sections of [the detailed gameplay constraints](docs/gameplay-invariants.md).
 Use [the gameplay reference](docs/gameplay.md) for player behavior and game-specific tuning.
@@ -14,7 +14,7 @@ Use [the gameplay reference](docs/gameplay.md) for player behavior and game-spec
 - Write each full sentence on its own physical line when substantially editing Markdown.
 - Comment only on non-obvious intent, constraints, invariants, or tradeoffs.
 - Keep the static frontend independently deployable with a configurable secure WebSocket endpoint.
-- Deploy frontend and backend together for protocol changes; current protocol is 41.
+- Deploy frontend and backend together for protocol changes; current protocol is 42.
 - Keep a single server instance while rooms live in memory.
 
 ## Game and asset requirements
@@ -66,19 +66,11 @@ Keep visible inflation tied to accepted presses and allow the final pop to displ
 Satay Snag, Glamour Brew, and Ant Air Mail share replay validation in `shared/market-games.js` and a real-scene tutorial renderer in `src/market-view.js`.
 Keep Satay at ten tighter catches, advance Glamour Brew's illustrated look once per cleared set, and keep Ant Air Mail's courier continuous between waypoints.
 
+Dam Good Fit, Sushi Switchboard, and Mole Metro share replay validation in `shared/workshop-games.js` and use the real gameplay scenes in their tutorials.
+Keep menu and switch labels readable on phones, and rank Mole Metro by delivered passengers.
+
 ## Remaining planned games
 
-- **Dam Good Fit** — A beaver crew races to repair a leaky dam by plugging a series of jagged gaps with wooden blocks.
-  Each gap has three candidate blocks, and pressing red, green, or blue drops the corresponding block into place.
-  The exact fit seals the leak and advances to the next gap, while a wrong block bounces out and costs time.
-  The fastest player to seal every gap wins.
-  [Arcade reference at 11:10](https://www.youtube.com/watch?v=Qpjyn7jUpEA&t=670s)
-- **Sushi Switchboard** — Customers at a sushi counter order dishes made up of one or two named menu items.
-  Each menu item is listed in exactly one of the red, green, or blue buckets.
-  Look up each requested item and press the button for its bucket to fill that part of the order.
-  Serve two-item orders in either order, pressing the same button twice if both items are in the same bucket.
-- **Mole Metro** — Each button toggles one of three track switches in an underground railway.
-  Route moving trains to their pictured stations without collisions, and deliver the most passengers to win.
 - **Goblin Garage Sale** — Bid on odd treasures using red for one coin, green for two, or blue for three.
   Bids reveal together, everyone pays their bid, and the highest bidder wins the item unless the top bid is tied, in which case the goblin keeps it.
   Build the most valuable haul from a limited purse.

@@ -16,6 +16,7 @@ import { LETTERS_GAME, LettersMatch, LETTERS_PACKET_MS } from '../shared/letters
 import { SESAME_GAME, validSesameResult } from '../shared/sesame.js';
 import { BALLOON_GAME, BALLOON_POP_MS, validBalloonResult } from '../shared/balloon.js';
 import { MARKET_FINISH_HOLD_MS, MARKET_GAMES, validMarketResult } from '../shared/market-games.js';
+import { METRO_GAME, WORKSHOP_FINISH_HOLD_MS, WORKSHOP_GAMES, validWorkshopResult } from '../shared/workshop-games.js';
 import { PROTOCOL_VERSION } from '../shared/protocol.js';
 import { isSharedChoice } from '../shared/choice-round.js';
 import { MISTAKE_GAME } from '../shared/mistake.js';
@@ -90,7 +91,7 @@ export class RoomService {
     if (!returning && room.set) room.set.players.push({ id: player.id, name: player.name, characterId: player.characterId, points: 0, wins: 0 });
     client.room = room.code;
     if (!room.hostId || !room.players.some(p => p.id === room.hostId && p.connected)) room.hostId = player.id;
-    this.send(client, { type: 'joined', protocol: PROTOCOL_VERSION, capabilities: [...MARKET_GAMES, BALLOON_GAME, SESAME_GAME, 'witch-power-curve', 'witch-cumulative-speed', 'witch-instant-aim', 'witch-turns', 'shark-jumper', 'horse-speeder', 'star-collector', 'desk-clock', 'happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
+    this.send(client, { type: 'joined', protocol: PROTOCOL_VERSION, capabilities: [...MARKET_GAMES, ...WORKSHOP_GAMES, BALLOON_GAME, SESAME_GAME, 'witch-power-curve', 'witch-cumulative-speed', 'witch-instant-aim', 'witch-turns', 'shark-jumper', 'horse-speeder', 'star-collector', 'desk-clock', 'happy-days', 'kaya-shuffle', 'room-navigation', 'arcade-wheel', 'arcade-reel', 'asset-readiness', 'coins-dodge', 'live-gameplay-v2', 'set-exit', 'firework-sets', 'game-announcements', 'game-picker-screen', 'shared-letters', 'shared-choices', 'mistake-points', 'dynamite-meals', 'character-picker', 'overlapping-coins', 'party-mode', 'arcade-length', 'timed-letters', 'expiring-seats'], token: player.token, playerId: player.id, code: room.code });
     this.broadcast(room);
   }
 
@@ -487,6 +488,7 @@ export class RoomService {
     if (round.game === SLOT_GAME && (!validReelMask(message.reelMask, cleared) || (message.reelMask & player.progress.reelMask) !== player.progress.reelMask)) return;
     const visual = sanitizeVisual(round, message.visual, received - round.startAt);
     if (MARKET_GAMES.includes(round.game) && (cleared === round.goal || visual?.done)) return;
+    if (WORKSHOP_GAMES.includes(round.game) && (visual?.done || round.game !== METRO_GAME && cleared === round.goal)) return;
     if (visual && visual.sample < (player.progress.visual?.sample ?? -1)) return;
     player.progress = { cleared, mistakes, ...(visual ? { visual } : player.progress.visual ? { visual: player.progress.visual } : {}), ...(round.game === SLOT_GAME ? { reelMask: message.reelMask } : {}), ...([PERM_GAME, HAPPY_GAME].includes(round.game) ? { score: message.score } : {}) };
     player.lastProgressAt = received;
@@ -519,6 +521,7 @@ export class RoomService {
     if (round.game === SESAME_GAME && message.status === 'finished' && !validSesameResult(round, message)) return this.error(client, 'Complete the code and report a valid dial history.');
     if (round.game === BALLOON_GAME && message.status === 'finished' && (message.mistakes !== 0 || !validBalloonResult(round, message))) return this.error(client, 'Pop the balloon and report a valid pump history.');
     if (MARKET_GAMES.includes(round.game) && message.status === 'finished' && !validMarketResult(round, message)) return this.error(client, 'Complete the race and report a valid input history.');
+    if (WORKSHOP_GAMES.includes(round.game) && message.status === 'finished' && (message.cleared < player.progress.cleared || message.mistakes < player.progress.mistakes || round.game === METRO_GAME && received < round.endAt - 250 || !validWorkshopResult(round, message))) return this.error(client, 'Report a valid input history for this round.');
     if (round.game === HORSE_GAME && message.status === 'finished' && !validHorseResult(round, message)) return this.error(client, 'Complete the race and report a valid driving history.');
     if (round.game === STAR_GAME && message.status === 'finished' && (received < round.endAt - 250 || message.cleared < player.progress.cleared || !validStarResult(round, message))) return this.error(client, 'Finish the 45-second round and report the collected stars.');
     if (round.game === HAPPY_GAME && message.status === 'finished' && (received < round.endAt - 250 || message.elapsed !== round.duration || message.cleared < player.progress.cleared || message.mistakes < player.progress.mistakes || !validHappyScore(round, message, true))) return this.error(client, 'Wait for the music to finish and report the judged notes and accuracy score.');
@@ -544,13 +547,14 @@ export class RoomService {
     if (round.game === LETTERS_GAME) player.result.cleared = round.letters.scores[player.id] || 0;
     if (isSharedChoice(round.game)) player.result.cleared = round.choice.scores[player.id] || 0;
     if (elapsedRace && message.status === 'finished') player.progress = { cleared: round.goal, mistakes: message.mistakes, ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}) };
-    if (round.game === MISTAKE_GAME && message.status === 'finished') player.progress = { ...player.progress, cleared, mistakes: message.mistakes };
+    if ([MISTAKE_GAME, METRO_GAME].includes(round.game) && message.status === 'finished') player.progress = { ...player.progress, cleared, mistakes: message.mistakes };
     if ([PERM_GAME, HAPPY_GAME].includes(round.game) && message.status === 'finished') player.progress = { cleared, mistakes: message.mistakes, score: message.score };
     const visual = sanitizeVisual(round, message.visual, received - round.startAt);
     if (visual && visual.sample >= (player.progress.visual?.sample ?? -1)) player.progress = { ...player.progress, cleared, mistakes: player.result.mistakes ?? player.progress.mistakes, visual };
     if (message.status === 'finished') {
       if (round.game === BALLOON_GAME) round.finishRevealUntil = received + BALLOON_POP_MS;
       if (MARKET_GAMES.includes(round.game)) round.finishRevealUntil = received + MARKET_FINISH_HOLD_MS;
+      if (WORKSHOP_GAMES.includes(round.game)) round.finishRevealUntil = received + WORKSHOP_FINISH_HOLD_MS;
     }
     this.send(client, { type: 'result-ack', roundId: round.id, status: player.result.status });
     this.finishIfComplete(room);

@@ -1,3 +1,5 @@
+import { WORKSHOP_FINISH_HOLD_MS, WORKSHOP_GAMES } from '../shared/workshop-games.js';
+import { driveWorkshop } from './helpers/workshop-games.js';
 import { driveWitch } from './helpers/witch.js';
 import { WITCH_HOLD_MS } from '../shared/witch.js';
 import { resultMessage } from '../src/result-message.js';
@@ -38,6 +40,19 @@ function setup({ mode = 'game-select', game = 'totem-shrinker', count = 4 } = {}
   ready();
   const finish = (order = clients.map((_, index) => index), winner = 0) => {
     const round = room.round;
+    if (WORKSHOP_GAMES.includes(round.game)) {
+      const runs = clients.map((_, index) => {
+        const place = index === winner ? 0 : index < winner ? index + 1 : index;
+        return driveWorkshop(round, { delay: place * 80, misses: place });
+      });
+      time = round.startAt + Math.max(...runs.map(run => run.elapsed)) + 100;
+      for (const index of order) {
+        const run = runs[index];
+        service.handle(clients[index], resultMessage(round, { id: round.id, run, goDelay: 0 }, 'finished', run.elapsed, run.elapsed));
+      }
+      time += WORKSHOP_FINISH_HOLD_MS; service.tick();
+      return;
+    }
     if (MARKET_GAMES.includes(round.game)) {
       const runs = clients.map((_, index) => driveMarket(round, { delay: (index === winner ? 0 : index < winner ? index + 1 : index) * 25 }));
       time = round.startAt + Math.max(...runs.map(run => run.elapsed)) + 100;

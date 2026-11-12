@@ -23,6 +23,7 @@ import { LETTERS_GAME, LettersRun, LETTERS_DURATION_MS } from './letters.js';
 import { SESAME_GAME, SesameRun, SESAME_GOAL, SESAME_DURATION_MS } from './sesame.js';
 import { BALLOON_GAME, BalloonRun, BALLOON_GOAL, BALLOON_DURATION_MS } from './balloon.js';
 import { ANT_GAME, MARKET_GAMES, MARKET_SETTINGS, SATAY_GAME, POTION_GAME, createMarketRun, marketSettings } from './market-games.js';
+import { DAM_GAME, SUSHI_GAME, METRO_GAME, WORKSHOP_GAMES, WORKSHOP_SETTINGS, createWorkshopRun, workshopSettings } from './workshop-games.js';
 
 import { DYNAMITE_GAME, DynamiteRun, DYNAMITE_GOAL, DYNAMITE_DURATION_MS } from './dynamite.js';
 
@@ -60,11 +61,15 @@ export const GAMES = Object.assign(Object.create(null), {
   [SATAY_GAME]: { id: SATAY_GAME, title: 'Satay Snag', subtitle: 'Skewer falling hot dogs midair', ...MARKET_SETTINGS[SATAY_GAME] },
   [POTION_GAME]: { id: POTION_GAME, title: 'Glamour Brew', subtitle: 'Brew a makeover one potion at a time', ...MARKET_SETTINGS[POTION_GAME] },
   [ANT_GAME]: { id: ANT_GAME, title: 'Ant Air Mail', subtitle: 'Guide a paper plane across the colony', ...MARKET_SETTINGS[ANT_GAME] },
+  [DAM_GAME]: { id: DAM_GAME, title: 'Dam Good Fit', subtitle: 'Match jagged blocks and plug the leaks', ...WORKSHOP_SETTINGS[DAM_GAME] },
+  [SUSHI_GAME]: { id: SUSHI_GAME, title: 'Sushi Switchboard', subtitle: 'Look up the menu and serve the order', ...WORKSHOP_SETTINGS[SUSHI_GAME] },
+  [METRO_GAME]: { id: METRO_GAME, title: 'Mole Metro', subtitle: 'Flip the switches and deliver passengers', scoring: 'points', scoreNoun: 'passengers', ...WORKSHOP_SETTINGS[METRO_GAME] },
 });
 
 export function roundSettings(game, seed, difficulty = 1, mode = 'game-select') {
   const level = Math.max(1, Math.min(5, Math.trunc(difficulty) || 1));
   if (MARKET_GAMES.includes(game)) return marketSettings(game, seed, level);
+  if (WORKSHOP_GAMES.includes(game)) return workshopSettings(game, seed, level);
   if (game === WITCH_GAME) return { seed, difficulty: level, goal: WITCH_GOAL, duration: WITCH_DURATION_MS };
   if (game === SHARK_GAME) return { seed, difficulty: level, goal: SHARK_GOAL + (level - 1) * 10, duration: SHARK_DURATION_MS };
   if (game === HORSE_GAME) return { seed, difficulty: level, goal: HORSE_GOAL, duration: HORSE_DURATION_MS, spacing: 140 - (level - 1) * 10 };
@@ -114,6 +119,7 @@ export function createRun(round, localStart, timingOffset = 0) {
   if (round.game === SESAME_GAME) return new SesameRun(round, localStart);
   if (round.game === BALLOON_GAME) return new BalloonRun(round, localStart);
   if (MARKET_GAMES.includes(round.game)) return createMarketRun(round, localStart);
+  if (WORKSHOP_GAMES.includes(round.game)) return createWorkshopRun(round, localStart);
   if (round.game === COIN_GAME) return new CoinRun(round, localStart);
   if (round.game === DODGE_GAME) return new DodgeRun(round, localStart);
   if (round.game === DICE_GAME) return new DiceRun(round, localStart);
@@ -131,6 +137,9 @@ export const isRoundActive = round => Boolean(round && ['countdown', 'running', 
 
 export function gameRules(game, round = {}) {
   if (game === SATAY_GAME) return ['Watch the hot dog fall toward the skewer.', 'Tap any button right as they line up.'];
+  if (game === DAM_GAME) return ['Look at the shape of the leak.', 'Press the matching block’s button. A wrong block bounces out.'];
+  if (game === SUSHI_GAME) return ['Find each requested item on the colored menu.', 'Press its color. For two items, either order works. Tap twice if both share a color.'];
+  if (game === METRO_GAME) return ['Match train and station symbols. Avoid occupied stations.', 'Red flips entry. Green flips the left fork. Blue flips the right.'];
   if (game === POTION_GAME) return ['Match each potion to its button. One press breaks one bottle.', 'Clear both trays to change the witch. Complete ten sets for her final look.'];
   if (game === ANT_GAME) return ['Follow one paper plane as it climbs over the colony.', 'At each waypoint, match its nose. Red is left, green down, and blue right.'];
   if (game === WITCH_GAME) return ['Alternate red and blue to run faster', 'Hold green anywhere before the edge to stop and aim', 'Release green to throw. Most frogs passed wins'];

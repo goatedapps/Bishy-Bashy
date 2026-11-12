@@ -9,6 +9,9 @@ const MENU_TRACKS = { menu: 'Background-Christmas.mp3', instructions: 'game-inst
 const MENU_TRACK_GAINS = { menu: 1, instructions: 2 };
 const EXTRA_AUDIO_FILES = { wrong: 'wrong.mp3', buttonPress: 'Button-Press.mp3', gameplayPress: 'Punch-button.mp3', instructionReveal: 'how-to-play.mp3', countdown: 'countdown.mp3', podiumWinner: 'podium-winner.mp3', wheelSpin: 'roulette.mp3', gameSelect: 'Game-select.mp3' };
 const GAME_AUDIO_FILES = {
+  'dam-good-fit': { ding: 'Ding.mp3' },
+  'sushi-switchboard': { ding: 'Ding.mp3' },
+  'mole-metro': { ding: 'Ding.mp3' },
   'satay-snag': { ding: 'Ding.mp3' },
   'glamour-brew': { ding: 'Ding.mp3', potionBurst: 'balloon-burst.mp3' },
   'ant-air-mail': { ding: 'Ding.mp3' },

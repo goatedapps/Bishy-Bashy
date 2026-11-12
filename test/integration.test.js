@@ -1,3 +1,5 @@
+import { WORKSHOP_GAMES, WORKSHOP_FINISH_HOLD_MS } from '../shared/workshop-games.js';
+import { driveWorkshop } from './helpers/workshop-games.js';
 import { driveWitch } from './helpers/witch.js';
 import { WITCH_GAME, WITCH_HOLD_MS } from '../shared/witch.js';
 import { resultMessage } from '../src/result-message.js';
@@ -114,7 +116,7 @@ test('Type in Letters: three real clients share targets and pointers, award ever
   }
 });
 
-for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-select', WITCH_GAME, 3], ['game-select', SESAME_GAME, 3], ['game-select', BALLOON_GAME, 3], ['game-select', 'totem-shrinker', 3], ['game-select', PERM_GAME, 3], ['game-select', SLOT_GAME, 3], ['game-select', FIREWORK_GAME, 3], ['game-select', MONKEY_GAME, 3], ['game-select', JUMP_GAME, 3], ['game-select', BURGER_GAME, 3], ['game-select', MISTAKE_GAME, 3], ['game-select', DICE_GAME, 3], ['game-select', FACING_GAME, 3], ['game-select', COIN_GAME, 3], ['game-select', DODGE_GAME, 3], ['game-select', 'dynamite-spark', 3], ['game-select', 'get-those-burgers-out', 3], ['game-select', 'wheres-kaya', 3], ['game-select', 'happy-days', 3], ['game-select', 'stationery-master', 3], ['game-select', 'clock-stopper', 3], ['game-select', 'ladder-climber', 3], ['game-select', 'star-collector', 3], ['game-select', 'horse-speeder', 3], ['game-select', 'shark-jumper', 3]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
+for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-select', WITCH_GAME, 3], ['game-select', SESAME_GAME, 3], ['game-select', BALLOON_GAME, 3], ...WORKSHOP_GAMES.map(id => ['game-select', id, 3]), ['game-select', 'totem-shrinker', 3], ['game-select', PERM_GAME, 3], ['game-select', SLOT_GAME, 3], ['game-select', FIREWORK_GAME, 3], ['game-select', MONKEY_GAME, 3], ['game-select', JUMP_GAME, 3], ['game-select', BURGER_GAME, 3], ['game-select', MISTAKE_GAME, 3], ['game-select', DICE_GAME, 3], ['game-select', FACING_GAME, 3], ['game-select', COIN_GAME, 3], ['game-select', DODGE_GAME, 3], ['game-select', 'dynamite-spark', 3], ['game-select', 'get-those-burgers-out', 3], ['game-select', 'wheres-kaya', 3], ['game-select', 'happy-days', 3], ['game-select', 'stationery-master', 3], ['game-select', 'clock-stopper', 3], ['game-select', 'ladder-climber', 3], ['game-select', 'star-collector', 3], ['game-select', 'horse-speeder', 3], ['game-select', 'shark-jumper', 3]]) test(`${mode} ${game}: four WebSocket players complete the entire automatic set`, async t => {
   const app = await createApp();
   let time = 1_000_000;
   app.rooms.now = () => time;
@@ -242,6 +244,19 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
       }
       waiting = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.history.length === index + 1);
       time = round.endAt; app.rooms.tick(); state = (await waiting).room;
+    } else if (WORKSHOP_GAMES.includes(round.game)) {
+      const runs = clients.map((_, place) => driveWorkshop(round, { delay: place * 80, misses: place }));
+      time = round.startAt + Math.max(...runs.map(run => run.elapsed)) + 100;
+      const acks = clients.map(socket => receiveProtocol(socket, message => message.type === 'result-ack' && message.roundId === round.id));
+      clients.forEach((socket, place) => {
+        const run = runs[place];
+        send(socket, resultMessage(round, { id: round.id, run, goDelay: 0 }, 'finished', run.elapsed, run.elapsed));
+      });
+      await Promise.all(acks);
+      const finished = receiveProtocol(clients[0], message => message.type === 'state' && message.room.set.history.length === index + 1);
+      time += WORKSHOP_FINISH_HOLD_MS;
+      app.rooms.tick();
+      state = (await finished).room;
     } else {
     const simulatedRuns = round.game === 'shark-jumper' ? clients.map((_, place) => driveSharks(round, { misses: place })) : round.game === 'horse-speeder' ? clients.map((_, place) => driveHorse(round, { delay: place * 1000 })) : round.game === 'star-collector' ? clients.map(() => { const run = createRun(round, 0); run.advance(round.duration); return run; }) : round.game === 'ladder-climber' ? clients.map((_, place) => { const run=createRun(round,0); let at=100; while(run.cleared < run.goal) { run.tap(run.sequence[run.cleared],at); at += 250 + place * 20; } run.advance(run.finishAt); return run; }) : round.game === 'dynamite-spark' ? clients.map((_, place) => { const run=createRun(round,0); while(!run.done)run.tap(run.sequence[run.cleared],100+run.cleared*(60+place*10));return run; }) : round.game === 'get-those-burgers-out' ? clients.map((_,place)=>{ const run=createRun(round,0);let at=100;while(!run.done){const wanted=[...run.requirements];for(let drop=0;drop<Math.max(...wanted);drop++){for(let color=0;color<3;color++)if(drop<wanted[color])run.tap(color,at);at+=350+place*20;run.advance(at);}at=Math.max(at,run.blockedUntil);run.advance(at);}return run; }) : [COIN_GAME, DODGE_GAME].includes(round.game) ? clients.map((_, place) => {
       const run = createRun(round, 0);
@@ -355,7 +370,7 @@ for (const game of ['totem-shrinker', PERM_GAME]) test(`${game}: four real conne
     const waiting = receive(socket, message => message.type === 'joined');
     send(socket, { type: index ? 'join' : 'create', game, mode: 'game-select', code, name: `Player ${index + 1}` });
     const joined = await waiting;
-    assert.equal(joined.protocol, 41);
+    assert.equal(joined.protocol, 42);
     code = joined.code;
     clients.push({ socket, ...joined });
     const ready = receive(socket, message => message.type === 'state' && message.room.players.some(player => player.id === joined.playerId && player.ready));
@@ -445,7 +460,7 @@ test('real WebSocket clients can create, synchronize, and join a room', async t 
   assert.equal(state.room.players[1].name, 'Friend 1');
   assert.equal(JSON.stringify(state).includes(joined.token), false);
   const health = await fetch(`http://127.0.0.1:${port}/health`);
-  assert.deepEqual(await health.json(), { ok: true, protocol: 41, countdownMs: 3000 });
+  assert.deepEqual(await health.json(), { ok: true, protocol: 42, countdownMs: 3000 });
   const info = await fetch(`http://127.0.0.1:${port}/connection-info`);
   assert.ok(Array.isArray((await info.json()).lanUrls));
 });

@@ -411,6 +411,56 @@ export const ASSETS = [
     "hash": "69ef8bd80f13207f"
   },
   {
+    "path": "assets/optimized/bg-dam-worksite-c6ef75d40545.webp",
+    "bytes": 95622,
+    "hash": "c6ef75d405455e5a"
+  },
+  {
+    "path": "assets/optimized/dam-cover-d043bee3876b.webp",
+    "bytes": 84360,
+    "hash": "d043bee3876be045"
+  },
+  {
+    "path": "assets/optimized/dam-wood-63c578e7583d.webp",
+    "bytes": 32582,
+    "hash": "63c578e7583d5e06"
+  },
+  {
+    "path": "assets/optimized/dam-water-49487ffb9f00.webp",
+    "bytes": 42364,
+    "hash": "49487ffb9f000f8c"
+  },
+  {
+    "path": "assets/optimized/bg-sushi-counter-f603337eaf46.webp",
+    "bytes": 66636,
+    "hash": "f603337eaf460727"
+  },
+  {
+    "path": "assets/optimized/sushi-cover-7b3ea9b646dd.webp",
+    "bytes": 69260,
+    "hash": "7b3ea9b646ddbeac"
+  },
+  {
+    "path": "assets/optimized/sushi-items-7453319109e2.webp",
+    "bytes": 76780,
+    "hash": "7453319109e28cc8"
+  },
+  {
+    "path": "assets/optimized/bg-metro-cavern-59acf5906ec5.webp",
+    "bytes": 62866,
+    "hash": "59acf5906ec5cf72"
+  },
+  {
+    "path": "assets/optimized/metro-cover-1984fc4d7cb9.webp",
+    "bytes": 90672,
+    "hash": "1984fc4d7cb961d9"
+  },
+  {
+    "path": "assets/optimized/metro-train-7d9d70f4bb4c.webp",
+    "bytes": 12634,
+    "hash": "7d9d70f4bb4cdd19"
+  },
+  {
     "path": "audio/hit-red.wav",
     "bytes": 9004,
     "hash": "e20ca80bd81e0977",
