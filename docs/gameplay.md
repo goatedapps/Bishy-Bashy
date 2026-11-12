@@ -950,8 +950,12 @@ At base difficulty, the choice window decreases from 5.2 to 1.91 seconds, with 9
 Read the customer’s speech bubble and find each named item in the red, green, or blue menu above the four player lanes.
 Press the matching button once for each item.
 Two items can be served in either order, and two items in one menu row require two presses of that color.
-A wrong press briefly pauses the order and keeps anything already served.
-Complete ten orders within 36 seconds to post a time.
+A wrong press fails the entire order, even after serving its first item; there are no retries.
+The customer reacts before the next order appears, with a short reading pause that ignores extra taps.
+You have ten orders and 36 seconds; the most correctly served orders wins, with no speed tiebreak.
+Orders left incomplete when time expires earn no points, and completed orders keep their points.
+The tutorial shows a rejected order as well as successful service.
+Deploy frontend and backend together with protocol 44 for these scoring and snapshot rules.
 
 ## Mole Metro
 

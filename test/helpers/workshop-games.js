@@ -16,8 +16,12 @@ export function driveWorkshop(round, { start = 0, delay = 0, misses = 0 } = {}) 
     }
     run.advance(run.end);
   } else {
-    for (const order of run.sequence) {
+    for (const [index, order] of run.sequence.entries()) {
       let at = run.blockedUntil + delay;
+      if (index >= run.sequence.length - misses) {
+        run.tap(run.menu.findIndex(bucket => !order.some(item => bucket.includes(item))), at);
+        continue;
+      }
       for (const item of [...order].reverse()) {
         run.tap(run.menu.findIndex(bucket => bucket.includes(item)), at);
         at += 150 + delay;

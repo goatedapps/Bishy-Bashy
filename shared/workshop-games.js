@@ -18,8 +18,8 @@ export const DAM_SETS = 8;
 export const DAM_REVEAL_MS = 900;
 const damWindow = (index, difficulty) => 5200 - 470 * index - 150 * (difficulty - 1);
 const damDuration = difficulty => Array.from({ length: DAM_SETS }, (_, index) => damWindow(index, difficulty) + DAM_REVEAL_MS).reduce((total, duration) => total + duration, 0);
-export const SUSHI_SERVE_MS = 440;
-export const SUSHI_RETRY_MS = 360;
+export const SUSHI_SERVE_MS = 550;
+export const SUSHI_OBSERVE_MS = 250;
 export const SUSHI_ITEMS = ['Salmon', 'Tuna', 'Shrimp', 'Egg', 'Eel', 'Cucumber', 'Avocado', 'Roe', 'Inari'];
 
 export const METRO_TRAINS = 12;
@@ -124,25 +124,53 @@ export class SushiRun extends ReplayLaneRun {
     super(round, start);
     this.menu = sushiMenu(round);
     this.sequence = sushiOrders(round, this.menu);
+    this.index = 0;
     this.servedMask = 0;
-    this.blockedUntil = start + 250;
+    this.lastMask = 0;
+    this.blockedUntil = start + SUSHI_OBSERVE_MS;
+  }
+
+  advance(time) {
+    if (!this.done && time >= this.end) {
+      this.done = true;
+      this.elapsed = this.round.duration;
+    }
+  }
+
+  tap(color, time) {
+    const action = super.tap(color, time);
+    return this.done && action.type !== 'ignored' ? { type: 'finished', elapsed: this.elapsed } : action;
   }
 
   resolve(color, time) {
-    const order = this.sequence[this.cleared];
+    const order = this.sequence[this.index];
     const completeMask = (1 << order.length) - 1;
     const slot = order.findIndex((item, index) => !(this.servedMask & (1 << index)) && this.menu[color].includes(item));
     if (slot === -1) {
-      this.blockedUntil = time + SUSHI_RETRY_MS;
-      return this.miss(time, color);
+      this.miss(time, color);
+      this.finishOrder(time);
+      return 'mistake';
     }
     this.servedMask |= 1 << slot;
     const served = this.servedMask === completeMask;
     this.feedback = { kind: served ? 'clear' : 'hit', at: time, color };
     if (!served) return 'move';
+    this.cleared++;
+    this.events.push({ type: 'stageComplete', at: time });
+    this.finishOrder(time);
+    return 'move';
+  }
+
+  finishOrder(time) {
+    this.lastMask = this.servedMask;
     this.servedMask = 0;
-    this.blockedUntil = time + SUSHI_SERVE_MS;
-    return 'clear';
+    this.index++;
+    this.blockedUntil = time + SUSHI_SERVE_MS + SUSHI_OBSERVE_MS;
+    if (this.index === this.round.goal) {
+      this.done = true;
+      this.elapsed = this.offsetUs(time) / 1000;
+      this.events.at(-1).preserveTail = true;
+    }
   }
 }
 
@@ -222,6 +250,6 @@ export function createWorkshopRun(round, start) {
 export function validWorkshopResult(round, { proof, cleared, elapsed, mistakes }) {
   const replay = replayLane(round, proof, createWorkshopRun);
   if (!replay) return false;
-  if (round.game === METRO_GAME) replay.advance(round.duration);
+  if (round.game === METRO_GAME || elapsed === round.duration) replay.advance(round.duration);
   return replay.done && replay.cleared === cleared && replay.elapsed === elapsed && replay.mistakes === mistakes;
 }

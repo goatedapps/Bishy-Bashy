@@ -94,7 +94,40 @@ test('a restored workshop finish renders without transient feedback from the ori
     demo.run.done = true;
     demo.run.cleared = demo.plan.settings.goal;
     demo.paint(demo.plan.completeAt);
-    assert.match(demo.stage.element.getAttribute('aria-label'), /served/);
+    assert.match(demo.stage.element.getAttribute('aria-label'), /Orders finished/);
+    assert.equal(demo.stage.scene.ticket.hidden, true);
+  } finally { globalThis.document = previous; }
+});
+
+test('Sushi feedback keeps a rejected order visible, settles motion, and resets for the next customer', () => {
+  const previous = globalThis.document;
+  globalThis.document = { hidden: false, createElement: () => new Element() };
+  try {
+    const demo = createGameDemo('sushi-switchboard');
+    demo.advance(0, true);
+    const wrong = demo.plan.cues.find(cue => cue.sound === 'stageWrong').at;
+    demo.advance(wrong + 70, true);
+    const scene = demo.stage.scene;
+    assert.match(scene.ticket.className, /is-rejected/);
+    assert.equal(scene.outcome.textContent, 'Wrong order');
+    assert.match(demo.stage.element.getAttribute('aria-label'), /no retry/);
+    const rejected = scene.order;
+    demo.stage.motion = { matches: true };
+    demo.paint(wrong + 70);
+    assert.equal(scene.ticket.style.transform, 'translate(0%,0%) scale(1)');
+    assert.equal(scene.sparkles.hidden, true);
+    demo.stage.motion.matches = false;
+    demo.advance(wrong + 550, true);
+    assert.notEqual(scene.order, rejected);
+    assert.doesNotMatch(scene.ticket.className, /is-rejected/);
+    assert.equal(scene.outcome.hidden, true);
+    demo.advance(demo.plan.completeAt + 100, true);
+    assert.match(scene.ticket.className, /is-served/);
+    assert.equal(scene.sparkles.hidden, false);
+    demo.advance(demo.plan.completeAt + 600, true);
+    assert.equal(scene.sparkles.hidden, true);
+    assert.equal(scene.customer.style.transform, 'translateY(0%) rotate(0deg) scale(1,1)');
+    demo.dispose();
   } finally { globalThis.document = previous; }
 });
 

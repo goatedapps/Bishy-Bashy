@@ -59,7 +59,7 @@ Everyone watches the same turn, the landing frog becomes a prince, and the most 
 Open Sesame is a simultaneous race to dial one shared eight-digit code using red and blue to move and green to select.
 Burst the Balloon is a simultaneous race to pop a balloon by alternating red and blue.
 Satay Snag races to catch ten hot dogs, Glamour Brew transforms a witch across ten potion sets, and Ant Air Mail follows one paper plane through twelve turns.
-Dam Good Fit scores correct repairs across eight timed group puzzles, Sushi Switchboard races to serve menu orders, and Mole Metro scores passengers delivered across a branching railway.
+Dam Good Fit scores correct repairs across eight timed group puzzles, Sushi Switchboard scores correctly served orders with no retries, and Mole Metro scores passengers delivered across a branching railway.
 Set placements award **10 / 7 / 4 / 1 points**, with ties sharing placement points.
 Party mode retains cumulative points, win counts, and history between cycles.
 Final standings stay open until every player still in the room chooses Exit.
@@ -79,7 +79,7 @@ Players can override the endpoint in Connection settings, and invitations preser
 `render.yaml` configures the Node service with build command `npm ci && npm run build` and start command `npm start`.
 Set `ALLOWED_ORIGINS=https://goatedapps.github.io`; additional origins may be comma-separated, with no repository path or trailing slash.
 HTTPS pages require `wss://`, and the client connects at `/ws`.
-Use `/health` for the health check; it reports protocol version 43.
+Use `/health` for the health check; it reports protocol version 44.
 Deploy frontend and backend together when changing protocol requirements, and verify both deployments separately.
 Keep one server instance while rooms live in memory; restarting or redeploying the service clears rooms.
 A sleeping service may need time to wake up.

@@ -14,7 +14,7 @@ Use [the gameplay reference](docs/gameplay.md) for player behavior and game-spec
 - Write each full sentence on its own physical line when substantially editing Markdown.
 - Comment only on non-obvious intent, constraints, invariants, or tradeoffs.
 - Keep the static frontend independently deployable with a configurable secure WebSocket endpoint.
-- Deploy frontend and backend together for protocol changes; current protocol is 43.
+- Deploy frontend and backend together for protocol changes; current protocol is 44.
 - Keep a single server instance while rooms live in memory.
 
 ## Game and asset requirements
@@ -68,6 +68,7 @@ Satay Snag, Glamour Brew, and Ant Air Mail share replay validation in `shared/ma
 Keep Satay at ten tighter catches, advance Glamour Brew's illustrated look once per cleared set, and keep Ant Air Mail's courier continuous between waypoints.
 
 Dam Good Fit uses eight shared, first-answer-locked puzzles with progressively shorter timers.
+Sushi Switchboard gives each of ten orders one attempt; a wrong press fails the whole order, and only correctly served orders score.
 Sushi Switchboard and Mole Metro share replay validation in `shared/workshop-games.js`.
 Keep menu and switch labels readable on phones, and rank Mole Metro by delivered passengers.
 

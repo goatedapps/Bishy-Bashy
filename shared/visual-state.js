@@ -7,7 +7,7 @@ const SCHEMAS = {
   [SATAY_GAME]: { index: 'index', launchedAt: 'time', blockedUntil: 'time' },
   [POTION_GAME]: { index: 'index', bottleMask: 'bottles', blockedUntil: 'time' },
   [ANT_GAME]: { blockedUntil: 'time' },
-  [SUSHI_GAME]: { servedMask: 'sushiMask' },
+  [SUSHI_GAME]: { index: 'index', servedMask: 'sushiMask', lastMask: 'sushiMask', blockedUntil: 'time' },
   [METRO_GAME]: { switches: 'mask', routes: 'metroRoutes' },
   'burst-the-balloon': {},
   'shark-jumper': { jumpAt: 'time', landAt: 'nullableTime', fallAt: 'time', blockedUntil: 'time' },
@@ -96,7 +96,7 @@ export function sanitizeVisual(round, visual, receivedElapsed) {
       continue;
     }
     if (type === 'sushiMask') {
-      if (!number(value, 0, 2, true)) return null;
+      if (!number(value, 0, 3, true)) return null;
       fields[key] = value;
       continue;
     }

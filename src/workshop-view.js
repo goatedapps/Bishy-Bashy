@@ -1,6 +1,6 @@
 import { gsap } from 'gsap';
 import { METRO_GAME, METRO_ARRIVAL_MS, METRO_ARRIVED, METRO_CRASH, METRO_DWELL_MS,
-  METRO_ENTRY_MS, METRO_FORK_MS, METRO_STATIONS, METRO_WRONG, SUSHI_GAME, SUSHI_ITEMS, SUSHI_SERVE_MS,
+  METRO_ENTRY_MS, METRO_FORK_MS, METRO_STATIONS, METRO_WRONG, SUSHI_GAME, SUSHI_ITEMS, SUSHI_SERVE_MS, SUSHI_OBSERVE_MS,
   createWorkshopRun, damOutline, metroStation } from '../shared/workshop-games.js';
 
 const BUTTON_SHAPES = ['●', '▲', '◆'];
@@ -115,38 +115,67 @@ class SushiScene {
   constructor() {
     this.element = node('div', 'workshop-scene sushi-scene');
     this.ticket = node('div', 'sushi-ticket');
+    this.outcome = node('strong', 'sushi-outcome');
+    this.sparkles = node('div', 'sushi-sparkles');
+    this.sparkles.setAttribute('aria-hidden', 'true');
+    for (let index = 0; index < 5; index++) this.sparkles.append(node('i', '', '✦'));
     this.menu = new SushiMenu();
     this.customer = node('div', 'sushi-customer');
     this.customer.setAttribute('aria-hidden', 'true');
     const counter = node('div', 'sushi-counter');
-    counter.append(this.ticket, this.customer);
+    counter.append(this.ticket, this.customer, this.sparkles);
     this.element.append(this.menu.element, counter);
   }
 
   render(run, age, motion, time) {
     this.menu.render(run.menu);
-    const complete = run.cleared === run.round.goal || run.feedback?.kind === 'clear' && age < SUSHI_SERVE_MS;
-    const index = complete ? run.cleared - 1 : run.cleared;
+    this.ticket.hidden = run.done && !run.feedback;
+    const resolved = ['clear', 'miss'].includes(run.feedback?.kind);
+    const holding = resolved && age < SUSHI_SERVE_MS || run.index === run.round.goal;
+    const complete = holding && run.feedback?.kind === 'clear';
+    const failed = holding && run.feedback?.kind === 'miss';
+    const index = Math.min(run.round.goal - 1, Math.max(0, run.index - Number(holding)));
     const order = run.sequence[index];
-    const served = complete ? (1 << order.length) - 1 : run.servedMask;
+    const served = holding ? run.lastMask : run.servedMask;
     if (this.order !== order || this.served !== served) {
       this.order = order;
       this.served = served;
-      this.ticket.replaceChildren(...order.map((item, index) => {
+      this.slots = order.map((item, index) => {
         const filled = Boolean(served & (1 << index));
         const slot = node('div', `sushi-slot${filled ? ' is-filled' : ''}`);
         slot.append(sushiIcon(item), node('span', '', SUSHI_ITEMS[item]), node('b', 'sushi-check', filled ? '✓' : ''));
         return slot;
-      }));
+      });
+      this.ticket.replaceChildren(...this.slots, this.outcome);
     }
     this.ticket.classList.toggle('is-served', complete);
-    const entrance = !run.feedback ? unit((time - run.start) / 250) :
-      !complete && run.feedback.kind === 'clear' ? unit((age - SUSHI_SERVE_MS) / 250) : 1;
-    const cheers = complete && motion ? Math.sin(Math.PI * unit(age / SUSHI_SERVE_MS)) : 0;
+    this.ticket.classList.toggle('is-rejected', failed);
+    this.outcome.hidden = !holding;
+    this.outcome.textContent = failed ? 'Wrong order' : complete ? 'Served!' : '';
+    const entrance = !run.feedback ? unit((time - run.start) / SUSHI_OBSERVE_MS) :
+      !holding && resolved ? unit((age - SUSHI_SERVE_MS) / SUSHI_OBSERVE_MS) : 1;
+    const cheers = complete && motion && age < 380 ? Math.sin(Math.PI * unit(age / 380)) : 0;
+    const recoil = failed && motion ? Math.sin(unit(age / 320) * Math.PI * 5) * (1 - unit(age / 320)) : 0;
+    const departure = holding && !run.done && motion ? settle(unit((age - 360) / (SUSHI_SERVE_MS - 360))) : 0;
     const reveal = motion ? orderIn(entrance) : 1;
-    this.ticket.style.transform = `translateY(${(1 - reveal) * 18 - cheers * 7}%) scale(${.82 + reveal * .18 + cheers * .035})`;
-    this.customer.style.transform = `translateY(${-cheers * 8}%) rotate(${cheers * 5}deg)`;
-    return complete ? 'Order served' : `Order: ${order.map((item, slot) => SUSHI_ITEMS[item] + (served & (1 << slot) ? ' served' : '')).join(', ')}`;
+    this.ticket.style.transform = `translate(${recoil * 5}%,${(1 - reveal) * 18 - cheers * 7 - departure * 12}%) scale(${.82 + reveal * .18 + cheers * .045})`;
+    this.ticket.style.opacity = String(1 - departure);
+    this.customer.style.transform = `translateY(${(1 - reveal) * 16 - cheers * 9 + departure * 12}%) rotate(${cheers * 5 - recoil * 5}deg) scale(${1 + cheers * .035},${1 - cheers * .04})`;
+    this.customer.style.opacity = String(1 - departure);
+    const pop = motion && ['hit', 'clear'].includes(run.feedback?.kind) && age < 280 ? Math.sin(Math.PI * unit(age / 280)) : 0;
+    const newest = order.findLastIndex((item, slot) => (served & (1 << slot)) && run.menu[run.feedback?.color]?.includes(item));
+    this.slots.forEach((slot, index) => {
+      const bounce = index === newest ? pop : 0;
+      slot.style.transform = `translateY(${-bounce * 8}%) scale(${1 + bounce * .12})`;
+    });
+    this.sparkles.hidden = !motion || !complete || age < 0 || age >= 380;
+    if (!this.sparkles.hidden) [...this.sparkles.children].forEach((spark, index) => {
+      const spread = settle(unit(age / 380));
+      const angle = (index / 4 * .8 + .1) * Math.PI;
+      spark.style.transform = `translate(${Math.cos(angle) * spread * 32}px,${-Math.sin(angle) * spread * 28}px) scale(${1 - spread * .6})`;
+      spark.style.opacity = String(1 - unit((age - 160) / 220));
+    });
+    return this.ticket.hidden ? 'Orders finished' : failed ? 'Wrong order — no retry' : complete ? 'Order served' : `Order: ${order.map((item, slot) => SUSHI_ITEMS[item] + (served & (1 << slot) ? ' served' : '')).join(', ')}`;
   }
 }
 

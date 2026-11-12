@@ -361,8 +361,13 @@ The protocol 43 handshake requires `satay-snag`, `glamour-brew`, and `ant-air-ma
 Dam Good Fit uses the shared-choice clock and server-owned first-answer locks for eight puzzles.
 Shorten each answer window by 470 ms, and reveal choices only after the deadline and transport grace.
 Award one repair per correct choice and animate the plug and splash from the scheduled reveal.
-Sushi Switchboard places every menu item in exactly one bucket, accepts either order, and clears a served slot only when the ticket completes.
-Its wrong press locks the counter for 360 ms without clearing an already served item.
+Sushi Switchboard places every menu item in exactly one bucket and accepts two items in either order, including repeated colors.
+Each of ten tickets has one attempt: a wrong press fails the entire order, including partial service, and never awards a point or retries that order.
+After success or failure, hold feedback for 550 ms, then allow 250 ms to read the next ticket before accepting input.
+Rank correctly served orders without a speed tiebreak; retain earned orders at the 36-second deadline and replay-validate both early and deadline finishes.
+Publish the ticket index separately from correct orders, and retain the resolved ticket mask for peer feedback.
+Use clock-driven GSAP easing for food pops, customer reactions, and ticket handoffs; reduced motion retains static result colors and symbols.
+Play one Ding per correct order, including the last, and Wrong for a failed final ticket without an extra finish Ding.
 Mole Metro latches a route at each junction before processing inputs at that same timestamp.
 Trains earn three passengers at their pictured station if it is empty, and any non-crashed arrival occupies its station for 2,750 ms.
 The seeded schedule avoids adjacent identical destinations, so a perfect run is possible even at the tightest headway.
@@ -370,4 +375,5 @@ The server replays bounded input histories and ranks Metro by passenger count at
 Keep the Sushi Switchboard menu above four equal lanes and show each customer’s order in their speech bubble.
 `src/workshop-view.js` draws both live lanes and isolated looping tutorials, and visual projections use only published train routes and outcomes.
 Use Ding once per correctly chosen repair, served order, and successful arrival, with no extra Ding when the Metro timer expires.
-Deploy frontend and backend together with protocol 43 and the `dam-good-fit`, `sushi-switchboard`, and `mole-metro` capabilities.
+Deploy frontend and backend together with protocol 44 and the `dam-good-fit`, `sushi-switchboard`, and `mole-metro` capabilities.
+Protocol 44 separates Sushi’s attempted tickets from its score and rejects clients using the former retry rules.

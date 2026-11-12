@@ -21,12 +21,19 @@ export function workshopDemoPlan(game, difficulty = 1) {
     cues.push({ type: 'effect', sound: 'gameplayPress', at });
     const action = run.tap(color, at);
     collect();
-    if (action.type === 'finished') cues.push({ type: 'complete', at });
+    if (action.type === 'finished' && game !== SUSHI_GAME) cues.push({ type: 'complete', at });
   };
 
   if (game === SUSHI_GAME) {
     let at = start + 650;
-    for (const order of run.sequence) {
+    for (const [index, order] of run.sequence.entries()) {
+      at = Math.max(at, run.blockedUntil + 180);
+      if (index === 1) {
+        const wrong = run.menu.findIndex(bucket => !order.some(item => bucket.includes(item)));
+        press(wrong, at);
+        at += 440;
+        continue;
+      }
       for (const item of [...order].reverse()) {
         press(run.menu.findIndex(bucket => bucket.includes(item)), at);
         at += 440;

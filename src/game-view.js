@@ -242,7 +242,7 @@ export class GameView {
       elements.stageResult.setAttribute('aria-label', stageFeedback?.correct ? 'Correct set' : 'Wrong set');
       elements.lane.className = `lane${own ? ' you' : ''}${!player ? ' empty' : ''}${frozen ? ' frozen' : ''}${active && status?.status === 'finished' ? ' finished' : ''}${active && status && status.status !== 'finished' ? ' forfeit' : ''}`;
       elements.finishBadge.hidden = !active || status?.status !== 'finished';
-      const finishLabel = balloon ? `${((status?.elapsed || 0) / 1000).toFixed(3)} s` : game === METRO_GAME ? `${cleared} passengers` : replayLane || game === SHARK_GAME || game === HORSE_GAME || jump || game === DYNAMITE_GAME || game === MEALS_GAME ? `${((status?.elapsed || 0) / 1000).toFixed(2)} s\nCLEAR!` : game === STAR_GAME ? `${cleared} stars` : perm || mistake || game === HAPPY_GAME ? '✓ Finished' : '✓ Cleared!';
+      const finishLabel = balloon ? `${((status?.elapsed || 0) / 1000).toFixed(3)} s` : game === SUSHI_GAME ? `${cleared} orders` : game === METRO_GAME ? `${cleared} passengers` : replayLane || game === SHARK_GAME || game === HORSE_GAME || jump || game === DYNAMITE_GAME || game === MEALS_GAME ? `${((status?.elapsed || 0) / 1000).toFixed(2)} s\nCLEAR!` : game === STAR_GAME ? `${cleared} stars` : perm || mistake || game === HAPPY_GAME ? '✓ Finished' : '✓ Cleared!';
       if (elements.finishBadge.textContent !== finishLabel) elements.finishBadge.textContent = finishLabel;
       elements.finishBadge.setAttribute('aria-live', own ? 'off' : 'polite');
       elements.name.textContent = player ? `${player.name}${own ? ' · You' : ''}` : 'Open spot';

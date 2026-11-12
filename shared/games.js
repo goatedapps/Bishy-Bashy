@@ -62,7 +62,7 @@ export const GAMES = Object.assign(Object.create(null), {
   [POTION_GAME]: { id: POTION_GAME, title: 'Glamour Brew', subtitle: 'Brew a makeover one potion at a time', ...MARKET_SETTINGS[POTION_GAME] },
   [ANT_GAME]: { id: ANT_GAME, title: 'Ant Air Mail', subtitle: 'Guide a paper plane across the colony', ...MARKET_SETTINGS[ANT_GAME] },
   [DAM_GAME]: { id: DAM_GAME, title: 'Dam Good Fit', subtitle: 'Match jagged blocks before time runs out', sharedArena: true, scoring: 'points', scoreNoun: 'repairs', ...WORKSHOP_SETTINGS[DAM_GAME] },
-  [SUSHI_GAME]: { id: SUSHI_GAME, title: 'Sushi Switchboard', subtitle: 'Look up the menu and serve the order', ...WORKSHOP_SETTINGS[SUSHI_GAME] },
+  [SUSHI_GAME]: { id: SUSHI_GAME, title: 'Sushi Switchboard', subtitle: 'Look up the menu and serve the order', scoring: 'points', scoreNoun: 'orders', ...WORKSHOP_SETTINGS[SUSHI_GAME] },
   [METRO_GAME]: { id: METRO_GAME, title: 'Mole Metro', subtitle: 'Flip the switches and deliver passengers', scoring: 'points', scoreNoun: 'passengers', ...WORKSHOP_SETTINGS[METRO_GAME] },
 });
 
@@ -139,7 +139,7 @@ export const isRoundActive = round => Boolean(round && ['countdown', 'running', 
 export function gameRules(game, round = {}) {
   if (game === SATAY_GAME) return ['Watch the hot dog fall toward the skewer.', 'Tap any button right as they line up.'];
   if (game === DAM_GAME) return ['Match the block to the leak. Your first press locks it in.', 'Answers reveal together. Most repairs across eight sets wins.'];
-  if (game === SUSHI_GAME) return ['Find each requested item on the menu and press its color.', 'Serve two items in either order. Tap twice if they share a color.'];
+  if (game === SUSHI_GAME) return ['Find each item on the menu and press its color. Two items: either order; same color: tap twice.', 'One wrong press fails the order. No retries. Most correct orders wins.'];
   if (game === METRO_GAME) return ['Match train and station symbols. Avoid occupied stations.', 'Red flips entry. Green flips the left fork. Blue flips the right.'];
   if (game === POTION_GAME) return ['Match each potion to its button. One press breaks one bottle.', 'Clear both trays to change the witch. Complete ten sets for her final look.'];
   if (game === ANT_GAME) return ['Follow one paper plane as it climbs over the colony.', 'At each waypoint, match its nose. Red is left, green down, and blue right.'];

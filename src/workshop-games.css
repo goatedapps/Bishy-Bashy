@@ -66,7 +66,7 @@
 }
 .is-playing.sushi-switchboard-theme .sushi-scene { grid-template-rows:minmax(0,1fr); }
 .is-playing.sushi-switchboard-theme .sushi-scene>.sushi-menu { display:none; }
-.sushi-counter { display:flex; flex-direction:column; justify-content:center; align-items:center; gap:5px; min-width:0; min-height:0; }
+.sushi-counter { position:relative; display:flex; flex-direction:column; justify-content:center; align-items:center; gap:5px; min-width:0; min-height:0; }
 .sushi-customer { flex:0 1 auto; min-height:0; width:min(83%,115px); aspect-ratio:1; background:var(--image-sushi-customer,url('/assets/optimized/sushi-customer-f41bbfc9e22b.webp')) center bottom / contain no-repeat; }
 .sushi-ticket {
   position:relative; z-index:1; width:min(100%,220px); display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:2px;
@@ -76,6 +76,12 @@
 .sushi-ticket::after { content:''; position:absolute; width:8px; height:8px; bottom:-6px; left:calc(50% - 4px); rotate:45deg; border-right:2px solid #56334b; border-bottom:2px solid #56334b; background:inherit; }
 .sushi-ticket.is-served { background:#ecffd6; border-color:#387447; }
 .sushi-ticket.is-served::after { border-color:#387447; }
+.sushi-ticket.is-rejected { background:#ffe1df; border-color:#a32d40; }
+.sushi-ticket.is-rejected::after { border-color:#a32d40; }
+.sushi-outcome { flex-basis:100%; text-align:center; font:900 clamp(9px,7cqw,16px)/1.15 Nunito,system-ui,sans-serif; }
+.sushi-ticket.is-rejected .sushi-outcome { color:#8a2033; }
+.sushi-sparkles { position:absolute; left:50%; top:42%; z-index:2; pointer-events:none; color:#ffde51; }
+.sushi-sparkles i { position:absolute; font:900 15px/1 sans-serif; text-shadow:0 1px #76411e; }
 .sushi-slot {
   display:grid; justify-items:center; align-content:center; min-width:0; flex:1 1 35%; position:relative;
   font:900 clamp(9px,7cqw,18px)/1.05 Nunito,system-ui,sans-serif; text-align:center; overflow-wrap:anywhere;

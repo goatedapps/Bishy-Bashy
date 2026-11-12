@@ -16,7 +16,7 @@ import { LETTERS_GAME, LettersMatch, LETTERS_PACKET_MS } from '../shared/letters
 import { SESAME_GAME, validSesameResult } from '../shared/sesame.js';
 import { BALLOON_GAME, BALLOON_POP_MS, validBalloonResult } from '../shared/balloon.js';
 import { MARKET_FINISH_HOLD_MS, MARKET_GAMES, validMarketResult } from '../shared/market-games.js';
-import { METRO_GAME, WORKSHOP_FINISH_HOLD_MS, WORKSHOP_GAMES, WORKSHOP_LANES, validWorkshopResult } from '../shared/workshop-games.js';
+import { METRO_GAME, SUSHI_GAME, WORKSHOP_FINISH_HOLD_MS, WORKSHOP_GAMES, WORKSHOP_LANES, validWorkshopResult } from '../shared/workshop-games.js';
 import { PROTOCOL_VERSION } from '../shared/protocol.js';
 import { isSharedChoice } from '../shared/choice-round.js';
 import { MISTAKE_GAME } from '../shared/mistake.js';
@@ -547,7 +547,7 @@ export class RoomService {
     if (round.game === LETTERS_GAME) player.result.cleared = round.letters.scores[player.id] || 0;
     if (isSharedChoice(round.game)) player.result.cleared = round.choice.scores[player.id] || 0;
     if (elapsedRace && message.status === 'finished') player.progress = { cleared: round.goal, mistakes: message.mistakes, ...(round.game === SLOT_GAME ? { reelMask: 7 } : {}) };
-    if ([MISTAKE_GAME, METRO_GAME].includes(round.game) && message.status === 'finished') player.progress = { ...player.progress, cleared, mistakes: message.mistakes };
+    if ([MISTAKE_GAME, METRO_GAME, SUSHI_GAME].includes(round.game) && message.status === 'finished') player.progress = { ...player.progress, cleared, mistakes: message.mistakes };
     if ([PERM_GAME, HAPPY_GAME].includes(round.game) && message.status === 'finished') player.progress = { cleared, mistakes: message.mistakes, score: message.score };
     const visual = sanitizeVisual(round, message.visual, received - round.startAt);
     if (visual && visual.sample >= (player.progress.visual?.sample ?? -1)) player.progress = { ...player.progress, cleared, mistakes: player.result.mistakes ?? player.progress.mistakes, visual };

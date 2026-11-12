@@ -2,10 +2,10 @@ import { CHOICE_GRACE_MS, ChoiceMatch } from '../shared/choice-round.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { GAMES, comparePlayers, createRun, roundSettings } from '../shared/games.js';
-import { captureVisual, sanitizeVisual } from '../shared/visual-state.js';
+import { captureVisual, sanitizeVisual, RemoteRuns } from '../shared/visual-state.js';
 import {
   DAM_GAME, METRO_GAME, METRO_ARRIVAL_MS, METRO_CRASH, METRO_ENTRY_MS,
-  METRO_FORK_MS, METRO_PASSENGERS, SUSHI_GAME, SUSHI_ITEMS, WORKSHOP_LANES, damPuzzles, validWorkshopResult,
+  METRO_FORK_MS, METRO_PASSENGERS, SUSHI_GAME, SUSHI_ITEMS, SUSHI_SERVE_MS, WORKSHOP_LANES, damPuzzles, validWorkshopResult,
 } from '../shared/workshop-games.js';
 import { workshopDemoPlan } from '../src/workshop-demo.js';
 import { driveWorkshop } from './helpers/workshop-games.js';
@@ -52,27 +52,93 @@ test('Dam Good Fit locks the first answer and reveals every seat together after 
   }
 });
 
-test('Sushi Switchboard supports both item orders and repeated colors, preserving a partial order after a miss', () => {
+test('Sushi serves either item order and repeated colors, but one wrong press permanently fails the ticket', () => {
   const run = createRun(settings(SUSHI_GAME), 0);
   const colorOf = item => run.menu.findIndex(bucket => bucket.includes(item));
   assert.deepEqual([...run.menu.flat()].sort((a, b) => a - b), SUSHI_ITEMS.map((_, index) => index));
   run.tap(colorOf(run.sequence[0][0]), run.blockedUntil);
-  const sharedColorOrder = run.sequence[1];
-  const sharedColor = colorOf(sharedColorOrder[0]);
-  assert.equal(colorOf(sharedColorOrder[1]), sharedColor);
+  const sharedColor = colorOf(run.sequence[1][0]);
+  assert.equal(colorOf(run.sequence[1][1]), sharedColor);
   const at = run.blockedUntil;
   assert.equal(run.tap(sharedColor, at).type, 'move');
   assert.equal(run.servedMask, 1);
   assert.equal(run.tap(sharedColor, at + 40).type, 'ignored');
   assert.equal(run.tap((sharedColor + 1) % 3, at + 100).type, 'mistake');
-  assert.equal(run.servedMask, 1);
-  assert.equal(run.tap(sharedColor, run.blockedUntil).type, 'clear');
+  assert.equal(run.index, 2);
+  assert.equal(run.cleared, 1);
+  assert.equal(run.mistakes, 1);
+  assert.equal(run.lastMask, 1);
+  assert.equal(run.servedMask, 0);
+  for (let age = 0; age < SUSHI_SERVE_MS; age += 10) {
+    assert.equal(run.tap(sharedColor, at + 100 + age).type, 'ignored');
+  }
   const [first, second] = run.sequence[2].map(colorOf);
   assert.notEqual(first, second);
-  assert.equal(run.tap(second, run.blockedUntil).type, 'move');
+  const next = run.blockedUntil;
+  assert.equal(run.tap(second, next).type, 'move');
   assert.equal(run.servedMask, 2);
-  assert.equal(run.tap(first, run.blockedUntil + 100).type, 'clear');
-  assert.equal(run.cleared, 3);
+  run.tap(first, next + 100);
+  assert.equal(run.index, 3);
+  assert.equal(run.cleared, 2);
+  assert.equal(run.mistakes, 1);
+});
+
+test('Sushi replays single attempts and ranks correct orders, never speed or retries', () => {
+  for (let seed = 0; seed < 20; seed++) for (let level = 1; level <= 5; level++) {
+    const round = settings(SUSHI_GAME, seed, level);
+    const perfect = driveWorkshop(round, { delay: 500 });
+    const missed = driveWorkshop(round, { misses: 3 });
+    const allWrong = driveWorkshop(round, { misses: round.goal });
+    for (const run of [perfect, missed, allWrong]) {
+      assert.equal(run.index, round.goal);
+      assert.equal(run.cleared + run.mistakes, round.goal);
+      assert.ok(validWorkshopResult(round, run));
+      assert.equal(run.events.filter(event => event.type === 'stageComplete').length, run.cleared);
+      assert.equal(run.events.filter(event => event.type === 'stageWrong').length, run.mistakes);
+      assert.equal(run.tap(0, run.blockedUntil).type, 'ignored');
+    }
+    assert.equal(perfect.cleared, 10);
+    assert.equal(missed.cleared, 7);
+    assert.equal(allWrong.cleared, 0);
+    assert.ok(perfect.elapsed > missed.elapsed);
+    const result = run => ({ result: { status: 'finished', cleared: run.cleared, elapsed: run.elapsed } });
+    assert.ok(comparePlayers(result(perfect), result(missed), SUSHI_GAME) < 0);
+    assert.equal(comparePlayers(result(perfect), result(driveWorkshop(round)), SUSHI_GAME), 0);
+    assert.equal(validWorkshopResult(round, { ...missed, cleared: round.goal }), false);
+    assert.equal(validWorkshopResult(round, { ...missed, mistakes: 0 }), false);
+    assert.equal(validWorkshopResult(round, { ...missed, proof: [...missed.proof, [0, missed.blockedUntil * 1000]] }), false);
+  }
+});
+
+test('Sushi keeps earned orders at the deadline, with replay-validated idle and partial finishes', () => {
+  const round = settings(SUSHI_GAME);
+  for (const answered of [false, true]) {
+    const run = createRun(round, 0);
+    if (answered) {
+      run.tap(run.menu.findIndex(bucket => bucket.includes(run.sequence[0][0])), run.blockedUntil);
+      run.tap(run.menu.findIndex(bucket => bucket.includes(run.sequence[1][0])), run.blockedUntil);
+    }
+    run.advance(round.duration);
+    assert.equal(run.done, true);
+    assert.equal(run.cleared, Number(answered));
+    assert.equal(run.elapsed, round.duration);
+    assert.ok(validWorkshopResult(round, run));
+    assert.equal(validWorkshopResult(round, { ...run, elapsed: round.duration - 1 }), false);
+  }
+});
+
+test('Sushi peer snapshots retain failed tickets without awarding progress or replaying the order', () => {
+  const round = settings(SUSHI_GAME);
+  const run = createRun(round, 1000);
+  run.tap(run.menu.findIndex(bucket => !bucket.includes(run.sequence[0][0])), 1300);
+  const visual = captureVisual(SUSHI_GAME, run, 1300);
+  const safe = sanitizeVisual(round, visual, 300);
+  assert.ok(safe);
+  const peer = new RemoteRuns().get(round, { id: 'peer', progress: { cleared: 0, mistakes: 1, visual: safe } }, 5000);
+  assert.equal(peer.index, 1);
+  assert.equal(peer.cleared, 0);
+  assert.equal(peer.feedback.kind, 'miss');
+  assert.equal(peer.feedback.at, 5300);
 });
 
 test('Mole Metro latches a route at each switch and penalizes a collision without taking back delivered passengers', () => {
@@ -122,8 +188,8 @@ test('Sushi and Metro tutorials use their gameplay models and cue one Ding per s
     const run = createRun(plan.settings, plan.start);
     for (const { color, at } of plan.presses) assert.notEqual(run.tap(color, at).type, 'ignored', game);
     run.advance?.(plan.completeAt);
-    assert.equal(run.cleared, game === METRO_GAME ? plan.settings.trainCount * METRO_PASSENGERS : plan.settings.goal, game);
-    assert.equal(plan.cues.filter(cue => cue.type === 'complete').length, 3, game);
-    assert.equal(run.mistakes, 0);
+    assert.equal(run.cleared, game === METRO_GAME ? plan.settings.trainCount * METRO_PASSENGERS : plan.settings.goal - 1, game);
+    assert.equal(plan.cues.filter(cue => cue.type === 'complete').length, game === SUSHI_GAME ? 2 : 3, game);
+    assert.equal(run.mistakes, game === SUSHI_GAME ? 1 : 0);
   }
 });

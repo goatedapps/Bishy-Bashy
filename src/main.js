@@ -48,7 +48,7 @@ import { LETTERS_GAME } from '../shared/letters.js';
 import { SESAME_GAME } from '../shared/sesame.js';
 import { BALLOON_GAME } from '../shared/balloon.js';
 import { MARKET_CONTROLS, MARKET_GAMES, POTION_GAME } from '../shared/market-games.js';
-import { DAM_GAME, METRO_GAME, WORKSHOP_CONTROLS, WORKSHOP_GAMES, WORKSHOP_LANES } from '../shared/workshop-games.js';
+import { DAM_GAME, METRO_GAME, SUSHI_GAME, WORKSHOP_CONTROLS, WORKSHOP_GAMES, WORKSHOP_LANES } from '../shared/workshop-games.js';
 import './workshop-games.css';
 import { PROTOCOL_VERSION } from '../shared/protocol.js';
 import './market-games.css';
@@ -418,7 +418,7 @@ function complete(status, elapsed = null) {
       audio.play('balloonPop', { group: 'finish' });
       audio.play('stageComplete', { group: 'finish' });
     }
-    else if (room.round.game !== METRO_GAME) {
+    else if (![METRO_GAME, SUSHI_GAME].includes(room.round.game)) {
       const sound = room.round.game === SESAME_GAME || REPLAY_LANES.includes(room.round.game) ? 'stageComplete' : room.round.game === SLOT_GAME ? 'slotWin' : 'finish';
       audio.play(sound, { group: 'finish' });
     }
