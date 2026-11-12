@@ -13,7 +13,7 @@ const localStart = 5799.1234;
 test('Satay accepts both edges, limits players to one attempt per hot dog, and processes skipped drops deterministically', () => {
   const round = settings(SATAY_GAME);
   assert.equal(round.goal, 10);
-  assert.equal(round.catchWindow, 76);
+  assert.deepEqual([1, 2, 3, 4, 5].map(difficulty => roundSettings(SATAY_GAME, 5, difficulty).catchWindow), [50, 43, 36, 29, 22]);
   assert.ok(satayDropMs(round, 0) <= 870);
   const run = createRun(round, localStart);
   assert.equal(run.tap(0, localStart).type, 'ignored');

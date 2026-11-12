@@ -26,7 +26,7 @@ const COLORS = [0, 1, 2];
 
 export function marketSettings(game, seed, difficulty) {
   return { seed, difficulty, ...MARKET_SETTINGS[game],
-    ...(game === SATAY_GAME ? { catchWindow: 76 - 11 * (difficulty - 1) } : {}) };
+    ...(game === SATAY_GAME ? { catchWindow: 50 - 7 * (difficulty - 1) } : {}) };
 }
 
 export function satayDropMs(round, index) {

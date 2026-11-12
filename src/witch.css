@@ -30,13 +30,12 @@
 .witch-seat>strong { font-size:12px; }
 .game-art>.witch-witch { width:90%; height:90%; position:absolute; left:0; bottom:0; }
 .game-art>.witch-frog { width:38%; height:38%; position:absolute; right:0; bottom:0; }
-.witch-demo .instruction-demo-scene { background:#d9c8ed; display:flex; height:clamp(220px,35vh,340px); }
+.witch-demo .instruction-demo-scene { background:#d9c8ed; display:flex; min-height:clamp(220px,35dvh,340px); }
 @media(max-width:500px) { .witch-seat { grid-template-columns:22px minmax(0,1fr); padding:1px; } .witch-seat>.character-portrait { width:22px; height:28px; } .witch-seat-name,.witch-seat>strong { font-size:10px; } }
 
 .witch-demo .instruction-demo-guide { justify-content:flex-start; }
 .witch-demo .instruction-demo-instructions { font-size:clamp(13px,1.7vw,18px); margin-bottom:8px; }
 .witch-demo .instruction-demo-instructions li { padding-block:6px; margin-block:3px; }
-.is-instructions #game-instructions:has(.witch-demo) #instructions-visual { flex:0 0 auto; }
 
 .witch-flight-count { position:absolute; top:42%; left:50%; transform:translate(-50%,-50%); z-index:9; pointer-events:none; text-align:center; color:#fff8db; text-shadow:0 3px #45234f,2px 0 #45234f,-2px 0 #45234f; }
 .witch-flight-count strong { display:block; font:900 clamp(38px,6vw,72px)/1 'Lilita One',system-ui,sans-serif; font-variant-numeric:tabular-nums; }

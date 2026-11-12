@@ -1,11 +1,11 @@
 .game-instructions:has(.instruction-demo) { max-width:900px; }
-.is-instructions #game-instructions:has(.instruction-demo) #instructions-visual { flex:1; min-height:0; display:flex; }
-.instruction-demo { display:grid; grid-template-rows:minmax(0,1fr); grid-template-columns:minmax(150px,.8fr) minmax(0,1fr); gap:clamp(16px,4vw,48px); width:100%; min-height:270px; text-align:left; color:var(--ink); }
+.is-instructions #instructions-visual:has(.instruction-demo) { flex:1 0 auto; display:flex; }
+.instruction-demo { display:grid; grid-template-columns:minmax(150px,.8fr) minmax(0,1fr); gap:clamp(16px,4vw,48px); width:100%; min-height:270px; text-align:left; color:var(--ink); }
 .instruction-demo-scene { position:relative; min-height:0; overflow:hidden; container-type:size; border:2px solid var(--ink); border-radius:20px; background:var(--image-bg-totem-temple,url('/assets/optimized/bg-totem-temple-51f21480bbb4.webp')) center / cover; --demo-block-width:min(86cqw,180px,calc((100cqh - 36px) * .3)); --demo-spacing:calc(var(--demo-block-width) / 1.5 - 4px); }
 .totem-demo-player { position:absolute; top:8px; width:100%; text-align:center; font-size:13px; }
 .totem-demo-block { position:absolute; left:50%; width:var(--demo-block-width); transform-origin:center bottom; }
 .totem-demo-block.demo-target { filter:drop-shadow(0 0 3px #ffef87); }
-.instruction-demo-guide { display:flex; flex-direction:column; justify-content:center; min-width:0; min-height:0; padding-block:8px 0; }
+.instruction-demo-guide { display:flex; flex-direction:column; justify-content:center; min-width:0; padding-block:8px 0; }
 .instruction-demo .instruction-demo-instructions { padding:0; margin:0 0 16px; list-style:none; counter-reset:demo-rule; max-width:none; font:800 clamp(15px,2vw,21px)/1.45 Nunito,system-ui,sans-serif; }
 .instruction-demo .instruction-demo-instructions li { position:relative; padding:10px 8px 10px 40px; margin:6px 0; border-radius:12px; counter-increment:demo-rule; }
 .instruction-demo-instructions li:before { content:counter(demo-rule); position:absolute; left:4px; top:12px; display:grid; place-items:center; width:26px; height:26px; border-radius:50%; background:#eee3f5; font:20px 'Lilita One',system-ui; }
@@ -15,13 +15,13 @@
 .instruction-demo-controls .shape { font-size:21px; }
 .instruction-demo-hand { position:absolute; top:18px; width:84px; height:105px; pointer-events:none; background:var(--image-tutorial-cat-paw,url('/assets/optimized/tutorial-cat-paw-e79482ce7b3e.webp')) center / contain no-repeat; z-index:2; }
 #rules:has(.instruction-demo) { width:min(900px,calc(100vw - 24px)); max-width:900px; }
-#rules .instruction-demo { height:min(420px,55dvh); }
+#rules .instruction-demo { min-height:max(270px,min(420px,55dvh)); }
 @media(max-width:620px) {
   .instruction-demo { grid-template-columns:minmax(110px,.8fr) minmax(0,1fr); gap:12px; min-height:250px; }
   .instruction-demo .instruction-demo-instructions { font-size:14px; margin-bottom:18px; }
   .instruction-demo .instruction-demo-instructions li { padding:8px 3px 8px 28px; }
   .instruction-demo-instructions li:before { width:21px; height:21px; left:0; top:9px; font-size:16px; }
-  .instruction-demo-controls { gap:5px; padding-bottom:80px; }
+  .instruction-demo-controls { gap:5px; padding-bottom:92px; }
   .instruction-demo-controls .hit-button { height:48px; border-width:2px; border-radius:12px; gap:0; }
   .instruction-demo-button-label { display:none; }
   .instruction-demo-hand { top:14px; }

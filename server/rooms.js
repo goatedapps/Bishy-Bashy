@@ -42,7 +42,7 @@ export class RoomService {
   snapshot(room) {
     return {
       code: room.code, hostId: room.hostId, testNumber: room.testNumber, selectedGame: room.selectedGame, mode: room.mode, arcadeLength: room.arcadeLength, arcadePreview: room.arcadePreview, gameChoosing: Boolean(room.gameChoosing), set: room.set,
-      players: room.players.map(({ id, name, connected, ready, sync, result, progress, disconnectedAt, characterId }) => ({ id, name, characterId, connected, ready, sync, result, progress, disconnectedAt })),
+      players: room.players.map(({ id, name, connected, ready, exitReady, sync, result, progress, disconnectedAt, characterId }) => ({ id, name, characterId, connected, ready, exitReady, sync, result, progress, disconnectedAt })),
       round: room.round ? { ...room.round } : null,
     };
   }
@@ -118,6 +118,7 @@ export class RoomService {
     }
     if (message.type === 'party-continue') {
       if (room.set?.mode !== 'party' || room.set.phase !== 'complete' || message.setId !== room.set.id || message.cycle !== room.set.cycle) return;
+      player.exitReady = false;
       player.ready = true;
       this.continueParty(room);
       return this.broadcast(room);
@@ -202,16 +203,18 @@ export class RoomService {
     if (message.type === 'shared-choice') return this.sharedChoice(client, room, player, message, received);
     if (message.type === 'witch-progress') return this.witchProgress(room, player, message, received);
     if (message.type === 'result') return this.result(client, room, player, message, received);
-    if (message.type === 'back-to-modes' || message.type === 'exit-set') {
-      if (message.type === 'exit-set' && room.set?.phase !== 'complete') return;
-      if (message.type === 'back-to-modes' && player.id !== room.hostId) return this.error(client, 'Only the host can return everyone to mode selection.');
-      if (!room.set && (room.arcadePreview || room.gameChoosing)) { room.arcadePreview = false; room.gameChoosing = false; return this.broadcast(room); }
-      if (!room.set || message.setId !== room.set.id) return;
-      room.set = null;
-      room.gameChoosing = false;
-      room.round = null;
-      room.arcadePreview = false;
-      room.players.forEach(member => { member.ready = false; member.result = null; member.progress = { cleared: 0, mistakes: 0 }; });
+    if (message.type === 'exit-set') {
+      const set = room.set;
+      if (set?.phase !== 'complete' || message.setId !== set.id || message.cycle !== set.cycle || player.exitReady) return;
+      player.exitReady = true;
+      player.ready = false;
+      this.finishExit(room);
+      return this.broadcast(room);
+    }
+    if (message.type === 'back-to-modes') {
+      if (player.id !== room.hostId) return this.error(client, 'Only the host can return everyone to mode selection.');
+      if (room.set?.phase === 'complete' || (room.set ? message.setId !== room.set.id : !room.arcadePreview && !room.gameChoosing)) return;
+      this.returnToModes(room);
       return this.broadcast(room);
     }
     if (message.type === 'leave') {
@@ -226,6 +229,7 @@ export class RoomService {
       if (!room.players.length) this.rooms.delete(room.code);
       else {
         if (isRoundActive(room.round)) this.finishIfComplete(room);
+        this.finishExit(room);
         this.broadcast(room);
       }
     }
@@ -233,6 +237,18 @@ export class RoomService {
 
   isSynced(player) {
     return player.sync && player.sync.count >= 3 && player.sync.rtt <= 1500 && this.now() - player.sync.at < 20_000;
+  }
+
+  returnToModes(room) {
+    room.set = null;
+    room.gameChoosing = false;
+    room.round = null;
+    room.arcadePreview = false;
+    room.players.forEach(player => { player.ready = false; player.exitReady = false; player.result = null; player.progress = { cleared: 0, mistakes: 0 }; });
+  }
+
+  finishExit(room) {
+    if (room.set?.phase === 'complete' && room.players.length && room.players.every(player => player.exitReady)) this.returnToModes(room);
   }
 
   beginPartyPicking(room) {
@@ -247,7 +263,7 @@ export class RoomService {
     set.cycleStart = set.plan.length;
     set.roundIndex = set.plan.length;
     room.round = null;
-    room.players.forEach(player => { player.ready = false; player.result = null; player.assetRound = null; player.progress = { cleared: 0, mistakes: 0 }; });
+    room.players.forEach(player => { player.ready = false; player.exitReady = false; player.result = null; player.assetRound = null; player.progress = { cleared: 0, mistakes: 0 }; });
   }
 
   finishPartyPicking(room) {
@@ -267,7 +283,7 @@ export class RoomService {
   continueParty(room) {
     if (room.set?.mode !== 'party' || room.set.phase !== 'complete') return false;
     const connected = room.players.filter(player => player.connected);
-    if (!connected.length || connected.some(player => !player.ready || !validCharacter(player.characterId)) || room.players.some(player => !player.connected && this.now() - player.disconnectedAt < RECONNECT_WAIT_MS)) return false;
+    if (!connected.length || connected.some(player => !player.ready || !validCharacter(player.characterId)) || room.players.some(player => player.exitReady || !player.connected && this.now() - player.disconnectedAt < RECONNECT_WAIT_MS)) return false;
     this.beginPartyPicking(room);
     return true;
   }
@@ -581,6 +597,7 @@ export class RoomService {
     room.replacementSeats = (room.replacementSeats || 0) + expired.length;
     this.chooseHost(room);
     if (isRoundActive(room.round)) this.finishIfComplete(room);
+    this.finishExit(room);
     this.broadcast(room);
     return true;
   }

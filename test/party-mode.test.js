@@ -104,7 +104,7 @@ test('Party plays every player pick, keeps points and wins across a unanimous co
   assert.equal(set.plan[2], 'totem-shrinker');
 });
 
-test('Party Continue needs every connected player, while Exit returns the whole room to modes', () => {
+test('Party Continue and Exit each require agreement, and players can switch their vote', () => {
   const { service, room, clients } = setup('party', 2);
   service.handle(clients[0], { type: 'start' });
   room.set.phase = 'complete';
@@ -114,6 +114,14 @@ test('Party Continue needs every connected player, while Exit returns the whole 
   service.handle(clients[0], message); assert.equal(room.set.phase, 'complete');
   service.handle(clients[1], message); assert.equal(room.set.phase, 'party-picking');
   room.set.phase = 'complete';
-  service.handle(clients[1], { type: 'exit-set', setId: room.set.id });
+  const exit = { type: 'exit-set', setId: room.set.id, cycle: room.set.cycle };
+  service.handle(clients[0], { ...exit, cycle: exit.cycle - 1 });
+  assert.equal(room.players[0].exitReady, false);
+  service.handle(clients[0], { ...message, cycle: exit.cycle });
+  service.handle(clients[1], exit);
+  assert.equal(room.set.phase, 'complete');
+  assert.equal(room.players[0].ready, true);
+  assert.equal(room.players[1].exitReady, true);
+  service.handle(clients[0], exit);
   assert.equal(room.set, null); assert.equal(room.round, null); assert.ok(room.players.every(player => !player.ready));
 });

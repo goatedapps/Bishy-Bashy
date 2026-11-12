@@ -130,7 +130,7 @@ export function createRun(round, localStart, timingOffset = 0) {
 export const isRoundActive = round => Boolean(round && ['countdown', 'running', 'collecting'].includes(round.phase));
 
 export function gameRules(game, round = {}) {
-  if (game === SATAY_GAME) return ['Watch the hot dog fall toward the skewer.', 'Tap any button right as they line up. Catch ten as fast as you can.'];
+  if (game === SATAY_GAME) return ['Watch the hot dog fall toward the skewer.', 'Tap any button right as they line up.'];
   if (game === POTION_GAME) return ['Match each potion to its button. One press breaks one bottle.', 'Clear both trays to change the witch. Complete ten sets for her final look.'];
   if (game === ANT_GAME) return ['Follow one paper plane as it climbs over the colony.', 'At each waypoint, match its nose. Red is left, green down, and blue right.'];
   if (game === WITCH_GAME) return ['Alternate red and blue to run faster', 'Hold green anywhere before the edge to stop and aim', 'Release green to throw. Most frogs passed wins'];

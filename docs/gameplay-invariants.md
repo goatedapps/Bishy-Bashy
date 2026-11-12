@@ -68,8 +68,11 @@ Every device displays all four lanes, except shared Letters, Sesame, Dice, Facin
 Keep the arena overlay above all character and effect layers, and show an explicit completion badge on every finished player lane.
 `shared/visual-state.js` publishes bounded scene snapshots at 4 Hz and maps round-relative timestamps to each viewer's clock; projections never advance gameplay or award results.
 `src/viewport.js` and `src/viewport.css` fit the active arena and shared controls inside the visual viewport, with controls outside the arena and instructions keeping Ready visible.
+Keep the tutorial scene, guide, controls, and player readiness in normal layout flow inside the scrollable card so resizing cannot cause overlap.
 Final standings hide setup and restart controls and show Exit to every connected player.
-`exit-set` accepts only the current completed set ID and returns the whole room to mode selection; active-set Back to modes remains host-only.
+`exit-set` records one vote per player for the current completed set and Party cycle.
+Return to mode selection when all occupied seats have voted, preserving votes on reconnect and rechecking after a seat leaves or expires.
+Party Exit and Continue votes replace each other, and Back to modes is host-only during an active set.
 Facing turns take 1800–1400 ms across five available difficulties; its reverse duck sprite must expose a left-pointing bill while clearly showing its back.
 Coins starts Arcade with 1200 ms falls and 700 ms launches; Game Select starts with 1300 ms falls and 720 ms launches, decreasing initial values by 80/40 ms per difficulty.
 Every Coins round progressively halves both fall duration and launch interval over its first 36 pairs; freeze each pair’s timings at launch so airborne objects never change speed.
@@ -206,7 +209,7 @@ Dynamite wire previews must use the shared seeded sequence even without a player
 `src/kaya-view.js` renders one dog, two copies of the same kitten, and three copies of the same opaque blanket; animate swaps from the shared round clock and never expose the dog during covered phases.
 Use supplied `card-move.mp3` once per shuffle with the common bounded cue scheduler; score and reveal through `ChoiceMatch`, with one Ding and the common large result circle for each correct player.
 Kaya is in Arcade, Game Select, Party, and the animated cat-paw tutorial catalog; reduced motion removes the crossing arcs while preserving the essential horizontal tracking movement.
-The handshake and health endpoint report protocol 40 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
+The handshake and health endpoint report protocol 41 with `kaya-shuffle`, `happy-days`, and `desk-clock`; deploy frontend and backend together.
 
 `shared/happy.js` owns Happy Days’ seeded 57-note arrangements on the supplied recording’s 145 BPM grid, 17 hold notes, and 30-second duration.
 Judge both press and release edges at ±55 ms for Perfect (1000 points) and ±140 ms for Good (500 points); a failed edge scores zero for that note, and holding early never collects future notes.
@@ -264,14 +267,14 @@ Hold red/blue to tilt left/right, release to level with momentum, and keep green
 `src/stars-view.js` rotates each maze and follows its car; peer smoothing must never run physics or award pickups.
 Use supplied `car-bump.mp3` once per distinct impact and `Ding.mp3` once per star, preserving collected stars after collisions.
 The catalog, looping cat-paw demo, illustrated assets, and supplied `star-collector-voice.mp3` cover all three set modes.
-The protocol 40 handshake requires `star-collector`; deploy frontend and backend together.
+The protocol 41 handshake requires `star-collector`; deploy frontend and backend together.
 
 Horse Speeder uses `shared/horse.js` for a 3200-unit race, 120 Hz speed/distance simulation, seeded moving traffic, and validated finish proofs within a 60-second deadline.
 Red/blue move left/right in 180 ms; green taps add speed with a 100 ms guard, coasting slows down, and bumps reduce speed without losing distance or blocking steering.
 Keep a safe lane in every traffic row and enough maximum-speed spacing for two lane changes plus reaction time; Game Select narrows row spacing from 140 to 120 across its three rounds.
 `src/horse-view.js` renders bounded perspective traffic, rear-view gallop poses, the finish banner, and accepted clear times; keep gameplay free of speedometers, counters, and progress bars.
 Overtakes and the finish use Ding, every gameplay/tutorial press uses `horse-gallop.mp3`, and horse collisions use `Punch-button.mp3`; the supplied `horse-speeder-voice.mp3` announces selection, and future horse-specific sounds must also be supplied.
-Protocol 40 requires `horse-speeder`, and bounded result proofs fit the 16 KiB WebSocket limit; deploy frontend and backend together.
+Protocol 41 requires `horse-speeder`, and bounded result proofs fit the 16 KiB WebSocket limit; deploy frontend and backend together.
 
 Shark Jumper uses `shared/shark.js` for a seeded color-matching zigzag climb: press the next shark’s color, jump for 240 ms, and turn it grey only after landing.
 The protagonist is a cute puppy; wrong colors cause a fall and one-second climb-back onto the last safe shark without losing completed jumps.
@@ -279,7 +282,7 @@ Use `plop.mp3` once at jump takeoff and `shark-splash.mp3` once at the 220 ms wa
 `src/shark-view.js` keeps eight bounded shark slots, authored jump/fall/climb motion, discrete reduced-motion states, and published remote timing without advancing peer gameplay.
 Start Arcade with 30 sharks and Game Select with 30/40/50 across its rounds; rank the final scheduled landing within 45 seconds and validate bounded jump histories on the server.
 Include the real recovery in the cat-paw tutorial; keep the common controls and omit gameplay counters and progress bars.
-Protocol 40 requires `shark-jumper`; deploy frontend and backend together.
+Protocol 41 requires `shark-jumper`; deploy frontend and backend together.
 
 `src/result-message.js` builds the actual client finish payload and includes any run-owned replay proof automatically; exercise this builder in Shark Jumper server and WebSocket regression tests.
 Shark Jumper masks submerged sprite pixels using the wave alpha, then displays only a feathered foam crest; never overlay opaque rectangular water strips or leave body parts visible below the waterline.
@@ -310,7 +313,7 @@ Spectator rendering uses isolated cosmetic copies and never changes an authorita
 Size the transformed prince to the scene and center him on the landing frog, even when a high throw zooms the camera out.
 Use the same real model and artwork in the looping cat-paw tutorial.
 Artwork masters and prompts live in `archive/artwork/`; delivered images total approximately 381 KB.
-The protocol 40 handshake requires `witch-turns`, `witch-instant-aim`, `witch-cumulative-speed`, and `witch-power-curve`; deploy frontend and backend together.
+The protocol 41 handshake requires `witch-turns`, `witch-instant-aim`, `witch-cumulative-speed`, and `witch-power-curve`; deploy frontend and backend together.
 
 ## Open Sesame
 
@@ -319,7 +322,7 @@ Accept the next digit only and preserve the correct prefix on a mistake.
 Rank completed codes by replay-verified elapsed time, with the common placement points and ties.
 Keep the dial shared in layout but local in control, and show all four player identities and accepted times on narrow screens.
 Use the live dial renderer in the isolated cat-paw tutorial, supplied Diuup for presses, Wrong for misses, and one Ding for the completed code.
-Deploy the frontend and backend together with protocol 40 and the `open-sesame` capability.
+Deploy the frontend and backend together with protocol 41 and the `open-sesame` capability.
 
 ## Burst the Balloon
 
@@ -331,12 +334,12 @@ Center the POP label and burst particles over the balloon at every lane width.
 Use the shared control deck with green disabled and supplied Diuup for accepted pumps.
 Play `balloon-burst.mp3` with one Ding at the burst.
 Use the live balloon renderer in the isolated cat-paw tutorial and retain discrete growth and the pop label under reduced motion.
-Deploy frontend and backend together with protocol 40 and the `burst-the-balloon` capability.
+Deploy frontend and backend together with protocol 41 and the `burst-the-balloon` capability.
 
 ## Satay Snag, Glamour Brew, and Ant Air Mail
 
 `shared/market-games.js` owns the seeded challenges and replays integer-microsecond input histories on the server.
-Satay accepts one press per sausage within an inclusive catch window of ±76 ms at base difficulty, narrowing by 11 ms per level.
+Satay accepts one press per sausage within an inclusive catch window of ±50 ms at base difficulty, narrowing by 7 ms per level.
 Base drops reach the skewer in 690–870 ms, and each round requires ten catches within 30 seconds.
 Advance unattended drops from their scheduled deadlines, preserve completed catches on a miss, and keep the visual catch at the skewer height.
 Glamour Brew presents two seeded stacks of distinct colors per set and removes exactly one matching potion on each accepted press.
@@ -347,4 +350,4 @@ Keep the final silhouette readable in a narrow lane, and use discrete waypoint p
 Use one Ding for each catch, cleared potion set, and correctly chosen flight leg, including the final success.
 The room acknowledges finishes immediately and shows the last animation for 550 ms before standings.
 Peer snapshots render only the published attempt, stacks, or flight leg and never advance another player’s game.
-The protocol 40 handshake requires `satay-snag`, `glamour-brew`, and `ant-air-mail`.
+The protocol 41 handshake requires `satay-snag`, `glamour-brew`, and `ant-air-mail`.

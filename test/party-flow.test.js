@@ -36,7 +36,8 @@ test('three-round Game Select has a five-second standings minimum and requires e
   const id=room.set.id;
   service.handle(host,{type:'start'});service.handle(host,{type:'configure',mode:'arcade'});
   assert.equal(room.set.id,id);assert.equal(room.set.phase,'complete');assert.equal(room.mode,'game-select');
-  service.handle(host,{type:'back-to-modes',setId:id});assert.equal(room.set,null);
+  service.handle(host,{type:'back-to-modes',setId:id});assert.equal(room.set.id,id);
+  service.handle(host,{type:'exit-set',setId:id});assert.equal(room.set,null);
 });
 
 test('Facing turns are slower at every difficulty and Arcade coin rain keeps its faster pacing through countdown', () => {
@@ -54,7 +55,7 @@ test('Facing turns are slower at every difficulty and Arcade coin rain keeps its
   assert.equal(roundSettings('its-raining-coins',123).fallMs,1300);
 });
 
-test('Exit is final-results-only, accepts a guest, and returns every player to modes once', () => {
+test('Exit is final-results-only and requires one vote per seat, including across reconnects', () => {
   let time=100000;
   const service=new RoomService({now:()=>time,send(){}}),host={},guest={};
   service.handle(host,{type:'create',name:'Host',mode:'game-select'});
@@ -74,10 +75,44 @@ test('Exit is final-results-only, accepts a guest, and returns every player to m
   service.handle(guest,{type:'exit-set',setId:'old-set'});
   assert.equal(room.set.id,id);
   service.handle(guest,{type:'exit-set',setId:id});
+  service.handle(guest,{type:'exit-set',setId:id});
+  service.handle(host,{type:'back-to-modes',setId:id});
+  assert.equal(room.set.id,id);
+  const token = room.players[1].token;
+  service.disconnect(guest);
+  const rejoined = {};
+  service.handle(rejoined,{type:'join',name:'Guest',code:room.code,token});
+  assert.equal(service.snapshot(room).players[1].exitReady,true);
+  service.handle(host,{type:'exit-set',setId:id});
   assert.equal(room.set,null);assert.equal(room.round,null);
   assert.equal(room.players.length,2);
   assert.ok(room.players.every(player=>!player.ready&&!player.result));
   service.handle(host,{type:'configure',mode:'arcade'});
   service.handle(guest,{type:'exit-set',setId:id});
   assert.equal(room.mode,'arcade');assert.equal(room.set,null);
+});
+
+for (const departure of ['leave', 'expire']) test(`Exit rechecks the remaining votes when a seat is removed by ${departure}`, () => {
+  let now = 100_000;
+  const service = new RoomService({ now: () => now, send() {} });
+  const host = {}, guest = {};
+  service.handle(host, { type: 'create', name: 'Host', mode: 'arcade' });
+  const room = service.rooms.get(host.room);
+  service.handle(guest, { type: 'join', name: 'Guest', code: room.code });
+  service.handle(host, { type: 'start' });
+  room.set.phase = 'complete';
+  room.round.phase = 'results';
+  service.handle(host, { type: 'exit-set', setId: room.set.id });
+  assert.equal(room.set.phase, 'complete');
+  if (departure === 'leave') service.handle(guest, { type: 'leave' });
+  else {
+    service.disconnect(guest);
+    now += 29_999;
+    service.tick();
+    assert.equal(room.set.phase, 'complete');
+    now++;
+    service.tick();
+  }
+  assert.equal(room.set, null);
+  assert.equal(room.players.length, 1);
 });

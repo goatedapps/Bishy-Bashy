@@ -14,7 +14,7 @@ Use [the gameplay reference](docs/gameplay.md) for player behavior and game-spec
 - Write each full sentence on its own physical line when substantially editing Markdown.
 - Comment only on non-obvious intent, constraints, invariants, or tradeoffs.
 - Keep the static frontend independently deployable with a configurable secure WebSocket endpoint.
-- Deploy frontend and backend together for protocol changes; current protocol is 40.
+- Deploy frontend and backend together for protocol changes; current protocol is 41.
 - Keep a single server instance while rooms live in memory.
 
 ## Game and asset requirements
@@ -29,6 +29,7 @@ Use [the gameplay reference](docs/gameplay.md) for player behavior and game-spec
 - Use the same three buttons and shared fixed control bar in every game.
 - Keep gameplay free of decorative bases, counters, totals, and progress bars unless explicitly requested; retain the round timer, essential target slots, and accepted final time.
 - Every How to play screen uses an isolated looping mini-demo with actual game artwork, concise rules, the shared buttons, and the illustrated cat paw.
+- Let tutorial content keep its natural height inside the scrollable card so instructions, controls, and player readiness stay separate during rotation.
 - Honor reduced motion and hidden-screen pausing without replaying stale cues.
 
 ## Timing and multiplayer invariants
@@ -41,6 +42,7 @@ Use [the gameplay reference](docs/gameplay.md) for player behavior and game-spec
 - Preserve accepted finishes and earned points when a player leaves; unfinished play forfeits.
 - Reserve disconnected seats for 30 seconds, then allow replacements to join the next round with separate scores.
 - Ready gates may wait 15 seconds for disconnected players, but never skip a connected unready player.
+- Final standings return to mode selection when every reserved seat has chosen Exit.
 - Hiding or reloading active gameplay forfeits the round.
 - Readiness does not carry between rounds; require fresh synchronization and asset readiness.
 - Clock uncertainty and GO render delay do not prove physical display synchronization.

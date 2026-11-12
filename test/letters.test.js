@@ -208,6 +208,9 @@ test('three Game Select rounds keep timed words and readiness gates, reset typin
   }
   assert.equal(room.set.phase, 'complete');
   service.handle(clients[1], { type: 'exit-set', setId: room.set.id });
+  assert.equal(room.set.phase, 'complete');
+  const setId = room.set.id;
+  for (const index of [0, 2]) service.handle(clients[index], { type: 'exit-set', setId });
   assert.equal(room.set, null);
   assert.equal(room.round, null);
 });

@@ -321,8 +321,12 @@ for (const [mode, game, length] of [['arcade', 'totem-shrinker', 5], ['game-sele
   }
   assert.equal(state.set.phase, 'complete');
   assert.equal(state.set.history.length, length);
+  const vote = { type: 'exit-set', setId: state.set.id };
+  const voted = clients.map(socket => receiveProtocol(socket, message => message.type === 'state' && message.room.set?.phase === 'complete' && message.room.players[1].exitReady));
+  send(clients[1], vote);
+  await Promise.all(voted);
   const exited = clients.map(socket => receiveProtocol(socket, message => message.type === 'state' && !message.room.set && !message.room.round));
-  send(clients[1], { type: 'exit-set', setId: state.set.id });
+  for (const index of [0, 2, 3]) send(clients[index], vote);
   for (const message of await Promise.all(exited)) assert.equal(message.room.players.length, 4);
 });
 
@@ -351,7 +355,7 @@ for (const game of ['totem-shrinker', PERM_GAME]) test(`${game}: four real conne
     const waiting = receive(socket, message => message.type === 'joined');
     send(socket, { type: index ? 'join' : 'create', game, mode: 'game-select', code, name: `Player ${index + 1}` });
     const joined = await waiting;
-    assert.equal(joined.protocol, 40);
+    assert.equal(joined.protocol, 41);
     code = joined.code;
     clients.push({ socket, ...joined });
     const ready = receive(socket, message => message.type === 'state' && message.room.players.some(player => player.id === joined.playerId && player.ready));
@@ -441,7 +445,7 @@ test('real WebSocket clients can create, synchronize, and join a room', async t 
   assert.equal(state.room.players[1].name, 'Friend 1');
   assert.equal(JSON.stringify(state).includes(joined.token), false);
   const health = await fetch(`http://127.0.0.1:${port}/health`);
-  assert.deepEqual(await health.json(), { ok: true, protocol: 40, countdownMs: 3000 });
+  assert.deepEqual(await health.json(), { ok: true, protocol: 41, countdownMs: 3000 });
   const info = await fetch(`http://127.0.0.1:${port}/connection-info`);
   assert.ok(Array.isArray((await info.json()).lanUrls));
 });

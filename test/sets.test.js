@@ -222,6 +222,8 @@ test('three automatic Totem rounds increase block counts and crown the total-poi
   service.handle(clients[0], { type: 'start' });
   assert.equal(room.set.id, setId);
   service.handle(clients[0], { type: 'back-to-modes', setId });
+  assert.equal(room.set.id, setId);
+  clients.forEach(client => service.handle(client, { type: 'exit-set', setId }));
   service.handle(clients[0], { type: 'start' }); state.ready();
   assert.notEqual(room.set.id, setId);
   assert.ok(room.set.players.every(player => player.points === 0));

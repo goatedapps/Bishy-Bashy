@@ -646,11 +646,16 @@ function updateMetrics() {
   $('party-continue').hidden = !continuing;
   $('party-continue').disabled = !connected || Boolean(mine?.ready) || !Number.isInteger(mine?.characterId);
   $('party-continue').textContent = mine?.ready ? 'Waiting for friends…' : 'Continue';
+  $('exit').disabled = !connected || Boolean(mine?.exitReady);
+  $('exit').textContent = mine?.exitReady ? 'Waiting to exit…' : 'Exit';
   updateArcadeSettings();
   let status = '';
   if (!connected) status = 'Reconnecting… Keep playing; your result stays saved on this device.';
   else if (isRoundActive(room.round) && !room.round.playerIds.includes(playerId)) status = 'You will join the next round. Choose your character while you wait.';
-  else if (room.set?.phase === 'complete') status = '';
+  else if (room.set?.phase === 'complete') {
+    const exitCount = room.players.filter(player => player.exitReady).length;
+    if (exitCount) status = `${exitCount} of ${room.players.length} players chose Exit.`;
+  }
   else if (room.set?.phase === 'party-picking') status = '';
   else if (room.gameChoosing) status = '';
   else if (idle) status = playerId === room.hostId ? 'Start the set when your friends have joined.' : 'Waiting for the host to start.';
@@ -675,7 +680,6 @@ function renderRoom() {
   $('leave').disabled = false;
   $('back').hidden = room.set?.phase === 'complete' || playerId !== room.hostId || !room.set && !room.arcadePreview && !room.gameChoosing;
   $('exit').hidden = room.set?.phase !== 'complete';
-  $('exit').disabled = !joined || socket?.readyState !== WebSocket.OPEN;
   $('ready-actions').hidden = Boolean(active || ['selecting', 'party-picking'].includes(room.set?.phase) || room.set?.phase === 'intermission' && room.mode !== 'game-select');
   $('ready').hidden = !gate;
   $('start').hidden = playerId !== room.hostId || Boolean(room.set);
@@ -931,7 +935,7 @@ $('arcade-length').addEventListener('input', () => {
 $('leave').addEventListener('click', () => requestNavigation('leave'));
 $('back').addEventListener('click', () => requestNavigation('back-to-modes'));
 $('exit').addEventListener('click', () => {
-  if (room?.set?.phase === 'complete') send({ type: 'exit-set', setId: room.set.id });
+  if (room?.set?.phase === 'complete') send({ type: 'exit-set', setId: room.set.id, cycle: room.set.cycle });
 });
 $('navigation-stay').addEventListener('click', () => $('navigation-confirm').close());
 $('navigation-confirm-action').addEventListener('click', () => {

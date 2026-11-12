@@ -43,12 +43,9 @@
 .art-open-sesame { background:#c4e2d8; }
 .sesame-phone-portrait { position:absolute; inset:5%; background:var(--image-sesame-phone,url('/assets/optimized/sesame-phone-a97815b35756.webp')) center / contain no-repeat; }
 .sesame-demo .instruction-demo-scene { display:flex; padding:5px; }
-.sesame-demo .sesame-slot { width:min(9.5cqw,34px); height:clamp(18px,5vh,33px); font-size:clamp(10px,8cqw,22px); }
-.sesame-demo .sesame-code { gap:min(1.5cqw,3px); padding:3px; }
+.sesame-demo .sesame-slot { width:100%; height:clamp(18px,9cqw,33px); font-size:clamp(10px,8cqw,22px); border-width:1px; }
+.sesame-demo .sesame-code { display:grid; grid-template-columns:repeat(8,minmax(0,1fr)); width:min(100%,300px); gap:clamp(1px,1cqw,3px); padding:2px; }
 @media (max-width:500px) {
-  .sesame-demo.instruction-demo { grid-template-columns:minmax(0,1fr); grid-template-rows:180px auto; min-height:0; }
-  #rules .sesame-demo.instruction-demo { height:auto; }
-  .is-instructions #game-instructions:has(.sesame-demo) #instructions-visual { flex:0 0 auto; }
   .sesame-demo .instruction-demo-instructions li { padding-block:5px; margin-block:3px; }
 }
 @media (prefers-reduced-motion:reduce) { .sesame-key { transition:none; } }

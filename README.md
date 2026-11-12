@@ -61,6 +61,7 @@ Burst the Balloon is a simultaneous race to pop a balloon by alternating red and
 Satay Snag races to catch ten hot dogs, Glamour Brew transforms a witch across ten potion sets, and Ant Air Mail follows one paper plane through twelve turns.
 Set placements award **10 / 7 / 4 / 1 points**, with ties sharing placement points.
 Party mode retains cumulative points, win counts, and history between cycles.
+Final standings stay open until every player still in the room chooses Exit.
 Hiding or reloading an active game forfeits the round; a network disconnection alone allows local play and pending-result retries.
 Disconnected seats are reserved for 30 seconds, and Ready gates wait up to 15 seconds for disconnected players.
 Accepted finishes and earned points survive a player leaving.
@@ -77,7 +78,7 @@ Players can override the endpoint in Connection settings, and invitations preser
 `render.yaml` configures the Node service with build command `npm ci && npm run build` and start command `npm start`.
 Set `ALLOWED_ORIGINS=https://goatedapps.github.io`; additional origins may be comma-separated, with no repository path or trailing slash.
 HTTPS pages require `wss://`, and the client connects at `/ws`.
-Use `/health` for the health check; it reports protocol version 40.
+Use `/health` for the health check; it reports protocol version 41.
 Deploy frontend and backend together when changing protocol requirements, and verify both deployments separately.
 Keep one server instance while rooms live in memory; restarting or redeploying the service clears rooms.
 A sleeping service may need time to wake up.
