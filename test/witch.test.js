@@ -2,7 +2,7 @@ import { HeldInputs } from '../src/held-input.js';
 import { driveWitch as throwPotion } from './helpers/witch.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { WitchRun, WITCH_GAME, WITCH_HOLD_MS, replayWitch, witchPose, witchFlight, WITCH_ROAD, WITCH_RUN_SCALE, FROG_SPACING } from '../shared/witch.js';
+import { WitchRun, WITCH_GAME, WITCH_HOLD_MS, replayWitch, witchPose, witchFlight, witchTravelPace, witchRunSpeed, WITCH_ROAD, WITCH_RUN_SCALE, FROG_SPACING } from '../shared/witch.js';
 import { GAMES, roundSettings, comparePlayers } from '../shared/games.js';
 import { RoomService } from '../server/rooms.js';
 import { resultMessage } from '../src/result-message.js';
@@ -35,7 +35,7 @@ test('the first accepted press starts visible forward travel with the original t
   assert.equal(replayWitch(run.proof, 225).x, run.x);
 });
 
-test('doubled travel preserves runway crossing time and replayed throw power at higher speeds', () => {
+test('moderate running retains doubled pace and deterministic runway crossing', () => {
   const run = new WitchRun();
   for (let index = 0; index < 40; index++) run.tap(index % 2 ? 2 : 0, 100 + index * 40);
   const at = run.at, x = run.x;
@@ -51,6 +51,44 @@ test('doubled travel preserves runway crossing time and replayed throw power at 
   const replay = replayWitch(run.proof, run.at);
   assert.equal(replay.failure, 'overrun');
   assert.ok(Math.abs(replay.elapsed - run.elapsed) < 1e-8);
+});
+
+test('visible pace levels off smoothly while numeric speed and throwing power remain uncapped', () => {
+  assert.equal(witchTravelPace(0), 0);
+  assert.equal(witchTravelPace(.22), 16);
+  assert.equal(witchTravelPace(20), 40);
+  assert.equal(witchTravelPace(40), 80);
+  assert.ok(Math.abs(witchTravelPace(40.001) - 80.002) < .000001);
+  let previous = 80;
+  for (const speed of [41, 60, 120, 240, 1000, 10000]) {
+    const pace = witchTravelPace(speed);
+    assert.ok(pace > previous && pace < 140);
+    assert.ok(pace < speed * 2);
+    previous = pace;
+  }
+  for (const interval of [40, 60, 100, 160]) {
+    const run = throwPotion(0, interval);
+    assert.equal(run.state, 'land');
+    assert.equal(run.power, witchRunSpeed(run.presses));
+    assert.ok(run.elapsed < 20000);
+    const replay = replayWitch(run.proof, run.elapsed);
+    assert.equal(replay.cleared, run.cleared);
+    assert.equal(replay.power, run.power);
+  }
+});
+
+test('a high-power witch has time to stop at the edge without losing throw strength', () => {
+  const run = new WitchRun();
+  run.x = WITCH_ROAD - 100;
+  run.speed = 120;
+  run.tap(1, 600);
+  assert.equal(run.state, 'aim');
+  assert.equal(run.power, 120);
+  assert.ok(run.x < WITCH_ROAD - 25);
+  const stopped = run.x;
+  run.advance(1000);
+  assert.equal(run.x, stopped);
+  assert.equal(run.angle, 22);
 });
 
 test('proofs replay independently of frame timing and reject reordered, future, rewritten, and oversized input', () => {
@@ -203,9 +241,9 @@ test('speed adds every accepted alternating press without decay or the former 42
   const faster = throwPotion(0, 80), typical = throwPotion(0, 100), relaxed = throwPotion(0, 120);
   assert.ok(faster.power > typical.power && typical.power > relaxed.power);
   assert.ok(faster.cleared > typical.cleared && typical.cleared > relaxed.cleared);
-  assert.ok(typical.cleared >= 55 && typical.cleared <= 65);
+  assert.ok(typical.cleared >= 80 && typical.cleared <= 100);
   assert.ok(faster.cleared > 40);
-  assert.ok(typical.flightSeconds > 1.8 && typical.flightSeconds < 2.2);
+  assert.ok(typical.flightSeconds > 2.4 && typical.flightSeconds < 2.7);
 });
 
 test('the flight counter increases through crossed frogs and excludes the transformed landing frog', () => {
@@ -236,7 +274,7 @@ test('the longer runway rewards fast tapping with a progressively steeper speed 
   }
   assert.equal(run.speed, 144);
   const average = throwPotion(0, 120), fast = throwPotion(0, 60);
-  assert.ok(average.power < 100);
+  assert.ok(average.power < 120);
   assert.ok(fast.power > average.power * 1.5);
   assert.ok(fast.cleared > average.cleared * 2);
 });

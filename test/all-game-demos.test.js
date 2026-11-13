@@ -4,6 +4,7 @@ import { GAMES, roundSettings } from '../shared/games.js';
 import { remainingDemoPlan, REMAINING_DEMO_GAMES } from '../src/remaining-demos.js';
 import { ScriptedDemo } from '../src/scripted-demo.js';
 import { createGameDemo } from '../src/game-demo.js';
+import { WitchRun, WITCH_ROAD } from '../shared/witch.js';
 
 test('Shark Jumper tutorial sounds come only from accepted jumps and water impacts', () => {
   const plan = remainingDemoPlan('shark-jumper');
@@ -174,4 +175,32 @@ test('Witch tutorial keeps its unmeasured gauge hidden, anchors it at the edge, 
     assert.equal(Number(stage.flightNumber.textContent), demo.run.cleared);
     demo.dispose(); assert.equal(stage.resize.disconnected, true);
   } finally { globalThis.document = previous; globalThis.ResizeObserver = priorObserver; }
+});
+
+test('Witch scenery uses softened travel while the badge keeps numeric power and green stops the scene', () => {
+  const previous = globalThis.document;
+  globalThis.document = { hidden: false, createElement: () => new Element(), createElementNS: () => new Element() };
+  try {
+    const demo = createGameDemo('witch-delivery'), stage = demo.stage;
+    for (const width of [350, 800]) {
+      stage.scene.clientWidth = width; stage.scene.clientHeight = 400;
+      const run = new WitchRun();
+      run.x = WITCH_ROAD - 100; run.speed = 120;
+      stage.render(demo.plan.settings, run, 300);
+      const before = parseFloat(stage.village.style.backgroundPosition);
+      stage.render(demo.plan.settings, run, 600);
+      const after = parseFloat(stage.village.style.backgroundPosition);
+      const formerScroll = 240 * .3 * width / 110 * .3;
+      assert.ok((before - after) / formerScroll > .51 && (before - after) / formerScroll < .52);
+      assert.equal(stage.speed.textContent, 'Speed 120.0');
+      assert.equal(stage.hud.hidden, false);
+      run.tap(1, 600);
+      stage.render(demo.plan.settings, run, 600);
+      const stopped = stage.village.style.backgroundPosition;
+      stage.render(demo.plan.settings, run, 1000);
+      assert.equal(stage.village.style.backgroundPosition, stopped);
+      assert.equal(stage.speed.textContent, 'Run speed 120.0');
+    }
+    demo.dispose();
+  } finally { globalThis.document = previous; }
 });

@@ -14,7 +14,7 @@ Use [the gameplay reference](docs/gameplay.md) for player behavior and game-spec
 - Write each full sentence on its own physical line when substantially editing Markdown.
 - Comment only on non-obvious intent, constraints, invariants, or tradeoffs.
 - Keep the static frontend independently deployable with a configurable secure WebSocket endpoint.
-- Deploy frontend and backend together for protocol changes; current protocol is 45.
+- Deploy frontend and backend together for protocol changes; current protocol is 46.
 - Keep a single server instance while rooms live in memory.
 
 ## Game and asset requirements
@@ -53,7 +53,7 @@ Witch’s Special Delivery replaces the planned Blaster Soda Race.
 Speed, angle, and frog-score displays are explicitly requested exceptions to the counter-free rule.
 Keep the cropped village scrolling and keep the speed badge beside the witch and anchor the quarter-circle angle gauge at the roof edge; green stops immediately and starts aiming.
 Each accepted alternating press increases speed using `0.2 × presses + 0.02 × presses²`, with no decay or speed cap.
-The 540-unit runway doubles visual travel to `2 × max(8, speed)` units per second after the first accepted press, preserving run-up timing and quadratic throw power.
+Keep the 540-unit runway and 16-unit/s opening pace; `witchTravelPace` softens movement above numeric speed 40 toward a 140-unit/s limit without capping numeric speed or throw power.
 Calibrate a near-edge speed-120 throw at 45° to about 80 frogs and 2.4 seconds of flight.
 Keep tutorial gauges hidden before measured layout and show the live frogs-passed counter during flight.
 The handshake requires `witch-turns`, `witch-instant-aim`, `witch-cumulative-speed`, and `witch-power-curve`.

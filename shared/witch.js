@@ -9,7 +9,15 @@ export const FROG_SPACING = 14;
 export const WITCH_HOLD_MS = 2200;
 const ANGLE_RATE = 55;
 const MIN_RUN_PACE = 8;
+const RUN_PACE_SOFT_START = 80;
+const RUN_PACE_HEADROOM = 60;
 export const witchRunSpeed = presses => .2 * presses + .02 * presses * presses;
+export function witchTravelPace(speed) {
+  if (speed <= 0) return 0;
+  const pace = WITCH_RUN_SCALE * Math.max(MIN_RUN_PACE, speed);
+  const excess = Math.max(0, pace - RUN_PACE_SOFT_START);
+  return Math.min(pace, RUN_PACE_SOFT_START) + RUN_PACE_HEADROOM * excess / (RUN_PACE_HEADROOM + excess);
+}
 const clamp = (value, low, high) => Math.max(low, Math.min(high, value));
 
 export class WitchRun {
@@ -26,7 +34,7 @@ export class WitchRun {
     const until = Math.min(time, this.end);
     const seconds = Math.max(0, until - this.at) / 1000;
     if (this.state === 'run') {
-      const pace = this.speed > 0 ? WITCH_RUN_SCALE * Math.max(MIN_RUN_PACE, this.speed) : 0;
+      const pace = witchTravelPace(this.speed);
       const distance = pace * seconds;
       if (this.x + distance >= WITCH_ROAD) {
         const crossing = (WITCH_ROAD - this.x) / pace;

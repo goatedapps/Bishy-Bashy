@@ -308,8 +308,9 @@ Use `shared/witch.js` for local inputs and server replay; freeze the round clock
 Only the active player accepts inputs or submits a result; duplicate accepted results acknowledge without advancing or awarding twice.
 Scores count frogs passed, excluding the transformed landing frog; equal counts share placement.
 Use a 540-unit runway and quadratic speed growth from the total accepted alternating press count, with no decay or speed cap.
-After the first accepted press, forward travel uses `2 × max(8, speed)` units per second; the doubled runway preserves the run-up time, while throw power and its displayed speed retain the quadratic value.
-Keep the running camera scale unchanged so movement and village scrolling visibly double; the tutorial uses the same movement model.
+The first accepted press starts movement at 16 units/s; `witchTravelPace` retains twice the numeric speed up to speed 40, then smoothly approaches 140 units/s.
+The soft limit applies only to runway travel: the speed badge, tap growth, and launch velocity retain the uncapped quadratic value.
+Keep the running camera scale unchanged; local runs, spectator projections, tutorials, and replay validation share the same travel curve.
 A near-edge speed-120 throw at 45° reaches about 80 frogs; leave headroom above that target.
 Green instantly stops translation and freezes speed before the edge; aim starts immediately and launches only on an explicit green release.
 Clear merged pointer/keyboard holds on cancellation; dialog/focus cancellation cancels the hold without throwing.
@@ -318,7 +319,7 @@ Spectator rendering uses isolated cosmetic copies and never changes an authorita
 Size the transformed prince to the scene and center him on the landing frog, even when a high throw zooms the camera out.
 Use the same real model and artwork in the looping cat-paw tutorial.
 Artwork masters and prompts live in `archive/artwork/`; delivered images total approximately 381 KB.
-The protocol 45 handshake requires `witch-turns`, `witch-instant-aim`, `witch-cumulative-speed`, and `witch-power-curve`; deploy frontend and backend together.
+The protocol 46 handshake requires `witch-turns`, `witch-instant-aim`, `witch-cumulative-speed`, and `witch-power-curve`; deploy frontend and backend together.
 
 ## Open Sesame
 

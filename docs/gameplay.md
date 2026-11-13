@@ -903,12 +903,13 @@ Original generated artwork and exact prompts live in [the artwork archive](../ar
 Gameplay and tutorial presses reuse the matching hit-red.wav, hit-green.wav, and hit-blue.wav sounds; Plop marks launch, Ding marks a successful transformation, and Wrong marks a failed throw.
 Game selection uses the supplied `Witch-special-delivery.voice.mp3` with the existing selection and applause cues.
 Physics tuning uses a 540-unit runway, speed `0.2 × presses + 0.02 × presses²`, 55°/s aim, 14-unit frog spacing, 5.5× launch velocity, and 400-unit/s² gravity.
-The first accepted press starts forward travel at 16 units per second; movement is twice `max(8, speed)` throughout the run.
-The doubled runway preserves run-up timing, while throw power and the speed badge follow the original uncapped quadratic value.
-Protocol 45 keeps local movement, spectator views, tutorials, and server replays on the same doubled pace.
+The first accepted press starts forward travel at 16 units per second; movement stays twice `max(8, speed)` through numeric speed 40.
+Above that threshold, travel uses `80 + 60 × excess / (60 + excess)`, where `excess = 2 × speed - 80`, smoothly approaching 140 units per second.
+This gives more stopping time near the edge while the speed badge and throw power follow the original uncapped quadratic value.
+Protocol 46 keeps local movement, spectator views, tutorials, and server replays on the same softened travel curve.
 At a near-edge 45° release, speed 120 reaches 80 frogs in about 2.4 seconds.
-Reference model runs at 120 ms per press reach speed 92 and about 47 frogs, while 60 ms presses reach speed 147 and about 119 frogs.
-These are tuning references rather than measured player averages; a 240-frog validation bound leaves room for exceptionally fast legal runs.
+Reference model runs stopping near the edge at 120 ms per press reach speed 106 and about 62 frogs; 60 ms presses reach speed 224 and the existing 240-frog scoring limit.
+These are tuning references rather than measured player averages; the longer time available to tap increases typical power, without changing the throw formula or the 240-frog scoring limit.
 
 ## Satay Snag
 
