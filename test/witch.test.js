@@ -2,7 +2,7 @@ import { HeldInputs } from '../src/held-input.js';
 import { driveWitch as throwPotion } from './helpers/witch.js';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { WitchRun, WITCH_GAME, WITCH_HOLD_MS, replayWitch, witchPose, witchFlight, WITCH_ROAD, FROG_SPACING } from '../shared/witch.js';
+import { WitchRun, WITCH_GAME, WITCH_HOLD_MS, replayWitch, witchPose, witchFlight, WITCH_ROAD, WITCH_RUN_SCALE, FROG_SPACING } from '../shared/witch.js';
 import { GAMES, roundSettings, comparePlayers } from '../shared/games.js';
 import { RoomService } from '../server/rooms.js';
 import { resultMessage } from '../src/result-message.js';
@@ -29,10 +29,28 @@ test('the first accepted press starts visible forward travel with the original t
   assert.equal(run.x, 0);
   run.tap(0, 100);
   run.advance(225);
-  assert.equal(run.x, 1);
+  assert.equal(run.x, 2);
   run.tap(1, 225);
   assert.equal(run.power, .22);
   assert.equal(replayWitch(run.proof, 225).x, run.x);
+});
+
+test('doubled travel preserves runway crossing time and replayed throw power at higher speeds', () => {
+  const run = new WitchRun();
+  for (let index = 0; index < 40; index++) run.tap(index % 2 ? 2 : 0, 100 + index * 40);
+  const at = run.at, x = run.x;
+  assert.equal(run.speed, 40);
+  run.advance(at + 500);
+  assert.ok(Math.abs(run.x - x - 40) < 1e-8);
+  assert.equal(run.speed, 40);
+  const originalCrossingAt = at + (270 - x / 2) / 40 * 1000;
+  run.advance(originalCrossingAt + 901);
+  assert.equal(run.failure, 'overrun');
+  assert.equal(run.x, 540);
+  assert.ok(Math.abs(run.elapsed - originalCrossingAt - 900) < 1e-8);
+  const replay = replayWitch(run.proof, run.at);
+  assert.equal(replay.failure, 'overrun');
+  assert.ok(Math.abs(replay.elapsed - run.elapsed) < 1e-8);
 });
 
 test('proofs replay independently of frame timing and reject reordered, future, rewritten, and oversized input', () => {
@@ -157,7 +175,7 @@ test('live frame updates and frozen nonzero device clocks preserve the submitted
   for (const start of [1234.5678, 527500.12345, 5000000.7]) {
     const run = new WitchRun({}, start); let color = 0;
     for (let at = start + 100; at < start + 9000; at += 100) {
-      if (run.x >= WITCH_ROAD - 14) break;
+      if (run.x >= WITCH_ROAD - 14 * WITCH_RUN_SCALE) break;
       for (let frame = run.at + 16; frame < at; frame += 16) run.advance(frame);
       run.tap(color, at); color = 2 - color;
     }
@@ -205,7 +223,7 @@ test('the flight counter increases through crossed frogs and excludes the transf
 
 
 test('the longer runway rewards fast tapping with a progressively steeper speed curve', () => {
-  assert.equal(WITCH_ROAD, 270);
+  assert.equal(WITCH_ROAD, 540);
   const run = new WitchRun({}, 0);
   let previousGain = 0;
   for (let i = 0; i < 80; i++) {
