@@ -250,6 +250,7 @@ export class GameAudio {
   }
 
   play(id, { color = 0, progress = 0, at = this.context?.currentTime, group = 'effects', game = this.game } = {}) {
+    if (id === 'gameplayPress' && game === 'dam-good-fit') id = 'buttonPress';
     if (id === 'partyLock') id = 'ding';
     if (id === 'stageComplete') id = 'ding';
     if (id === 'stageWrong' && game === 'horse-speeder') id = 'gameplayPress';

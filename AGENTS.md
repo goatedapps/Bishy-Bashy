@@ -30,7 +30,7 @@ Use [the gameplay reference](docs/gameplay.md) for player behavior and game-spec
 - Use one shared gameplay screen or four equal-width player lanes at every viewport size.
 - Keep gameplay free of decorative bases, counters, totals, and progress bars unless explicitly requested; retain the round timer, essential target slots, and accepted final time.
 - Every How to play screen uses an isolated looping mini-demo with actual game artwork, concise rules, the shared buttons, and the illustrated cat paw.
-- Fit the complete tutorial, player readiness, and Ready button in the viewport when space allows, with scrolling available for shorter viewports and enlarged text.
+- Let tutorial cards and demos fill the available viewport height, keeping readiness and Ready visible; retain scrolling for shorter viewports and enlarged text.
 - Honor reduced motion and hidden-screen pausing without replaying stale cues.
 
 ## Timing and multiplayer invariants

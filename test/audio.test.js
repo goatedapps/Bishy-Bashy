@@ -491,6 +491,27 @@ test('loading button feedback never catches up after interruption or a slow down
   assert.equal([...audio.voices].at(-1).id, 'buttonPress');
 });
 
+test('Dam choices and tutorial presses reuse the menu click without changing other games or success sounds', async () => {
+  const { audio, requests } = setup();
+  await audio.unlock();
+  audio.selectGame('dam-good-fit');
+  await audio.load();
+  audio.pressButton('gameplay');
+  audio.play('gameplayPress');
+  assert.deepEqual([...audio.voices].map(voice => voice.id), ['buttonPress', 'buttonPress']);
+  assert.equal(requests.filter(url => url.includes('/Button-Press.mp3?')).length, 1);
+  audio.play('stageComplete');
+  assert.equal([...audio.voices].at(-1).id, 'ding');
+  audio.selectGame('totem-shrinker');
+  audio.pressButton('gameplay');
+  assert.equal([...audio.voices].at(-1).id, 'gameplayPress');
+  audio.selectGame('dam-good-fit');
+  audio.setEnabled(false);
+  audio.pressButton('gameplay');
+  audio.play('gameplayPress');
+  assert.equal(audio.voices.size, 0);
+});
+
 test('gameplay presses use a separate cached punch effect and obey effects volume, mute, and voice limits', async () => {
   const { audio, requests } = setup();
   await audio.unlock();

@@ -59,7 +59,7 @@ body:is(.is-playing,.is-instructions,.party-picking) { display:flex; flex-direct
 #control-deck,#control-deck .hit-button { touch-action:none; user-select:none; -webkit-user-select:none; }
 
 @media(max-width:700px), (max-height:720px) {
-  .is-instructions #game-instructions { flex:0 1 auto; margin:0 auto; padding:9px 12px; }
+  .is-instructions #game-instructions { flex:1 1 0; margin:0 auto; padding:9px 12px; }
   .is-instructions #game-instructions #instructions-title { font-size:clamp(23px,6vw,31px); margin:2px 0 12px; }
   .is-instructions .ready-actions { margin-top:7px; }
   .is-instructions .ready-actions button { padding:8px 17px; min-height:42px; font-size:16px; }

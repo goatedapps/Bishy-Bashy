@@ -52,6 +52,7 @@ All 32 games are available in every mode:
 Burst the Balloon, Open Sesame, Witch’s Special Delivery, Totem Shrinker, Perm Mania, Facial Slot Machine, Fireworks Craze, Mimicking Monkeys, Jump for the Meat, Burger Girl, Me Find Mistake, Dice, Dice, More Dice, Facing Which Way, It's Raining Coins, Dodge or Die!!, Type in Letters, Dynamite Spark, Get Those Burgers Out!, Where’s Kaya, Happy Days, Stationery Master, Clock Stopper, Ladder Climber, Star Collector, Horse Speeder, Shark Jumper, Satay Snag, Glamour Brew, Ant Air Mail, Dam Good Fit, Sushi Switchboard, and Mole Metro.
 The common keyboard shortcuts are **1 / 2 / 3** or **J / K / L**.
 Game instructions explain each game's actions and any additional keyboard controls.
+Phone tutorials expand into the available height while keeping Ready near the bottom; short viewports and enlarged text can still scroll.
 
 Readiness resets between rounds and waits for every connected player and a fresh clock estimate.
 Witch’s Special Delivery is turn-based: alternate red/blue to run, hold green to stop and aim, then release to throw a potion over a row of frogs.

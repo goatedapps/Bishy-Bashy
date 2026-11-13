@@ -29,7 +29,7 @@
 @media(prefers-reduced-motion:reduce) { .totem-demo-block.demo-target { filter:none; } }
 
 @media(max-width:700px), (max-height:720px) {
-  .is-instructions #instructions-visual:has(.instruction-demo) { flex:0 0 auto; }
+  .is-instructions #instructions-visual:has(.instruction-demo) { flex:1 0 auto; }
   .is-instructions .instruction-demo { min-height:0; gap:9px; }
   .is-instructions .instruction-demo .instruction-demo-scene { align-self:stretch; height:auto; min-height:clamp(120px,27dvh,205px); }
   .is-instructions .instruction-demo-guide { padding:0; }

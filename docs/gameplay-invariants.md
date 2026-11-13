@@ -70,6 +70,7 @@ Keep the arena overlay above all character and effect layers, and show an explic
 `shared/visual-state.js` publishes bounded scene snapshots at 4 Hz and maps round-relative timestamps to each viewer's clock; projections never advance gameplay or award results.
 `src/viewport.js` and `src/viewport.css` fit the active arena and shared controls inside the dynamic viewport, with controls outside the arena and instructions keeping Ready visible.
 Compact tutorial spacing, controls, and player badges to fit the viewport while keeping the full content accessible on shorter screens.
+On phones, keep the card and demo flexible so spare vertical space enlarges the tutorial and Ready stays near the safe bottom edge.
 Use one shared scene or four equal-width lanes, including on phones.
 Use `touch-action:none` on the gameplay control deck to prevent double-tap zoom and preserve pinch zoom elsewhere.
 Final standings hide setup and restart controls and show Exit to every connected player.
@@ -359,6 +360,7 @@ The protocol 43 handshake requires `satay-snag`, `glamour-brew`, and `ant-air-ma
 
 `shared/workshop-games.js` owns the seeded puzzles, menus, orders, and train schedules.
 Dam Good Fit uses the shared-choice clock and server-owned first-answer locks for eight puzzles.
+Its choice presses and tutorial step cues use the existing `Button-Press.mp3` click instead of `Punch-button.mp3`; success and failure cues remain separate.
 Shorten each answer window by 470 ms, and reveal choices only after the deadline and transport grace.
 Award one repair per correct choice and animate the plug and splash from the scheduled reveal.
 Sushi Switchboard places every menu item in exactly one bucket and accepts two items in either order, including repeated colors.
